@@ -1,13 +1,13 @@
 {
   "name": "filedmaker",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
-  "description": "Viewpoint studio with SVG tracing, section profiles, portals and 3D stadium modeling studio",
+  "description": "Survey-to-view stadium model workflow with seat CSV import, landmark registration, obstruction analysis and photo alignment",
   "scripts": {
     "start": "node scripts/server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check src/plan.mjs && node --check src/model.mjs && node --check src/scene.js && node --check src/app.js && node --check scripts/server.mjs",
+    "check": "node --check src/survey.mjs && node --check src/photo.mjs && node --check src/plan.mjs && node --check src/model.mjs && node --check src/scene.js && node --check src/app.js && node --check scripts/server.mjs",
     "verify": "npm run check && npm test"
   },
   "engines": { "node": ">=20" }

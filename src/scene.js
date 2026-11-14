@@ -255,6 +255,18 @@ function addArchitecturalDetails(group, surface, project, tiers) {
   }
 }
 
+// Obstacles imported or measured by the user are part of the authored venue model,
+// unlike temporary spectator proxies. Do not infer any barriers not explicitly entered.
+function addSurveyObstacles(root, survey) {
+  const materials={rail:mat(0xb2a398,.47), parapet:mat(0x9aa3a9), wall:mat(0xadb4ba), column:mat(0x8c9b9e), screen:mat(0x4c535e)};
+  for (const o of survey?.obstacles || []) {
+    const m=new THREE.Mesh(new THREE.BoxGeometry(o.width,o.height,o.depth), materials[o.type] || mat(0x9ea8ad));
+    m.position.set(o.x,o.y,o.z);m.rotation.y=o.yaw*Math.PI/180;
+    m.userData.obstructionId=o.id;
+    root.add(m);
+  }
+}
+
 function makeLocalCrowd(model, seat, mode) {
   const group = new THREE.Group();
   group.userData.editorOnly = true;
@@ -374,7 +386,8 @@ export class StadiumScene {
     else if (surface.sport === 'soccer') soccer(floor, surface);
     else football(floor, surface);
     this.root.add(floor);
-    for (const tier of tiers) {
+    // Schematic terraces are not displayed under imported seats: they have no surveyed provenance.
+    if (model.seatOrigin !== 'imported') for (const tier of tiers) {
       for (const section of project.sections) {
         if (!section.enabled) continue;
         const stand = makeTerrace(section, surface, tier, project);
@@ -386,7 +399,8 @@ export class StadiumScene {
     const [bottom, back] = createSeatMesh(seats, project);
     this.seatMeshes = [bottom, back];
     this.root.add(bottom, back);
-    addArchitecturalDetails(this.root,surface,project,tiers);
+    if (model.seatOrigin !== 'imported') addArchitecturalDetails(this.root,surface,project,tiers);
+    addSurveyObstacles(this.root,project.survey);
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), mat(0xeff1f1));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.33;
@@ -398,7 +412,7 @@ export class StadiumScene {
     grid.material.opacity = 0.43;
     grid.userData.editorOnly = true;
     this.root.add(grid);
-    if (project.roof) this.addRoof();
+    if (project.roof && model.seatOrigin !== 'imported') this.addRoof();
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(0.43, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd08035, depthTest: false }));
     this.marker.renderOrder = 10;
     this.marker.userData.editorOnly = true;

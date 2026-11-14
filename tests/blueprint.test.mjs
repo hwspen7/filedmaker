@@ -45,7 +45,7 @@ test('calibrated closed SVG outline can drive 3D seats', () => {
   project.outline = traced;
   project.plan = plan;
   const model = generateSeats(project);
-  assert.equal(model.project.schemaVersion, 3);
+  assert.equal(model.project.schemaVersion, 4);
   assert.ok(model.capacity > 1000);
   assert.equal(new Set(model.seats.map(s => s.uid)).size, model.capacity);
   assert.equal(planPoint(plan, {x: 2, z: 4}).x, 2.3);
@@ -114,7 +114,7 @@ test('invalid imported plans and section profiles cannot enter project state', (
 test('projects created under v2 migrate without breaking the new schema', () => {
   const p=createProject('soccer');delete p.sectionProfiles;delete p.portals;delete p.plan;p.schemaVersion=2;
   const next=validateProject(p);
-  assert.equal(next.schemaVersion,3);
+  assert.equal(next.schemaVersion,4);
   assert.deepEqual(next.sectionProfiles,[]);
   assert.deepEqual(next.portals,[]);
   assert.equal(next.plan,null);

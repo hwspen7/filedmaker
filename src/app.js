@@ -1,6 +1,8 @@
 import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers, resolveSectionTier } from './model.mjs';
 import { parseSvgPlan, planPoint, tracePlanOutline } from './plan.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, sightlineNote, nearbySeat, seatDescriptor } from './view.mjs';
+import { parseSeatCSV, fitPlanRegistration, seatRegistration, obstructionReport, demoSurveyRows } from './survey.mjs';
+import { fieldLandmarks, fitPhotoView } from './photo.mjs';
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];
@@ -19,6 +21,7 @@ let outlineHandleIndex = 0;
 let referenceUrl = '';
 let referenceOpacity = 0.35;
 let selectedPlanPath = 0;
+let focusImported2D = false;
 let rendererFailed = false;
 let model = null;
 let stadium = null;
@@ -29,6 +32,9 @@ let view = 'orbit';
 let viewOptions = validateViewOptions(getStored('filedmaker.view.v1', VIEW_DEFAULTS));
 let comparison = [];
 let localPhotos = [];
+let calibrationPhoto = null;
+let calibrationPoints = [];
+let lastPhotoFit = null;
 let bookmarks = getStored('filedmaker.bookmarks.v1', []);
 if (!Array.isArray(bookmarks)) bookmarks = [];
 
@@ -142,6 +148,28 @@ function renderTab() {
       html += `<button data-remove-plan class="full-outline">Remove SVG reference <span>×</span></button>`;
       html += `<p class="hint">Only the vector geometry is saved in project JSON. Native DWG/DXF and external SVG assets are not imported. Tracing requires one closed contour around the field center.</p>`;
     } else html += `<div class="outline-stat">No vector plan imported. You can continue drawing an outline manually, or import an SVG to trace.</div>`;
+  } else if (activeTab === 'survey') {
+    const s = project.survey;
+    const anchorField=(i,prop,label,value)=>field(label,`<input type="number" data-control="${i}" data-control-prop="${prop}" step="any" value="${value}" />`);
+    const obsField=(i,prop,label,value)=>field(label,`<input type="${['type','source'].includes(prop)?'text':'number'}" data-obstacle="${i}" data-obstacle-prop="${prop}" step="any" value="${safe(value)}" />`);
+    html=`<div class="outline-stat"><strong>Real-world calibration pipeline</strong><p>Import official or independently measured positions; do not treat generated stadium seats as surveyed data.</p></div>`;
+    html+=`<div class="outline-controls"><button data-ohio-stadium>Ohio Stadium reference</button><button data-import-seat-csv>Import seat CSV</button></div>`;
+    html+=`<div class="two-fields">${field('Seat source',`<select data-survey-prop="mode">${optionList(s.mode,[['generated','Generated illustration'],['imported','Imported coordinates']])}</select>`)}${field('Plan X/Z units',`<select data-survey-prop="inputUnit">${optionList(s.inputUnit,[['m','Meters'],['ft','Feet'],['drawing','Unscaled drawing units']])}</select>`)}</div>`;
+    html+=`<div class="two-fields">${field('Elevation units',`<select data-survey-prop="yUnit">${optionList(s.yUnit,[['m','Meters'],['ft','Feet']])}</select>`)}${field('Elevation offset (m)',`<input type="number" data-survey-prop="heightOffset" step="0.01" value="${s.heightOffset}"/>`)}</div>`;
+    html+=field('Venue name',`<input type="text" data-survey-prop="venue" value="${safe(s.venue)}"/>`);
+    html+=field('Coordinate source / measurement note',`<input type="text" data-survey-prop="source" value="${safe(s.source)}"/>`);
+    html+=field('Public source URL (optional HTTPS)',`<input type="url" data-survey-prop="sourceUrl" value="${safe(s.sourceUrl)}" placeholder="https://..."/>`);
+    html+=`<div class="outline-stat">${num(s.seats.length)} imported seats · ${s.seats.filter(p=>p.y!==null).length} with supplied elevation · ${s.anchors.length} matched landmarks</div>`;
+    html+=`<div class="outline-controls"><button data-demo-seat-csv>Load fictional 24-seat fixture</button><button data-clear-seat-csv ${s.seats.length?'':'disabled'}>Clear imported seats</button></div>`;
+    html+=`<p class="hint">CSV requires seat_id, section, row, seat, x, z and optional tier, y. Source units apply to X/Z; elevations use the separately chosen unit. Use raw drawing X/Z with at least two matched control points. Imported mode hides schematic terraces rather than suggesting they match the real seat measurements.</p>`;
+    html+=`<div class="subheading">LANDMARK REGISTRATION</div><p class="hint">For each control point enter the X/Z in your original CSV (source), and the corresponding known X/Z in this stadium frame (target, meters). Stadium center is X=0, Z=0. Minimum 2 matches, recommended 3+ for residual testing.</p>`;
+    if(s.anchors.length>=2){try{const fit=fitPlanRegistration(s.anchors);html+=`<div class="outline-stat"><strong>RMS ${fit.rms.toFixed(3)} m · Max ${fit.maxError.toFixed(3)} m</strong><p>Scale ${fit.scale.toFixed(6)} m/unit · Angle ${(fit.angle*180/Math.PI).toFixed(2)}° · ${fit.count} controls. Two-point fit has zero independent residual check.</p></div>`}catch(e){html+=`<p class="hint error-note">${safe(e.message)}</p>`;}}
+    s.anchors.forEach((a,i)=>{html+=`<div class="tier-card"><div class="tier-header"><strong>${safe(a.id)}</strong><button data-remove-control="${i}">Remove</button></div><div class="two-fields">${anchorField(i,'srcX','Source X',a.srcX)}${anchorField(i,'srcZ','Source Z',a.srcZ)}</div><div class="two-fields">${anchorField(i,'dstX','Target X (m)',a.dstX)}${anchorField(i,'dstZ','Target Z (m)',a.dstZ)}</div></div>`;});
+    html+=`<button data-add-control class="full-outline" ${s.anchors.length>=32?'disabled':''}>＋ Add calibration landmark</button>`;
+    html+=`<div class="subheading">MEASURED / MODELED OBSTRUCTIONS</div><p class="hint">Manually add rails, parapets, columns or screens as oriented boxes. The sightline check tests only these boxes; source notes and sizes must be verified for real-world conclusions.</p>`;
+    s.obstacles.forEach((o,i)=>{html+=`<div class="tier-card"><div class="tier-header"><strong>${safe(o.type)} · ${safe(o.id)}</strong><button data-remove-obstacle="${i}">Remove</button></div>${obsField(i,'type','Type',o.type)}${obsField(i,'source','Source note',o.source)}<div class="two-fields">${obsField(i,'x','Center X (m)',o.x)}${obsField(i,'z','Center Z (m)',o.z)}</div><div class="two-fields">${obsField(i,'y','Center Y (m)',o.y)}${obsField(i,'yaw','Yaw (°)',o.yaw)}</div><div class="two-fields">${obsField(i,'width','Width (m)',o.width)}${obsField(i,'height','Height (m)',o.height)}</div>${obsField(i,'depth','Depth (m)',o.depth)}</div>`;});
+    html+=`<button data-add-obstacle class="full-outline">＋ Add barrier near selected seat</button>`;
+    html+=`<button data-export-survey-report class="full-outline">↓ Export calibration QA report</button>`;
   } else {
     html = fieldText('Project name', 'title', project.title);
     html += fieldText('City', 'city', project.city);
@@ -158,7 +186,7 @@ function updateHeader() {
   byId('breadcrumbTitle').textContent = project.title;
   byId('viewportTitle').textContent = project.title;
   byId('projectSubline').textContent = `${project.country} · ${surface.label}`;
-  byId('viewportSubtitle').textContent = `${surface.label} · ${project.city || 'Custom venue'} · Parametric draft`;
+  byId('viewportSubtitle').textContent = `${surface.label} · ${project.city || 'Custom venue'} · ${project.survey.mode==='imported'?'Imported unverified positions':'Parametric draft'}`;
   $all('[data-preset]').forEach(button => button.classList.toggle('active', (button.dataset.preset === 'nfl' && ['nfl', 'cfl', 'cfl27'].includes(project.surface)) || (button.dataset.preset === 'nba' && ['nba', 'ncaa'].includes(project.surface)) || button.dataset.preset === project.surface));
   $all('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === activeTab));
   byId('undoBtn').disabled = !history.length;
@@ -172,11 +200,13 @@ function showSelection(seat = stadium?.selectedSeat) {
   const tier = model.tiers[seat.tier];
   const section = model.project.sections[seat.sectionIndex];
   const stats = sectionStats(model, seat.sectionId);
-  target.innerHTML = `<strong>${safe(section.label)} · Row ${seat.row}</strong><p>${safe(tier.label)} · Seat ${seat.number}<br />Section capacity ${num(stats.seats)} seats</p><code>X ${seat.x.toFixed(2)} · Y ${seat.y.toFixed(2)} · Z ${seat.z.toFixed(2)} m</code>`;
+  const sectionLabel=model.seatOrigin==='imported'?seat.sectionId:section.label;
+  target.innerHTML = `<strong>${safe(sectionLabel)} · Row ${safe(seat.row)}</strong><p>${safe(model.seatOrigin==='imported'?seat.tierLabel||'Imported deck':tier.label)} · Seat ${safe(seat.number)}<br />Section count ${num(stats.seats)} seats</p><code>X ${seat.x.toFixed(2)} · Y ${seat.y.toFixed(2)} · Z ${seat.z.toFixed(2)} m${seat.elevationKnown===false?' · ELEVATION UNKNOWN':''}</code>`;
 }
 function updateStats() {
   if (!model) return;
   byId('capacityValue').textContent = num(model.capacity);
+  byId('seatSourceLabel').textContent=model.seatOrigin==='imported'?'imported, not independently verified':'parametrically generated seats';
   byId('tierCount').textContent = model.tiers.length;
   byId('sectionCount').textContent = model.project.sections.filter(s => s.enabled).length;
   byId('fieldSize').textContent = `${model.surface.length.toFixed(0)}×${model.surface.width.toFixed(0)}`;
@@ -238,7 +268,8 @@ function commit(callback) {
     if (project.plan) selectedPlanPath = Math.min(selectedPlanPath, project.plan.paths.length - 1);
     outlineHandleIndex = Math.min(outlineHandleIndex, project.outline.points.length - 1);
     renderTab(); updateHeader(); scheduleModel();
-  } catch (error) { toast(error.message, true); renderTab(); }
+    return true;
+  } catch (error) { toast(error.message, true); renderTab(); return false; }
 }
 function replaceProject(next) {
   try {
@@ -306,6 +337,19 @@ async function exportGlb() {
   } catch (error) { toast(`GLB export failed: ${error.message}`, true); }
   finally { button.disabled = false; button.textContent = before; }
 }
+function exportSurveyQA(){
+  const survey=project.survey;
+  let fit=null,warning=null;
+  try{fit=seatRegistration(survey);}catch(err){warning=err.message;}
+  const result={schema:'filedmaker-calibration-report.v1',venue:survey.venue,source:survey.source,url:survey.sourceUrl,
+    generatedAt:new Date().toISOString(),seatMode:survey.mode,importedSeats:survey.seats.length,
+    elevatedSeats:survey.seats.filter(seat=>seat.y!==null).length,controlPoints:survey.anchors.length,
+    registration:fit,warning,modeledObstacles:survey.obstacles,
+    photoCalibration:project.survey.photoCheck||null,
+    caution:'Not certified surveyed data. Residuals evaluate only entered landmarks; sightline checks include only manually modeled obstruction boxes.'};
+  downloadBlob(new Blob([JSON.stringify(result,null,2)],{type:'application/json'}),`${slug()}-calibration-QA.json`);
+  toast('Coordinate registration and provenance report exported.');
+}
 function saveSlot() {
   const library = getStored(KEY_LIBRARY, {});
   const id = slug();
@@ -321,7 +365,16 @@ function drawLibrary() {
 
 byId('tabContent').addEventListener('change', e => {
   const input = e.target;
-  if (input.dataset.project) {
+  if(input.dataset.surveyProp){
+    const key=input.dataset.surveyProp;
+    commit(next=>{next.survey[key]=input.type==='number'?Number(input.value):input.value;});
+  } else if(input.dataset.controlProp){
+    const i=Number(input.dataset.control),key=input.dataset.controlProp;
+    commit(next=>{next.survey.anchors[i][key]=Number(input.value);});
+  } else if(input.dataset.obstacleProp){
+    const i=Number(input.dataset.obstacle),key=input.dataset.obstacleProp;
+    commit(next=>{next.survey.obstacles[i][key]=input.type==='number'?Number(input.value):input.value;});
+  } else if (input.dataset.project) {
     const key = input.dataset.project;
     commit(next => { next[key] = input.type === 'checkbox' ? input.checked : input.type === 'number' ? Number(input.value) : input.value; });
   } else if (input.dataset.tier !== undefined) {
@@ -363,7 +416,27 @@ byId('tabContent').addEventListener('change', e => {
 });
 byId('tabContent').addEventListener('click', e => {
   const target = e.target.closest('button'); if (!target) return;
-  if (target.dataset.addTier !== undefined) {
+  if(target.hasAttribute('data-import-seat-csv')) byId('seatCsvUpload').click();
+  else if(target.hasAttribute('data-ohio-stadium')){
+    commit(next=>{next.title='Ohio Stadium · reference project';next.city='Columbus';next.country='United States';next.surface='nfl';next.survey.venue='Ohio Stadium';next.survey.source='Ohio State official seating-chart reference — no seat coordinates included';next.survey.sourceUrl='https://ohiostatebuckeyes.com/sports/2023/9/14/maps-seating-charts-services';next.survey.mode='generated';});
+    toast('Official reference linked. Geometry remains schematic until measured coordinates are imported.');
+  }
+  else if(target.hasAttribute('data-demo-seat-csv')){
+    commit(next=>{next.survey.seats=parseSeatCSV(demoSurveyRows());next.survey.mode='imported';next.survey.inputUnit='m';next.survey.yUnit='m';next.survey.anchors=[];next.survey.source='Fictional calibration fixture — not an actual venue';});
+    focusImported2D=true;
+    toast('Loaded 24 fictional test seats. This is not real stadium data.');
+  }
+  else if(target.hasAttribute('data-clear-seat-csv'))commit(next=>{next.survey.seats=[];next.survey.mode='generated';next.survey.anchors=[];});
+  else if(target.hasAttribute('data-add-control'))commit(next=>{const n=next.survey.anchors.length+1;next.survey.anchors.push({id:`CP${n}`,srcX:n*10,srcZ:0,dstX:n*10,dstZ:0});});
+  else if(target.hasAttribute('data-remove-control'))commit(next=>{const i=Number(target.dataset.removeControl);next.survey.anchors.splice(i,1);if(next.survey.mode==='imported'&&next.survey.inputUnit==='drawing'&&next.survey.anchors.length<2)next.survey.mode='generated';});
+  else if(target.hasAttribute('data-add-obstacle')){
+    const seat=currentSeat();
+    const a=seat?.yaw??0,offset=seat?1.2:0;
+    commit(next=>{const n=next.survey.obstacles.length+1;next.survey.obstacles.push({id:`OBS${Date.now().toString(36)}-${n}`,type:'rail',source:'Unverified manual model',x:(seat?.x??0)-Math.sin(a)*offset,y:(seat?.y??1.4)+1,z:(seat?.z??0)-Math.cos(a)*offset,width:1.5,height:.9,depth:.12,yaw:a*180/Math.PI});});
+  }
+  else if(target.hasAttribute('data-remove-obstacle'))commit(next=>{next.survey.obstacles.splice(Number(target.dataset.removeObstacle),1);});
+  else if(target.hasAttribute('data-export-survey-report'))exportSurveyQA();
+  else if (target.dataset.addTier !== undefined) {
     commit(next => {
       const prev = next.tiers.at(-1);
       next.tiers.push({ id: `T${next.tiers.length + 1}`, label: `Tier ${next.tiers.length + 1}`, rows: 18, depth: prev.depth, rise: prev.rise, offset: 0, height: 0, gap: 0, heightGap: 0 });
@@ -483,8 +556,17 @@ function renderOutlineSvg(projectValue = project) {
   const tiers = resolveTiers(projectValue);
   const outer = tiers.at(-1);
   const margin = outer.startOffset + outer.rows * outer.depth + 60;
-  const lim = Math.min(430, Math.max(surface.length / 2, surface.width / 2) + margin + 14);
-  svg.setAttribute('viewBox', `${-lim} ${-lim} ${2 * lim} ${2 * lim}`);
+  const imported=model?.seatOrigin==='imported' && projectValue===project && model.seats.length;
+  const importedRange=imported?model.seats.reduce((m,seat)=>Math.max(m,Math.abs(seat.x),Math.abs(seat.z)),0)+24:0;
+  const lim = Math.min(2000,Math.max(importedRange,Math.max(surface.length / 2, surface.width / 2) + margin + 14));
+  if(focusImported2D && imported){
+    let minX=Infinity,minZ=Infinity,maxX=-Infinity,maxZ=-Infinity;
+    for(const seat of model.seats){minX=Math.min(minX,seat.x);maxX=Math.max(maxX,seat.x);minZ=Math.min(minZ,seat.z);maxZ=Math.max(maxZ,seat.z);}
+    const size=Math.max(15,maxX-minX+12,maxZ-minZ+12);
+    svg.setAttribute('viewBox', `${((minX+maxX)/2-size/2).toFixed(2)} ${((minZ+maxZ)/2-size/2).toFixed(2)} ${size.toFixed(2)} ${size.toFixed(2)}`);
+  }else svg.setAttribute('viewBox', `${-lim} ${-lim} ${2 * lim} ${2 * lim}`);
+  byId('focusImportedSeats').disabled=!imported;
+  byId('focusImportedSeats').textContent=focusImported2D?'Full field':'Focus seats';
   const backSize = lim * 1.8;
   const field = `<rect x="${-surface.width / 2}" y="${-surface.length / 2}" width="${surface.width}" height="${surface.length}" fill="${surface.sport === 'basketball' ? '#a48963' : '#2a7659'}" stroke="#b8eee2" stroke-width=".5"/><path d="M${-surface.width / 2},0 H${surface.width / 2} M0,${-surface.length / 2} V${surface.length / 2}" stroke="#d5f2e5" stroke-width=".35" opacity=".5"/>`;
   const basePath = svgPath(projectValue, surface, 0);
@@ -495,7 +577,7 @@ function renderOutlineSvg(projectValue = project) {
     html += `<path d="M${pos} ${-lim}V${lim} M${-lim} ${pos}H${lim}" stroke="#d8dddd" stroke-width=".28" opacity=".65"/>`;
   }
   html += reference;
-  for (let i = tiers.length - 1; i >= 0; i--) {
+  if(projectValue.survey?.mode!=='imported') for (let i = tiers.length - 1; i >= 0; i--) {
     const tier = tiers[i];
     for (const section of projectValue.sections) {
       if (!section.enabled) continue;
@@ -517,7 +599,22 @@ function renderOutlineSvg(projectValue = project) {
       html += `<path d="${d}Z" fill="${['#d4e0dc','#dce3ed','#f1e8d6','#e2dce7'][i]}" fill-opacity=".76" stroke="${['#739e98','#8c9bb1','#caa880','#a4aab8'][i]}" stroke-width=".65"/>`;
     }
   }
-  html += `<path d="${basePath}" fill="#e7eceb" stroke="#628980" stroke-width=".7"/>${field}`;
+  html += projectValue.survey?.mode==='imported' ? field : `<path d="${basePath}" fill="#e7eceb" stroke="#628980" stroke-width=".7"/>${field}`;
+  if(imported){
+    const sample=Math.max(1,Math.ceil(model.seats.length/4500));
+    const selected=currentSeat()?.uid;
+    for(let i=0;i<model.seats.length;i+=sample){
+      const seat=model.seats[i];
+      html+=`<circle data-real-seat="${safe(seat.uid)}" cx="${seat.x.toFixed(3)}" cy="${seat.z.toFixed(3)}" r="${(focusImported2D?Math.max(.15,projectValue.seatPitch*.4):Math.max(.8,lim/240)).toFixed(2)}" fill="${seat.uid===selected?'#d28b30':'#215c72'}" fill-opacity=".85" stroke="#fff" stroke-width=".12"><title>${safe(seat.uid)} · ${safe(seat.sectionId)} · row ${safe(seat.row)} · seat ${safe(seat.number)}</title></circle>`;
+    }
+    if(selected && !model.seats.some((p,i)=>p.uid===selected&&i%sample===0)){
+      const seat=model.seats.find(p=>p.uid===selected);
+      if(seat)html+=`<circle data-real-seat="${safe(seat.uid)}" cx="${seat.x}" cy="${seat.z}" r="${(focusImported2D?.34:Math.max(1.5,lim/190)).toFixed(2)}" fill="#d28b30"/>`;
+    }
+  }
+  for(const o of projectValue.survey?.obstacles||[]){
+    html+=`<rect x="${o.x-o.width/2}" y="${o.z-o.depth/2}" width="${o.width}" height="${o.depth}" fill="#c47844" stroke="#a95020" stroke-width=".3" transform="rotate(${-o.yaw} ${o.x} ${o.z})"><title>${safe(o.id)} · ${safe(o.type)}</title></rect>`;
+  }
   // Aisle directions are drawn as translucent corridors, matching the seating cutouts.
   for (const aisle of projectValue.aisles) {
     const angle = aisle.angle * Math.PI / 180;
@@ -570,6 +667,13 @@ const positionFromPointer = event => {
   return { x: Math.round(local.x * 10) / 10, z: Math.round(local.y * 10) / 10 };
 };
 let outlineDrag = null;
+svg.addEventListener('click',event=>{
+  const dot=event.target.closest('[data-real-seat]');if(!dot||!model)return;
+  const seat=model.seats.find(p=>p.uid===dot.getAttribute('data-real-seat'));
+  if(!seat)return;
+  if(stadium){activateSeat(seat);}
+  else{showSelection(seat);toast('Selected imported seat. A working 3D renderer is needed for eye view.');}
+});
 svg.addEventListener('pointerdown', event => {
   const handle = event.target.closest('[data-handle]');
   if (!handle || project.outline.mode !== 'custom') return;
@@ -618,6 +722,7 @@ svg.addEventListener('dblclick', event => {
 byId('showOutlineTab').addEventListener('click', () => { activeTab = 'outline'; renderTab(); updateHeader(); });
 byId('showAislesTab').addEventListener('click', () => { activeTab = 'aisles'; renderTab(); updateHeader(); });
 byId('showPlanTab').addEventListener('click', () => { activeTab = 'plan'; renderTab(); updateHeader(); });
+byId('focusImportedSeats').addEventListener('click',()=>{focusImported2D=!focusImported2D;renderOutlineSvg();});
 byId('planUpload').addEventListener('change', async e => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -632,6 +737,17 @@ byId('planUpload').addEventListener('change', async e => {
     toast(`${plan.paths.length} SVG paths imported. Calibrate drawing width before tracing.`);
   } catch (error) { toast(`SVG import failed: ${error.message}`, true); }
   e.target.value = '';
+});
+byId('seatCsvUpload').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    if(file.size>32_000_000||!file.name.toLowerCase().endsWith('.csv'))throw new Error('Choose a UTF-8 CSV under 32 MB.');
+    const rows=parseSeatCSV(await file.text());
+    focusImported2D=true;
+    if(!commit(next=>{next.survey.seats=rows;next.survey.mode='imported';next.survey.source=file.name.slice(0,150);}))return;
+    activeTab='survey';renderTab();toast(`${num(rows.length)} seat rows loaded. Verify coordinate units and alignment.`);
+  }catch(err){toast(`CSV import failed: ${err.message}`,true);}
+  e.target.value='';
 });
 byId('referenceUpload').addEventListener('change', e => {
   const file = e.target.files?.[0];
@@ -665,7 +781,7 @@ byId('projectDialog').addEventListener('click', e => {
 byId('jsonImport').addEventListener('change', async event => {
   const file = event.target.files?.[0]; if (!file) return;
   try {
-    if (file.size > 2_000_000) throw new Error('Project file too large (maximum 2 MB).');
+    if (file.size > 32_000_000) throw new Error('Project file too large (maximum 32 MB).');
     const data = JSON.parse(await file.text());
     if (replaceProject(data.project || data)) { byId('projectDialog').close(); toast('Project imported.'); }
   } catch (error) { toast(`Import failed: ${error.message}`, true); }
@@ -737,6 +853,14 @@ function refreshViewPanel() {
     byId('hudSeat').textContent=seatDescriptor(seat);
     byId('hudPosition').textContent=`${viewOptions.posture} · ${viewOptions.optic} · ${viewOptions.zoom.toFixed(1)}× · ${values.distance.toFixed(1)} m`;
   } else {info.textContent='Select a seat to inspect the estimated eye position and playing-field distance.';}
+  const s=project.survey,report=byId('surveyDiagnostics');
+  let residual='No matched control landmarks';
+  if(s.anchors.length>=2){try{const f=fitPlanRegistration(s.anchors);residual=`Landmark RMS ${f.rms.toFixed(2)} m · max ${f.maxError.toFixed(2)} m · ${f.count} points${f.count===2?' (no validation holdout)':''}`;}catch(e){residual=e.message;}}
+  let block='Select a seat to evaluate modeled obstructions';
+  if(seat&&model){const v=viewpoint(seat,model.surface,viewOptions);const o=obstructionReport(v.origin,v.target,s.obstacles);
+    block=o.blocked?`Modeled sightline intersects ${o.nearest.type} (${o.nearest.obstacleId}) at ${o.nearest.distance.toFixed(1)} m`:'No manually modeled barrier intersects the target (NOT a certified clear view)';
+  }
+  report.textContent=`${model?.seatOrigin==='imported'?`${num(s.seats.length)} imported unverified seats`:'Illustrative generated seating'} · ${s.seats.filter(p=>p.y!==null).length} measured-elevation entries. ${residual}. ${block}.`;
   const bookmarked=seat&&bookmarks.some(b=>b.project===project.title&&b.surface===project.surface&&b.uid===seat.uid);
   byId('hudFavorite').textContent=bookmarked?'★ Saved':'☆ Save seat';
   byId('favoriteSeat').textContent=bookmarked?'★ Remove favorite':'☆ Favorite';
@@ -745,6 +869,11 @@ function refreshViewPanel() {
 function lookupSeat(query) {
   if (!model) return null;
   const text=String(query||'').trim().toUpperCase();
+  const direct=model.seats.find(s=>s.uid.toUpperCase()===text); if(direct)return direct;
+  if(model.seatOrigin==='imported'){
+    const match=text.match(/^(.+?)\s+(?:ROW\s*)?([\w-]+)\s+(?:SEAT\s*)?([\w-]+)$/);
+    if(match)return model.seats.find(s=>s.sectionId.toUpperCase()===match[1]&&String(s.row).toUpperCase()===match[2]&&String(s.number).toUpperCase()===match[3])||null;
+  }
   const section=text.match(/\b([A-Z]{1,3}[-]?\d{1,3})\b/);
   const tier=text.match(/\bT([1-4])\b/);
   const row=text.match(/\b(?:ROW|R)\s*(\d+)\b/);
@@ -853,6 +982,72 @@ function applySeatLink(){
   const seat=model.seats.find(s=>s.uid===params.get('seat'));
   if(seat){activateSeat(seat);updateEyeOptions({posture:params.get('posture')||'seated',optic:params.get('optic')||'human',zoom:Number(params.get('zoom')||1)});}
 }
+// Local photograph registration. Only calibration correspondences are persisted.
+function refreshCalibrationDialog(){
+  const list=fieldLandmarks(SURFACES[project.surface]);
+  const select=byId('calibrationLandmark'),previous=select.value;
+  select.innerHTML=list.map(l=>`<option value="${safe(l.id)}">${safe(l.name)}</option>`).join('');
+  if(list.some(l=>l.id===previous)) select.value=previous;
+  const marks=byId('calibrationMarks');marks.replaceChildren();
+  const photo=byId('calibrationPhoto');
+  if(calibrationPhoto){photo.src=calibrationPhoto.url;photo.hidden=false;byId('calibrationEmpty').hidden=true;}
+  else {photo.hidden=true;byId('calibrationEmpty').hidden=false;}
+  for(const [i,point] of calibrationPoints.entries()){
+    const div=document.createElement('span');div.className='calibration-marker';div.style.left=`${point.x*100}%`;div.style.top=`${point.y*100}%`;
+    div.title=`${point.id} (${(point.x*100).toFixed(1)}%, ${(point.y*100).toFixed(1)}%)`;
+    div.textContent=String(i+1);marks.append(div);
+  }
+  byId('calibrationPoints').textContent=`${calibrationPoints.length} distinct field landmark${calibrationPoints.length===1?'':'s'} selected`;
+}
+byId('openPhotoCalibration').addEventListener('click',()=>{
+  const seat=currentSeat();if(!seat)return toast('Choose a seat before calibrating its camera.',true);
+  calibrationPoints=[];lastPhotoFit=null;
+  refreshCalibrationDialog();byId('photoCalibrationDialog').showModal();
+});
+byId('editSurvey').addEventListener('click',()=>{activeTab='survey';renderTab();updateHeader();document.querySelector('.sidebar-scroll')?.scrollTo({top:1000,behavior:'smooth'});});
+byId('closePhotoCalibration').addEventListener('click',()=>byId('photoCalibrationDialog').close());
+byId('calibrationPhotoInput').addEventListener('change',event=>{
+  const f=event.target.files?.[0];if(!f)return;
+  if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>12_000_000){toast('Use a PNG, JPEG or WebP photo under 12 MB.',true);return;}
+  if(calibrationPhoto?.url)URL.revokeObjectURL(calibrationPhoto.url);
+  const url=URL.createObjectURL(f);
+  const img=new Image();img.onload=()=>{calibrationPhoto={url,width:img.naturalWidth,height:img.naturalHeight,name:f.name};calibrationPoints=[];refreshCalibrationDialog();};
+  img.onerror=()=>{URL.revokeObjectURL(url);toast('Photo could not be decoded.',true);};
+  img.src=url;event.target.value='';
+});
+byId('calibrationPhoto').addEventListener('click',event=>{
+  if(!calibrationPhoto)return;
+  const rect=event.currentTarget.getBoundingClientRect();
+  const x=(event.clientX-rect.left)/rect.width,y=(event.clientY-rect.top)/rect.height;
+  if(x<0||x>1||y<0||y>1)return;
+  const id=byId('calibrationLandmark').value;
+  calibrationPoints=calibrationPoints.filter(p=>p.id!==id);
+  calibrationPoints.push({id,x,y});
+  lastPhotoFit=null;
+  byId('calibrationResult').textContent=`Marked ${id}. Set the next landmark and click its position.`;
+  refreshCalibrationDialog();
+});
+byId('clearCalibrationMarks').addEventListener('click',()=>{calibrationPoints=[];lastPhotoFit=null;refreshCalibrationDialog();byId('calibrationResult').textContent='Photo markers cleared.';});
+byId('fitCalibrationCamera').addEventListener('click',()=>{
+  try{
+    if(!calibrationPhoto)throw new Error('Load a reference photo first.');
+    if(!currentSeat()||!model)throw new Error('Select a seat first.');
+    if(model.seatOrigin==='imported' && currentSeat().elevationKnown===false)throw new Error('This imported seat has no measured elevation. Camera calibration requires a known seat height.');
+    const f=fitPhotoView({points:calibrationPoints,width:calibrationPhoto.width,height:calibrationPhoto.height,seat:currentSeat(),surface:model.surface,posture:viewOptions.posture,target:viewOptions.target,
+      initial:{yaw:viewOptions.yaw,pitch:viewOptions.pitch,fov:67/viewOptions.zoom}});
+    lastPhotoFit=f;
+    if(f.rmsPx>Math.max(12,calibrationPhoto.height*0.02)){
+      byId('calibrationResult').textContent=`Calibration rejected: RMS reprojection ${f.rmsPx.toFixed(1)} px across ${f.marks} landmarks. Recheck landmark identities, click coordinates, photo crop, seat coordinates and camera model. No camera or saved project values were changed.`;
+      return;
+    }
+    byId('calibrationResult').textContent=`Estimated yaw ${f.yaw.toFixed(2)}°, pitch ${f.pitch.toFixed(2)}°, vertical FOV ${f.fov.toFixed(2)}°. RMS reprojection ${f.rmsPx.toFixed(1)} px; worst ${f.maxErrorPx.toFixed(1)} px. ${f.status}. ${f.rmsPx>20?'High residual: check seat coordinates and selected landmarks.':'Compare against additional photographs before trusting this estimate.'}`;
+    const selectedId=currentSeat().uid;
+    commit(next=>{next.survey.photoCheck={seatId:selectedId,points:calibrationPoints.map(p=>({...p})),width:calibrationPhoto.width,height:calibrationPhoto.height,yaw:f.yaw,pitch:f.pitch,fov:f.fov,rmsPx:f.rmsPx,maxErrorPx:f.maxErrorPx};});
+    updateEyeOptions({optic:'phone',yaw:f.yaw,pitch:f.pitch,zoom:f.zoom});
+    switchView('seat');
+    toast('Camera view aligned to photo landmarks. This does not certify seat coordinates.');
+  }catch(err){byId('calibrationResult').textContent=err.message;toast(err.message,true);}
+});
 byId('retryRender').addEventListener('click', () => location.reload());
 document.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;

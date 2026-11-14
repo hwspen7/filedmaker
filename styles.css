@@ -235,3 +235,29 @@ select { color-scheme: light; }
 }
 @media(max-width:830px){.view-switch{max-width:calc(100% - 28px);overflow:auto;white-space:nowrap}.view-btn{flex-shrink:0}}
 .photo-button{padding:0;border:0;background:transparent;border-radius:6px}
+
+/* v5 — survey and photograph calibration, same neutral light workspace. */
+.survey-title { margin-top: 17px; }
+.survey-diagnostics { font-size: 10px; line-height: 1.6; padding: 11px 10px; border: 1px solid #e4e4e4; background: #fff; border-radius: 9px; color: #555; }
+.error-note { color: #9c3b31!important; }
+.calibration-dialog { width: min(1090px, 95vw); max-width: 95vw; max-height: 94vh; overflow: auto; padding: 24px; border: 1px solid #dedede; border-radius: 17px; background: #fff; color: #222; box-shadow: 0 18px 60px #0003; }
+.calibration-dialog::backdrop { background: #13131385; }
+.calibration-layout { display: grid; grid-template-columns: minmax(0,1fr) 240px; gap: 18px; margin-top: 18px; }
+.calibration-main { min-width: 0; }
+.calibration-photo-canvas { position: relative; margin-top: 13px; width: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; background: #f3f4f4; border: 1px solid #e1e1e1; border-radius: 11px; overflow: hidden; }
+.calibration-photo-canvas img { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; cursor: crosshair; user-select: none; }
+.calibration-photo-canvas img[hidden],.calibration-photo-canvas #calibrationEmpty[hidden]{display:none}
+.calibration-photo-canvas #calibrationEmpty { font-size: 12px; text-align: center; color: #6b6b6b; line-height: 1.7; max-width: 300px; padding: 24px; }
+.calibration-marks { position: absolute; inset: 0; pointer-events: none; }
+.calibration-marker { position: absolute; transform: translate(-50%,-50%); height: 21px; min-width: 21px; border-radius: 99px; border: 2px solid #fff; box-shadow: 0 0 0 1px #137b6c,0 2px 7px #0005; background: #147d6e; color: white; font-weight: 700; font-size: 10px; line-height: 17px; text-align: center; }
+.calibration-controls { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.calibration-controls>label { font-size: 12px; color: #4c4c4c; font-weight: 600; }
+.calibration-controls select { width: 100%; display: block; border: 1px solid #ddd; margin-top: 7px; padding: 10px; border-radius: 8px; background: #fff; font-size: 12px; }
+.calibration-controls #calibrationPoints { font-size: 11px; color: #666; }
+.calibration-controls .primary-btn { padding: 12px; }
+.calibration-controls .hint { font-size: 11px; line-height: 1.6; color: #777; }
+@media(max-width:760px) { .calibration-dialog { padding: 14px; } .calibration-layout { grid-template-columns: 1fr; } .calibration-photo-canvas { min-height: 230px; } }
+
+.calibration-photo-frame { position: relative; width: max-content; max-width: 100%; max-height: 62vh; line-height: 0; }
+.calibration-photo-frame img { max-width: 100%; max-height: 62vh; width: auto; height: auto; display: block; }
+.calibration-photo-frame:has(img[hidden]) { display: none; }

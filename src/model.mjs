@@ -1,6 +1,7 @@
 // Deterministic parametric geometry and project validation. No DOM or 3D dependencies.
+import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
 export const TAU = Math.PI * 2;
-export const CURRENT_SCHEMA = 3;
+export const CURRENT_SCHEMA = 4;
 
 export const SURFACES = Object.freeze({
   nfl: { sport: 'football', label: 'NFL football', width: 48.768, length: 109.728, endZone: 9.144 },
@@ -45,6 +46,7 @@ export function createProject(preset = 'nfl') {
     portals: [],
     sectionProfiles: [],
     plan: null,
+    survey: createSurvey(),
     sections: makeSections(arena ? 16 : 20),
     tiers: arena ? [
       { id: 'T1', label: 'Lower bowl', rows: 18, depth: 0.83, rise: 0.32, offset: 4.2, height: 1.1, gap: 2.8, heightGap: 2.5 },
@@ -59,7 +61,7 @@ export function createProject(preset = 'nfl') {
 
 export function validateProject(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected a project object.');
-  if (![1, 2, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1, 2 or ${CURRENT_SCHEMA}.`);
+  if (![1, 2, 3, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1, 2, 3 or ${CURRENT_SCHEMA}.`);
   if (!(input.surface in SURFACES)) throw new Error('Unsupported playing surface.');
   if (!Array.isArray(input.tiers) || input.tiers.length < 1 || input.tiers.length > 4) throw new Error('Use between 1 and 4 seating tiers.');
   if (!Array.isArray(input.sections) || input.sections.length < 4 || input.sections.length > 36) throw new Error('Use between 4 and 36 sections.');
@@ -183,6 +185,7 @@ export function validateProject(input) {
       for (const point of path.points) if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z) || Math.abs(point.x) > 100000 || Math.abs(point.z) > 100000) throw new Error('SVG plan contains an invalid coordinate.');
     }
   }
+  project.survey = validateSurvey(project.survey);
   return project;
 }
 
@@ -374,6 +377,9 @@ export function generateSeats(input) {
   const project = validateProject(input);
   const surface = SURFACES[project.surface];
   const tiers = resolveTiers(project);
+  const source = importedSeats(project.survey, project);
+  if (source) return { project, surface, tiers, seats: source.seats, groups: [], capacity: source.seats.length,
+    seatOrigin: 'imported', registration: source.registration, elevationCount: source.elevationCount };
   const seats = [], groups = [];
   for (const tier of tiers) {
     for (let sectionIndex = 0; sectionIndex < project.sections.length; sectionIndex++) {
@@ -408,7 +414,7 @@ export function generateSeats(input) {
       }
     }
   }
-  return { project, surface, tiers, seats, groups, capacity: seats.length };
+  return { project, surface, tiers, seats, groups, capacity: seats.length, seatOrigin: 'generated', registration: null, elevationCount: seats.length };
 }
 
 export function sectionStats(model, sectionId) {

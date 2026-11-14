@@ -46,11 +46,11 @@ export function nearbySeat(model, seat, direction) {
   if (!model || !seat) return null;
   const seats = model.seats;
   if (direction === 'left' || direction === 'right') {
-    return seats.find(s => s.tier === seat.tier && s.sectionId === seat.sectionId && s.row === seat.row && s.number === seat.number + (direction === 'right' ? 1 : -1)) || null;
+    return seats.find(s => s.tier === seat.tier && s.sectionId === seat.sectionId && s.row === seat.row && Number(s.number) === Number(seat.number) + (direction === 'right' ? 1 : -1)) || null;
   }
   if (direction === 'front' || direction === 'back') {
-    const wantedRow = seat.row + (direction === 'back' ? 1 : -1);
-    const choices = seats.filter(s => s.tier === seat.tier && s.sectionId === seat.sectionId && s.row === wantedRow);
+    const wantedRow = Number(seat.row) + (direction === 'back' ? 1 : -1);
+    const choices = seats.filter(s => s.tier === seat.tier && s.sectionId === seat.sectionId && Number(s.row) === wantedRow);
     if (!choices.length) return null;
     return choices.reduce((best, cur) => Math.hypot(cur.x - seat.x, cur.z - seat.z) < Math.hypot(best.x - seat.x, best.z - seat.z) ? cur : best);
   }

@@ -80,6 +80,7 @@ try {
                 '.js'   { $type = 'text/javascript; charset=utf-8' }
                 '.mjs'  { $type = 'text/javascript; charset=utf-8' }
                 '.json' { $type = 'application/json; charset=utf-8' }
+                '.csv'  { $type = 'text/csv; charset=utf-8' }
                 '.svg'  { $type = 'image/svg+xml' }
                 '.png'  { $type = 'image/png' }
                 '.jpg'  { $type = 'image/jpeg' }

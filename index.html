@@ -18,7 +18,7 @@
 <body>
   <div class="workspace">
     <aside class="sidebar">
-      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>Stadium modeling studio</small></div><span class="version">v4.0</span></header>
+      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>Stadium modeling studio</small></div><span class="version">v5.0</span></header>
       <div class="sidebar-scroll">
         <section class="side-panel">
           <div class="eyebrow">Your project</div>
@@ -41,9 +41,9 @@
             <button class="tab" data-tab="sections">Sections</button>
             <button class="tab" data-tab="outline">Outline</button>
             <button class="tab" data-tab="aisles">Aisles</button><button class="tab" data-tab="plan">SVG plan</button>
-            <button class="tab" data-tab="info">Info</button>
+            <button class="tab" data-tab="survey">Real data</button><button class="tab" data-tab="info">Info</button>
           </div>
-          <div id="tabContent"></div>
+          <div id="tabContent"></div><input id="seatCsvUpload" type="file" accept=".csv,text/csv" hidden />
         </section>
       </div>
       <footer class="sidebar-footer"><span class="status-dot"></span><span id="saveStatus">All changes stored in this browser</span></footer>
@@ -57,7 +57,7 @@
           <div class="viewport-header"><div><div class="viewport-overline"><span class="live-dot"></span> Interactive preview</div><h1 id="viewportTitle">Untitled Stadium</h1><div class="viewport-subtitle" id="viewportSubtitle">Parametric bowl · Draft model</div></div><button id="screenshot" class="viewport-icon" title="Save viewport screenshot" aria-label="Save screenshot">▣</button></div>
           <div class="view-switch" aria-label="View mode"><button data-view="orbit" class="view-btn active">3D view</button><button data-view="plan" class="view-btn">Top view</button><button data-view="section" class="view-btn">Section</button><button data-view="seat" class="view-btn">Human view</button><button data-view="outline" class="view-btn">2D editor</button></div>
           <div id="outlineEditor" class="outline-editor" hidden>
-            <div class="outline-editor-top"><div><strong>2D outline editor</strong><small>Drag anchors · Double-click to add · All distances in meters</small></div><div class="outline-editor-actions"><button id="showOutlineTab" class="outline-action">Outline controls</button><button id="showAislesTab" class="outline-action">Aisles</button><button id="showPlanTab" class="outline-action">SVG plan</button></div></div>
+            <div class="outline-editor-top"><div><strong>2D outline editor</strong><small>Drag anchors · Double-click to add · All distances in meters</small></div><div class="outline-editor-actions"><button id="showOutlineTab" class="outline-action">Outline controls</button><button id="showAislesTab" class="outline-action">Aisles</button><button id="showPlanTab" class="outline-action">SVG plan</button><button id="focusImportedSeats" class="outline-action">Focus seats</button></div></div>
             <svg id="outlineSvg" role="img" aria-label="Editable overhead stadium outline" tabindex="0" viewBox="-150 -150 300 300"></svg>
             <div class="outline-editor-bottom"><label class="reference-loader">Load tracing image <input type="file" id="referenceUpload" accept="image/png,image/jpeg,image/webp" hidden /></label><label>Reference opacity <input type="range" id="referenceOpacity" min="0" max="1" value="0.35" step="0.05" /></label><button id="clearReference" class="outline-action">Clear image</button><label class="reference-loader">Import SVG<input type="file" id="planUpload" accept=".svg,image/svg+xml" hidden /></label><span id="outlineHint" aria-live="polite">Convert the bowl to a custom outline to edit anchor positions.</span></div>
           </div>
@@ -72,7 +72,7 @@
         </div>
         <aside class="inspector">
           <div class="inspector-heading"><span>Inspector</span><span class="inspector-live">● Live</span></div>
-          <div class="stat-card"><small>Estimated seating capacity</small><strong id="capacityValue">—</strong><div class="stat-suffix">parametrically generated seats</div></div>
+          <div class="stat-card"><small>Estimated seating capacity</small><strong id="capacityValue">—</strong><div class="stat-suffix" id="seatSourceLabel">parametrically generated seats</div></div>
           <div class="mini-stats"><div><small>Tiers</small><strong id="tierCount">—</strong></div><div><small>Sections</small><strong id="sectionCount">—</strong></div><div><small>Field</small><strong id="fieldSize">—</strong></div></div>
           <div class="inspector-block"><div class="inspector-title">Selection <span>01</span></div><div id="selectionInfo" class="selection-info"><div class="empty-selection">Click a seat or seating section to inspect its position.</div></div><div class="seat-actions"><button id="prevSeat" class="outline-btn">← Previous</button><button id="nextSeat" class="outline-btn">Next →</button></div></div>
           <div class="inspector-block viewpoint-panel" id="viewpointPanel">
@@ -87,6 +87,9 @@
             <div class="view-form"><label for="crowdMode">Nearby spectators</label><select id="crowdMode"><option value="empty">Empty stands</option><option value="seated">Seated (illustrative)</option><option value="standing">Standing (illustrative)</option></select></div>
             <div class="view-navigate"><button data-seat-move="front">↑ Forward row</button><button data-seat-move="back">↓ Back row</button><button data-seat-move="left">← Left seat</button><button data-seat-move="right">→ Right seat</button></div>
             <div class="view-diagnostics" id="viewDiagnostics">Select a seat to inspect eye level and approximate distance.</div>
+            <div class="inspector-title survey-title">Survey &amp; visibility <span>04</span></div>
+            <div id="surveyDiagnostics" class="survey-diagnostics">Model data provenance appears here.</div>
+            <div class="view-action-grid"><button id="openPhotoCalibration">Calibrate photo</button><button id="editSurvey">Real data editor</button></div>
             <div class="view-action-grid"><button id="favoriteSeat">☆ Favorite</button><button id="addComparison">＋ Compare</button><button id="openCompare">View A / B</button><button id="shareSeat">Copy local link</button></div>
             <div class="view-form"><label for="favoritesSelect">Saved positions</label><select id="favoritesSelect"><option value="">Choose a favorite</option></select></div>
             <div class="view-form"><label>View references (local only)</label><label class="upload-photo">Upload audience reference photo<input id="viewPhotoUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple /></label><div id="photoList" class="photo-list"><small>No reference photos uploaded</small></div></div>
@@ -95,12 +98,19 @@
           <div class="inspector-note"><span>◈</span><p>SVG drawings and model geometry are editable references, not verified survey measurements. Validate geometry before using it for ticketing or real sightlines.</p></div>
         </aside>
       </div>
-      <div class="bottom-bar"><div><span class="bottom-dot"></span><span id="bottomStatus">Model ready</span></div><div>Meters <span class="bottom-sep">/</span> Local data <span class="bottom-sep">/</span> <span id="modelVersion">SCHEMA v3</span></div></div>
+      <div class="bottom-bar"><div><span class="bottom-dot"></span><span id="bottomStatus">Model ready</span></div><div>Meters <span class="bottom-sep">/</span> Local data <span class="bottom-sep">/</span> <span id="modelVersion">SCHEMA v4</span></div></div>
     </main>
   </div>
 
   <dialog id="projectDialog" class="project-dialog"><form method="dialog"><div class="dialog-header"><div><div class="eyebrow">Project library</div><h2>Open a project</h2></div><button value="cancel" class="icon-btn" aria-label="Close">×</button></div><div id="savedProjects" class="saved-projects"></div><div class="dialog-footer"><label class="outline-btn upload-label" for="jsonImport">Import JSON file</label><input type="file" id="jsonImport" accept=".json,application/json" hidden /><button value="cancel" class="plain-btn">Close</button></div></form></dialog>
   <dialog class="comparison-dialog" id="comparisonDialog"><div class="comparison-top"><div><h2>Seat view comparison</h2><p>Capture up to two human-eye viewpoints from the current model. Photographs can be displayed as references, not proof of geometric accuracy.</p></div><button id="closeComparison">× Close</button></div><div class="comparison-slots" id="comparisonSlots"></div><div class="comparison-footer"><button id="swapComparison">Swap A / B</button><button id="clearComparison">Clear comparison</button></div></dialog>
+  <dialog class="calibration-dialog" id="photoCalibrationDialog">
+    <div class="comparison-top"><div><h2>Photo camera calibration</h2><p>Match visible playing-field landmarks in a local reference photo. This estimates camera yaw, pitch and FOV at the selected seat, not surveyed seat coordinates.</p></div><button id="closePhotoCalibration">× Close</button></div>
+    <div class="calibration-layout"><div class="calibration-main">
+      <label class="upload-photo">Load local reference photo <input id="calibrationPhotoInput" accept="image/png,image/jpeg,image/webp" type="file" hidden /></label>
+      <div id="calibrationPhotoCanvas" class="calibration-photo-canvas"><div id="calibrationPhotoFrame" class="calibration-photo-frame"><img id="calibrationPhoto" alt="Local photograph for landmark calibration" hidden /><div id="calibrationMarks" class="calibration-marks"></div></div><span id="calibrationEmpty">Load a stadium photo, choose a field landmark, then click its position in the image.</span></div>
+    </div><aside class="calibration-controls"><label>Landmark to mark<select id="calibrationLandmark"></select></label><div id="calibrationPoints">0 points marked</div><button id="clearCalibrationMarks" class="full-outline">Clear points</button><button id="fitCalibrationCamera" class="primary-btn">Fit camera to photo</button><div id="calibrationResult" class="view-diagnostics">A minimum of three distinct field landmarks is required. Four or more are recommended for a useful residual check.</div><p class="hint">Reference photo pixels remain local and are not included in the JSON export. Only landmark coordinates and camera-fit diagnostics are saved.</p></aside></div>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./src/app.js"></script>
 </body>

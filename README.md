@@ -4,7 +4,25 @@ A browser-based **parametric 3D stadium and arena modeling studio** for the Unit
 
 ![CI](https://github.com/hwspen7/filedmaker/actions/workflows/quality.yml/badge.svg)
 
-## Version 3.0 — vector blueprint and independent seating profiles
+## Version 5.0 — Real Venue Calibration Pipeline
+
+FiledMaker v5 joins the existing **ChatGPT-inspired light editor**, custom stadium outlines, human-eye seat views, and SVG tracing with a verifiable local workflow for real-world seating data. It is designed for **football, basketball and soccer venues in the United States and Canada**.
+
+- **Real data tab:** import local seat-coordinate CSV files (up to 150,000 seats), with unique IDs, section/row/seat labels, optional measured elevation, meter/foot/drawing X/Z units, and explicit provenance. Imported seat positions replace generated seats and the schematic terraces are hidden instead of implying a surveyed building.
+- **Control-point registration:** solve a 2D translation, rotation and scale from two or more matched landmarks, with in-sample RMS and maximum residual (meters). A two-point calibration cannot verify global accuracy.
+- **2D map:** displays actual imported seat points with 2D selection and a **Focus seats / Full field** toggle.
+- **Obstructions:** author rectangular 3D rails, parapets, columns or walls with metric coordinates and yaw. The View inspector checks the ray from the human eye to the chosen field target against these user-authored objects only.
+- **Photo calibration:** mark 3–12 playing-field landmarks in a local reference image and fit the selected seat's camera yaw, pitch and FOV. Unacceptable pixel residuals are rejected; photos themselves are not persisted.
+- **QA report:** export the calibration residuals, coordinate source, elevation coverage, obstacles and photo-fit metadata as JSON.
+- **Practice project:** an Ohio Stadium reference shortcut links Ohio State's official seating-chart listing. It does **not** supply or claim to reconstruct official seat coordinates. The included [`fictional-survey-seats.csv`](examples/fictional-survey-seats.csv) is a clearly fictional integration fixture.
+
+**Use this guide:** [docs/REAL_VENUE_WORKFLOW.md](docs/REAL_VENUE_WORKFLOW.md) for formats, calibration, in-sample error interpretation, photo registration and accuracy boundaries.
+
+**Verification:** `npm run verify` performs syntax checks and pure-geometry tests. Full browser 3D/GLB behavior still depends on the Three.js CDN and must be checked in an actual supported browser. Browser tests were also performed with the 3D renderer replaced by a deterministic mock, so they validate UI wiring rather than WebGL rendering.
+
+**Data integrity:** any stadium-specific coordinate source needs verified rights, coordinate reference and measurement metadata. Never advertise an imported but unverified seat as a surveyed, unobstructed or officially approved view.
+
+## Version 3.0 — vector blueprint and independent seating profiles (legacy features)
 
 FiledMaker keeps the **light, neutral workspace** introduced in v2.1. The stadium engineering tools now support a schematic workflow based on imported SVG vector floor plans, individual section-tier geometry, and row-limited entrance openings.
 
@@ -143,6 +161,8 @@ filedmaker/
 ├── styles.css                     # Responsive studio theme
 ├── src/
 │   ├── model.mjs                  # Pure parameter validation / geometry / seats
+│   ├── survey.mjs                 # CSV import, registration, line of sight
+│   ├── photo.mjs                  # Pinhole projection and landmark fitting
 │   ├── scene.js                   # Three.js renderer, picking, 3D exports
 │   └── app.js                     # Browser editor, local storage, import / export
 ├── scripts/server.mjs             # Optional dependency-free Node static server
@@ -168,7 +188,7 @@ This executes Node's syntax checks and the geometry/server test suites. GitHub A
 
 - This is an **editor for schematic parametric stadiums**, not a ready-made catalog of surveyed NFL/NBA/MLS venues.
 - Detailed architectural façades, signage, accurately modeled roofs and verified obstructions need separately licensed reference data or manual modeling in a DCC/CAD tool.
-- First-person seat views use the modeled eye point and aim at field center. They are illustrative, not validated real-world sightline predictions.
+- First-person seat views offer selectable posture, target, yaw, pitch and zoom. Imported seats use provided coordinates, but the camera and visibility model are illustrative until checked against independent measurements.
 - Imported projects are schema validated but are not an authoritative source of physical measurements.
 - Local snapshots are stored in browser `localStorage`; export JSON for backups.
 
