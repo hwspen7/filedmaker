@@ -8,7 +8,7 @@ import {nearbySeat,eyePosition,viewingTarget} from '../src/view.mjs';
 test('real data project schema supports migration without changing synthetic seats',()=>{
   const old=createProject();old.schemaVersion=3;delete old.survey;
   const migrated=validateProject(old);
-  assert.equal(CURRENT_SCHEMA,4);assert.equal(migrated.survey.mode,'generated');
+  assert.equal(CURRENT_SCHEMA,5);assert.equal(migrated.survey.mode,'generated');
   assert.ok(generateSeats(old).capacity>10000);
 });
 test('CSV importer reads UTF-8 BOM, CRLF, quoted commas and numeric elevations',()=>{

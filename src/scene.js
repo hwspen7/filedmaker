@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveSectionTier } from './model.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates } from './view.mjs';
+import { addDetailedVenue } from './architecture.js';
+import { isOhioReference } from './venues.mjs';
 
 const white = 0xf2f6ef;
 const mat = (color, roughness = 0.85) => new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.06 });
@@ -41,15 +43,16 @@ function pole(group, start, end, radius, color) {
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
   group.add(mesh);
 }
-function football(group, surface) {
+function football(group, surface, project) {
   const { width: w, length: l, endZone } = surface;
+  const ohio = isOhioReference(project);
   box(group, w + 10, 0.26, l + 10, 0, -0.13, 0, mat(0x1a413c));
   box(group, w, 0.08, l, 0, 0.035, 0, mat(0x30784e));
   for (let i = 0; i < 12; i++) {
     if (i % 2 === 0) box(group, w, 0.004, l / 12, 0, 0.078, -l / 2 + l * (i + 0.5) / 12, mat(0x347c51));
   }
   for (const side of [-1, 1]) {
-    box(group, w, 0.01, endZone, 0, 0.085, side * (l / 2 - endZone / 2), mat(side > 0 ? 0x214e75 : 0x1c655f));
+    box(group, w, 0.01, endZone, 0, 0.085, side * (l / 2 - endZone / 2), mat(ohio ? 0xb11f35 : side > 0 ? 0x214e75 : 0x1c655f));
     stripe(group, -w / 2, side * (l / 2 - endZone), w / 2, side * (l / 2 - endZone), 0.16);
     const z = side * (l / 2 + 0.5);
     pole(group, [0, 0, z], [0, 3.05, z], 0.085, 0xffd56c);
@@ -62,7 +65,32 @@ function football(group, surface) {
   for (let i = 1; i < 20; i++) {
     const z = -play / 2 + i * play / 20;
     stripe(group, -w / 2, z, w / 2, z, i === 10 ? 0.18 : 0.08);
-    if (i % 2) for (const x of [-w * 0.28, w * 0.28]) stripe(group, x - 0.38, z + 0.65, x + 0.38, z + 0.65, 0.1);
+  }
+  for(let i=1;i<100;i++){
+    if(i%5===0)continue;
+    const z=-play/2+i*play/100;
+    for(const x of [-6.096,6.096])stripe(group,x-.29,z,x+.29,z,.09);
+    for(const x of [-w/2+.7,w/2-.7])stripe(group,x-.24,z,x+.24,z,.075);
+  }
+  if(ohio){
+    function paintText(text,width,depth,x,z,rotation=0,color='#ffffff'){
+      const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;
+      const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.font='bold 122px Arial,sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,128,1000);
+      const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+      const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,depth),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,toneMapped:false}));
+      mesh.rotation.x=-Math.PI/2;mesh.rotation.z=rotation;mesh.position.set(x,.115,z);group.add(mesh);
+    }
+    paintText('OHIO STATE',30,8,0,-l/2+endZone/2);
+    paintText('BUCKEYES',30,8,0,l/2-endZone/2,Math.PI);
+    paintText('O',11,12,0,0,0,'#b31f37');
+    for(let yard=10;yard<=50;yard+=10){
+      const zz=(yard-50)*play/100;
+      for(const sign of [-1,1]){
+        paintText(String(yard),4.2,2.2,-w*.33,sign*zz);
+        paintText(String(yard),4.2,2.2,w*.33,sign*zz,Math.PI);
+      }
+    }
   }
 }
 function soccer(group, surface) {
@@ -135,17 +163,19 @@ function makeTerrace(section, surface, tier, project) {
       const startAngle = pointAtDistance(path, start).angle;
       const endAngle = pointAtDistance(path, end).angle;
       const spans = Math.max(1, Math.ceil((endAngle - startAngle) * 90 / Math.PI));
-      const shade = base.clone().multiplyScalar(0.63 + (row % 2) * 0.045);
+      const shade = base.clone().lerp(new THREE.Color(0xb7b8b5),.89).multiplyScalar(.93 + (row % 2)*.06);
       const offset = vertices.length / 3;
       for (let i = 0; i <= spans; i++) {
         const angle = startAngle + (endAngle - startAngle) * i / spans;
         const near = modelPerimeterPoint(project, surface, angle, radial);
         const far = modelPerimeterPoint(project, surface, angle, radial + profile.depth);
-        vertices.push(near.x, y, near.z, far.x, y + profile.rise, far.z);
-        for (let j = 0; j < 2; j++) colors.push(shade.r, shade.g, shade.b);
-        if (i < spans) {
-          const k = offset + i * 2;
-          indices.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+        // Flat tread followed by a concrete riser, not a sloped sheet.
+        vertices.push(near.x,y,near.z,far.x,y,far.z,far.x,y+profile.rise,far.z);
+        for(let j=0;j<3;j++){const fac=j===2?.72:1;colors.push(shade.r*fac,shade.g*fac,shade.b*fac);}
+        if(i<spans){
+          const k=offset+i*3;
+          indices.push(k,k+1,k+3,k+1,k+4,k+3);
+          indices.push(k+1,k+2,k+4,k+2,k+5,k+4);
         }
       }
     }
@@ -178,38 +208,27 @@ function addConcourse(group, surface, project, tier) {
   }
 }
 
-function createSeatMesh(seats, project) {
-  const cushion = new THREE.BoxGeometry(Math.min(0.49, project.seatPitch * 0.86), 0.14, 0.45);
-  const back = new THREE.BoxGeometry(Math.min(0.49, project.seatPitch * 0.86), 0.56, 0.095);
-  const seatMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.82, metalness: 0.02 });
-  const cushionMesh = new THREE.InstancedMesh(cushion, seatMat, seats.length);
-  const backMesh = new THREE.InstancedMesh(back, seatMat.clone(), seats.length);
-  cushionMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-  backMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-  const object = new THREE.Object3D();
-  const color = new THREE.Color();
-  const colors = project.sections.map(s => new THREE.Color(s.color));
-  seats.forEach((seat, i) => {
-    const shade = colors[seat.sectionIndex];
-    color.copy(shade).multiplyScalar(0.91 + (seat.row % 3) * 0.045);
-    object.position.set(seat.x, seat.y + 0.45, seat.z);
-    object.rotation.set(0, seat.yaw, 0);
-    object.updateMatrix();
-    cushionMesh.setMatrixAt(i, object.matrix);
-    cushionMesh.setColorAt(i, color);
-    // Local +Z points away from the pitch, opposite the occupant's gaze.
-    object.translateZ(-0.2);
-    object.position.y = seat.y + 0.75;
-    object.updateMatrix();
-    backMesh.setMatrixAt(i, object.matrix);
-    backMesh.setColorAt(i, color.clone().multiplyScalar(0.8));
+function createSeatMesh(seats,project) {
+  const high=project.detailLevel==='high',bleachers=isOhioReference(project);
+  const w=Math.min(.49,project.seatPitch*.86);
+  const geometries=[new THREE.BoxGeometry(w,.115,.4),new THREE.BoxGeometry(w,bleachers?.14:.60,.095)];
+  if(high)geometries.push(new THREE.BoxGeometry(.055,.42,.065));
+  const base=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.67,metalness:bleachers?.42:.07});
+  const meshes=geometries.map(g=>new THREE.InstancedMesh(g,base.clone(),seats.length));
+  const shades=project.sections.map(s=>new THREE.Color(s.color)),o=new THREE.Object3D(),c=new THREE.Color();
+  seats.forEach((seat,i)=>{
+    c.copy(shades[seat.sectionIndex]||new THREE.Color(0x8a9296)).lerp(new THREE.Color(bleachers?0xa8abad:0xffffff),bleachers?.62:.06);
+    c.multiplyScalar(.93+seat.row%4*.021);
+    o.rotation.set(0,seat.yaw,0);o.scale.set(1,1,1);
+    o.position.set(seat.x,seat.y+.44,seat.z);o.updateMatrix();
+    meshes[0].setMatrixAt(i,o.matrix);meshes[0].setColorAt(i,c);
+    o.position.set(seat.x,seat.y+(bleachers?.61:.76),seat.z);o.translateZ(-.2);o.updateMatrix();
+    meshes[1].setMatrixAt(i,o.matrix);meshes[1].setColorAt(i,c.clone().multiplyScalar(.84));
+    if(high){o.position.set(seat.x,seat.y+.37,seat.z);o.translateZ(.17);o.updateMatrix();meshes[2].setMatrixAt(i,o.matrix);meshes[2].setColorAt(i,new THREE.Color(0x858b89));}
   });
-  cushionMesh.instanceMatrix.needsUpdate = true;
-  backMesh.instanceMatrix.needsUpdate = true;
-  if (cushionMesh.instanceColor) cushionMesh.instanceColor.needsUpdate = true;
-  if (backMesh.instanceColor) backMesh.instanceColor.needsUpdate = true;
-  cushionMesh.userData.isSeat = true;
-  return [cushionMesh, backMesh];
+  meshes.forEach(m=>{m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;m.instanceMatrix.setUsage(THREE.StaticDrawUsage);});
+  meshes[0].userData.isSeat=true;
+  return meshes;
 }
 
 // Architectural context is schematic, not a scanned/surveyed building model.
@@ -384,7 +403,7 @@ export class StadiumScene {
     const floor = new THREE.Group();
     if (surface.sport === 'basketball') basketball(floor, surface);
     else if (surface.sport === 'soccer') soccer(floor, surface);
-    else football(floor, surface);
+    else football(floor, surface, project);
     this.root.add(floor);
     // Schematic terraces are not displayed under imported seats: they have no surveyed provenance.
     if (model.seatOrigin !== 'imported') for (const tier of tiers) {
@@ -396,10 +415,12 @@ export class StadiumScene {
       }
       addConcourse(this.root, surface, project, tier);
     }
-    const [bottom, back] = createSeatMesh(seats, project);
-    this.seatMeshes = [bottom, back];
-    this.root.add(bottom, back);
-    if (model.seatOrigin !== 'imported') addArchitecturalDetails(this.root,surface,project,tiers);
+    this.seatMeshes = createSeatMesh(seats, project);
+    this.root.add(...this.seatMeshes);
+    if (model.seatOrigin !== 'imported') {
+      addArchitecturalDetails(this.root,surface,project,tiers);
+      addDetailedVenue(this.root,model);
+    }
     addSurveyObstacles(this.root,project.survey);
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), mat(0xeff1f1));
     ground.rotation.x = -Math.PI / 2;

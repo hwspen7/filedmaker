@@ -218,3 +218,16 @@ The public pages of `shijiao.xingpaste.com` document 2D/3D venue views, area and
 ### Data and accuracy limitations
 
 All existing demo seats, sections, spectator figures and generated architectural details are **illustrative**. Accurate real-world obstructed-view predictions require surveyed seating and railing positions, field geometry, actual patrons and verified photograph calibration. GLB includes generated architectural geometry, but temporary crowd proxies and editing markers are editor-only and excluded from export. High-quality 3D previews require Three.js CDN access and a browser that supports WebGL.
+
+## v6.0: Sports architecture and Ohio Stadium
+
+Open **Ohio Stadium · real reference** from the sidebar or **Build Ohio Stadium reference** in Bowl properties. This uses **published architectural facts** and creates an editable *approximate* horseshoe with permanent southern lower stands, north rotunda, west press/suite structures and an officially sized scoreboard frame. The section geometry, seat numbering and height profiles are reconstructed, **not a surveyed digital twin**. The generated seat count is NOT the official capacity.
+
+New **Draft / Standard / High** scene detail modes preserve faster editing and provide progressively richer bleacher geometry, stepped risers, staircase treads, portal frames, front rails, exterior arcade bays and ribbon board strips. Field fixtures now include football pylons, one-yard hashes and sideline benches; soccer corner flags and technical areas; basketball scorer's table, benches and a suspended scoreboard. **Facades** and **sports fixtures** can be disabled independently.
+
+**Documented Ohio Stadium data:** Ohio State's official page reports 919 × 679 ft overall, 136 ft stadium height, 183 ft press-box roof height, 125 × 42 ft video board, and 102,041 seats (published figure, subject to future changes). The 2001 renovation permanently enclosed the South Stands; the north end retains the historic horseshoe and rotunda.
+
+**Data accuracy:** No official seat-center XYZ coordinates, per-section elevations or detailed measured obstruction data are included. The 3D reference is appropriate for creating a more specific stadium illustration, not for ticket-level sightline guarantees. See [Ohio Stadium modeling notes](docs/OHIO_STADIUM_REFERENCE.md).
+
+**Source code:** `src/venues.mjs`, `src/stadiumDetails.mjs`, `src/architecture.js`; existing survey and photo calibration tooling is unchanged.
+

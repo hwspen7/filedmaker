@@ -3,6 +3,7 @@ import { parseSvgPlan, planPoint, tracePlanOutline } from './plan.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, sightlineNote, nearbySeat, seatDescriptor } from './view.mjs';
 import { parseSeatCSV, fitPlanRegistration, seatRegistration, obstructionReport, demoSurveyRows } from './survey.mjs';
 import { fieldLandmarks, fitPhotoView } from './photo.mjs';
+import { createOhioStadiumProject, OHIO_STADIUM, isOhioReference } from './venues.mjs';
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];
@@ -13,8 +14,8 @@ const safe = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;',
 const getStored = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const putStored = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } };
 let project;
-try { project = validateProject(getStored(KEY_CURRENT, createProject())); }
-catch { project = createProject(); }
+try { project = validateProject(getStored(KEY_CURRENT, createOhioStadiumProject())); }
+catch { project = createOhioStadiumProject(); }
 let activeTab = 'bowl';
 let activeSectionId = project.sections[0].id;
 let outlineHandleIndex = 0;
@@ -59,7 +60,14 @@ function renderTab() {
     html = fieldSelect('Playing surface', 'surface', project.surface, Object.entries(SURFACES).map(([key, v]) => [key, v.label]));
     html += `<div class="two-fields">${fieldText('Bowl squareness', 'shape', project.shape, 'number', 'min="2" max="8" step="0.1"')}${fieldText('Seat pitch (m)', 'seatPitch', project.seatPitch, 'number', 'min="0.4" max="1.1" step="0.01"')}</div>`;
     html += fieldText('Aisle gap at each section boundary (m)', 'aisleWidth', project.aisleWidth, 'number', 'min="0" max="5" step="0.1"');
-    html += `<label class="toggle-row"><input data-project="roof" type="checkbox" ${project.roof ? 'checked' : ''} /> Show schematic roof canopy</label>`;
+    html += `<div class="subheading">ARCHITECTURAL DETAIL <span class="pill">SPORTS VENUES</span></div>`;
+    html += fieldSelect('Scene detail','detailLevel',project.detailLevel,[['draft','Draft · light editing'],['standard','Standard · architecture'],['high','High · terraces and fixtures']]);
+    html += `<label class="toggle-row"><input data-project="showExterior" type="checkbox" ${project.showExterior?'checked':''} /> Facades, stadium structures and concourses</label>`;
+    html += `<label class="toggle-row"><input data-project="showFixtures" type="checkbox" ${project.showFixtures?'checked':''} /> Sports equipment and field fixtures</label>`;
+    html += `<label class="toggle-row"><input data-project="roof" type="checkbox" ${project.roof?'checked':''} /> Show schematic roof canopy</label>`;
+    html += `<div class="subheading">REAL STADIUM REFERENCE</div><button class="full-outline" data-build-ohio-stadium>Build Ohio Stadium reference <span>↗</span></button>`;
+    html += `<p class="hint">Uses verified Ohio State stadium facts and an approximated horseshoe, South Stands and west press-box structure. Exact seats and aisle positions are NOT surveyed.</p>`;
+    if(isOhioReference(project))html += `<div class="venue-facts"><strong>Ohio Stadium · Columbus</strong><span>Official outer dimensions ${OHIO_STADIUM.lengthM.toFixed(1)} × ${OHIO_STADIUM.widthM.toFixed(1)} m</span><span>Official capacity ${num(OHIO_STADIUM.publishedCapacity)} · generated seats are NOT official</span><span>Separate South Stands · western press-box · north rotunda</span><a href="${OHIO_STADIUM.sources[0]}" target="_blank" rel="noopener noreferrer">Ohio State stadium facts ↗</a></div>`;
     html += `<p class="hint">Bowl squareness controls the superellipse contour. Adjust seat pitch and aisle gaps to recalculate every seat in all tiers.</p>`;
     html += `<div class="subheading">MODEL SYSTEM <span class="pill">METRIC COORDINATES</span></div><p class="hint">All seat positions use meters. The pitch is centered on (0, 0, 0), with its long axis along Z.</p>`;
   } else if (activeTab === 'tiers') {
@@ -186,7 +194,7 @@ function updateHeader() {
   byId('breadcrumbTitle').textContent = project.title;
   byId('viewportTitle').textContent = project.title;
   byId('projectSubline').textContent = `${project.country} · ${surface.label}`;
-  byId('viewportSubtitle').textContent = `${surface.label} · ${project.city || 'Custom venue'} · ${project.survey.mode==='imported'?'Imported unverified positions':'Parametric draft'}`;
+  byId('viewportSubtitle').textContent = `${surface.label} · ${project.city || 'Custom venue'} · ${isOhioReference(project)?'Ohio Stadium architectural reference / estimated seats':project.survey.mode==='imported'?'Imported unverified positions':'Parametric draft'}`;
   $all('[data-preset]').forEach(button => button.classList.toggle('active', (button.dataset.preset === 'nfl' && ['nfl', 'cfl', 'cfl27'].includes(project.surface)) || (button.dataset.preset === 'nba' && ['nba', 'ncaa'].includes(project.surface)) || button.dataset.preset === project.surface));
   $all('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === activeTab));
   byId('undoBtn').disabled = !history.length;
@@ -206,7 +214,7 @@ function showSelection(seat = stadium?.selectedSeat) {
 function updateStats() {
   if (!model) return;
   byId('capacityValue').textContent = num(model.capacity);
-  byId('seatSourceLabel').textContent=model.seatOrigin==='imported'?'imported, not independently verified':'parametrically generated seats';
+  byId('seatSourceLabel').textContent=model.seatOrigin==='imported'?'imported, not independently verified':isOhioReference(project)?'reconstructed sectors · NOT official seat count':'parametrically generated seats';
   byId('tierCount').textContent = model.tiers.length;
   byId('sectionCount').textContent = model.project.sections.filter(s => s.enabled).length;
   byId('fieldSize').textContent = `${model.surface.length.toFixed(0)}×${model.surface.width.toFixed(0)}`;
@@ -416,10 +424,18 @@ byId('tabContent').addEventListener('change', e => {
 });
 byId('tabContent').addEventListener('click', e => {
   const target = e.target.closest('button'); if (!target) return;
-  if(target.hasAttribute('data-import-seat-csv')) byId('seatCsvUpload').click();
+  if(target.hasAttribute('data-build-ohio-stadium')){
+    if(confirm('Load Ohio Stadium architectural reference? Unsaved edits will be replaced. This is NOT a surveyed seat map.')){
+      activeTab='bowl';replaceProject(createOhioStadiumProject());
+      toast('Ohio Stadium loaded. All seat positions remain estimates.');
+    }
+  }
+  else if(target.hasAttribute('data-import-seat-csv')) byId('seatCsvUpload').click();
   else if(target.hasAttribute('data-ohio-stadium')){
-    commit(next=>{next.title='Ohio Stadium · reference project';next.city='Columbus';next.country='United States';next.surface='nfl';next.survey.venue='Ohio Stadium';next.survey.source='Ohio State official seating-chart reference — no seat coordinates included';next.survey.sourceUrl='https://ohiostatebuckeyes.com/sports/2023/9/14/maps-seating-charts-services';next.survey.mode='generated';});
-    toast('Official reference linked. Geometry remains schematic until measured coordinates are imported.');
+    if(confirm('Load Ohio Stadium architectural reference? Unsaved edits will be replaced.')){
+      activeTab='bowl';replaceProject(createOhioStadiumProject());
+      toast('Ohio Stadium loaded. Generated seats remain approximate.');
+    }
   }
   else if(target.hasAttribute('data-demo-seat-csv')){
     commit(next=>{next.survey.seats=parseSeatCSV(demoSurveyRows());next.survey.mode='imported';next.survey.inputUnit='m';next.survey.yUnit='m';next.survey.anchors=[];next.survey.source='Fictional calibration fixture — not an actual venue';});
@@ -766,6 +782,7 @@ byId('clearReference').addEventListener('click', () => {
 });
 
 byId('newProject').addEventListener('click', () => { if (confirm('Create a new blank NFL stadium project?')) replaceProject(createProject()); });
+byId('ohioVenueShortcut').addEventListener('click',()=>{if(confirm('Load Ohio Stadium reference? Unsaved edits will be replaced.')){activeTab='bowl';replaceProject(createOhioStadiumProject());toast('Ohio Stadium architectural reference loaded. Seat coordinates are estimated.');}});
 byId('saveProject').addEventListener('click', saveSlot);
 byId('openProject').addEventListener('click', () => { drawLibrary(); byId('projectDialog').showModal(); });
 byId('projectDialog').addEventListener('click', e => {

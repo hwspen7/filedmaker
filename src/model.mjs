@@ -1,7 +1,7 @@
 // Deterministic parametric geometry and project validation. No DOM or 3D dependencies.
 import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
 export const TAU = Math.PI * 2;
-export const CURRENT_SCHEMA = 4;
+export const CURRENT_SCHEMA = 5;
 
 export const SURFACES = Object.freeze({
   nfl: { sport: 'football', label: 'NFL football', width: 48.768, length: 109.728, endZone: 9.144 },
@@ -41,6 +41,10 @@ export function createProject(preset = 'nfl') {
     seatPitch: arena ? 0.53 : 0.52,
     aisleWidth: arena ? 1.15 : 1.55,
     roof: arena,
+    detailLevel: 'standard',
+    showExterior: true,
+    showFixtures: true,
+    venueReference: null,
     outline: { mode: 'parametric', points: [] },
     aisles: [],
     portals: [],
@@ -61,7 +65,7 @@ export function createProject(preset = 'nfl') {
 
 export function validateProject(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected a project object.');
-  if (![1, 2, 3, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1, 2, 3 or ${CURRENT_SCHEMA}.`);
+  if (![1, 2, 3, 4, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1, 2, 3, 4 or ${CURRENT_SCHEMA}.`);
   if (!(input.surface in SURFACES)) throw new Error('Unsupported playing surface.');
   if (!Array.isArray(input.tiers) || input.tiers.length < 1 || input.tiers.length > 4) throw new Error('Use between 1 and 4 seating tiers.');
   if (!Array.isArray(input.sections) || input.sections.length < 4 || input.sections.length > 36) throw new Error('Use between 4 and 36 sections.');
@@ -74,6 +78,19 @@ export function validateProject(input) {
   project.seatPitch = clamp(project.seatPitch, 0.4, 1.1);
   project.aisleWidth = clamp(project.aisleWidth, 0, 5);
   project.roof = Boolean(project.roof);
+  project.detailLevel = project.detailLevel ?? 'standard';
+  if (!['draft','standard','high'].includes(project.detailLevel)) throw new Error('Invalid architectural detail level.');
+  project.showExterior = project.showExterior !== false;
+  project.showFixtures = project.showFixtures !== false;
+  if (project.venueReference === undefined) project.venueReference = null;
+  if (project.venueReference !== null) {
+    if (project.venueReference?.id !== 'ohio-stadium') throw new Error('Unknown venue reference.');
+    project.venueReference = {
+      id:'ohio-stadium', dataLevel:'documented-architecture/estimated-seating',
+      seatNumbering:'synthetic',
+      measurementNotice:'Architectural reference only. Exact section boundaries, seat locations and risers require survey.'
+    };
+  }
   if (project.outline === undefined) project.outline = { mode: 'parametric', points: [] };
   if (!project.outline || !['custom', 'parametric'].includes(project.outline.mode)) throw new Error('Invalid outline mode.');
   if (project.outline.mode === 'custom') {
