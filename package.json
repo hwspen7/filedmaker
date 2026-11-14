@@ -1,9 +1,9 @@
 {
   "name": "filedmaker",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Parametric 3D stadium and arena modeling studio",
+  "description": "2D outline and 3D parametric stadium and arena modeling studio",
   "scripts": {
     "start": "node scripts/server.mjs",
     "test": "node --test tests/*.test.mjs",

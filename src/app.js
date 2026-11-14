@@ -1,4 +1,4 @@
-import { CURRENT_SCHEMA, SURFACES, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy } from './model.mjs';
+import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers } from './model.mjs';
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];
@@ -13,6 +13,10 @@ try { project = validateProject(getStored(KEY_CURRENT, createProject())); }
 catch { project = createProject(); }
 let activeTab = 'bowl';
 let activeSectionId = project.sections[0].id;
+let outlineHandleIndex = 0;
+let referenceUrl = '';
+let referenceOpacity = 0.35;
+let rendererFailed = false;
 let model = null;
 let stadium = null;
 let renderVersion = 0;
@@ -65,6 +69,30 @@ function renderTab() {
     html += `<div class="two-fields">${field('Start angle (°)', sectionInput('start', 'number', section.start))}${field('End angle (°)', sectionInput('end', 'number', section.end))}</div>`;
     html += `<label class="toggle-row">${sectionInput('enabled', 'checkbox', section.enabled)} Section accepts seats</label>`;
     html += `<div class="hint">Section boundaries are generated at equal angles. Edit the number of sections to rebuild the layout.</div></div>`;
+  } else if (activeTab === 'outline') {
+    const custom = project.outline.mode === 'custom';
+    html = `<p class="hint">Outline is a closed radial polygon. Drag its control points in the 2D editor to shape an irregular seating bowl. Invalid geometry is rejected automatically.</p>`;
+    if (!custom) {
+      html += `<div class="outline-stat">The bowl is using its standard parametric superellipse.</div><div class="outline-controls"><button data-enable-outline>Create editable outline</button><button data-open-editor>Open 2D editor</button></div>`;
+    } else {
+      outlineHandleIndex = Math.max(0, Math.min(outlineHandleIndex, project.outline.points.length - 1));
+      const point = project.outline.points[outlineHandleIndex];
+      html += `<div class="outline-stat">${project.outline.points.length} anchors · closed curve · 1.5 m minimum pitch clearance</div>`;
+      html += `<div class="outline-controls"><button data-open-editor>Open 2D editor</button><button data-add-point ${project.outline.points.length >= 64 ? 'disabled' : ''}>Add point</button><button data-delete-point ${project.outline.points.length <= 8 ? 'disabled' : ''}>Remove point</button></div>`;
+      html += field('Selected control point', `<select id="outlineHandleSelect">${project.outline.points.map((_, i) => `<option value="${i}" ${i === outlineHandleIndex ? 'selected' : ''}>Anchor ${i + 1}</option>`).join('')}</select>`);
+      html += `<div class="two-fields">${field('X coordinate (m)', `<input type="number" step="0.1" data-outline-coordinate="x" value="${point.x.toFixed(2)}" />`)}${field('Z coordinate (m)', `<input type="number" step="0.1" data-outline-coordinate="z" value="${point.z.toFixed(2)}" />`)}</div>`;
+      html += `<button data-reset-outline class="full-outline">Return to parametric outline <span>↶</span></button><p class="hint">Double-click an outline edge in the 2D workspace to insert another anchor. Click any anchor to edit its coordinates.</p>`;
+    }
+  } else if (activeTab === 'aisles') {
+    html = `<p class="hint">Create radial circulation aisles independently of section borders. Each aisle removes seating and the corresponding terrace strip from the chosen level.</p>`;
+    html += `<button data-add-aisle class="full-outline" ${project.aisles.length >= 32 ? 'disabled' : ''}>＋ Add radial aisle <span>${project.aisles.length}/32</span></button>`;
+    if (!project.aisles.length) html += `<div class="outline-stat">No independent aisles yet. Section boundaries still have the standard aisle spacing.</div>`;
+    project.aisles.forEach((aisle, i) => {
+      html += `<div class="aisle-card"><div class="aisle-card-header"><strong>${safe(aisle.id)}</strong><button data-remove-aisle="${i}" aria-label="Remove ${safe(aisle.id)}">Remove</button></div>`;
+      html += `<div class="two-fields">${field('Angle (°)', `<input type="number" min="0" max="359.99" step="0.5" data-aisle-index="${i}" data-aisle-prop="angle" value="${aisle.angle}" />`)}${field('Width (m)', `<input type="number" min="0.8" max="10" step="0.1" data-aisle-index="${i}" data-aisle-prop="width" value="${aisle.width}" />`)}</div>`;
+      html += field('Affected levels', `<select data-aisle-index="${i}" data-aisle-prop="tier">${optionList(aisle.tier, [['all','All tiers'], ...project.tiers.map(t => [t.id,t.label])])}</select>`);
+      html += `</div>`;
+    });
   } else {
     html = fieldText('Project name', 'title', project.title);
     html += fieldText('City', 'city', project.city);
@@ -133,6 +161,7 @@ function scheduleModel() {
         if (view === 'seat') stadium.setView('seat');
       }
       updateStats();
+      renderOutlineSvg();
       byId('loadingState').hidden = true;
       byId('saveStatus').textContent = putStored(KEY_CURRENT, project) ? 'Auto-saved in this browser' : 'Local storage unavailable — export JSON';
     } catch (error) {
@@ -155,6 +184,7 @@ function commit(callback) {
     future = [];
     project = validated;
     if (!project.sections.some(s => s.id === activeSectionId)) activeSectionId = project.sections[0].id;
+    outlineHandleIndex = Math.min(outlineHandleIndex, project.outline.points.length - 1);
     renderTab(); updateHeader(); scheduleModel();
   } catch (error) { toast(error.message, true); renderTab(); }
 }
@@ -166,8 +196,10 @@ function replaceProject(next) {
     future = [];
     project = validated;
     activeSectionId = project.sections[0].id;
+    outlineHandleIndex = 0;
     view = 'orbit';
     $all('[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+    syncOutlineVisibility();
     renderTab(); updateHeader(); scheduleModel();
     return true;
   } catch (error) { toast(`Invalid project: ${error.message}`, true); return false; }
@@ -179,6 +211,7 @@ function travel(which) {
   other.push(JSON.stringify(project));
   project = validateProject(JSON.parse(from.pop()));
   activeSectionId = project.sections[0].id;
+  outlineHandleIndex = 0;
   renderTab(); updateHeader(); scheduleModel();
 }
 function downloadBlob(blob, filename) {
@@ -244,6 +277,14 @@ byId('tabContent').addEventListener('change', e => {
   } else if (input.dataset.sectionProp) {
     const id = activeSectionId, key = input.dataset.sectionProp;
     commit(next => { const section = next.sections.find(s => s.id === id); section[key] = input.type === 'checkbox' ? input.checked : input.type === 'number' ? Number(input.value) : input.value; });
+  } else if (input.id === 'outlineHandleSelect') {
+    outlineHandleIndex = Number(input.value); renderTab(); renderOutlineSvg();
+  } else if (input.dataset.outlineCoordinate) {
+    const index = outlineHandleIndex, axis = input.dataset.outlineCoordinate;
+    commit(next => { next.outline.points[index][axis] = Number(input.value); });
+  } else if (input.dataset.aisleProp) {
+    const index = Number(input.dataset.aisleIndex), prop = input.dataset.aisleProp;
+    commit(next => { next.aisles[index][prop] = input.type === 'number' ? Number(input.value) : input.value; });
   } else if (input.id === 'sectionCountInput') {
     const count = Number(input.value);
     if (count === project.sections.length) return;
@@ -262,8 +303,42 @@ byId('tabContent').addEventListener('click', e => {
     });
   } else if (target.dataset.removeTier !== undefined) {
     const index = Number(target.dataset.removeTier);
-    if (confirm(`Remove ${project.tiers[index].label}?`)) commit(next => next.tiers.splice(index, 1));
+    if (confirm(`Remove ${project.tiers[index].label}?`)) commit(next => {
+      const removed = next.tiers[index].id;
+      next.tiers.splice(index, 1);
+      next.aisles = next.aisles.filter(a => a.tier !== removed);
+      next.aisles.forEach(a => { if (a.tier !== 'all' && Number(a.tier.slice(1)) > index + 1) a.tier = `T${Number(a.tier.slice(1)) - 1}`; });
+    });
   } else if (target.dataset.pickSection) showSection(target.dataset.pickSection);
+  else if (target.hasAttribute('data-enable-outline')) {
+    commit(next => { next.outline = createCustomOutline(next); });
+    show2DEditor();
+  } else if (target.hasAttribute('data-reset-outline')) {
+    commit(next => { next.outline = { mode: 'parametric', points: [] }; });
+  } else if (target.hasAttribute('data-open-editor')) show2DEditor();
+  else if (target.hasAttribute('data-add-point')) {
+    const index = outlineHandleIndex;
+    commit(next => {
+      const points = next.outline.points;
+      const a = outlineAngle(points[index]), b = outlineAngle(points[(index + 1) % points.length]);
+      const angle = (a + ((b <= a ? b + TAU : b) - a) / 2) % TAU;
+      const position = modelPerimeterPoint(next, SURFACES[next.surface], angle);
+      points.splice(index + 1, 0, position);
+    });
+    outlineHandleIndex = index + 1; renderTab(); renderOutlineSvg();
+  } else if (target.hasAttribute('data-delete-point')) {
+    const index = outlineHandleIndex;
+    commit(next => { next.outline.points.splice(index, 1); });
+    outlineHandleIndex = Math.max(0, index - 1); renderTab(); renderOutlineSvg();
+  } else if (target.hasAttribute('data-add-aisle')) {
+    commit(next => {
+      const used = new Set(next.aisles.map(a => a.id));
+      let id = 1; while (used.has(`A${id}`)) id++;
+      next.aisles.push({ id: `A${id}`, angle: (25 + next.aisles.length * 52) % 360, width: 1.6, tier: 'all' });
+    });
+  } else if (target.hasAttribute('data-remove-aisle')) {
+    commit(next => { next.aisles.splice(Number(target.dataset.removeAisle), 1); });
+  }
 });
 $all('[data-tab]').forEach(button => button.addEventListener('click', () => { activeTab = button.dataset.tab; renderTab(); updateHeader(); }));
 $all('[data-preset]').forEach(button => button.addEventListener('click', () => {
@@ -275,9 +350,153 @@ $all('[data-preset]').forEach(button => button.addEventListener('click', () => {
 $all('[data-view]').forEach(button => button.addEventListener('click', () => {
   view = button.dataset.view;
   $all('[data-view]').forEach(item => item.classList.toggle('active', item === button));
-  if (stadium) stadium.setView(view);
-  else toast('3D rendering not yet available.', true);
+  syncOutlineVisibility();
+  if (stadium) stadium.setView(view === 'outline' ? 'plan' : view);
+  else if (view !== 'outline') toast('3D rendering not yet available.', true);
 }));
+// The SVG editor is independent of WebGL. Changes flow through the same project,
+// geometry validation, history stack and 3D rendering pipeline as numeric edits.
+function syncOutlineVisibility() {
+  byId('outlineEditor').hidden = view !== 'outline';
+  byId('stadiumCanvas').style.pointerEvents = view === 'outline' ? 'none' : 'auto';
+  byId('renderError').hidden = view === 'outline' || !rendererFailed;
+  if (view === 'outline') renderOutlineSvg();
+}
+function show2DEditor() {
+  view = 'outline';
+  $all('[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+  if (stadium) stadium.setView('plan');
+  syncOutlineVisibility();
+}
+function svgPath(projectValue, surface, margin, samples = 256) {
+  let d = '';
+  for (let i = 0; i <= samples; i++) {
+    const angle = i * TAU / samples;
+    const pos = modelPerimeterPoint(projectValue, surface, angle, margin);
+    d += `${i ? 'L' : 'M'}${pos.x.toFixed(3)},${pos.z.toFixed(3)} `;
+  }
+  return d + 'Z';
+}
+function renderOutlineSvg(projectValue = project) {
+  const svg = byId('outlineSvg');
+  if (!svg) return;
+  const surface = SURFACES[projectValue.surface];
+  const tiers = resolveTiers(projectValue);
+  const outer = tiers.at(-1);
+  const margin = outer.startOffset + outer.rows * outer.depth + 15;
+  const lim = Math.min(430, Math.max(surface.length / 2, surface.width / 2) + margin + 14);
+  svg.setAttribute('viewBox', `${-lim} ${-lim} ${2 * lim} ${2 * lim}`);
+  const backSize = lim * 1.8;
+  const field = `<rect x="${-surface.width / 2}" y="${-surface.length / 2}" width="${surface.width}" height="${surface.length}" fill="${surface.sport === 'basketball' ? '#a48963' : '#2a7659'}" stroke="#b8eee2" stroke-width=".5"/><path d="M${-surface.width / 2},0 H${surface.width / 2} M0,${-surface.length / 2} V${surface.length / 2}" stroke="#d5f2e5" stroke-width=".35" opacity=".5"/>`;
+  const basePath = svgPath(projectValue, surface, 0);
+  const reference = referenceUrl ? `<image href="${safe(referenceUrl)}" x="${-backSize / 2}" y="${-backSize / 2}" width="${backSize}" height="${backSize}" opacity="${referenceOpacity}" preserveAspectRatio="xMidYMid meet"/>` : '';
+  let html = `<rect x="${-lim}" y="${-lim}" width="${2 * lim}" height="${2 * lim}" fill="#112334"/>`;
+  const gridStep = lim > 130 ? 25 : 10;
+  for (let pos = -Math.floor(lim / gridStep) * gridStep; pos <= lim; pos += gridStep) {
+    html += `<path d="M${pos} ${-lim}V${lim} M${-lim} ${pos}H${lim}" stroke="#3b5363" stroke-width=".28" opacity=".65"/>`;
+  }
+  html += reference;
+  for (let i = tiers.length - 1; i >= 0; i--) {
+    const tier = tiers[i];
+    const outerMargin = tier.startOffset + tier.rows * tier.depth;
+    html += `<path d="${svgPath(projectValue, surface, outerMargin)}" fill="#254a59" fill-opacity=".28" stroke="${['#7cc3d2','#98acde','#ddb98e','#a4c3a4'][i]}" stroke-width=".85"/>`;
+    html += `<path d="${svgPath(projectValue, surface, tier.startOffset)}" fill="none" stroke="#7897a9" stroke-width=".6" stroke-dasharray="2 2"/>`;
+  }
+  html += `<path d="${basePath}" fill="#172b34" stroke="#77d2d0" stroke-width=".7"/>${field}`;
+  // Aisle directions are drawn as translucent corridors, matching the seating cutouts.
+  for (const aisle of projectValue.aisles) {
+    const angle = aisle.angle * Math.PI / 180;
+    for (const tier of tiers) {
+      if (aisle.tier !== 'all' && aisle.tier !== tier.id) continue;
+      const near = modelPerimeterPoint(projectValue, surface, angle, tier.startOffset);
+      const far = modelPerimeterPoint(projectValue, surface, angle, tier.startOffset + tier.rows * tier.depth);
+      html += `<line x1="${near.x}" y1="${near.z}" x2="${far.x}" y2="${far.z}" stroke="#ebc47a" stroke-width="${aisle.width}" stroke-opacity=".65" stroke-linecap="butt"/>`;
+    }
+  }
+  if (projectValue.outline.mode === 'custom') {
+    const size = Math.max(2.1, lim * .017);
+    projectValue.outline.points.forEach((p, i) => {
+      const selected = i === outlineHandleIndex;
+      html += `<circle data-handle="${i}" cx="${p.x}" cy="${p.z}" r="${size * (selected ? 1.3 : 1)}" fill="${selected ? '#ffe4a0' : '#7fe0d8'}" stroke="#082432" stroke-width=".85"/>`;
+      if (selected) html += `<text x="${p.x + size * 1.6}" y="${p.z - size * 1.6}" fill="#f9efc0" font-size="${size * 2.4}" font-weight="bold">${i + 1}</text>`;
+    });
+  }
+  svg.innerHTML = html;
+  byId('outlineHint').textContent = projectValue.outline.mode === 'custom' ? `${projectValue.outline.points.length} editable anchors · double-click near boundary to insert` : 'Select Outline → Create editable outline to draw.';
+}
+const svg = byId('outlineSvg');
+const positionFromPointer = event => {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX; point.y = event.clientY;
+  const transform = svg.getScreenCTM();
+  if (!transform) return null;
+  const local = point.matrixTransform(transform.inverse());
+  return { x: Math.round(local.x * 10) / 10, z: Math.round(local.y * 10) / 10 };
+};
+let outlineDrag = null;
+svg.addEventListener('pointerdown', event => {
+  const handle = event.target.closest('[data-handle]');
+  if (!handle || project.outline.mode !== 'custom') return;
+  outlineHandleIndex = Number(handle.dataset.handle);
+  outlineDrag = { pointerId: event.pointerId, index: outlineHandleIndex, valid: null };
+  svg.setPointerCapture(event.pointerId);
+  activeTab = 'outline'; renderTab(); renderOutlineSvg();
+});
+svg.addEventListener('pointermove', event => {
+  if (!outlineDrag || event.pointerId !== outlineDrag.pointerId) return;
+  const pos = positionFromPointer(event);
+  if (!pos) return;
+  const draft = deepCopy(project);
+  draft.outline.points[outlineDrag.index] = pos;
+  try {
+    validateOutline(draft.outline.points, SURFACES[draft.surface]);
+    outlineDrag.valid = pos;
+    renderOutlineSvg(draft);
+  } catch {
+    byId('outlineHint').textContent = 'Invalid position: anchors must stay ordered and outside the pitch.';
+  }
+});
+function finishOutlineDrag(event) {
+  if (!outlineDrag || event.pointerId !== outlineDrag.pointerId) return;
+  const { index, valid } = outlineDrag;
+  outlineDrag = null;
+  if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+  if (valid) commit(next => { next.outline.points[index] = valid; });
+  else { renderTab(); renderOutlineSvg(); }
+}
+svg.addEventListener('pointerup', finishOutlineDrag);
+svg.addEventListener('pointercancel', finishOutlineDrag);
+svg.addEventListener('dblclick', event => {
+  if (project.outline.mode !== 'custom' || project.outline.points.length >= 64) return;
+  const position = positionFromPointer(event);
+  if (!position) return;
+  const angle = outlineAngle(position);
+  const points = project.outline.points;
+  let index = points.findIndex(p => outlineAngle(p) > angle);
+  if (index < 0) index = points.length;
+  // Insert a point on the current perimeter at the cursor bearing.
+  const projected = modelPerimeterPoint(project, SURFACES[project.surface], angle, 0);
+  commit(next => { next.outline.points.splice(index, 0, projected); });
+  outlineHandleIndex = index; renderTab(); renderOutlineSvg();
+});
+byId('showOutlineTab').addEventListener('click', () => { activeTab = 'outline'; renderTab(); updateHeader(); });
+byId('showAislesTab').addEventListener('click', () => { activeTab = 'aisles'; renderTab(); updateHeader(); });
+byId('referenceUpload').addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size > 8_000_000) return toast('Reference must be a PNG/JPEG/WebP image up to 8 MB.', true);
+  if (referenceUrl) URL.revokeObjectURL(referenceUrl);
+  referenceUrl = URL.createObjectURL(file);
+  renderOutlineSvg();
+  toast('Reference added for visual tracing. It is not saved with the project.');
+  e.target.value = '';
+});
+byId('referenceOpacity').addEventListener('input', e => { referenceOpacity = Number(e.target.value); renderOutlineSvg(); });
+byId('clearReference').addEventListener('click', () => {
+  if (referenceUrl) URL.revokeObjectURL(referenceUrl);
+  referenceUrl = ''; renderOutlineSvg();
+});
+
 byId('newProject').addEventListener('click', () => { if (confirm('Create a new blank NFL stadium project?')) replaceProject(createProject()); });
 byId('saveProject').addEventListener('click', saveSlot);
 byId('openProject').addEventListener('click', () => { drawLibrary(); byId('projectDialog').showModal(); });
@@ -331,15 +550,17 @@ document.addEventListener('keydown', e => {
   else if (key === 'y') { e.preventDefault(); travel('redo'); }
   else if (key === 's') { e.preventDefault(); saveSlot(); }
 });
-renderTab(); updateHeader(); scheduleModel();
+renderTab(); updateHeader(); scheduleModel(); syncOutlineVisibility();
 try {
   const { StadiumScene } = await import('./scene.js');
   stadium = new StadiumScene(byId('stadiumCanvas'), seat => { showSelection(seat); }, sectionId => { showSection(sectionId); });
   if (model) { stadium.load(model); updateStats(); }
+  rendererFailed = false;
   byId('renderError').hidden = true;
 } catch (error) {
   console.error('Failed to initialize 3D renderer', error);
+  rendererFailed = true;
   byId('renderErrorMessage').textContent = `Unable to load the 3D engine. Check internet access to the Three.js CDN, WebGL support, and browser developer console. ${error.message}`;
-  byId('renderError').hidden = false;
+  byId('renderError').hidden = view === 'outline';
   byId('bottomStatus').textContent = '3D renderer unavailable — JSON and CSV editing still works';
 }

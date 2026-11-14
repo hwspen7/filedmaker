@@ -9,7 +9,10 @@ A browser-based **parametric 3D stadium and arena modeling studio** for the Unit
 - **Football:** NFL-sized, CFL 2026-sized and CFL 2027-sized schematic playing surfaces.
 - **Soccer:** 105 × 68 m football pitches with field lines and simplified goals.
 - **Basketball:** NBA and NCAA court presets with hoops, markings and an indoor-style seating bowl.
-- **Bowl editor:** adjust overall contour, seat pitch, aisle gaps and a schematic canopy.
+- **Bowl editor:** adjust overall contour, seat pitch, section-boundary aisle gaps and a schematic canopy.
+- **2D outline editor (v2):** convert any regular bowl into a custom star-shaped perimeter with 8–64 editable handles. Drag handles, click to select, double-click near the boundary to insert, or edit exact X/Z coordinates. Invalid or self-intersecting profiles are rejected.
+- **Reference image tracing (v2):** temporarily overlay a local PNG/JPEG/WebP seating plan with adjustable opacity. The image stays on your computer and is not embedded in exported projects.
+- **Independent radial aisles (v2):** create up to 32 aisle cutouts with width and angular location, either across all levels or confined to a chosen tier. Both seat positions and concrete terrace strips reflect these gaps.
 - **Tier editor:** add or remove tiers (up to four), tune row counts, depth, rise, front offset, elevation and inter-tier gaps.
 - **Section editor:** choose up to 36 radial sections, edit each one's angle interval and label, enable/disable its seating, change its color.
 - **Live 3D:** orbit, zoom, plan view, per-seat view, ray-pick seats and click terrace sections.
@@ -44,6 +47,25 @@ npm start
 
 macOS / Linux: `./start-unix.sh` (uses Node.js or Python 3).
 
+## What's new in v2
+
+Version 2 adds **a real 2D authoring workspace** instead of relying only on the default rounded-rectangle bowl. The editable radial outline changes the **actual seat generation and terrace geometry**, not just the image overlaid on top of the scene.
+
+1. Select a football, soccer or basketball preset.
+2. Select **Outline → Create editable outline**. This converts the procedural perimeter into a control-point profile while preserving the playing surface.
+3. Open **2D Editor**. Drag any anchor, double-click near the outline to insert another anchor, or edit X/Z numerically in the sidebar. The contour stays closed and the curve is continuously validated to clear the field.
+4. Optionally load a locally stored reference seat-plan image with the opacity control. **This is only an image overlay for manual tracing**, not an automatically calibrated CAD/SVG importer.
+5. Open **Aisles** to add radial circulation gaps. Set angle, width, and all-tier/single-tier coverage. The 2D editor shows the corridors, and the seats and terrace geometry are regenerated using exactly the same interval-splitting algorithm.
+6. Return to **3D Orbit** or **Top plan** for the updated model. Use **Seat view** to inspect a chosen seat. Export `.filedmaker.json`, `.csv`, `.glb`, or screenshot PNG.
+
+### Geometry and data constraints
+
+- A custom outline is an ordered, star-shaped polygon around the pitch. It is **not** an arbitrary freeform CAD polygon with holes or isolated stands. The model rejects curve segments that cross the playing surface clearance.
+- Control points are stored in meters in X/Z. Each seating tier expands radially outward from the edited base contour. This is a parametric approximation, not a survey-quality normal offset.
+- Radial aisles currently create physical gaps in seat rows and visible stepped terraces, but do not yet generate stair meshes, handrails, vomitories, portals or concourse floors.
+- Saved projects have `schemaVersion: 2`. Existing v1 JSON documents and local recovery records are automatically migrated on load. Save a v2 JSON file for interchange.
+- Seating is **synthetic**, based on modeled row spacing and dimensions. Do not claim actual venue capacities, unobstructed real-world sightlines or official seat identifiers without external measurements and calibration.
+
 ## Modeling workflow
 
 1. Select **Football**, **Soccer** or **Arena** to start from a useful preset.
@@ -62,7 +84,7 @@ An editable JSON document follows this envelope:
 {
   "format": "filedmaker-project",
   "project": {
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "title": "My Stadium",
     "country": "United States",
     "city": "Columbus",
@@ -71,6 +93,8 @@ An editable JSON document follows this envelope:
     "seatPitch": 0.52,
     "aisleWidth": 1.55,
     "roof": false,
+    "outline": { "mode": "parametric", "points": [] },
+    "aisles": [],
     "tiers": [],
     "sections": []
   }

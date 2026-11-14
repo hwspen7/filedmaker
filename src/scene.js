@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-import { SURFACES, TAU, perimeterPoint } from './model.mjs';
+import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals } from './model.mjs';
 
 const white = 0xf2f6ef;
 const mat = (color, roughness = 0.85) => new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.06 });
@@ -121,24 +121,30 @@ function basketball(group, surface) {
   }
 }
 
-function makeTerrace(section, surface, shape, tier) {
-  const spans = Math.max(2, Math.round((section.end - section.start) / 2));
+function makeTerrace(section, surface, tier, project) {
   const vertices = [], colors = [], indices = [];
   const base = new THREE.Color(section.color);
-  const rowCount = tier.rows;
-  for (let row = 0; row < rowCount; row++) {
+  for (let row = 0; row < tier.rows; row++) {
     const radial = tier.startOffset + row * tier.depth;
     const y = tier.startHeight + row * tier.rise - 0.15;
-    for (let i = 0; i <= spans; i++) {
-      const a = (section.start + (section.end - section.start) * i / spans) * Math.PI / 180;
-      const near = perimeterPoint(a, surface.width / 2 + radial, surface.length / 2 + radial, shape);
-      const far = perimeterPoint(a, surface.width / 2 + radial + tier.depth, surface.length / 2 + radial + tier.depth, shape);
-      vertices.push(near.x, y, near.z, far.x, y + tier.rise, far.z);
+    const path = modelPerimeterPath(project, surface, radial + tier.depth * 0.5);
+    const strips = seatingIntervals(path, section, project, tier.id);
+    for (const [start, end] of strips) {
+      const startAngle = pointAtDistance(path, start).angle;
+      const endAngle = pointAtDistance(path, end).angle;
+      const spans = Math.max(1, Math.ceil((endAngle - startAngle) * 90 / Math.PI));
       const shade = base.clone().multiplyScalar(0.63 + (row % 2) * 0.045);
-      for (let j = 0; j < 2; j++) colors.push(shade.r, shade.g, shade.b);
-      if (i < spans) {
-        const k = (row * (spans + 1) + i) * 2;
-        indices.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+      const offset = vertices.length / 3;
+      for (let i = 0; i <= spans; i++) {
+        const angle = startAngle + (endAngle - startAngle) * i / spans;
+        const near = modelPerimeterPoint(project, surface, angle, radial);
+        const far = modelPerimeterPoint(project, surface, angle, radial + tier.depth);
+        vertices.push(near.x, y, near.z, far.x, y + tier.rise, far.z);
+        for (let j = 0; j < 2; j++) colors.push(shade.r, shade.g, shade.b);
+        if (i < spans) {
+          const k = offset + i * 2;
+          indices.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+        }
       }
     }
   }
@@ -152,11 +158,11 @@ function makeTerrace(section, surface, shape, tier) {
   return mesh;
 }
 
-function addConcourse(group, surface, shape, tier) {
+function addConcourse(group, surface, project, tier) {
   const segments = 192, pts = [];
   const radial = tier.startOffset + tier.rows * tier.depth;
   for (let i = 0; i <= segments; i++) {
-    const p = perimeterPoint(TAU * i / segments, surface.width / 2 + radial, surface.length / 2 + radial, shape);
+    const p = modelPerimeterPoint(project, surface, TAU * i / segments, radial);
     pts.push(p.x, tier.startHeight + tier.rows * tier.rise, p.z);
   }
   group.add(new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)), new THREE.LineBasicMaterial({ color: 0xc4e0df, transparent: true, opacity: 0.48 })));
@@ -283,11 +289,11 @@ export class StadiumScene {
     for (const tier of tiers) {
       for (const section of project.sections) {
         if (!section.enabled) continue;
-        const stand = makeTerrace(section, surface, project.shape, tier);
+        const stand = makeTerrace(section, surface, tier, project);
         this.terraces.push(stand);
         this.root.add(stand);
       }
-      addConcourse(this.root, surface, project.shape, tier);
+      addConcourse(this.root, surface, project, tier);
     }
     const [bottom, back] = createSeatMesh(seats, project);
     this.seatMeshes = [bottom, back];
@@ -318,13 +324,11 @@ export class StadiumScene {
     const { project, surface, tiers } = this.model;
     const last = tiers[tiers.length - 1];
     const radial = last.startOffset + last.rows * last.depth + 5;
-    const width = surface.width / 2 + radial;
-    const length = surface.length / 2 + radial;
     const height = last.startHeight + last.rows * last.rise + 12;
     const segments = 96, ring = [];
     for (let i = 0; i <= segments; i++) {
       const a = i * TAU / segments;
-      const p = perimeterPoint(a, width, length, project.shape);
+      const p = modelPerimeterPoint(project, surface, a, radial);
       ring.push(new THREE.Vector3(p.x, height, p.z));
     }
     const vertices = [], indices = [];

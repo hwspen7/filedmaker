@@ -1,6 +1,6 @@
 // Deterministic parametric geometry and project validation. No DOM or 3D dependencies.
 export const TAU = Math.PI * 2;
-export const CURRENT_SCHEMA = 1;
+export const CURRENT_SCHEMA = 2;
 
 export const SURFACES = Object.freeze({
   nfl: { sport: 'football', label: 'NFL football', width: 48.768, length: 109.728, endZone: 9.144 },
@@ -40,6 +40,8 @@ export function createProject(preset = 'nfl') {
     seatPitch: arena ? 0.53 : 0.52,
     aisleWidth: arena ? 1.15 : 1.55,
     roof: arena,
+    outline: { mode: 'parametric', points: [] },
+    aisles: [],
     sections: makeSections(arena ? 16 : 20),
     tiers: arena ? [
       { id: 'T1', label: 'Lower bowl', rows: 18, depth: 0.83, rise: 0.32, offset: 4.2, height: 1.1, gap: 2.8, heightGap: 2.5 },
@@ -54,11 +56,12 @@ export function createProject(preset = 'nfl') {
 
 export function validateProject(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected a project object.');
-  if (input.schemaVersion !== CURRENT_SCHEMA) throw new Error(`Unsupported project schema. Expected ${CURRENT_SCHEMA}.`);
+  if (![1, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1 or ${CURRENT_SCHEMA}.`);
   if (!(input.surface in SURFACES)) throw new Error('Unsupported playing surface.');
   if (!Array.isArray(input.tiers) || input.tiers.length < 1 || input.tiers.length > 4) throw new Error('Use between 1 and 4 seating tiers.');
   if (!Array.isArray(input.sections) || input.sections.length < 4 || input.sections.length > 36) throw new Error('Use between 4 and 36 sections.');
   const project = deepCopy(input);
+  project.schemaVersion = CURRENT_SCHEMA;
   project.title = String(project.title || 'Untitled Stadium').slice(0, 100);
   project.country = String(project.country || '').slice(0, 80);
   project.city = String(project.city || '').slice(0, 100);
@@ -66,6 +69,28 @@ export function validateProject(input) {
   project.seatPitch = clamp(project.seatPitch, 0.4, 1.1);
   project.aisleWidth = clamp(project.aisleWidth, 0, 5);
   project.roof = Boolean(project.roof);
+  if (project.outline === undefined) project.outline = { mode: 'parametric', points: [] };
+  if (!project.outline || !['custom', 'parametric'].includes(project.outline.mode)) throw new Error('Invalid outline mode.');
+  if (project.outline.mode === 'custom') {
+    validateOutline(project.outline.points, SURFACES[project.surface]);
+  } else {
+    project.outline = { mode: 'parametric', points: [] };
+  }
+  if (project.aisles === undefined) project.aisles = [];
+  if (!Array.isArray(project.aisles) || project.aisles.length > 32) throw new Error('Use at most 32 aisles.');
+  const aisleIds = new Set();
+  project.aisles.forEach((aisle, index) => {
+    if (!aisle || typeof aisle !== 'object') throw new Error('Invalid aisle.');
+    aisle.id = String(aisle.id || `A${index + 1}`).slice(0, 30);
+    if (aisleIds.has(aisle.id)) throw new Error('Duplicate aisle ID.');
+    aisleIds.add(aisle.id);
+    aisle.angle = Number(aisle.angle);
+    aisle.width = Number(aisle.width);
+    if (!Number.isFinite(aisle.angle) || aisle.angle < 0 || aisle.angle >= 360) throw new Error('Aisle angles must be from 0 to below 360 degrees.');
+    if (!Number.isFinite(aisle.width) || aisle.width < 0.8 || aisle.width > 10) throw new Error('Aisle width must be 0.8–10 m.');
+    aisle.tier = aisle.tier || 'all';
+    if (aisle.tier !== 'all' && !project.tiers.some(t => t.id === aisle.tier)) throw new Error('Aisle references a missing tier.');
+  });
   const ids = new Set();
   project.tiers.forEach((tier, index) => {
     if (!tier || typeof tier !== 'object') throw new Error('Tier is invalid.');
@@ -132,6 +157,109 @@ export function perimeterPath(halfWidth, halfLength, exponent, resolution = 512)
   return { points, distances, length: distances[resolution], resolution };
 }
 
+// A custom outline is a star-shaped, angle-ordered radial profile. This prevents
+// self-intersections, negative row lengths and seats crossing the pitch.
+export function outlineMinimumRadius(surface, angle, clearance = 1.5) {
+  const c = Math.abs(Math.cos(angle));
+  const s = Math.abs(Math.sin(angle));
+  return Math.min(c < 1e-9 ? Infinity : (surface.width / 2 + clearance) / c,
+    s < 1e-9 ? Infinity : (surface.length / 2 + clearance) / s);
+}
+export function outlineAngle(point) {
+  return (Math.atan2(point.z, point.x) + TAU) % TAU;
+}
+export function validateOutline(points, surface) {
+  if (!Array.isArray(points) || points.length < 8 || points.length > 64) throw new Error('Custom outline needs 8–64 control points.');
+  let previous = -Infinity;
+  const first = outlineAngle(points[0]);
+  for (const point of points) {
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z)) throw new Error('Outline contains invalid coordinates.');
+    if (Math.abs(point.x) > 400 || Math.abs(point.z) > 400) throw new Error('Outline control point exceeds 400 m.');
+    const angle = outlineAngle(point);
+    if (angle - previous < 0.025) throw new Error('Outline points must be ordered with at least 1.5° separation.');
+    if (Math.hypot(point.x, point.z) < outlineMinimumRadius(surface, angle)) throw new Error('Outline must stay outside the playing surface with 1.5 m clearance.');
+    previous = angle;
+  }
+  if (first + TAU - previous < 0.025) throw new Error('Outline closing angle is too narrow.');
+  // Checking only handles is insufficient: interpolation could clip a pitch corner.
+  const dummy = { outline: { mode: 'custom', points } };
+  for (let i = 0; i < 720; i++) {
+    const angle = i * TAU / 720;
+    const point = modelPerimeterPoint(dummy, surface, angle, 0);
+    if (Math.hypot(point.x, point.z) + 1e-6 < outlineMinimumRadius(surface, angle)) {
+      throw new Error('Outline curve crosses the playing surface clearance.');
+    }
+  }
+  return true;
+}
+export function createCustomOutline(project, controlCount = 20) {
+  const surface = SURFACES[project.surface];
+  const points = Array.from({ length: Math.max(8, Math.min(64, Math.round(controlCount))) }, (_, i) => {
+    const angle = i * TAU / Math.max(8, Math.min(64, Math.round(controlCount)));
+    const a = surface.width / 2 + 4, b = surface.length / 2 + 4;
+    const radiusFromCurve = Math.pow(Math.pow(Math.abs(Math.cos(angle)) / a, project.shape) + Math.pow(Math.abs(Math.sin(angle)) / b, project.shape), -1 / project.shape);
+    const radius = Math.max(radiusFromCurve, outlineMinimumRadius(surface, angle, 12));
+    return { x: Math.cos(angle) * radius, z: Math.sin(angle) * radius };
+  });
+  return { mode: 'custom', points };
+}
+export function modelPerimeterPoint(project, surface, angle, margin = 0) {
+  if (project.outline?.mode !== 'custom') return perimeterPoint(angle, surface.width / 2 + margin, surface.length / 2 + margin, project.shape);
+  const points = project.outline.points;
+  const normalized = ((angle % TAU) + TAU) % TAU;
+  let i = points.length - 1;
+  for (let j = 0; j < points.length; j++) {
+    if (outlineAngle(points[j]) > normalized) { i = j - 1; break; }
+  }
+  if (i < 0) i = points.length - 1;
+  const j = (i + 1) % points.length;
+  let a = outlineAngle(points[i]);
+  let b = outlineAngle(points[j]);
+  let target = normalized;
+  if (j === 0) b += TAU;
+  if (target < a) target += TAU;
+  const t = (target - a) / (b - a);
+  const r = Math.hypot(points[i].x, points[i].z) * (1 - t) + Math.hypot(points[j].x, points[j].z) * t + margin;
+  return { x: Math.cos(angle) * r, z: Math.sin(angle) * r };
+}
+export function modelPerimeterPath(project, surface, margin = 0, resolution = 512) {
+  const points = [], distances = [0];
+  for (let i = 0; i <= resolution; i++) {
+    const angle = i * TAU / resolution;
+    const point = { ...modelPerimeterPoint(project, surface, angle, margin), angle };
+    points.push(point);
+    if (i) distances.push(distances[i - 1] + Math.hypot(point.x - points[i - 1].x, point.z - points[i - 1].z));
+  }
+  return { points, distances, length: distances[resolution], resolution };
+}
+
+// Split a section's seat row at aisle strips, including wraparound at 0°.
+// The same intervals drive visible terrace geometry and generated seat positions.
+export function seatingIntervals(path, section, project, tierId = 'T1') {
+  const start = distanceAtAngle(path, section.start * Math.PI / 180) + project.aisleWidth / 2;
+  const end = distanceAtAngle(path, section.end * Math.PI / 180) - project.aisleWidth / 2;
+  if (end <= start) return [];
+  let segments = [[start, end]];
+  for (const aisle of project.aisles || []) {
+    if (aisle.tier !== 'all' && aisle.tier !== tierId) continue;
+    const at = distanceAtAngle(path, aisle.angle * Math.PI / 180);
+    for (const shift of [-path.length, 0, path.length]) {
+      const low = at + shift - aisle.width / 2;
+      const high = at + shift + aisle.width / 2;
+      const next = [];
+      for (const [s, e] of segments) {
+        if (high <= s || low >= e) next.push([s, e]);
+        else {
+          if (low > s) next.push([s, low]);
+          if (high < e) next.push([high, e]);
+        }
+      }
+      segments = next;
+    }
+  }
+  return segments.filter(([s, e]) => e > s + 1e-5);
+}
+
 export function distanceAtAngle(path, radians) {
   const normalized = clamp(radians, 0, TAU) / TAU * path.resolution;
   const idx = Math.min(path.resolution - 1, Math.floor(normalized));
@@ -164,29 +292,32 @@ export function generateSeats(input) {
   for (const tier of tiers) {
     for (let row = 0; row < tier.rows; row++) {
       const margin = tier.startOffset + (row + 0.5) * tier.depth;
-      const path = perimeterPath(surface.width / 2 + margin, surface.length / 2 + margin, project.shape);
+      const path = modelPerimeterPath(project, surface, margin);
       const y = tier.startHeight + row * tier.rise + 0.08;
       for (let sectionIndex = 0; sectionIndex < project.sections.length; sectionIndex++) {
         const section = project.sections[sectionIndex];
         if (!section.enabled) continue;
-        const start = distanceAtAngle(path, section.start * Math.PI / 180) + project.aisleWidth / 2;
-        const end = distanceAtAngle(path, section.end * Math.PI / 180) - project.aisleWidth / 2;
-        const span = end - start;
-        const count = Math.floor(span / project.seatPitch);
-        if (count < 1) continue;
-        const from = seats.length;
-        const step = span / count;
-        for (let i = 0; i < count; i++) {
-          const position = pointAtDistance(path, start + (i + 0.5) * step);
+        const intervals = seatingIntervals(path, section, project, tier.id);
+        let seatNumber = 0;
+        for (const [start, end] of intervals) {
+          const span = end - start;
+          const count = Math.floor(span / project.seatPitch);
+          if (count < 1) continue;
+          const from = seats.length;
+          const step = span / count;
+          for (let i = 0; i < count; i++) {
+            const position = pointAtDistance(path, start + (i + 0.5) * step);
+            const number = ++seatNumber;
           seats.push({
             x: position.x, y, z: position.z,
             yaw: Math.atan2(-position.x, -position.z),
             tier: tier.index, sectionId: section.id, sectionIndex,
-            row: row + 1, number: i + 1,
-            uid: `${tier.id}-${section.id}-${row + 1}-${i + 1}`,
+            row: row + 1, number,
+            uid: `${tier.id}-${section.id}-${row + 1}-${number}`,
           });
         }
-        groups.push({ tier: tier.index, sectionIndex, row: row + 1, from, count });
+          groups.push({ tier: tier.index, sectionIndex, row: row + 1, from, count });
+        }
       }
     }
   }
