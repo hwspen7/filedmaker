@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveSectionTier } from './model.mjs';
+import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates } from './view.mjs';
 
 const white = 0xf2f6ef;
 const mat = (color, roughness = 0.85) => new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.06 });
@@ -211,6 +212,66 @@ function createSeatMesh(seats, project) {
   return [cushionMesh, backMesh];
 }
 
+// Architectural context is schematic, not a scanned/surveyed building model.
+function addArchitecturalDetails(group, surface, project, tiers) {
+  const metal = mat(0x859399, .5), concrete = mat(0xb8c2c5);
+  const lines = [], shellVertices = [], shellIndices = [];
+  for (const tier of tiers) {
+    for (const section of project.sections) {
+      if (!section.enabled) continue;
+      const profile = resolveSectionTier(tier, section.id, project);
+      if (!profile.rows) continue;
+      const angleSpan = (section.end - section.start) * Math.PI / 180;
+      const segments = Math.max(3, Math.ceil(angleSpan / .075));
+      const innerR = profile.startOffset;
+      const outerR = profile.startOffset + profile.rows * profile.depth;
+      const innerH = profile.startHeight, outerH = profile.startHeight + profile.rows * profile.rise;
+      for (const edge of [{r:innerR,y:innerH},{r:outerR,y:outerH}]) {
+        for (let i = 0; i < segments; i++) {
+          const a = (section.start*Math.PI/180) + i*angleSpan/segments;
+          const b = a+angleSpan/segments;
+          const p = modelPerimeterPoint(project,surface,a,edge.r);
+          const q = modelPerimeterPoint(project,surface,b,edge.r);
+          // The lower parapet is opaque and can block line-of-sight in first-person view.
+          const h = edge.r===innerR ? .65 : .9;
+          const k = shellVertices.length/3;
+          shellVertices.push(p.x,edge.y,p.z, q.x,edge.y,q.z, p.x,edge.y+h,p.z, q.x,edge.y+h,q.z);
+          shellIndices.push(k,k+1,k+2,k+1,k+3,k+2);
+          const rail = edge.y+h+.28;
+          lines.push(p.x,rail,p.z,q.x,rail,q.z);
+          if (i%3===0) lines.push(p.x,edge.y+h,p.z,p.x,rail,p.z);
+        }
+      }
+    }
+  }
+  if (shellVertices.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(shellVertices,3));g.setIndex(shellIndices);g.computeVertexNormals();
+    group.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0xb8c2c5,roughness:.92,side:THREE.DoubleSide})));
+  }
+  if (lines.length) {
+    const g = new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(lines,3));
+    group.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x667b83})));
+  }
+}
+
+function makeLocalCrowd(model, seat, mode) {
+  const group = new THREE.Group();
+  group.userData.editorOnly = true;
+  if (!seat || mode === 'empty') return group;
+  const neighbors = crowdCandidates(model,seat,90);
+  const heads = new THREE.InstancedMesh(new THREE.SphereGeometry(.115,9,7), mat(0x917764),neighbors.length);
+  const bodies = new THREE.InstancedMesh(new THREE.CapsuleGeometry(.16,.27,3,6),mat(0x647786),neighbors.length);
+  const o = new THREE.Object3D();
+  for(let i=0;i<neighbors.length;i++){
+    const s=neighbors[i], standing=mode==='standing';
+    o.position.set(s.x,s.y+(standing ? 1.60 : 1.17),s.z);o.scale.set(1,1,1);o.rotation.set(0,0,0);o.updateMatrix();heads.setMatrixAt(i,o.matrix);
+    o.position.y=s.y+(standing ? 1.07:.75);o.scale.set(1,standing ? 1.25:.84,1);o.rotation.y=s.yaw;o.updateMatrix();bodies.setMatrixAt(i,o.matrix);
+  }
+  heads.instanceMatrix.needsUpdate=true;bodies.instanceMatrix.needsUpdate=true;
+  group.add(heads,bodies);return group;
+}
+
 export class StadiumScene {
   constructor(canvas, onSeat, onSection) {
     this.canvas = canvas;
@@ -246,16 +307,33 @@ export class StadiumScene {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.mode = 'orbit';
+    this.viewOptions = { ...VIEW_DEFAULTS };
+    this.crowdGroup = null;
+    this.seatDrag = null;
     this.selectedSeat = null;
     this.model = null;
     this.marker = null;
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas.parentElement);
     let down = null;
-    canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; });
+    canvas.addEventListener('pointerdown', e => {
+      down = { x: e.clientX, y: e.clientY };
+      if (this.mode === 'seat' && e.button === 0) { this.seatDrag = {x:e.clientX,y:e.clientY,yaw:this.viewOptions.yaw,pitch:this.viewOptions.pitch}; canvas.setPointerCapture(e.pointerId); }
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!this.seatDrag || this.mode !== 'seat') return;
+      this.setViewOptions({ yaw: this.seatDrag.yaw - (e.clientX-this.seatDrag.x)*.17, pitch: this.seatDrag.pitch + (e.clientY-this.seatDrag.y)*.15 });
+    });
+    canvas.addEventListener('pointercancel', () => { this.seatDrag = null; });
+    canvas.addEventListener('wheel', e => {
+      if (this.mode !== 'seat') return;
+      e.preventDefault();
+      this.setViewOptions({zoom:this.viewOptions.zoom * (e.deltaY>0 ? .92 : 1.087)});
+    }, {passive:false});
     canvas.addEventListener('pointerup', e => {
       if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 5 && this.mode !== 'seat') this.pick(e);
       down = null;
+      this.seatDrag = null;
     });
     this.animate = () => {
       this.frame = requestAnimationFrame(this.animate);
@@ -283,6 +361,7 @@ export class StadiumScene {
     this.seatMeshes = [];
     this.terraces = [];
     this.marker = null;
+    this.crowdGroup = null;
   }
 
   load(model, retainView = false) {
@@ -307,6 +386,7 @@ export class StadiumScene {
     const [bottom, back] = createSeatMesh(seats, project);
     this.seatMeshes = [bottom, back];
     this.root.add(bottom, back);
+    addArchitecturalDetails(this.root,surface,project,tiers);
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), mat(0xeff1f1));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.33;
@@ -356,6 +436,7 @@ export class StadiumScene {
 
   highlight(seat) {
     this.selectedSeat = seat || null;
+    if (this.model) this.refreshCrowd();
     if (!this.marker) return;
     this.marker.visible = Boolean(seat);
     if (seat) this.marker.position.set(seat.x, seat.y + 1.42, seat.z);
@@ -379,6 +460,36 @@ export class StadiumScene {
     }
   }
 
+  refreshCrowd() {
+    if (this.crowdGroup) {
+      this.root.remove(this.crowdGroup);
+      this.crowdGroup.traverse(obj=>{ obj.geometry?.dispose(); if(obj.material) obj.material.dispose(); });
+    }
+    this.crowdGroup = makeLocalCrowd(this.model,this.selectedSeat,this.viewOptions.crowd);
+    this.root.add(this.crowdGroup);
+  }
+
+  setViewOptions(next) {
+    const oldCrowd = this.viewOptions.crowd;
+    this.viewOptions = validateViewOptions({...this.viewOptions,...next});
+    if (this.viewOptions.crowd !== oldCrowd && this.model) this.refreshCrowd();
+    if (this.mode === 'seat') this.applyEyeView();
+    return this.viewOptions;
+  }
+
+  applyEyeView() {
+    if (!this.model || !this.selectedSeat) return;
+    const p = viewpoint(this.selectedSeat,this.model.surface,this.viewOptions);
+    this.controls.enabled=false;
+    this.camera.up.set(0,1,0);
+    this.camera.position.set(p.origin.x,p.origin.y,p.origin.z);
+    this.camera.lookAt(p.origin.x+p.direction.x*30,p.origin.y+p.direction.y*30,p.origin.z+p.direction.z*30);
+    this.camera.fov=p.fov;
+    this.camera.updateProjectionMatrix();
+    if (this.marker) this.marker.visible=false;
+    return p;
+  }
+
   setView(mode) {
     if (!this.model) return;
     this.mode = mode;
@@ -400,15 +511,15 @@ export class StadiumScene {
       this.camera.fov = 46;
       this.camera.updateProjectionMatrix();
       this.controls.update();
+    } else if (mode === 'section' && this.selectedSeat) {
+      this.controls.enabled = true;
+      this.camera.up.set(0,1,0);
+      const seat = this.selectedSeat, radius = Math.max(1, Math.hypot(seat.x,seat.z));
+      this.controls.target.set(seat.x,seat.y+2,seat.z);
+      this.camera.position.set(seat.x + seat.x/radius*23,seat.y+18,seat.z + seat.z/radius*23);
+      this.camera.fov=51;this.camera.updateProjectionMatrix();this.controls.update();
     } else if (mode === 'seat' && this.selectedSeat) {
-      this.controls.enabled = false;
-      const seat = this.selectedSeat;
-      this.camera.up.set(0, 1, 0);
-      this.camera.position.set(seat.x, seat.y + 1.17, seat.z);
-      this.camera.lookAt(0, 1.4, 0);
-      this.camera.fov = 72;
-      this.camera.updateProjectionMatrix();
-      if (this.marker) this.marker.visible = false;
+      this.applyEyeView();
     }
     if (mode !== 'seat' && this.marker && this.selectedSeat) this.marker.visible = true;
   }
@@ -431,7 +542,7 @@ export class StadiumScene {
     });
   }
 
-  capture() { return this.canvas.toDataURL('image/png'); }
+  capture() { this.renderer.render(this.scene, this.camera); return this.canvas.toDataURL('image/png'); }
   dispose() {
     cancelAnimationFrame(this.frame);
     this.resizeObserver.disconnect();

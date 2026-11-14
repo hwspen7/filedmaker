@@ -175,3 +175,26 @@ This executes Node's syntax checks and the geometry/server test suites. GitHub A
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+
+## v4 — Viewpoint Studio and human-eye preview
+
+The editor now includes a **Viewpoint studio** in the right Inspector. Load a model, click a seat, and choose **Human view**. Drag on the 3D canvas to look around; scroll while in Human view to magnify. You can also choose **Section** for an external close-up or **3D view** for a whole-building overview.
+
+* **Spectator eye** — Seated (1.17 m above each generated seat's floor reference) and standing (1.60 m) presets. Camera height changes without moving the seat.
+* **Look direction** — Independent yaw and pitch control; select center, near end, far end, or sidelines. The selected target only initializes the gaze; dragging pans independently.
+* **Optics** — A representative central-gaze crop (Human) or approximate phone framing overlay (Phone) and zoom from 0.5× to 8×. This is **not** a calibrated physical model of peripheral human vision or a specific phone's lens.
+* **Nearby crowds** — Optional local seated or standing human *proxies* around the seat. These are simplistic head/body shapes that illustrate possible occlusion, not verified spectator heights, movement, or sightline grades.
+* **Architecture** — Automatically generated simplified parapet walls, perimeter rails and tier geometry. No exact arena plans, railing locations, or real obstruction measurements are bundled.
+* **Find seats** — Enter queries such as `S01 row 8 seat 12` or `T2 S05 row 10 seat 4`. Move left/right or forward/back through model seats; seat search operates on the locally generated seating database.
+* **Comparison** — Capture two 3D viewpoint screenshots and compare them side by side. You can also open uploaded **local reference photos** in the comparator. Photos stay in browser memory, are not transferred to a server, and disappear on reload.
+* **Favorites** — Save seats in browser local storage, or copy a link to a seat in the *same locally stored project*. These links are **not** hosted or portable project shares. To share the full model, export the project JSON first.
+* **View diagnostics** — Approximate field-target distance, eye elevation, look-down angle and FOV are reported. They are derived from **generated geometry**, not surveyed seat data. No numerical obstruction-clearance grade is claimed.
+
+### Relationship to Shijiao / View Live
+
+The public pages of `shijiao.xingpaste.com` document 2D/3D venue views, area and seat selection, eye-level views, phone framing, comparison, photos and saved spots. We implement an independent sports-stadium editing version of those **verifiable viewer interactions**. We do **not** copy their source code, assets, account system, personal photo database, event catalog or copyrighted stadium data. Features that depend on a hosted service (user profiles, uploads, moderation, events and worldwide venue records) are **not** available in this local modeling application.
+
+### Data and accuracy limitations
+
+All existing demo seats, sections, spectator figures and generated architectural details are **illustrative**. Accurate real-world obstructed-view predictions require surveyed seating and railing positions, field geometry, actual patrons and verified photograph calibration. GLB includes generated architectural geometry, but temporary crowd proxies and editing markers are editor-only and excluded from export. High-quality 3D previews require Three.js CDN access and a browser that supports WebGL.

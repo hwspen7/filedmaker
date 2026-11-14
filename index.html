@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#ffffff" />
-  <meta name="description" content="FiledMaker — a parametric stadium and arena modelling workspace." />
+  <meta name="description" content="FiledMaker — stadium modeling, seat views and sightline preview workspace." />
   <title>FiledMaker | Stadium Modeling Studio</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
@@ -18,7 +18,7 @@
 <body>
   <div class="workspace">
     <aside class="sidebar">
-      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>Stadium modeling studio</small></div><span class="version">v3.0</span></header>
+      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>Stadium modeling studio</small></div><span class="version">v4.0</span></header>
       <div class="sidebar-scroll">
         <section class="side-panel">
           <div class="eyebrow">Your project</div>
@@ -50,18 +50,23 @@
     </aside>
 
     <main class="main">
-      <div class="topbar"><div class="breadcrumbs">Workspace <span>/</span> <strong id="breadcrumbTitle">Untitled Stadium</strong></div><div class="top-actions"><button id="undoBtn" class="icon-btn" title="Undo (Ctrl+Z)">↶</button><button id="redoBtn" class="icon-btn" title="Redo (Ctrl+Y)">↷</button><div class="top-divider"></div><button id="openProject" class="plain-btn">Open</button><button id="exportJson" class="plain-btn">Export JSON</button><button id="exportGlb" class="primary-btn">Export GLB ↓</button></div></div>
+      <div class="topbar"><div class="breadcrumbs">Workspace <span>/</span> <strong id="breadcrumbTitle">Untitled Stadium</strong></div><div class="top-actions"><button id="undoBtn" class="icon-btn" title="Undo (Ctrl+Z)">↶</button><button id="redoBtn" class="icon-btn" title="Redo (Ctrl+Y)">↷</button><div class="top-divider"></div><button id="openProject" class="plain-btn">Open</button><button id="exportJson" class="plain-btn">Export JSON</button><button id="toggleInspector" class="plain-btn">View tools</button><button id="exportGlb" class="primary-btn">Export GLB ↓</button></div></div>
       <div class="stage">
         <div class="viewport" id="viewport">
           <canvas id="stadiumCanvas" aria-label="Interactive 3D stadium model"></canvas>
           <div class="viewport-header"><div><div class="viewport-overline"><span class="live-dot"></span> Interactive preview</div><h1 id="viewportTitle">Untitled Stadium</h1><div class="viewport-subtitle" id="viewportSubtitle">Parametric bowl · Draft model</div></div><button id="screenshot" class="viewport-icon" title="Save viewport screenshot" aria-label="Save screenshot">▣</button></div>
-          <div class="view-switch" aria-label="View mode"><button data-view="orbit" class="view-btn active">3D view</button><button data-view="plan" class="view-btn">Top view</button><button data-view="seat" class="view-btn">Seat view</button><button data-view="outline" class="view-btn">2D editor</button></div>
+          <div class="view-switch" aria-label="View mode"><button data-view="orbit" class="view-btn active">3D view</button><button data-view="plan" class="view-btn">Top view</button><button data-view="section" class="view-btn">Section</button><button data-view="seat" class="view-btn">Human view</button><button data-view="outline" class="view-btn">2D editor</button></div>
           <div id="outlineEditor" class="outline-editor" hidden>
             <div class="outline-editor-top"><div><strong>2D outline editor</strong><small>Drag anchors · Double-click to add · All distances in meters</small></div><div class="outline-editor-actions"><button id="showOutlineTab" class="outline-action">Outline controls</button><button id="showAislesTab" class="outline-action">Aisles</button><button id="showPlanTab" class="outline-action">SVG plan</button></div></div>
             <svg id="outlineSvg" role="img" aria-label="Editable overhead stadium outline" tabindex="0" viewBox="-150 -150 300 300"></svg>
             <div class="outline-editor-bottom"><label class="reference-loader">Load tracing image <input type="file" id="referenceUpload" accept="image/png,image/jpeg,image/webp" hidden /></label><label>Reference opacity <input type="range" id="referenceOpacity" min="0" max="1" value="0.35" step="0.05" /></label><button id="clearReference" class="outline-action">Clear image</button><label class="reference-loader">Import SVG<input type="file" id="planUpload" accept=".svg,image/svg+xml" hidden /></label><span id="outlineHint" aria-live="polite">Convert the bowl to a custom outline to edit anchor positions.</span></div>
           </div>
-          <div class="axis-tip">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click a seat</div>
+          <div id="humanViewHud" class="human-view-hud" hidden>
+            <div><strong id="hudSeat">Seat viewpoint</strong><span id="hudPosition">Estimated human-eye preview</span></div>
+            <div class="hud-actions"><button id="hudReset" title="Reset gaze direction">Reset gaze</button><button id="hudCompare" title="Add this viewpoint to comparison">Compare</button><button id="hudFavorite" title="Save this seat locally">☆ Save seat</button></div>
+          </div>
+          <div id="phoneFrame" class="phone-frame" hidden><span>PHONE FRAME · APPROXIMATION</span><div class="phone-thirds"></div></div>
+          <div class="axis-tip">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click a seat · In Human view drag to look around</div>
           <div id="loadingState" class="loading-state" hidden><div class="spinner"></div><strong>Generating stadium</strong><small>Building seating geometry and the 3D scene</small></div>
           <div id="renderError" class="render-error" hidden><strong>3D engine unavailable</strong><p id="renderErrorMessage">Please check your connection and reload this page.</p><button id="retryRender" class="primary-btn">Reload renderer</button></div>
         </div>
@@ -70,6 +75,22 @@
           <div class="stat-card"><small>Estimated seating capacity</small><strong id="capacityValue">—</strong><div class="stat-suffix">parametrically generated seats</div></div>
           <div class="mini-stats"><div><small>Tiers</small><strong id="tierCount">—</strong></div><div><small>Sections</small><strong id="sectionCount">—</strong></div><div><small>Field</small><strong id="fieldSize">—</strong></div></div>
           <div class="inspector-block"><div class="inspector-title">Selection <span>01</span></div><div id="selectionInfo" class="selection-info"><div class="empty-selection">Click a seat or seating section to inspect its position.</div></div><div class="seat-actions"><button id="prevSeat" class="outline-btn">← Previous</button><button id="nextSeat" class="outline-btn">Next →</button></div></div>
+          <div class="inspector-block viewpoint-panel" id="viewpointPanel">
+            <div class="inspector-title">Viewpoint studio <span>03</span></div>
+            <p class="viewpoint-help">See what a spectator might see. Illustrative geometry, not a validated seat-photo match.</p>
+            <div class="view-form"><label for="seatSearch">Find a precise seat</label><div class="search-line"><input id="seatSearch" placeholder="S01 row 8 seat 12" autocomplete="off" /><button id="findSeat">Find</button></div><small id="seatSearchResult">Search by section, row and seat number</small></div>
+            <button id="jumpSeatView" class="full-outline strong-button">◎ Enter human-eye view <span>↗</span></button><button id="focusSection" class="full-outline">Focus this seating section <span>↗</span></button>
+            <div class="view-form"><label>Eye height</label><div class="pill-options" id="postureButtons"><button data-posture="seated" class="chosen">Seated · 1.17 m</button><button data-posture="standing">Standing · 1.60 m</button></div></div>
+            <div class="view-form"><label>Optics</label><div class="pill-options" id="opticButtons"><button data-optic="human" class="chosen">Human</button><button data-optic="phone">Phone</button></div></div>
+            <div class="view-form"><label for="zoomSlider">Magnification <output id="zoomValue">1×</output></label><input id="zoomSlider" type="range" min="0.5" max="8" step="0.1" value="1" /></div>
+            <div class="view-form"><label for="viewTarget">Look toward</label><select id="viewTarget"><option value="center">Center of playing surface</option><option value="near">Near end</option><option value="far">Far end</option><option value="left">Left touchline</option><option value="right">Right touchline</option></select></div>
+            <div class="view-form"><label for="crowdMode">Nearby spectators</label><select id="crowdMode"><option value="empty">Empty stands</option><option value="seated">Seated (illustrative)</option><option value="standing">Standing (illustrative)</option></select></div>
+            <div class="view-navigate"><button data-seat-move="front">↑ Forward row</button><button data-seat-move="back">↓ Back row</button><button data-seat-move="left">← Left seat</button><button data-seat-move="right">→ Right seat</button></div>
+            <div class="view-diagnostics" id="viewDiagnostics">Select a seat to inspect eye level and approximate distance.</div>
+            <div class="view-action-grid"><button id="favoriteSeat">☆ Favorite</button><button id="addComparison">＋ Compare</button><button id="openCompare">View A / B</button><button id="shareSeat">Copy local link</button></div>
+            <div class="view-form"><label for="favoritesSelect">Saved positions</label><select id="favoritesSelect"><option value="">Choose a favorite</option></select></div>
+            <div class="view-form"><label>View references (local only)</label><label class="upload-photo">Upload audience reference photo<input id="viewPhotoUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple /></label><div id="photoList" class="photo-list"><small>No reference photos uploaded</small></div></div>
+          </div>
           <div class="inspector-block"><div class="inspector-title">Exports <span>02</span></div><button id="exportCsv" class="full-outline">Download seat coordinates (.csv) <span>↓</span></button><button id="exportProjectAlt" class="full-outline">Download editable project (.json) <span>↓</span></button></div>
           <div class="inspector-note"><span>◈</span><p>SVG drawings and model geometry are editable references, not verified survey measurements. Validate geometry before using it for ticketing or real sightlines.</p></div>
         </aside>
@@ -79,6 +100,7 @@
   </div>
 
   <dialog id="projectDialog" class="project-dialog"><form method="dialog"><div class="dialog-header"><div><div class="eyebrow">Project library</div><h2>Open a project</h2></div><button value="cancel" class="icon-btn" aria-label="Close">×</button></div><div id="savedProjects" class="saved-projects"></div><div class="dialog-footer"><label class="outline-btn upload-label" for="jsonImport">Import JSON file</label><input type="file" id="jsonImport" accept=".json,application/json" hidden /><button value="cancel" class="plain-btn">Close</button></div></form></dialog>
+  <dialog class="comparison-dialog" id="comparisonDialog"><div class="comparison-top"><div><h2>Seat view comparison</h2><p>Capture up to two human-eye viewpoints from the current model. Photographs can be displayed as references, not proof of geometric accuracy.</p></div><button id="closeComparison">× Close</button></div><div class="comparison-slots" id="comparisonSlots"></div><div class="comparison-footer"><button id="swapComparison">Swap A / B</button><button id="clearComparison">Clear comparison</button></div></dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./src/app.js"></script>
 </body>

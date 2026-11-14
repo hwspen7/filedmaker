@@ -1,5 +1,6 @@
 import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers, resolveSectionTier } from './model.mjs';
 import { parseSvgPlan, planPoint, tracePlanOutline } from './plan.mjs';
+import { VIEW_DEFAULTS, validateViewOptions, viewpoint, sightlineNote, nearbySeat, seatDescriptor } from './view.mjs';
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];
@@ -25,6 +26,12 @@ let renderVersion = 0;
 let history = [], future = [];
 let toastTimer;
 let view = 'orbit';
+let viewOptions = validateViewOptions(getStored('filedmaker.view.v1', VIEW_DEFAULTS));
+let comparison = [];
+let localPhotos = [];
+let bookmarks = getStored('filedmaker.bookmarks.v1', []);
+if (!Array.isArray(bookmarks)) bookmarks = [];
+
 const toast = (message, error = false) => {
   const element = byId('toast');
   element.textContent = message;
@@ -176,6 +183,7 @@ function updateStats() {
   byId('bottomStatus').textContent = `${num(model.capacity)} seats · ${model.project.sections.filter(s => s.enabled).length} active sections · ${model.tiers.length} tier(s)`;
   byId('modelVersion').textContent = `SCHEMA v${CURRENT_SCHEMA}`;
   showSelection();
+  refreshViewPanel();
 }
 
 function showSection(sectionId) {
@@ -203,6 +211,7 @@ function scheduleModel() {
         if (view === 'seat') stadium.setView('seat');
       }
       updateStats();
+      refreshViewPanel();
       renderOutlineSvg();
       byId('loadingState').hidden = true;
       byId('saveStatus').textContent = putStored(KEY_CURRENT, project) ? 'Auto-saved in this browser' : 'Local storage unavailable — export JSON';
@@ -435,13 +444,15 @@ $all('[data-preset]').forEach(button => button.addEventListener('click', () => {
     activeTab = 'bowl'; replaceProject(createProject(button.dataset.preset));
   }
 }));
-$all('[data-view]').forEach(button => button.addEventListener('click', () => {
-  view = button.dataset.view;
-  $all('[data-view]').forEach(item => item.classList.toggle('active', item === button));
+function switchView(mode) {
+  view = mode;
+  $all('[data-view]').forEach(item => item.classList.toggle('active', item.dataset.view === mode));
   syncOutlineVisibility();
-  if (stadium) stadium.setView(view === 'outline' ? 'plan' : view);
-  else if (view !== 'outline') toast('3D rendering not yet available.', true);
-}));
+  if (stadium) stadium.setView(mode === 'outline' ? 'plan' : mode);
+  else if (mode !== 'outline') toast('3D rendering not yet available.', true);
+  refreshViewPanel();
+}
+$all('[data-view]').forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
 // The SVG editor is independent of WebGL. Changes flow through the same project,
 // geometry validation, history stack and 3D rendering pipeline as numeric edits.
 function syncOutlineVisibility() {
@@ -683,6 +694,165 @@ byId('screenshot').addEventListener('click', () => {
   anchor.href = stadium.capture();
   anchor.click(); toast('Viewport screenshot downloaded.');
 });
+// Seat view operations intentionally remain local to a model. We do not claim
+// simulated geometry is surveyed, and photos are never sent to a server.
+function currentSeat() { return stadium?.selectedSeat || model?.seats[0] || null; }
+function updateEyeOptions(patch) {
+  viewOptions = validateViewOptions({...viewOptions,...patch});
+  putStored('filedmaker.view.v1',viewOptions);
+  if (stadium) stadium.setViewOptions(viewOptions);
+  refreshViewPanel();
+}
+function activateSeat(seat, enterView = true) {
+  if (!seat || !stadium) { toast('Seat unavailable or 3D engine is not running.',true);return; }
+  stadium.highlight(seat);
+  showSelection(seat);
+  if (enterView) switchView('seat');
+  refreshViewPanel();
+}
+function refreshBookmarks() {
+  const select = byId('favoritesSelect');
+  const selected = select.value;
+  const filtered = bookmarks.filter(b=>b.project === project.title && b.surface === project.surface);
+  select.replaceChildren(new Option('Choose a favorite',''));
+  for(const b of filtered){select.add(new Option(b.title,b.uid));}
+  if (filtered.some(b=>b.uid===selected)) select.value=selected;
+}
+function refreshViewPanel() {
+  const seat = currentSeat();
+  const info = byId('viewDiagnostics');
+  if (!info) return;
+  byId('humanViewHud').hidden = view !== 'seat' || !stadium;
+  byId('phoneFrame').hidden = view !== 'seat' || viewOptions.optic !== 'phone' || !stadium;
+  $all('[data-posture]').forEach(btn=>btn.classList.toggle('chosen',btn.dataset.posture===viewOptions.posture));
+  $all('[data-optic]').forEach(btn=>btn.classList.toggle('chosen',btn.dataset.optic===viewOptions.optic));
+  byId('zoomSlider').value=String(viewOptions.zoom);
+  byId('zoomValue').textContent=`${viewOptions.zoom.toFixed(1)}×`;
+  byId('viewTarget').value=viewOptions.target;
+  byId('crowdMode').value=viewOptions.crowd;
+  if (seat && model) {
+    const p=viewpoint(seat,model.surface,viewOptions);
+    const values=sightlineNote(seat,model.surface,viewOptions.posture);
+    info.innerHTML=`<strong>${safe(seatDescriptor(seat))}</strong><br />Eye Y ${p.origin.y.toFixed(2)} m · target distance ≈ ${values.distance.toFixed(1)} m<br />Look-down angle ≈ ${values.downwardAngle.toFixed(1)}° · vertical FOV ${p.fov.toFixed(1)}°<br /><em>${safe(values.status)}</em>`;
+    byId('hudSeat').textContent=seatDescriptor(seat);
+    byId('hudPosition').textContent=`${viewOptions.posture} · ${viewOptions.optic} · ${viewOptions.zoom.toFixed(1)}× · ${values.distance.toFixed(1)} m`;
+  } else {info.textContent='Select a seat to inspect the estimated eye position and playing-field distance.';}
+  const bookmarked=seat&&bookmarks.some(b=>b.project===project.title&&b.surface===project.surface&&b.uid===seat.uid);
+  byId('hudFavorite').textContent=bookmarked?'★ Saved':'☆ Save seat';
+  byId('favoriteSeat').textContent=bookmarked?'★ Remove favorite':'☆ Favorite';
+  refreshBookmarks();
+}
+function lookupSeat(query) {
+  if (!model) return null;
+  const text=String(query||'').trim().toUpperCase();
+  const section=text.match(/\b([A-Z]{1,3}[-]?\d{1,3})\b/);
+  const tier=text.match(/\bT([1-4])\b/);
+  const row=text.match(/\b(?:ROW|R)\s*(\d+)\b/);
+  const seat=text.match(/\b(?:SEAT|NO|NUMBER)\s*(\d+)\b/);
+  const nums=(text.replace(/\b(?:S\d+|T\d+)\b/g,'').match(/\b\d+\b/g)||[]).map(Number);
+  const sectionId=section?.[1] || currentSeat()?.sectionId;
+  const rowNum=Number(row?.[1]??nums[0]);
+  const seatNum=Number(seat?.[1]??nums[1]);
+  const tierIndex=tier ? Number(tier[1])-1 : undefined;
+  if(!sectionId || !Number.isInteger(rowNum) || !Number.isInteger(seatNum)) return null;
+  return model.seats.find(s=>s.sectionId.toUpperCase()===sectionId && s.row===rowNum && s.number===seatNum && (tierIndex===undefined||s.tier===tierIndex))||null;
+}
+function findSeatFromForm(){
+  const found=lookupSeat(byId('seatSearch').value);
+  byId('seatSearchResult').textContent=found?seatDescriptor(found):'Seat not found. Example: S01 row 8 seat 12';
+  if (found) activateSeat(found);
+  else toast('Exact seat not found in this generated model.',true);
+}
+function favoriteSeat(){
+  const seat=currentSeat();if(!seat)return toast('Select a seat first.',true);
+  const key=b=>b.uid===seat.uid&&b.project===project.title&&b.surface===project.surface;
+  if(bookmarks.some(key))bookmarks=bookmarks.filter(b=>!key(b));
+  else bookmarks.push({uid:seat.uid,title:seatDescriptor(seat),project:project.title,surface:project.surface});
+  bookmarks=bookmarks.slice(-75);
+  putStored('filedmaker.bookmarks.v1',bookmarks);
+  refreshViewPanel();
+  toast(bookmarks.some(key)?'Seat saved in this browser.':'Favorite removed.');
+}
+function compareSeat(){
+  if(!stadium||!model)return toast('3D renderer is required for view comparisons.',true);
+  const seat=currentSeat();if(!seat)return toast('Select a seat first.',true);
+  switchView('seat');
+  // capture forces one rendered frame, even if animation has not yet repainted.
+  comparison.push({title:seatDescriptor(seat),meta:`${viewOptions.posture} · ${viewOptions.optic} · ${viewOptions.zoom.toFixed(1)}×`,image:stadium.capture()});
+  if(comparison.length>2)comparison.shift();
+  toast(`Captured viewpoint ${comparison.length}/2. Open A / B to compare.`);
+}
+function renderComparison(){
+  const target=byId('comparisonSlots');target.replaceChildren();
+  for(let i=0;i<2;i++){
+    const slot=comparison[i],card=document.createElement('section');card.className='compare-slot';
+    if(slot){
+      const img=document.createElement('img');img.src=slot.image;img.alt=`Captured view ${i+1}`;card.append(img);
+      const h=document.createElement('h3');h.textContent=`${i?'B':'A'} · ${slot.title}`;card.append(h);
+      const p=document.createElement('p');p.textContent=slot.meta;card.append(p);
+    }else{const empty=document.createElement('div');empty.className='compare-empty';empty.textContent=`${i?'B':'A'} · Capture a seat view or select a local photo`;card.append(empty);}
+    target.append(card);
+  }
+}
+function addPhoto(file){
+  if (!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size>10*1024*1024) throw new Error('Choose PNG/JPEG/WebP images under 10 MB.');
+  const url=URL.createObjectURL(file);
+  localPhotos.push({url,name:file.name,seat:currentSeat()?seatDescriptor(currentSeat()):'Unassigned'});
+  if(localPhotos.length>12)URL.revokeObjectURL(localPhotos.shift().url);
+  renderPhotos();
+}
+function renderPhotos(){
+  const el=byId('photoList');el.replaceChildren();
+  if(!localPhotos.length){el.textContent='No reference photos uploaded';return;}
+  localPhotos.forEach((photo,i)=>{
+    const b=document.createElement('button');b.className='photo-button';b.title=`${photo.name} — ${photo.seat} · click to compare`;
+    const im=document.createElement('img');im.src=photo.url;im.alt=`Photo reference ${i+1}`;b.append(im);
+    b.addEventListener('click',()=>{comparison.push({image:photo.url,title:photo.name,meta:`Reference photograph · ${photo.seat} · unverified`});if(comparison.length>2)comparison.shift();renderComparison();byId('comparisonDialog').showModal();});
+    el.append(b);
+  });
+}
+byId('jumpSeatView').addEventListener('click',()=>{if(!stadium)return toast('3D engine unavailable.',true);switchView('seat');});
+byId('focusSection').addEventListener('click',()=>{if(!stadium)return toast('3D engine unavailable.',true);switchView('section');});
+byId('toggleInspector').addEventListener('click',()=>document.querySelector('.inspector').classList.toggle('inspector-open')); 
+byId('hudReset').addEventListener('click',()=>updateEyeOptions({yaw:0,pitch:0,zoom:1}));
+byId('hudCompare').addEventListener('click',compareSeat);
+byId('hudFavorite').addEventListener('click',favoriteSeat);
+byId('findSeat').addEventListener('click',findSeatFromForm);
+byId('seatSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();findSeatFromForm();}});
+byId('zoomSlider').addEventListener('input',e=>updateEyeOptions({zoom:Number(e.target.value)}));
+byId('viewTarget').addEventListener('change',e=>updateEyeOptions({target:e.target.value,yaw:0,pitch:0}));
+byId('crowdMode').addEventListener('change',e=>updateEyeOptions({crowd:e.target.value}));
+$all('[data-posture]').forEach(b=>b.addEventListener('click',()=>updateEyeOptions({posture:b.dataset.posture})));
+$all('[data-optic]').forEach(b=>b.addEventListener('click',()=>updateEyeOptions({optic:b.dataset.optic})));
+$all('[data-seat-move]').forEach(b=>b.addEventListener('click',()=>{
+  const next=nearbySeat(model,currentSeat(),b.dataset.seatMove);
+  if(next)activateSeat(next);else toast('There is no seat in that direction within this section.',true);
+}));
+byId('favoriteSeat').addEventListener('click',favoriteSeat);
+byId('favoritesSelect').addEventListener('change',e=>{const seat=model?.seats.find(s=>s.uid===e.target.value);if(seat)activateSeat(seat);});
+byId('addComparison').addEventListener('click',compareSeat);
+byId('openCompare').addEventListener('click',()=>{renderComparison();byId('comparisonDialog').showModal();});
+byId('closeComparison').addEventListener('click',()=>byId('comparisonDialog').close());
+byId('swapComparison').addEventListener('click',()=>{comparison.reverse();renderComparison();});
+byId('clearComparison').addEventListener('click',()=>{comparison=[];renderComparison();});
+byId('shareSeat').addEventListener('click',async()=>{
+  const seat=currentSeat();if(!seat)return toast('Select a seat first.',true);
+  const url=new URL(location.href);
+  url.hash=new URLSearchParams({seat:seat.uid,posture:viewOptions.posture,optic:viewOptions.optic,zoom:String(viewOptions.zoom)}).toString();
+  try {await navigator.clipboard.writeText(url.href);toast('Local model seat link copied. Requires the same project/browser.');}
+  catch {window.prompt('Copy local model seat link (same browser/project only):',url.href);}
+});
+byId('viewPhotoUpload').addEventListener('change',event=>{
+  try{for(const f of [...event.target.files].slice(0,12))addPhoto(f);toast(`${localPhotos.length} local photo(s) available for comparison.`);}
+  catch(error){toast(error.message,true);}
+  event.target.value='';
+});
+function applySeatLink(){
+  const params=new URLSearchParams(location.hash.slice(1));
+  if(!params.has('seat')||!model||!stadium)return;
+  const seat=model.seats.find(s=>s.uid===params.get('seat'));
+  if(seat){activateSeat(seat);updateEyeOptions({posture:params.get('posture')||'seated',optic:params.get('optic')||'human',zoom:Number(params.get('zoom')||1)});}
+}
 byId('retryRender').addEventListener('click', () => location.reload());
 document.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
@@ -694,8 +864,10 @@ document.addEventListener('keydown', e => {
 renderTab(); updateHeader(); scheduleModel(); syncOutlineVisibility();
 try {
   const { StadiumScene } = await import('./scene.js');
-  stadium = new StadiumScene(byId('stadiumCanvas'), seat => { showSelection(seat); }, sectionId => { showSection(sectionId); });
-  if (model) { stadium.load(model); updateStats(); }
+  stadium = new StadiumScene(byId('stadiumCanvas'), seat => { showSelection(seat); refreshViewPanel(); }, sectionId => { showSection(sectionId); });
+  stadium.setViewOptions(viewOptions);
+  if (model) { stadium.load(model); updateStats(); applySeatLink(); }
+  refreshViewPanel();
   rendererFailed = false;
   byId('renderError').hidden = true;
 } catch (error) {
