@@ -10,7 +10,8 @@ const server = http.createServer(async (req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);
+    const requestFile = path.endsWith('/') ? `${path}index.html` : path;
+    const file = resolve(root, `.${requestFile}`);
     if (file !== root && !file.startsWith(`${root}${sep}`)) { res.writeHead(403); res.end(); return; }
     if (!(await stat(file)).isFile()) { res.writeHead(404); res.end(); return; }
     const data = await readFile(file);

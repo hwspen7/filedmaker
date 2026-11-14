@@ -65,6 +65,7 @@ try {
             $requestPath = $tokens[1].Split('?')[0]
             $relativePath = [System.Uri]::UnescapeDataString($requestPath).TrimStart('/').Replace('/', [System.IO.Path]::DirectorySeparatorChar).Replace('\', [System.IO.Path]::DirectorySeparatorChar)
             if ([string]::IsNullOrEmpty($relativePath)) { $relativePath = 'index.html' }
+            elseif ($requestPath.EndsWith('/')) { $relativePath = Join-Path $relativePath 'index.html' }
             $filePath = [System.IO.Path]::GetFullPath((Join-Path $root $relativePath))
             if (-not $filePath.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
                 Send-Response $stream 403 'Forbidden' (New-ErrorBody 'Forbidden') 'text/plain; charset=utf-8' $headOnly
