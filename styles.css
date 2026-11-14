@@ -272,3 +272,7 @@ select { color-scheme: light; }
 .venue-facts span {color:#616161;}
 .venue-facts a {color:#285b6c;text-decoration:underline;}
 .reference-venue-button {margin:10px 0;}
+
+.school-entry{display:block;background:#242424;color:#fff;text-decoration:none;border-radius:12px;padding:13px 14px;font-weight:650;margin:10px 0 16px}.school-entry small{display:block;color:#cfcfcf;font-weight:400;line-height:1.5;font-size:11px;margin-top:5px}.school-entry:hover{background:#414141}
+
+.legacy-templates{margin-top:12px}.legacy-templates summary{cursor:pointer;font-size:11px;color:#8a8a8a;padding:6px}.legacy-templates .template-grid{margin-top:8px}

@@ -5,6 +5,8 @@ import { SURFACES, modelPerimeterPoint, resolveTiers, resolveSectionTier } from 
 import { OHIO_STADIUM, isOhioReference } from './venues.mjs';
 import { aisleStairPlan, facadeArcPlan } from './stadiumDetails.mjs';
 import { entranceFramePlan, fieldEquipmentPlan, guardrailPlan } from './detailKit.mjs';
+import { nbaArenaId } from './nbaGeometry.mjs';
+import { addNBAArenaArchitecture } from './nbaArchitecture.js';
 
 const material=(color,metalness=0,roughness=.82)=>new THREE.MeshStandardMaterial({color,metalness,roughness,side:THREE.DoubleSide});
 function addBox(parent,w,h,d,x,y,z,m){const obj=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);obj.position.set(x,y,z);parent.add(obj);return obj;}
@@ -234,7 +236,7 @@ function sportFurniture(root,project){
       addBox(root,.10,.62,7.9,x-.86,.52,z,red);
     }
   }
-  if(project.surface==='nba'||project.surface==='ncaa-basketball') {
+  if((project.surface==='nba'||project.surface==='ncaa-basketball') && !nbaArenaId(project)) {
     // Suspended four-way board, with shallow inset LED faces and mounting mast.
     addBox(root,5.9,3.85,5.9,0,15,0,dark);
     const LED=material(0x334d58,.14,.42);
@@ -258,5 +260,5 @@ export function addDetailedVenue(root,model){
     facade(root,project);
     if(isOhioReference(project) && project.showExterior)ohioSpecific(root,project);
   }
-  if(project.showFixtures)sportFurniture(root,project);
+  if(project.showFixtures){sportFurniture(root,project);addNBAArenaArchitecture(root,project);}
 }

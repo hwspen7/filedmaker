@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#ffffff"><title>School Studio · FiledMaker</title><link rel="stylesheet" href="./studio.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+</head><body><div class="app"><aside class="sidebar"><div class="brand"><span class="logo">F</span><div><b>FiledMaker</b><small>School Venue Studio</small></div></div>
+<a class="back" href="../index.html">← Advanced geometry editor</a>
+<div class="side-scroll"><div class="section-label">01 / Start from your school</div>
+<label>Venue type<select id="profile"><option value="college-basketball">NCAA basketball arena</option><option value="college-gym">NCAA small gymnasium</option><option value="college-football">NCAA football stadium</option><option value="high-basketball">High-school gym</option><option value="high-football">High-school football bleachers</option><option value="middle-basketball">Middle-school gym</option></select></label>
+<label>School or district name<input id="schoolName" value="Example Community College" placeholder="Enter school name"></label><label>Venue name<input id="venueName" value="Campus Gymnasium" placeholder="Enter actual venue name"></label>
+<div class="pair"><label>City<input id="city" placeholder="City"></label><label>Country<input id="country" value="United States"></label></div>
+<button id="build" class="primary wide">Generate editable draft</button>
+<div class="line"></div><div class="section-label">02 / Replace guesses with data</div><p class="hint">Choose the data your school already has. A row roster keeps real section and seat labels, but its 3D positions are estimates.</p>
+<label class="upload" for="rowsCsv">↑ Import rows + seats CSV<input id="rowsCsv" type="file" accept=".csv,text/csv" hidden></label>
+<label class="upload" for="surveyCsv">↑ Import XYZ seat survey CSV<input id="surveyCsv" type="file" accept=".csv,text/csv" hidden></label>
+<div class="pair buttons"><button id="exampleCsv">Get row CSV example</button><button id="clearRows">Reset to draft</button></div>
+<div class="line"></div><div class="section-label">03 / Export to school website</div>
+<button id="publish" class="primary wide">Export standalone seat preview</button><button id="exportJson" class="wide">Export editable project JSON</button><button id="exportSeats" class="wide">Export seat coordinates CSV</button><button id="exportGlb" class="wide">Export GLB model</button>
+<p class="hint">Standalone preview works without a backend for 2D seat browsing. It offers optional Three.js 3D viewing when online. It does not manage ticket orders, payments or inventory.</p>
+</div><div class="status" id="sidebarStatus">Local draft · not published</div></aside>
+<main class="main"><header class="topbar"><div><div class="muted tiny">School Venue Studio / Workbench</div><strong id="title">Campus Gymnasium</strong></div><span class="tag">School-first · Preview only</span></header>
+<div class="workspace"><div class="visual"><div class="overlay"><button id="orbit" class="active">3D orbit</button><button id="plan">Top view</button><button id="human">Human view</button></div><canvas id="canvas" aria-label="Interactive school sports venue"></canvas><div id="canvasNote">Select a seat to inspect its approximate view. Real seating data can be imported from the left.</div><div id="canvasError" hidden></div></div>
+<aside class="inspector"><div class="section-label">Venue readiness</div><div class="count"><strong id="count">—</strong><span>modeled seat positions</span></div><div class="metrics"><div><span>Reference</span><strong id="method">—</strong></div><div><span>Sections</span><strong id="sections">—</strong></div><div><span>Surface</span><strong id="court">—</strong></div></div>
+<h3>Selected seat</h3><div class="selected" id="chosen">Click a seat in the 3D view to inspect it.</div><div class="pair buttons"><button id="prevSeat">← Previous</button><button id="nextSeat">Next →</button></div>
+<h3>Quality checklist</h3><div id="quality" class="quality"></div>
+<div class="warn">Do not represent generated seat positions as measured. Accessibility and egress require school review. No live availability, booking or payments are included.</div>
+</aside></div><div class="footer"><span id="message">Choose a template to start</span><span>All data stays in this browser until you export it</span></div></main></div>
+<script type="module" src="./studio.js"></script></body></html>

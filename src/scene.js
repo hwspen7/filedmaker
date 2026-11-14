@@ -142,7 +142,7 @@ function basketball(group, surface) {
     hoop.rotation.x = Math.PI / 2;
     group.add(hoop);
     // Simplified 3-point line, intentionally schematic rather than surveyed court artwork.
-    const radius = surface.label.includes('NCAA') ? 6.75 : 7.24;
+    const radius = surface.threePointRadiusM ?? 7.24;
     const bound = Math.min(w / 2 - 0.9, 6.65);
     const extension = Math.sqrt(Math.max(0, radius * radius - bound * bound));
     const arcZ = baseline - sign * 1.58;
@@ -258,6 +258,7 @@ function createSeatMesh(seats, project) {
     for(const i of [3,4,5,6]) meshes[i].setColorAt(index,steelTint);
   });
   meshes.forEach((mesh,i)=>{
+    mesh.userData.originalMatrices = mesh.instanceMatrix.array.slice();
     mesh.instanceMatrix.needsUpdate=true;
     if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
     mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
@@ -447,6 +448,7 @@ export class StadiumScene {
       addConcourse(this.root, surface, project, tier);
     }
     this.seatMeshes = createSeatMesh(seats, project);
+    this.hiddenSeatIndex=-1;
     this.root.add(...this.seatMeshes);
     if (model.seatOrigin !== 'imported') {
       addArchitecturalDetails(this.root,surface,project,tiers);
@@ -543,10 +545,35 @@ export class StadiumScene {
     return this.viewOptions;
   }
 
+  hideCurrentSeatForViewer(shouldHide) {
+    if (!this.model || !this.seatMeshes?.length) return;
+    const previous = this.hiddenSeatIndex ?? -1;
+    const current = shouldHide && this.selectedSeat ? this.model.seats.findIndex(s=>s.uid===this.selectedSeat.uid) : -1;
+    if (current === previous) return;
+    const zero = new THREE.Matrix4().makeScale(0,0,0);
+    const restore = new THREE.Matrix4();
+    // This only affects rendering the currently occupied chair. Other rows are
+    // kept visible to preserve realistic foreground occlusion.
+    for (let component=0;component<this.seatMeshes.length;component++) {
+      const mesh=this.seatMeshes[component];
+      if (!mesh || !mesh.count) continue;
+      if (previous >= 0) {
+        // Restore from the authoritative matrix cached at seat-mesh creation.
+        const saved=mesh.userData.originalMatrices;
+        if (saved) mesh.setMatrixAt(previous,restore.fromArray(saved,previous*16));
+      }
+      if (current >= 0) mesh.setMatrixAt(current,zero);
+      mesh.instanceMatrix.needsUpdate=true;
+    }
+    this.hiddenSeatIndex=current;
+  }
+
   applyEyeView() {
     if (!this.model || !this.selectedSeat) return;
     const p = viewpoint(this.selectedSeat,this.model.surface,this.viewOptions);
     this.controls.enabled=false;
+    this.hideCurrentSeatForViewer(true);
+    this.camera.near=.045;
     this.camera.up.set(0,1,0);
     this.camera.position.set(p.origin.x,p.origin.y,p.origin.z);
     this.camera.lookAt(p.origin.x+p.direction.x*30,p.origin.y+p.direction.y*30,p.origin.z+p.direction.z*30);
@@ -559,6 +586,7 @@ export class StadiumScene {
   setView(mode) {
     if (!this.model) return;
     this.mode = mode;
+    if(mode!=='seat') { this.hideCurrentSeatForViewer(false);this.camera.near=.08; }
     const { surface, tiers } = this.model;
     const span = Math.max(surface.length, surface.width) + tiers.at(-1).startOffset * 2 + 40;
     if (mode === 'orbit') {
@@ -593,11 +621,13 @@ export class StadiumScene {
   async exportGLB() {
     if (!this.model) throw new Error('Generate a stadium before exporting.');
     const exporter = new GLTFExporter();
+    const wasHumanView = this.mode === 'seat';
+    this.hideCurrentSeatForViewer(false);
     const hidden = [];
     this.root.traverse(object => {
       if (object.userData.editorOnly && object.visible) { hidden.push(object); object.visible = false; }
     });
-    const restore = () => hidden.forEach(object => { object.visible = true; });
+    const restore = () => {hidden.forEach(object => { object.visible = true; });if(wasHumanView) this.hideCurrentSeatForViewer(true);};
     return new Promise((resolve, reject) => {
       try {
         exporter.parse(this.root, result => {

@@ -5,6 +5,8 @@ import { parseSeatCSV, fitPlanRegistration, seatRegistration, obstructionReport,
 import { fieldLandmarks, fitPhotoView } from './photo.mjs';
 import { createOhioStadiumProject, OHIO_STADIUM, isOhioReference, ohioFactReport } from './venues.mjs';
 import { stadiumProvenance } from './stadiumDetails.mjs';
+import { NBA_CATALOG, createNBAArenaProject, nbaArenaReport } from './nbaArenas.mjs';
+import { createSchoolProject } from './schoolPipeline.mjs';
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];
@@ -15,8 +17,8 @@ const safe = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;',
 const getStored = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const putStored = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } };
 let project;
-try { project = validateProject(getStored(KEY_CURRENT, createOhioStadiumProject())); }
-catch { project = createOhioStadiumProject(); }
+try { project = validateProject(getStored(KEY_CURRENT, createSchoolProject('college-gym',{school:'Your School',venue:'School Gymnasium'}))); }
+catch { project = createSchoolProject('college-gym',{school:'Your School',venue:'School Gymnasium'}); }
 let activeTab = 'bowl';
 let activeSectionId = project.sections[0].id;
 let outlineHandleIndex = 0;
@@ -66,6 +68,7 @@ function renderTab() {
     html += `<label class="toggle-row"><input data-project="showExterior" type="checkbox" ${project.showExterior ? 'checked' : ''} /> Facades, stadium structures and concourses</label>`;
     html += `<label class="toggle-row"><input data-project="showFixtures" type="checkbox" ${project.showFixtures ? 'checked' : ''} /> Sports equipment, player benches and field fixtures</label>`;
     html += `<label class="toggle-row"><input data-project="roof" type="checkbox" ${project.roof ? 'checked' : ''} /> Show schematic roof canopy</label>`;
+    html += `<div class="subheading">SCHOOL VENUE STUDIO</div><a class="school-entry" href="./school/">Open school automation studio →<small>Generate a school arena from row inventories, export a selectable seat viewer</small></a>`;
     html += `<div class="subheading">REAL STADIUM REFERENCE</div><button class="full-outline reference-venue-button" data-build-ohio-stadium>Build Ohio Stadium reference <span>↗</span></button>`;
     html += `<p class="hint">Based on Ohio State's published dimensions, historic horseshoe layout and south-stand/press-box features. Seat rows, individual sections and elevations remain approximate, not surveyed.</p>`;
     if(isOhioReference(project)) html += `<div class="venue-facts"><strong>Ohio Stadium · Columbus</strong><span>Official envelope ${OHIO_STADIUM.lengthM.toFixed(1)} × ${OHIO_STADIUM.widthM.toFixed(1)} m</span><span>Official capacity ${num(OHIO_STADIUM.publishedCapacity)} · generated seats are NOT official</span><span>Separate southern stands · west press box · north rotunda</span><a href="${OHIO_STADIUM.sources[0]}" target="_blank" rel="noopener noreferrer">Ohio State published stadium facts ↗</a></div>`;
@@ -425,7 +428,16 @@ byId('tabContent').addEventListener('change', e => {
 });
 byId('tabContent').addEventListener('click', e => {
   const target = e.target.closest('button'); if (!target) return;
-  if(target.hasAttribute('data-build-ohio-stadium')){
+  if(target.hasAttribute('data-build-nba-arena')){
+    const id=byId('nbaArenaSelect')?.value;
+    if(!id){toast('Choose an NBA arena first.',true);return;}
+    const arena=NBA_CATALOG.find(item=>item.id===id);
+    if(confirm(`Load ${arena.arena} reference? Current unsaved edits will be replaced. Geometry is illustrative, not surveyed.`)){
+      activeTab='bowl';replaceProject(createNBAArenaProject(id));
+      toast(`${arena.arena} loaded · only verified venue facts are treated as real.`);
+    }
+  }
+  else if(target.hasAttribute('data-build-ohio-stadium')){
     if(confirm('Load the Ohio Stadium architectural reference? Current unsaved model will be replaced. This is not an accurate seat survey.')) {
       activeTab='bowl'; replaceProject(createOhioStadiumProject());
       toast('Loaded Ohio Stadium reference geometry — seat-level positions remain estimated.');
@@ -782,7 +794,7 @@ byId('clearReference').addEventListener('click', () => {
   referenceUrl = ''; renderOutlineSvg();
 });
 
-byId('newProject').addEventListener('click', () => { if (confirm('Create a new blank NFL stadium project?')) replaceProject(createProject()); });
+byId('newProject').addEventListener('click', () => { if (confirm('Create a new NCAA school venue draft?')) replaceProject(createSchoolProject('college-gym',{school:'Your School',venue:'School Gymnasium'})); });
 byId('ohioVenueShortcut').addEventListener('click', () => { if(confirm('Load the Ohio Stadium reference? Unsaved edits will be replaced.')) {activeTab='bowl'; replaceProject(createOhioStadiumProject()); toast('Ohio Stadium geometry loaded. All seat positions remain estimated.');}});
 byId('saveProject').addEventListener('click', saveSlot);
 byId('openProject').addEventListener('click', () => { drawLibrary(); byId('projectDialog').showModal(); });

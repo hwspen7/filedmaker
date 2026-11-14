@@ -1,5 +1,6 @@
 // Deterministic parametric geometry and project validation. No DOM or 3D dependencies.
 import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
+import { getNBAArena } from './nbaCatalog.mjs';
 export const TAU = Math.PI * 2;
 export const CURRENT_SCHEMA = 5;
 
@@ -8,8 +9,12 @@ export const SURFACES = Object.freeze({
   cfl: { sport: 'football', label: 'CFL (2026)', width: 59.436, length: 137.16, endZone: 18.288 },
   cfl27: { sport: 'football', label: 'CFL (2027)', width: 59.436, length: 118.872, endZone: 13.716 },
   soccer: { sport: 'soccer', label: 'Soccer (105 × 68 m)', width: 68, length: 105 },
-  nba: { sport: 'basketball', label: 'NBA basketball', width: 15.24, length: 28.6512 },
-  ncaa: { sport: 'basketball', label: 'NCAA basketball', width: 15.24, length: 28.6512 },
+  nba: { sport: 'basketball', label: 'NBA basketball', width: 15.24, length: 28.6512, threePointRadiusM: 7.24 },
+  ncaa: { sport: 'basketball', label: 'NCAA basketball (94 × 50 ft)', width: 15.24, length: 28.6512, threePointRadiusM: 6.75 },
+  'ncaa-football': { sport: 'football', label: 'NCAA football (120 × 53⅓ yd)', width: 48.768, length: 109.728, endZone: 9.144 },
+  'nfhs-basketball': { sport: 'basketball', label: 'High-school basketball (84 × 50 ft)', width: 15.24, length: 25.6032, threePointRadiusM: 6.0198 },
+  'nfhs-football': { sport: 'football', label: 'High-school football (120 × 53⅓ yd)', width: 48.768, length: 109.728, endZone: 9.144 },
+  'youth-basketball': { sport: 'basketball', label: 'Small gym example (74 × 42 ft, verify locally)', width: 12.8016, length: 22.5552, threePointRadiusM: 6.0198 },
 });
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
@@ -84,12 +89,22 @@ export function validateProject(input) {
   project.showFixtures = project.showFixtures !== false;
   if (project.venueReference === undefined) project.venueReference = null;
   if (project.venueReference !== null) {
-    if (project.venueReference?.id !== 'ohio-stadium') throw new Error('Unknown venue reference.');
-    project.venueReference = {
-      id:'ohio-stadium', dataLevel:'documented-architecture/estimated-seating',
-      seatNumbering:'synthetic',
-      measurementNotice:'Architectural reference only. Exact section boundaries, seat locations and risers require survey.'
-    };
+    const referenceId = String(project.venueReference?.id || '');
+    if (referenceId === 'ohio-stadium') {
+      project.venueReference = {
+        id:'ohio-stadium', dataLevel:'documented-architecture/estimated-seating',
+        seatNumbering:'synthetic',
+        measurementNotice:'Architectural reference only. Exact section boundaries, seat locations and risers require survey.'
+      };
+    } else if (referenceId.startsWith('nba:') && project.surface === 'nba' && getNBAArena(referenceId.slice(4))) {
+      const arena = getNBAArena(referenceId.slice(4));
+      project.venueReference = {
+        id:referenceId,
+        dataLevel: arena.modelStatus === 'identity-only' ? 'official-venue-identity-only' : 'official-identified-features/estimated-seating',
+        seatNumbering:'synthetic',
+        measurementNotice:'Arena identity and cited public features are documented. Bowl layout, row counts and seat coordinates are inferred and have not been verified.'
+      };
+    } else throw new Error('Unknown venue reference.');
   }
   if (project.outline === undefined) project.outline = { mode: 'parametric', points: [] };
   if (!project.outline || !['custom', 'parametric'].includes(project.outline.mode)) throw new Error('Invalid outline mode.');

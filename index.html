@@ -18,23 +18,30 @@
 <body>
   <div class="workspace">
     <aside class="sidebar">
-      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>Stadium modeling studio</small></div><span class="version">v6.1</span></header>
+      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>School venue modeling</small></div><span class="version">v7.1</span></header>
       <div class="sidebar-scroll">
         <section class="side-panel">
-          <div class="eyebrow">Your project</div>
+          <div class="eyebrow">School-first tools</div><a href="./school/" class="school-entry">Open School Studio →<small>Import row maps, build a venue and export a selectable seat preview</small></a><div class="eyebrow">Advanced model project</div>
           <div class="project-identity"><div class="project-avatar">◈</div><div><strong id="projectNameSmall">Untitled Stadium</strong><small id="projectSubline">United States · NFL</small></div></div>
           <div class="quick-actions"><button id="newProject" class="outline-btn">＋ New</button><button id="saveProject" class="outline-btn">Save locally</button></div>
         </section>
         <section class="side-panel">
           <div class="eyebrow">Start with a template</div>
           <div class="template-grid">
-            <button data-preset="nfl" class="template-option"><span>▤</span><strong>Football</strong><small>NFL / NCAA</small></button>
-            <button data-preset="soccer" class="template-option"><span>▧</span><strong>Soccer</strong><small>MLS / CPL</small></button>
-            <button data-preset="nba" class="template-option"><span>◉</span><strong>Arena</strong><small>NBA / NCAA</small></button>
+            <button data-preset="ncaa-football" class="template-option"><span>▤</span><strong>NCAA</strong><small>Football</small></button>
+            <button data-preset="nfhs-basketball" class="template-option"><span>▧</span><strong>School gym</strong><small>NFHS</small></button>
+            <button data-preset="ncaa" class="template-option"><span>◉</span><strong>NCAA</strong><small>Basketball</small></button>
           </div>
+          <details class="legacy-templates"><summary>Other legacy templates</summary>
+            <div class="template-grid">
+              <button data-preset="nfl" class="template-option"><span>▤</span><strong>Football</strong><small>NFL legacy</small></button>
+              <button data-preset="soccer" class="template-option"><span>▧</span><strong>Soccer</strong><small>Legacy</small></button>
+              <button data-preset="nba" class="template-option"><span>◉</span><strong>NBA</strong><small>Legacy</small></button>
+            </div>
+          </details>
         </section>
         <section class="side-panel settings-panel">
-          <div class="venue-shortcut"><button id="ohioVenueShortcut" class="venue-shortcut-button">🏟 Ohio Stadium · real reference <span>↗</span></button><small>Verified stadium facts · estimated row geometry</small></div>
+          <div class="venue-shortcut"><button id="ohioVenueShortcut" class="venue-shortcut-button">🏟 Ohio Stadium · real reference <span>↗</span></button><small>Advanced Ohio Stadium example · actual school maps should use School Studio</small></div>
           <div class="panel-head"><div class="eyebrow">Model properties</div><span id="dirtyBadge">EDITABLE</span></div>
           <div class="tab-row" role="tablist" aria-label="Editor properties">
             <button class="tab active" data-tab="bowl">Bowl</button>
@@ -81,10 +88,10 @@
             <p class="viewpoint-help">See what a spectator might see. Illustrative geometry, not a validated seat-photo match.</p>
             <div class="view-form"><label for="seatSearch">Find a precise seat</label><div class="search-line"><input id="seatSearch" placeholder="S01 row 8 seat 12" autocomplete="off" /><button id="findSeat">Find</button></div><small id="seatSearchResult">Search by section, row and seat number</small></div>
             <button id="jumpSeatView" class="full-outline strong-button">◎ Enter human-eye view <span>↗</span></button><button id="focusSection" class="full-outline">Focus this seating section <span>↗</span></button>
-            <div class="view-form"><label>Eye height</label><div class="pill-options" id="postureButtons"><button data-posture="seated" class="chosen">Seated · 1.17 m</button><button data-posture="standing">Standing · 1.60 m</button></div></div>
+            <div class="view-form"><label>Eye height</label><div class="pill-options" id="postureButtons"><button data-posture="seated" class="chosen">Seated · 1.17 m</button><button data-posture="standing">Standing · 1.60 m</button><button data-posture="leaning">Lean forward · 1.23 m</button></div></div>
             <div class="view-form"><label>Optics</label><div class="pill-options" id="opticButtons"><button data-optic="human" class="chosen">Human</button><button data-optic="phone">Phone</button></div></div>
             <div class="view-form"><label for="zoomSlider">Magnification <output id="zoomValue">1×</output></label><input id="zoomSlider" type="range" min="0.5" max="8" step="0.1" value="1" /></div>
-            <div class="view-form"><label for="viewTarget">Look toward</label><select id="viewTarget"><option value="center">Center of playing surface</option><option value="near">Near end</option><option value="far">Far end</option><option value="left">Left touchline</option><option value="right">Right touchline</option></select></div>
+            <div class="view-form"><label for="viewTarget">Look toward</label><select id="viewTarget"><option value="center">Center of playing surface</option><option value="near">Near end</option><option value="far">Far end</option><option value="left">Left touchline</option><option value="right">Right touchline</option><option value="near-rim">Near basket (NBA)</option><option value="far-rim">Far basket (NBA)</option><option value="scoreboard">Center scoreboard (NBA)</option></select></div>
             <div class="view-form"><label for="crowdMode">Nearby spectators</label><select id="crowdMode"><option value="empty">Empty stands</option><option value="seated">Seated (illustrative)</option><option value="standing">Standing (illustrative)</option></select></div>
             <div class="view-navigate"><button data-seat-move="front">↑ Forward row</button><button data-seat-move="back">↓ Back row</button><button data-seat-move="left">← Left seat</button><button data-seat-move="right">→ Right seat</button></div>
             <div class="view-diagnostics" id="viewDiagnostics">Select a seat to inspect eye level and approximate distance.</div>

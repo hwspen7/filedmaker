@@ -1,0 +1,7 @@
+section,row,seats,side,tier,seat_pitch_m,center_offset_m,seat_type
+HOME,A,12,west,T1,0.53,0,bleacher
+HOME,B,12,west,T1,0.53,0,bleacher
+HOME,C,12,west,T1,0.53,0,bleacher
+VISITOR,A,10,east,T1,0.53,0,bleacher
+VISITOR,B,10,east,T1,0.53,0,bleacher
+VISITOR,C,10,east,T1,0.53,0,bleacher
