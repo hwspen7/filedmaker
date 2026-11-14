@@ -1,4 +1,5 @@
-import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers } from './model.mjs';
+import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers, resolveSectionTier } from './model.mjs';
+import { parseSvgPlan, planPoint, tracePlanOutline } from './plan.mjs';
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];
@@ -16,6 +17,7 @@ let activeSectionId = project.sections[0].id;
 let outlineHandleIndex = 0;
 let referenceUrl = '';
 let referenceOpacity = 0.35;
+let selectedPlanPath = 0;
 let rendererFailed = false;
 let model = null;
 let stadium = null;
@@ -68,7 +70,20 @@ function renderTab() {
     html += field('Seat color', sectionInput('color', 'color', section.color));
     html += `<div class="two-fields">${field('Start angle (°)', sectionInput('start', 'number', section.start))}${field('End angle (°)', sectionInput('end', 'number', section.end))}</div>`;
     html += `<label class="toggle-row">${sectionInput('enabled', 'checkbox', section.enabled)} Section accepts seats</label>`;
-    html += `<div class="hint">Section boundaries are generated at equal angles. Edit the number of sections to rebuild the layout.</div></div>`;
+    html += `<div class="hint">Edit section bounds above, or customize the seating footprint separately on each level below.</div></div>`;
+    const tiers = resolveTiers(project);
+    html += `<div class="subheading">SECTION × TIER GEOMETRY</div><p class="hint">Overrides affect this section only. Empty (0-row) profiles become gaps in the 3D model and seat CSV.</p>`;
+    for (const tier of tiers) {
+      const profile = project.sectionProfiles.find(p => p.sectionId === section.id && p.tierId === tier.id);
+      html += `<div class="tier-card section-profile"><div class="tier-header"><strong>${safe(tier.label)}</strong><button data-toggle-profile="${tier.id}">${profile ? 'Reset to tier' : 'Customize'}</button></div>`;
+      if (profile) {
+        const input = (prop,label,value,min,max,step) => field(label, `<input type="number" data-profile-tier="${tier.id}" data-profile-prop="${prop}" min="${min}" max="${max}" step="${step}" value="${value}" />`);
+        html += `<div class="two-fields">${input('rows','Rows',profile.rows,0,75,1)}${input('frontShift','Front shift (m)',profile.frontShift,-4,40,.1)}</div>`;
+        html += `<div class="two-fields">${input('heightShift','Elevation shift (m)',profile.heightShift,-8,30,.1)}${input('rise','Row rise (m)',profile.rise,.12,.75,.01)}</div>`;
+        html += input('depth','Row depth (m)',profile.depth,.65,1.8,.01);
+      } else html += `<p class="hint">Inherits ${tier.rows} rows · ${tier.startHeight.toFixed(1)} m base elevation.</p>`;
+      html += `</div>`;
+    }
   } else if (activeTab === 'outline') {
     const custom = project.outline.mode === 'custom';
     html = `<p class="hint">Outline is a closed radial polygon. Drag its control points in the 2D editor to shape an irregular seating bowl. Invalid geometry is rejected automatically.</p>`;
@@ -93,6 +108,33 @@ function renderTab() {
       html += field('Affected levels', `<select data-aisle-index="${i}" data-aisle-prop="tier">${optionList(aisle.tier, [['all','All tiers'], ...project.tiers.map(t => [t.id,t.label])])}</select>`);
       html += `</div>`;
     });
+    html += `<div class="subheading">ENTRANCES / VOMITORIES</div><p class="hint">Unlike full-length aisles, entrances cut through selected rows in one seating tier.</p>`;
+    html += `<button data-add-portal class="full-outline" ${project.portals.length >= 40 ? 'disabled' : ''}>＋ Add entrance opening <span>${project.portals.length}/40</span></button>`;
+    project.portals.forEach((portal, i) => {
+      const tier = project.tiers.find(t => t.id === portal.tierId);
+      html += `<div class="aisle-card"><div class="aisle-card-header"><strong>${safe(portal.id)}</strong><button data-remove-portal="${i}">Remove</button></div>`;
+      html += field('Tier', `<select data-portal-index="${i}" data-portal-prop="tierId">${optionList(portal.tierId, project.tiers.map(t => [t.id,t.label]))}</select>`);
+      html += `<div class="two-fields">${field('Angle (°)', `<input type="number" min="0" max="359.99" step="0.5" data-portal-index="${i}" data-portal-prop="angle" value="${portal.angle}" />`)}${field('Width (m)', `<input type="number" min="0.8" max="18" step="0.1" data-portal-index="${i}" data-portal-prop="width" value="${portal.width}" />`)}</div>`;
+      html += `<div class="two-fields">${field('Start row', `<input type="number" min="1" max="75" step="1" data-portal-index="${i}" data-portal-prop="firstRow" value="${portal.firstRow}" />`)}${field('End row', `<input type="number" min="1" max="75" step="1" data-portal-index="${i}" data-portal-prop="lastRow" value="${portal.lastRow}" />`)}</div>`;
+      html += `<p class="hint">${safe(tier?.label || 'Tier')} · seat and terrace cutout</p></div>`;
+    });
+  } else if (activeTab === 'plan') {
+    html = `<p class="hint">Import a vector seating plan (SVG). Its shapes become inert geometry guides, not executable SVG. Set scale, offset, and rotation before tracing a closed stadium contour.</p>`;
+    html += `<button data-import-plan class="full-outline">Import SVG drawing <span>↑</span></button>`;
+    if (project.plan) {
+      const plan = project.plan;
+      selectedPlanPath = Math.max(0, Math.min(selectedPlanPath, plan.paths.length - 1));
+      const closed = plan.paths.filter(p => p.closed).length;
+      html += `<div class="outline-stat"><strong>${safe(plan.name)}</strong><p>${plan.paths.length} vector paths · ${closed} closed · units need calibration</p></div>`;
+      html += field('Drawing width represented (m)', `<input type="number" id="planWidth" min="1" max="10000" step="0.5" value="${(plan.viewBox[2] * plan.scale).toFixed(2)}" />`);
+      html += `<div class="two-fields">${field('X offset (m)', `<input type="number" data-plan-prop="offsetX" value="${plan.offsetX}" step="0.5" />`)}${field('Z offset (m)', `<input type="number" data-plan-prop="offsetZ" value="${plan.offsetZ}" step="0.5" />`)}</div>`;
+      html += field('Rotation (°)', `<input type="number" data-plan-prop="rotation" value="${plan.rotation}" step="1" min="-360" max="360" />`);
+      html += `<label class="toggle-row"><input type="checkbox" data-plan-prop="visible" ${plan.visible ? 'checked' : ''} /> Show SVG guides in 2D editor</label>`;
+      html += field('Selected vector path', `<select id="planPathSelect">${optionList(String(selectedPlanPath), plan.paths.map((p, i) => [String(i), `${p.closed ? '◯' : '—'} ${p.name} (${p.points.length} pts)`]))}</select>`);
+      html += `<div class="outline-controls"><button data-trace-plan ${!plan.paths[selectedPlanPath]?.closed ? 'disabled' : ''}>Trace selected closed contour</button><button data-open-editor>2D editor</button></div>`;
+      html += `<button data-remove-plan class="full-outline">Remove SVG reference <span>×</span></button>`;
+      html += `<p class="hint">Only the vector geometry is saved in project JSON. Native DWG/DXF and external SVG assets are not imported. Tracing requires one closed contour around the field center.</p>`;
+    } else html += `<div class="outline-stat">No vector plan imported. You can continue drawing an outline manually, or import an SVG to trace.</div>`;
   } else {
     html = fieldText('Project name', 'title', project.title);
     html += fieldText('City', 'city', project.city);
@@ -184,6 +226,7 @@ function commit(callback) {
     future = [];
     project = validated;
     if (!project.sections.some(s => s.id === activeSectionId)) activeSectionId = project.sections[0].id;
+    if (project.plan) selectedPlanPath = Math.min(selectedPlanPath, project.plan.paths.length - 1);
     outlineHandleIndex = Math.min(outlineHandleIndex, project.outline.points.length - 1);
     renderTab(); updateHeader(); scheduleModel();
   } catch (error) { toast(error.message, true); renderTab(); }
@@ -197,6 +240,7 @@ function replaceProject(next) {
     project = validated;
     activeSectionId = project.sections[0].id;
     outlineHandleIndex = 0;
+    selectedPlanPath = 0;
     view = 'orbit';
     $all('[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
     syncOutlineVisibility();
@@ -285,11 +329,25 @@ byId('tabContent').addEventListener('change', e => {
   } else if (input.dataset.aisleProp) {
     const index = Number(input.dataset.aisleIndex), prop = input.dataset.aisleProp;
     commit(next => { next.aisles[index][prop] = input.type === 'number' ? Number(input.value) : input.value; });
+  } else if (input.dataset.profileProp) {
+    const sectionId = activeSectionId, tierId = input.dataset.profileTier, prop = input.dataset.profileProp;
+    commit(next => { const item = next.sectionProfiles.find(p => p.sectionId === sectionId && p.tierId === tierId); if (item) item[prop] = Number(input.value); });
+  } else if (input.dataset.portalProp) {
+    const i = Number(input.dataset.portalIndex), prop = input.dataset.portalProp;
+    commit(next => { next.portals[i][prop] = input.type === 'number' ? Number(input.value) : input.value; });
+  } else if (input.dataset.planProp) {
+    const prop = input.dataset.planProp;
+    commit(next => { if (next.plan) next.plan[prop] = input.type === 'checkbox' ? input.checked : Number(input.value); });
+  } else if (input.id === 'planWidth') {
+    commit(next => { next.plan.scale = Number(input.value) / next.plan.viewBox[2]; });
+  } else if (input.id === 'planPathSelect') {
+    selectedPlanPath = Number(input.value);
+    renderTab(); renderOutlineSvg();
   } else if (input.id === 'sectionCountInput') {
     const count = Number(input.value);
     if (count === project.sections.length) return;
     if (confirm('Rebuild the section layout? Custom section names, colors and enabled states will be reset.')) {
-      commit(next => { next.sections = makeSections(count); });
+      commit(next => { next.sections = makeSections(count); next.sectionProfiles = []; });
       activeSectionId = project.sections[0].id;
     } else renderTab();
   }
@@ -308,6 +366,18 @@ byId('tabContent').addEventListener('click', e => {
       next.tiers.splice(index, 1);
       next.aisles = next.aisles.filter(a => a.tier !== removed);
       next.aisles.forEach(a => { if (a.tier !== 'all' && Number(a.tier.slice(1)) > index + 1) a.tier = `T${Number(a.tier.slice(1)) - 1}`; });
+      next.sectionProfiles = next.sectionProfiles.filter(p => p.tierId !== removed);
+      next.sectionProfiles.forEach(p => { if (Number(p.tierId.slice(1)) > index + 1) p.tierId = `T${Number(p.tierId.slice(1)) - 1}`; });
+      next.portals = next.portals.filter(p => p.tierId !== removed);
+      next.portals.forEach(p => { if (Number(p.tierId.slice(1)) > index + 1) p.tierId = `T${Number(p.tierId.slice(1)) - 1}`; });
+    });
+  } else if (target.dataset.toggleProfile) {
+    const tierId = target.dataset.toggleProfile, sectionId = activeSectionId;
+    commit(next => {
+      const i = next.sectionProfiles.findIndex(p => p.sectionId === sectionId && p.tierId === tierId);
+      if (i >= 0) next.sectionProfiles.splice(i, 1);
+      else { const tier = next.tiers.find(t => t.id === tierId);
+        next.sectionProfiles.push({ sectionId, tierId, rows: tier.rows, frontShift: 0, heightShift: 0, depth: tier.depth, rise: tier.rise }); }
     });
   } else if (target.dataset.pickSection) showSection(target.dataset.pickSection);
   else if (target.hasAttribute('data-enable-outline')) {
@@ -338,6 +408,24 @@ byId('tabContent').addEventListener('click', e => {
     });
   } else if (target.hasAttribute('data-remove-aisle')) {
     commit(next => { next.aisles.splice(Number(target.dataset.removeAisle), 1); });
+  } else if (target.hasAttribute('data-add-portal')) {
+    commit(next => {
+      const used = new Set(next.portals.map(p => p.id)); let i = 1; while (used.has(`P${i}`)) i++;
+      next.portals.push({id:`P${i}`, tierId:'T1', angle:45, width:4, firstRow:8, lastRow:12});
+    });
+  } else if (target.hasAttribute('data-remove-portal')) {
+    commit(next => { next.portals.splice(Number(target.dataset.removePortal), 1); });
+  } else if (target.hasAttribute('data-import-plan')) {
+    byId('planUpload').click();
+  } else if (target.hasAttribute('data-remove-plan')) {
+    commit(next => { next.plan = null; }); selectedPlanPath = 0;
+  } else if (target.hasAttribute('data-trace-plan')) {
+    try {
+      const outline = tracePlanOutline(project.plan, selectedPlanPath, SURFACES[project.surface]);
+      const draft = deepCopy(project); draft.outline = outline;
+      validateOutline(outline.points, SURFACES[project.surface]);
+      commit(next => { next.outline = outline; }); show2DEditor(); toast('Closed SVG contour converted to an editable seating outline.');
+    } catch (error) { toast(`Trace failed: ${error.message}`, true); }
   }
 });
 $all('[data-tab]').forEach(button => button.addEventListener('click', () => { activeTab = button.dataset.tab; renderTab(); updateHeader(); }));
@@ -383,7 +471,7 @@ function renderOutlineSvg(projectValue = project) {
   const surface = SURFACES[projectValue.surface];
   const tiers = resolveTiers(projectValue);
   const outer = tiers.at(-1);
-  const margin = outer.startOffset + outer.rows * outer.depth + 15;
+  const margin = outer.startOffset + outer.rows * outer.depth + 60;
   const lim = Math.min(430, Math.max(surface.length / 2, surface.width / 2) + margin + 14);
   svg.setAttribute('viewBox', `${-lim} ${-lim} ${2 * lim} ${2 * lim}`);
   const backSize = lim * 1.8;
@@ -398,9 +486,25 @@ function renderOutlineSvg(projectValue = project) {
   html += reference;
   for (let i = tiers.length - 1; i >= 0; i--) {
     const tier = tiers[i];
-    const outerMargin = tier.startOffset + tier.rows * tier.depth;
-    html += `<path d="${svgPath(projectValue, surface, outerMargin)}" fill="#bfd0d2" fill-opacity=".32" stroke="${['#739e98','#8c9bb1','#caa880','#a4aab8'][i]}" stroke-width=".85"/>`;
-    html += `<path d="${svgPath(projectValue, surface, tier.startOffset)}" fill="none" stroke="#96a5a8" stroke-width=".6" stroke-dasharray="2 2"/>`;
+    for (const section of projectValue.sections) {
+      if (!section.enabled) continue;
+      const g = resolveSectionTier(tier, section.id, projectValue);
+      if (!g.rows) continue;
+      const start = section.start * Math.PI / 180, end = section.end * Math.PI / 180;
+      const segments = Math.max(3, Math.ceil((section.end - section.start) / 2.0));
+      let d = '';
+      for (let j = 0; j <= segments; j++) {
+        const angle = start + (end - start) * j / segments;
+        const pos = modelPerimeterPoint(projectValue, surface, angle, g.startOffset + g.rows * g.depth);
+        d += `${j ? 'L' : 'M'}${pos.x.toFixed(2)},${pos.z.toFixed(2)} `;
+      }
+      for (let j = segments; j >= 0; j--) {
+        const angle = start + (end - start) * j / segments;
+        const pos = modelPerimeterPoint(projectValue, surface, angle, g.startOffset);
+        d += `L${pos.x.toFixed(2)},${pos.z.toFixed(2)} `;
+      }
+      html += `<path d="${d}Z" fill="${['#d4e0dc','#dce3ed','#f1e8d6','#e2dce7'][i]}" fill-opacity=".76" stroke="${['#739e98','#8c9bb1','#caa880','#a4aab8'][i]}" stroke-width=".65"/>`;
+    }
   }
   html += `<path d="${basePath}" fill="#e7eceb" stroke="#628980" stroke-width=".7"/>${field}`;
   // Aisle directions are drawn as translucent corridors, matching the seating cutouts.
@@ -412,6 +516,27 @@ function renderOutlineSvg(projectValue = project) {
       const far = modelPerimeterPoint(projectValue, surface, angle, tier.startOffset + tier.rows * tier.depth);
       html += `<line x1="${near.x}" y1="${near.z}" x2="${far.x}" y2="${far.z}" stroke="#eab766" stroke-width="${aisle.width}" stroke-opacity=".65" stroke-linecap="butt"/>`;
     }
+  }
+  // Vector plans are converted to geometry, never inserted as active SVG markup.
+  if (projectValue.plan?.visible) {
+    const plan = projectValue.plan;
+    plan.paths.forEach((path, i) => {
+      const points = path.points.map(p => planPoint(plan, p));
+      if (!points.length) return;
+      const selected = i === selectedPlanPath;
+      const d = points.map((p, j) => `${j ? 'L' : 'M'}${p.x.toFixed(2)},${p.z.toFixed(2)}`).join(' ') + (path.closed ? ' Z' : '');
+      html += `<path d="${d}" fill="none" stroke="${selected ? '#1e70ab' : '#617c9a'}" stroke-opacity="${selected ? '.95' : '.48'}" stroke-width="${selected ? '1.2' : '.45'}" stroke-dasharray="${selected ? 'none' : '1.4 1.4'}" pointer-events="none"/>`;
+    });
+  }
+  for (const portal of projectValue.portals || []) {
+    const tier = tiers.find(t => t.id === portal.tierId);
+    if (!tier) continue;
+    const at = portal.angle * Math.PI / 180;
+    const section = projectValue.sections.find(s => s.enabled && portal.angle >= s.start && portal.angle < s.end);
+    const g = section ? resolveSectionTier(tier, section.id, projectValue) : tier;
+    const front = modelPerimeterPoint(projectValue, surface, at, g.startOffset + (portal.firstRow - 1) * g.depth);
+    const back = modelPerimeterPoint(projectValue, surface, at, g.startOffset + Math.min(g.rows, portal.lastRow) * g.depth);
+    html += `<line x1="${front.x}" y1="${front.z}" x2="${back.x}" y2="${back.z}" stroke="#b96e32" stroke-width="${portal.width}" stroke-opacity=".75"/>`;
   }
   if (projectValue.outline.mode === 'custom') {
     const size = Math.max(2.1, lim * .017);
@@ -481,6 +606,22 @@ svg.addEventListener('dblclick', event => {
 });
 byId('showOutlineTab').addEventListener('click', () => { activeTab = 'outline'; renderTab(); updateHeader(); });
 byId('showAislesTab').addEventListener('click', () => { activeTab = 'aisles'; renderTab(); updateHeader(); });
+byId('showPlanTab').addEventListener('click', () => { activeTab = 'plan'; renderTab(); updateHeader(); });
+byId('planUpload').addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    if (file.size > 1_500_000 || !file.name.toLowerCase().endsWith('.svg')) throw new Error('Choose an SVG document below 1.5 MB.');
+    const plan = parseSvgPlan(await file.text());
+    plan.name = file.name.slice(0,80);
+    const surface = SURFACES[project.surface];
+    plan.scale = Number(((Math.max(surface.length, surface.width) + 70) / Math.max(plan.viewBox[2], plan.viewBox[3])).toFixed(5));
+    commit(next => { next.plan = plan; });
+    activeTab = 'plan'; selectedPlanPath = 0; renderTab(); show2DEditor();
+    toast(`${plan.paths.length} SVG paths imported. Calibrate drawing width before tracing.`);
+  } catch (error) { toast(`SVG import failed: ${error.message}`, true); }
+  e.target.value = '';
+});
 byId('referenceUpload').addEventListener('change', e => {
   const file = e.target.files?.[0];
   if (!file) return;

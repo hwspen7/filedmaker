@@ -4,11 +4,32 @@ A browser-based **parametric 3D stadium and arena modeling studio** for the Unit
 
 ![CI](https://github.com/hwspen7/filedmaker/actions/workflows/quality.yml/badge.svg)
 
-## Interface design (v2.1)
+## Version 3.0 — vector blueprint and independent seating profiles
 
-The editor now uses a **light, neutral workspace** inspired by the understated layout of ChatGPT on the web, while retaining FiledMaker's own name and visual identity. The sidebar uses warm off-white surfaces, the modeling canvas and 2D outline grid are light, the inspector uses white cards, and high-priority export actions are near-black. All editing tools, model schema v2 and local project data are unchanged. No external font download or framework is needed for the interface.
+FiledMaker keeps the **light, neutral workspace** introduced in v2.1. The stadium engineering tools now support a schematic workflow based on imported SVG vector floor plans, individual section-tier geometry, and row-limited entrance openings.
 
-Use `Ctrl+Shift+R` if an older stylesheet remains in the browser cache after pulling the update.
+### From an SVG seating plan to an editable stadium
+
+1. Click **2D editor** and open the **SVG plan** tab.
+2. Import a local `.svg` blueprint (up to 1.5 MB). The importer recognizes line, rectangle, ellipse, circle, polygon and SVG paths, including curves and arcs. Vector data is parsed into inert coordinate arrays. Scripts, external references and embedded markup are **not executed**.
+3. Use **Drawing width represented (m)** to calibrate the original SVG `viewBox` to real-world meters. Adjust X/Z offsets and rotation until the drawing aligns with the playing surface. The model uses X across the field and Z along the field.
+4. Choose a **closed vector path** enclosing the playing surface, and click **Trace selected closed contour**. FiledMaker samples it radially into 32 editable control points. Non-star-shaped or pitch-intersecting outlines may be rejected because the current stadium model uses a star-shaped inner boundary.
+5. Refine the resulting outline in the **2D editor**, then switch back to the 3D view to inspect seats and terraces.
+6. In **Sections**, select any section, then click **Customize** for the desired tier to independently set row count, front setback, elevation shift, row rise and row depth.
+7. In **Aisles**, add an **entrance opening** specifying tier, orientation, width and a limited row range. It removes seat positions and matching 3D terrace strips only in those rows.
+8. Save a project JSON (schema v3), export seat coordinates, or export the GLB scene (Three.js must load for GLB).
+
+**Practice file:** [`examples/football-bowl.svg`](examples/football-bowl.svg) contains a fictional stadium outline and football field for learning the tracing workflow. It is illustrative, not surveyed geometry.
+
+### Scope and limitations
+
+- **Native DWG, DXF, BIM, IFC and PDF CAD imports are not supported.** Convert a plan to a clean SVG first, preserving its `viewBox` and geometry. Some advanced SVG filters, embedded images, text outlines, and unsupported `<use>` references are intentionally skipped.
+- The importer stores simplified vector coordinates in project JSON, not original SVG markup. Projects are compatible with older schema v1 and v2 files; a version 3 export should be backed up before editing in older software.
+- The 3D seating bowl still requires a *radially ordered* star-shaped inner boundary. Per-section front/height/row overrides allow varied footprints but are not arbitrary standalone 3D polygon meshes, complete architectural walls, doors, or structural beams.
+- No automatic scale inference or survey verification is performed. Users **must calibrate** drawings against known measurements. The generated capacity is indicative and not an officially certified seat count.
+- Browser WebGL / full GLB export still depends on the externally loaded Three.js modules. SVG and 2D editing are independent of WebGL.
+
+Use `Ctrl+Shift+R` if an older stylesheet remains in the browser cache after pulling an update.
 
 ## What you can build
 
@@ -16,11 +37,14 @@ Use `Ctrl+Shift+R` if an older stylesheet remains in the browser cache after pul
 - **Soccer:** 105 × 68 m football pitches with field lines and simplified goals.
 - **Basketball:** NBA and NCAA court presets with hoops, markings and an indoor-style seating bowl.
 - **Bowl editor:** adjust overall contour, seat pitch, section-boundary aisle gaps and a schematic canopy.
-- **2D outline editor (v2):** convert any regular bowl into a custom star-shaped perimeter with 8–64 editable handles. Drag handles, click to select, double-click near the boundary to insert, or edit exact X/Z coordinates. Invalid or self-intersecting profiles are rejected.
-- **Reference image tracing (v2):** temporarily overlay a local PNG/JPEG/WebP seating plan with adjustable opacity. The image stays on your computer and is not embedded in exported projects.
-- **Independent radial aisles (v2):** create up to 32 aisle cutouts with width and angular location, either across all levels or confined to a chosen tier. Both seat positions and concrete terrace strips reflect these gaps.
+- **2D outline editor (v3):** convert any regular bowl into a custom star-shaped perimeter with 8–64 editable handles. Drag handles, click to select, double-click near the boundary to insert, or edit exact X/Z coordinates. Invalid or self-intersecting profiles are rejected.
+- **Reference image tracing:** temporarily overlay a local PNG/JPEG/WebP seating plan with adjustable opacity. The image stays on your computer and is not embedded in exported projects.
+- **Independent radial aisles:** create up to 32 aisle cutouts with width and angular location, either across all levels or confined to a chosen tier. Both seat positions and concrete terrace strips reflect these gaps.
 - **Tier editor:** add or remove tiers (up to four), tune row counts, depth, rise, front offset, elevation and inter-tier gaps.
 - **Section editor:** choose up to 36 radial sections, edit each one's angle interval and label, enable/disable its seating, change its color.
+- **Blueprint import (v3):** import and calibrate vector SVG paths; trace a closed perimeter into the 2D editor.
+- **Independent sector/tier profiles (v3):** override row count, setback, elevation, row rise and row depth for one section on one level.
+- **Entrances / vomitories (v3):** remove seats and terraces for a defined range of rows without cutting out entire stands.
 - **Live 3D:** orbit, zoom, plan view, per-seat view, ray-pick seats and click terrace sections.
 - **Exports:** editable `.filedmaker.json`, per-seat coordinates `.csv`, full `.glb` geometry and `.png` viewport screenshots.
 - **Project management:** automatic browser-local recovery, named local snapshots, undo/redo and JSON import.

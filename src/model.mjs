@@ -1,6 +1,6 @@
 // Deterministic parametric geometry and project validation. No DOM or 3D dependencies.
 export const TAU = Math.PI * 2;
-export const CURRENT_SCHEMA = 2;
+export const CURRENT_SCHEMA = 3;
 
 export const SURFACES = Object.freeze({
   nfl: { sport: 'football', label: 'NFL football', width: 48.768, length: 109.728, endZone: 9.144 },
@@ -42,6 +42,9 @@ export function createProject(preset = 'nfl') {
     roof: arena,
     outline: { mode: 'parametric', points: [] },
     aisles: [],
+    portals: [],
+    sectionProfiles: [],
+    plan: null,
     sections: makeSections(arena ? 16 : 20),
     tiers: arena ? [
       { id: 'T1', label: 'Lower bowl', rows: 18, depth: 0.83, rise: 0.32, offset: 4.2, height: 1.1, gap: 2.8, heightGap: 2.5 },
@@ -56,7 +59,7 @@ export function createProject(preset = 'nfl') {
 
 export function validateProject(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected a project object.');
-  if (![1, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1 or ${CURRENT_SCHEMA}.`);
+  if (![1, 2, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1, 2 or ${CURRENT_SCHEMA}.`);
   if (!(input.surface in SURFACES)) throw new Error('Unsupported playing surface.');
   if (!Array.isArray(input.tiers) || input.tiers.length < 1 || input.tiers.length > 4) throw new Error('Use between 1 and 4 seating tiers.');
   if (!Array.isArray(input.sections) || input.sections.length < 4 || input.sections.length > 36) throw new Error('Use between 4 and 36 sections.');
@@ -121,6 +124,65 @@ export function validateProject(input) {
     section.enabled = Boolean(section.enabled);
     section.color = /^#[0-9a-fA-F]{6}$/.test(section.color) ? section.color : sectionColor(index);
   });
+  // Section profiles can independently adjust the seating footprint of a tier.
+  if (project.sectionProfiles === undefined) project.sectionProfiles = [];
+  if (!Array.isArray(project.sectionProfiles) || project.sectionProfiles.length > 144) throw new Error('Use at most 144 section/tier profiles.');
+  const profileKeys = new Set();
+  project.sectionProfiles.forEach(profile => {
+    if (!profile || !project.sections.some(section => section.id === profile.sectionId) || !project.tiers.some(tier => tier.id === profile.tierId)) throw new Error('Section profile references a missing section or tier.');
+    const key = JSON.stringify([profile.sectionId, profile.tierId]);
+    if (profileKeys.has(key)) throw new Error('Duplicate section/tier profile.');
+    profileKeys.add(key);
+    const finite = (value, label, low, high, integer = false) => {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < low || number > high || (integer && !Number.isInteger(number))) throw new Error(`${label} must be between ${low} and ${high}.`);
+      return number;
+    };
+    profile.rows = finite(profile.rows, 'Section rows', 0, 75, true);
+    profile.frontShift = finite(profile.frontShift, 'Section front shift', -4, 40);
+    profile.heightShift = finite(profile.heightShift, 'Section height shift', -8, 30);
+    profile.rise = finite(profile.rise, 'Section row rise', 0.12, 0.75);
+    profile.depth = finite(profile.depth, 'Section row depth', 0.65, 1.8);
+    const base = resolveTiers(project).find(t => t.id === profile.tierId);
+    if (base.startOffset + profile.frontShift < 0.5) throw new Error('Section front shift intersects the playing surface.');
+    if (base.startHeight + profile.heightShift < 0.15) throw new Error('Section elevation must remain above the playing surface.');
+  });
+  if (project.portals === undefined) project.portals = [];
+  if (!Array.isArray(project.portals) || project.portals.length > 40) throw new Error('Use at most 40 entrance openings.');
+  const portalIds = new Set();
+  project.portals.forEach((portal, index) => {
+    if (!portal || typeof portal !== 'object') throw new Error('Invalid entrance opening.');
+    portal.id = String(portal.id || `P${index + 1}`).slice(0, 30);
+    if (portalIds.has(portal.id)) throw new Error('Duplicate entrance opening ID.');
+    portalIds.add(portal.id);
+    if (!project.tiers.some(tier => tier.id === portal.tierId)) throw new Error('Entrance opening references a missing tier.');
+    for (const name of ['angle', 'width', 'firstRow', 'lastRow']) portal[name] = Number(portal[name]);
+    if (!Number.isFinite(portal.angle) || portal.angle < 0 || portal.angle >= 360) throw new Error('Entrance opening angle must be 0–359.99 degrees.');
+    if (!Number.isFinite(portal.width) || portal.width < 0.8 || portal.width > 18) throw new Error('Entrance opening width must be 0.8–18 m.');
+    if (!Number.isInteger(portal.firstRow) || !Number.isInteger(portal.lastRow) || portal.firstRow < 1 || portal.lastRow < portal.firstRow || portal.lastRow > 75) throw new Error('Entrance row range is invalid.');
+  });
+  if (project.plan === undefined) project.plan = null;
+  if (project.plan !== null) {
+    const plan = project.plan;
+    if (!plan || !Array.isArray(plan.paths) || plan.paths.length < 1 || plan.paths.length > 160) throw new Error('Imported plan contains an invalid number of paths.');
+    const check = (value, min, max, label) => { if (!Number.isFinite(value) || value < min || value > max) throw new Error(`Invalid SVG ${label}.`); };
+    check(plan.scale, 0.001, 100, 'scale');
+    check(plan.rotation, -360, 360, 'rotation');
+    check(plan.offsetX, -2000, 2000, 'X offset');
+    check(plan.offsetZ, -2000, 2000, 'Z offset');
+    if (!Array.isArray(plan.viewBox) || plan.viewBox.length !== 4 || plan.viewBox.some(v => !Number.isFinite(v))) throw new Error('Invalid SVG viewBox.');
+    plan.name = String(plan.name || 'Imported SVG').slice(0, 80);
+    plan.visible = Boolean(plan.visible);
+    let totalPoints = 0;
+    for (const path of plan.paths) {
+      if (!path || !Array.isArray(path.points) || path.points.length < 2) throw new Error('Invalid SVG path geometry.');
+      path.name = String(path.name || 'Path').slice(0, 80);
+      path.closed = Boolean(path.closed);
+      totalPoints += path.points.length;
+      if (totalPoints > 25000) throw new Error('SVG plan exceeds the 25,000 point limit.');
+      for (const point of path.points) if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z) || Math.abs(point.x) > 100000 || Math.abs(point.z) > 100000) throw new Error('SVG plan contains an invalid coordinate.');
+    }
+  }
   return project;
 }
 
@@ -136,6 +198,14 @@ export function resolveTiers(project) {
     nextHeight = startHeight + tier.rows * tier.rise + tier.heightGap;
   });
   return result;
+}
+
+export function resolveSectionTier(tier, sectionId, project) {
+  const override = (project.sectionProfiles || []).find(p => p.tierId === tier.id && p.sectionId === sectionId);
+  if (!override) return tier;
+  return { ...tier, rows: override.rows, depth: override.depth, rise: override.rise,
+    startOffset: tier.startOffset + override.frontShift,
+    startHeight: tier.startHeight + override.heightShift };
 }
 
 export function perimeterPoint(angle, halfWidth, halfLength, exponent) {
@@ -235,7 +305,7 @@ export function modelPerimeterPath(project, surface, margin = 0, resolution = 51
 
 // Split a section's seat row at aisle strips, including wraparound at 0°.
 // The same intervals drive visible terrace geometry and generated seat positions.
-export function seatingIntervals(path, section, project, tierId = 'T1') {
+export function seatingIntervals(path, section, project, tierId = 'T1', row = null) {
   const start = distanceAtAngle(path, section.start * Math.PI / 180) + project.aisleWidth / 2;
   const end = distanceAtAngle(path, section.end * Math.PI / 180) - project.aisleWidth / 2;
   if (end <= start) return [];
@@ -255,6 +325,22 @@ export function seatingIntervals(path, section, project, tierId = 'T1') {
         }
       }
       segments = next;
+    }
+  }
+  // Vomitories / entrance portals only remove seats within the specified row band.
+  if (row !== null) {
+    for (const portal of project.portals || []) {
+      if (portal.tierId !== tierId || row < portal.firstRow || row > portal.lastRow) continue;
+      const at = distanceAtAngle(path, portal.angle * Math.PI / 180);
+      for (const shift of [-path.length, 0, path.length]) {
+        const low = at + shift - portal.width / 2, high = at + shift + portal.width / 2;
+        const next = [];
+        for (const [s, e] of segments) {
+          if (high <= s || low >= e) next.push([s, e]);
+          else { if (low > s) next.push([s, low]); if (high < e) next.push([high, e]); }
+        }
+        segments = next;
+      }
     }
   }
   return segments.filter(([s, e]) => e > s + 1e-5);
@@ -290,32 +376,33 @@ export function generateSeats(input) {
   const tiers = resolveTiers(project);
   const seats = [], groups = [];
   for (const tier of tiers) {
-    for (let row = 0; row < tier.rows; row++) {
-      const margin = tier.startOffset + (row + 0.5) * tier.depth;
-      const path = modelPerimeterPath(project, surface, margin);
-      const y = tier.startHeight + row * tier.rise + 0.08;
-      for (let sectionIndex = 0; sectionIndex < project.sections.length; sectionIndex++) {
-        const section = project.sections[sectionIndex];
-        if (!section.enabled) continue;
-        const intervals = seatingIntervals(path, section, project, tier.id);
+    for (let sectionIndex = 0; sectionIndex < project.sections.length; sectionIndex++) {
+      const section = project.sections[sectionIndex];
+      if (!section.enabled) continue;
+      const geometry = resolveSectionTier(tier, section.id, project);
+      if (geometry.rows === 0) continue;
+      for (let row = 0; row < geometry.rows; row++) {
+        const margin = geometry.startOffset + (row + 0.5) * geometry.depth;
+        const path = modelPerimeterPath(project, surface, margin);
+        const y = geometry.startHeight + row * geometry.rise + 0.08;
+        const intervals = seatingIntervals(path, section, project, tier.id, row + 1);
         let seatNumber = 0;
         for (const [start, end] of intervals) {
           const span = end - start;
           const count = Math.floor(span / project.seatPitch);
           if (count < 1) continue;
-          const from = seats.length;
-          const step = span / count;
+          const from = seats.length, step = span / count;
           for (let i = 0; i < count; i++) {
             const position = pointAtDistance(path, start + (i + 0.5) * step);
             const number = ++seatNumber;
-          seats.push({
-            x: position.x, y, z: position.z,
-            yaw: Math.atan2(-position.x, -position.z),
-            tier: tier.index, sectionId: section.id, sectionIndex,
-            row: row + 1, number,
-            uid: `${tier.id}-${section.id}-${row + 1}-${number}`,
-          });
-        }
+            seats.push({
+              x: position.x, y, z: position.z,
+              yaw: Math.atan2(-position.x, -position.z),
+              tier: tier.index, sectionId: section.id, sectionIndex,
+              row: row + 1, number,
+              uid: `${tier.id}-${section.id}-${row + 1}-${number}`,
+            });
+          }
           groups.push({ tier: tier.index, sectionIndex, row: row + 1, from, count });
         }
       }

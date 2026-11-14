@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals } from './model.mjs';
+import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveSectionTier } from './model.mjs';
 
 const white = 0xf2f6ef;
 const mat = (color, roughness = 0.85) => new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.06 });
@@ -124,11 +124,12 @@ function basketball(group, surface) {
 function makeTerrace(section, surface, tier, project) {
   const vertices = [], colors = [], indices = [];
   const base = new THREE.Color(section.color);
-  for (let row = 0; row < tier.rows; row++) {
-    const radial = tier.startOffset + row * tier.depth;
-    const y = tier.startHeight + row * tier.rise - 0.15;
-    const path = modelPerimeterPath(project, surface, radial + tier.depth * 0.5);
-    const strips = seatingIntervals(path, section, project, tier.id);
+  const profile = resolveSectionTier(tier, section.id, project);
+  for (let row = 0; row < profile.rows; row++) {
+    const radial = profile.startOffset + row * profile.depth;
+    const y = profile.startHeight + row * profile.rise - 0.15;
+    const path = modelPerimeterPath(project, surface, radial + profile.depth * 0.5);
+    const strips = seatingIntervals(path, section, project, tier.id, row + 1);
     for (const [start, end] of strips) {
       const startAngle = pointAtDistance(path, start).angle;
       const endAngle = pointAtDistance(path, end).angle;
@@ -138,8 +139,8 @@ function makeTerrace(section, surface, tier, project) {
       for (let i = 0; i <= spans; i++) {
         const angle = startAngle + (endAngle - startAngle) * i / spans;
         const near = modelPerimeterPoint(project, surface, angle, radial);
-        const far = modelPerimeterPoint(project, surface, angle, radial + tier.depth);
-        vertices.push(near.x, y, near.z, far.x, y + tier.rise, far.z);
+        const far = modelPerimeterPoint(project, surface, angle, radial + profile.depth);
+        vertices.push(near.x, y, near.z, far.x, y + profile.rise, far.z);
         for (let j = 0; j < 2; j++) colors.push(shade.r, shade.g, shade.b);
         if (i < spans) {
           const k = offset + i * 2;
@@ -159,13 +160,21 @@ function makeTerrace(section, surface, tier, project) {
 }
 
 function addConcourse(group, surface, project, tier) {
-  const segments = 192, pts = [];
-  const radial = tier.startOffset + tier.rows * tier.depth;
-  for (let i = 0; i <= segments; i++) {
-    const p = modelPerimeterPoint(project, surface, TAU * i / segments, radial);
-    pts.push(p.x, tier.startHeight + tier.rows * tier.rise, p.z);
+  // A section's concourse follows its independently edited terrace footprint.
+  for (const section of project.sections) {
+    if (!section.enabled) continue;
+    const geometry = resolveSectionTier(tier, section.id, project);
+    if (geometry.rows === 0) continue;
+    const radial = geometry.startOffset + geometry.rows * geometry.depth;
+    const y = geometry.startHeight + geometry.rows * geometry.rise;
+    const segments = Math.max(3, Math.ceil((section.end - section.start) * 0.4)), pts = [];
+    for (let i = 0; i <= segments; i++) {
+      const a = (section.start + (section.end - section.start) * i / segments) * Math.PI / 180;
+      const p = modelPerimeterPoint(project, surface, a, radial);
+      pts.push(p.x, y, p.z);
+    }
+    group.add(new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)), new THREE.LineBasicMaterial({ color: 0x849c98, transparent: true, opacity: 0.52 })));
   }
-  group.add(new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)), new THREE.LineBasicMaterial({ color: 0xc4e0df, transparent: true, opacity: 0.48 })));
 }
 
 function createSeatMesh(seats, project) {
