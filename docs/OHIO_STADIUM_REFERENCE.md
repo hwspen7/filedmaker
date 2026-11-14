@@ -1,43 +1,65 @@
-# Ohio Stadium — real venue architectural reference
+# Ohio Stadium — architectural reference model
 
-**Accuracy status: documented venue facts + illustrated architectural reconstruction.** This is not a licensed scan, authoritative CAD/BIM dataset or official seat chart.
+**Model classification:** Reference reconstruction, **NOT a surveyed seat-by-seat digital twin**.
 
-## Published data (Ohio State Athletics)
+This is the first named real sports venue in FiledMaker. It is grounded in public architectural facts and Ohio State's own stadium descriptions and seating maps. A named real venue does **not** make every point in its generated geometry a measured coordinate.
 
-- Ohio Stadium, Columbus, Ohio, opened in 1922. Its distinctive horseshoe design is historic.
-- Overall length: 919 ft (280.1112 m). Width: 679 ft (206.9592 m).
-- Stadium height: 136 ft (41.4528 m). Roof of press box above field: 183 ft (55.7784 m).
-- Video board published dimensions: 125 ft by 42 ft (38.1 × 12.8016 m).
-- Ohio State's stadium page gives a present seating capacity of 102,041; this figure is **not** the model's procedurally generated seat count.
-- The 1999–2001 renovation lowered the field and made the former temporary South Stands permanent.
-- The seating maps depict separate AA/A/B/C/D seating tiers and extensive west-side premium/press facilities.
-- The 2022 field design includes scarlet end zones and a block-O at midfield.
+## Documented physical and historical facts
 
-## Model geometry that is NOT surveyed
+| Feature | Ohio State published value / description | Status |
+|---|---|---|
+| Location | Columbus, Ohio, United States | Official |
+| Historic structure | 1922, distinct horseshoe configuration | Official |
+| 1999–2001 renovation | Lowered playing field, new seating and permanent south-end stands | University Archives |
+| Outer venue length | 919 ft = 280.1112 m | Official facts |
+| Outer venue width | 679 ft = 206.9592 m | Official facts |
+| Stadium height | 136 ft = 41.4528 m | Official facts |
+| Press-box roof height | 183 ft = 55.7784 m above field | Official facts |
+| Published capacity | 102,041 | Official stadium fact-page figure, date-dependent |
+| 2012 main video board | 125 ft × 42 ft = 38.1 m × 12.8016 m | Official facts |
+| Seating / premium functions | AA, A, B, C, D decks, west press/suite/club areas | Ohio State services map / seating chart |
+| Field visual design | Scarlet end zones, block-O midfield, Ohio State and Buckeyes names, gray outer strokes | Official 2022 field design notice |
 
-- Inner bowl plan, 48 control-point positions, tier radii, row count, risers and aisle angles.
-- Precise north rotunda arch widths, masonry bays, tower locations, facade and windows.
-- West press/suite box footprint and individual level elevations.
-- Video board location and structural supports (the display dimensions, not its placement, are sourced).
-- Ticket section boundaries, ADA access positions and individual seat center XYZ coordinates.
-- Railings, stairs and entrances, which are visual reference shapes, not surveyed obstructions.
+**Sources**
 
-**Do not publish seat-specific recommendations from this reference alone.** Use the existing CSV seat survey, landmark registration, barrier modeling and photo viewpoint calibration tools to add independently verified venue data. Reference model seats use synthetic section IDs and cannot be passed off as official ticket locations.
+- [Ohio State Athletics — Ohio Stadium facts](https://ohiostatebuckeyes.com/sports/2023/6/2/ohio-stadium)
+- [Ohio State Athletics — Stadium seating maps](https://ohiostatebuckeyes.com/sports/2022/8/17/maps)
+- [Ohio State University Libraries — Renovations](https://library.osu.edu/a-walk-in-our-shoe/renovations)
+- [Ohio State Athletics — FieldTurf design announcement](https://ohiostatebuckeyes.com/news/2022/2/7/new-ohio-stadium-field-turf-design-announced)
+- [Ohio State University Historic Buildings records](https://library.osu.edu/documents/university-archives/subject_files/Buildings-%20OSU%20Historic.pdf)
+- [Structural/precast renovation case study](https://www.pci.org/PCI_Docs/Publications/PCI%20Journal/2003/Jan-Feb/Architectural%20and%20Structural%20Precast%20Prestressed%20Concrete%20Renovates%20Landmark%20Ohio%20Stadium.pdf)
 
-## Validation workflow
+## Reconstructed geometry in FiledMaker v6
 
-1. Obtain authorized current architectural and seating documents with correct usage rights.
-2. Register the field corners, north rotunda and boundary landmarks.
-3. Trace accurate separate South Stands and AA/A/B/C/D deck footprints.
-4. Tie floor heights and rows to measured elevations.
-5. Import seat coordinates and permanent obstruction locations.
-6. Fit and cross-validate independent photographs, then review view-quality error statistics.
-7. Version the model by season, event layout and source provenance.
+- **Footprint:** an editable 48-handle curved and straight-sided approximate bowl profile; its control points are *not* an architectural floor plan.
+- **South end:** a separate lower-tier arrangement, with the uppermost horseshoe tier omitted at the south end, reflecting the distinction between the historic horseshoe and permanent South Stands.
+- **Bowl verticality:** four editable tier interpretations labeled AA, A, B/club, and C. Deck names are supported by official maps, but their numbers of rows, front offsets, tread depths, heights and individual section boundaries are estimates.
+- **Exterior:** repeated concrete arcade bays, simplified north rotunda arches and south terminal towers; the pattern, sizes and positions of individual bays are visual interpretations.
+- **West press/suites:** stacked glazed premium structures with a roof height referenced to the published official dimension. Floor heights and glazing modules are illustrative.
+- **Southern display:** a video board frame with official published *screen* dimensions, but its absolute position and mounting structure are approximate.
+- **Sports interior:** scarlet end zones, simple synthetic text field markings, numbered yard lines, hashmarks, pylons, sideline benches, equipment and goalposts. No official crest or licensed broadcast art is embedded.
+- **Seating:** approximately 60,000 **procedurally generated** reference positions. This number is model output, **NOT** Ohio Stadium's actual capacity, seat numbering, official sections or a survey.
 
-## References
+## What has not been validated
 
-- [Ohio State Athletics: stadium facts](https://ohiostatebuckeyes.com/sports/2023/6/2/ohio-stadium)
-- [Ohio State Athletics: seating maps](https://ohiostatebuckeyes.com/sports/2022/8/17/maps)
-- [Ohio State University Libraries: renovation history](https://library.osu.edu/a-walk-in-our-shoe/renovations)
-- [Ohio State Athletics: 2022 field design](https://ohiostatebuckeyes.com/news/2022/2/7/new-ohio-stadium-field-turf-design-announced)
-- [OSU historic buildings](https://library.osu.edu/documents/university-archives/subject_files/Buildings-%20OSU%20Historic.pdf)
+- Individual ticketed section boundaries and true section numbers in 3D.
+- Seat-center positions, bleacher dimensions, row rise, stairway geometry, or ADA seat positions.
+- Exact location and height of railings, entrances, suites, video board supports, walls and roof structures.
+- Observer eye height relative to each individual seat's measured coordinate.
+- LIDAR/photogrammetry, aerial orthorectification or on-site view matching.
+
+Because the current spatial features are interpretive, the line-of-sight analyzer must not be used to claim real ticket-view quality. Import independently surveyed seat coordinates and obstructions, then calibrate against photographs and an authoritative floor plan, before publishing seat-level visibility.
+
+## Validation roadmap
+
+1. Obtain licensed architectural CAD/BIM plans or a georeferenced floor plan with usage rights.
+2. Register the plan against known control points around the field and north rotunda.
+3. Digitize **actual** separate AA/A/B/C/D/club/press box footprints and tie tier-specific heights to verified elevations.
+4. Import authoritative seat centers, row labels, section IDs and staircase/portal polygons.
+5. Align an independently captured photo set using FiledMaker's landmark camera fitter. Record pixel RMS error and source for each comparison.
+6. Manually survey critical barriers and sightline occluders, including rail top elevations.
+7. Publish only validated seats and version the reference by season, event configuration and source license.
+
+## Model data
+
+`examples/ohio-stadium-reference.json` is an editable project. It is distinct from `examples/fictional-survey-seats.csv`, which remains an intentionally fictional test fixture and is never applied to this real venue template.

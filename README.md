@@ -4,6 +4,45 @@ A browser-based **parametric 3D stadium and arena modeling studio** for the Unit
 
 ![CI](https://github.com/hwspen7/filedmaker/actions/workflows/quality.yml/badge.svg)
 
+## Version 6.1 — Stadium Detail Kit and sports-specific refinement
+
+The v6.1 editor improves the **illustrative** Ohio Stadium reference and the reusable
+football/soccer/basketball stadium generators without changing any published Ohio
+Stadium measurements or claiming surveyed seat coordinates.
+
+- **Open vomitory geometry.** Entrance voids are cut out of seating and terrace strips;
+  only jambs, a shallow lintel and a tread-level threshold are rendered. Entrances
+  are automatically skipped when their tier/section has no seats.
+- **Seat construction.** Thin seat pans, a front lip, optional tilted backs, slim support
+  legs and armrests replace bulky block seating. For the Ohio reference, upper tiers
+  use *illustrative* simplified bleachers; their exact real-world seating type,
+  numbering and distribution are still unknown. Seats remain GPU-instanced and
+  retain the original per-seat picking IDs.
+- **Guardrail alignment.** Instanced posts and two continuous handrail bars are
+  clipped to the actual seat-bearing row intervals; aisle gaps are respected by
+  rails and parapet walls instead of being closed by uninterrupted walls.
+- **Event-day field details.** Football team benches, small rolling carts, pylons,
+  chain markers and a broadcast platform; soccer dugouts and corner flags;
+  basketball scorer table, team benches and a suspended display are produced by
+  sport-specific asset plans. These furnishings are schematic, not measured.
+- **Scoreboard alignment.** Display and frame share the same local coordinate
+  system, preventing a rotated display from separating from its frame.
+- **Reusable plans and tests.** All asset locations, entrance bounds and guardrail
+  segments are computed in `src/detailKit.mjs` without Three.js. They can be
+  tested and reused as we add more real venues.
+
+**Quality check:** `npm run verify` includes the new Detail Kit checks. The scene
+still downloads Three.js at runtime. A passing Node test suite does **not** prove
+full WebGL rendering or GLB export works on every Windows browser/GPU. Test the
+`High` detail setting and GLB export locally before publishing a stadium.
+
+**Important:** the stadium exterior, portals, seat styles, aisles and guardrails
+remain interpretations unless supplied with properly licensed architectural
+plans or survey measurements. Never describe the Ohio reference as a seat-accurate
+digital twin.
+
+[Detail Kit design and verification](docs/STADIUM_DETAIL_KIT.md)
+
 ## Version 5.0 — Real Venue Calibration Pipeline
 
 FiledMaker v5 joins the existing **ChatGPT-inspired light editor**, custom stadium outlines, human-eye seat views, and SVG tracing with a verifiable local workflow for real-world seating data. It is designed for **football, basketball and soccer venues in the United States and Canada**.
@@ -219,15 +258,19 @@ The public pages of `shijiao.xingpaste.com` document 2D/3D venue views, area and
 
 All existing demo seats, sections, spectator figures and generated architectural details are **illustrative**. Accurate real-world obstructed-view predictions require surveyed seating and railing positions, field geometry, actual patrons and verified photograph calibration. GLB includes generated architectural geometry, but temporary crowd proxies and editing markers are editor-only and excluded from export. High-quality 3D previews require Three.js CDN access and a browser that supports WebGL.
 
-## v6.0: Sports architecture and Ohio Stadium
+## v6.0 — Real sports architecture and Ohio Stadium reference
 
-Open **Ohio Stadium · real reference** from the sidebar or **Build Ohio Stadium reference** in Bowl properties. This uses **published architectural facts** and creates an editable *approximate* horseshoe with permanent southern lower stands, north rotunda, west press/suite structures and an officially sized scoreboard frame. The section geometry, seat numbering and height profiles are reconstructed, **not a surveyed digital twin**. The generated seat count is NOT the official capacity.
+Choose **Ohio Stadium · real reference** in the left sidebar, or **Build Ohio Stadium reference** in Bowl properties. This loads the named, editable stadium **architectural reconstruction**, not an official seat survey. The old NFL, CFL, soccer, NBA and NCAA project generators remain available.
 
-New **Draft / Standard / High** scene detail modes preserve faster editing and provide progressively richer bleacher geometry, stepped risers, staircase treads, portal frames, front rails, exterior arcade bays and ribbon board strips. Field fixtures now include football pylons, one-yard hashes and sideline benches; soccer corner flags and technical areas; basketball scorer's table, benches and a suspended scoreboard. **Facades** and **sports fixtures** can be disabled independently.
+New scene detail options:
 
-**Documented Ohio Stadium data:** Ohio State's official page reports 919 × 679 ft overall, 136 ft stadium height, 183 ft press-box roof height, 125 × 42 ft video board, and 102,041 seats (published figure, subject to future changes). The 2001 renovation permanently enclosed the South Stands; the north end retains the historic horseshoe and rotunda.
+- **Draft:** basic terraces, seats and field for editing at low cost.
+- **Standard:** stair treads and exterior structure with sports-equipment context.
+- **High:** stepped concrete risers, stair nosing, extra seat support, front railings, fascia ribbons, entrance frames, arcade bays, west-side suites, press-box glazing, north rotunda, south-end structure and officially sized scoreboard framing on the Ohio preset.
+- Independent **facade** and **sports fixtures** toggles.
+- Football: one-yard field hash markers, team bench zones, pylons and Ohio-themed scarlet end zones when the Ohio reference is selected.
+- Soccer: corner flags and technical areas. Basketball: scorer's table, team benches and suspended display.
 
-**Data accuracy:** No official seat-center XYZ coordinates, per-section elevations or detailed measured obstruction data are included. The 3D reference is appropriate for creating a more specific stadium illustration, not for ticket-level sightline guarantees. See [Ohio Stadium modeling notes](docs/OHIO_STADIUM_REFERENCE.md).
+The reference project uses source-backed top-level facts, but **all individual seat coordinates and detailed architectural elevations are estimated**. The official Ohio Stadium published capacity is **not** the capacity generated by the reference project. See [Ohio Stadium source and accuracy notes](docs/OHIO_STADIUM_REFERENCE.md).
 
-**Source code:** `src/venues.mjs`, `src/stadiumDetails.mjs`, `src/architecture.js`; existing survey and photo calibration tooling is unchanged.
-
+Files: `src/venues.mjs` (venue reference data), `src/stadiumDetails.mjs` (testable detail plan and envelope), `src/architecture.js` (3D structures), `examples/ohio-stadium-reference.json` (editable project).

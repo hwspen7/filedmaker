@@ -4,6 +4,7 @@ import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveSectionTier } from './model.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates } from './view.mjs';
 import { addDetailedVenue } from './architecture.js';
+import { seatAssetPlan } from './detailKit.mjs';
 import { isOhioReference } from './venues.mjs';
 
 const white = 0xf2f6ef;
@@ -66,29 +67,31 @@ function football(group, surface, project) {
     const z = -play / 2 + i * play / 20;
     stripe(group, -w / 2, z, w / 2, z, i === 10 ? 0.18 : 0.08);
   }
-  for(let i=1;i<100;i++){
-    if(i%5===0)continue;
-    const z=-play/2+i*play/100;
-    for(const x of [-6.096,6.096])stripe(group,x-.29,z,x+.29,z,.09);
-    for(const x of [-w/2+.7,w/2-.7])stripe(group,x-.24,z,x+.24,z,.075);
+  // One-yard hash marks and field-side tick marks. NCAA hash spacing is approximate here.
+  for (let i = 1; i < 100; i++) {
+    const z = -play/2 + i * play/100;
+    if (i%5===0)continue;
+    for (const x of [-6.096,6.096])stripe(group,x-.29,z,x+.29,z,.09);
+    for (const x of [-w/2+.7,w/2-.7])stripe(group,x-.24,z,x+.24,z,.075);
   }
-  if(ohio){
-    function paintText(text,width,depth,x,z,rotation=0,color='#ffffff'){
+  if (ohio) {
+    const labelMat = new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false,transparent:true});
+    function stamp(text, width, depth, x, z, rotation=0, color='#ffffff') {
       const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;
-      const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.font='bold 122px Arial,sans-serif';
+      const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.font='bold 122px Arial, sans-serif';
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,128,1000);
       const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-      const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,depth),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,toneMapped:false}));
-      mesh.rotation.x=-Math.PI/2;mesh.rotation.z=rotation;mesh.position.set(x,.115,z);group.add(mesh);
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(width,depth), new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,toneMapped:false}));
+      m.rotation.x=-Math.PI/2;m.rotation.z=rotation;m.position.set(x,.115,z);group.add(m);
     }
-    paintText('OHIO STATE',30,8,0,-l/2+endZone/2);
-    paintText('BUCKEYES',30,8,0,l/2-endZone/2,Math.PI);
-    paintText('O',11,12,0,0,0,'#b31f37');
+    stamp('OHIO STATE',30,8,0,-l/2+endZone/2);
+    stamp('BUCKEYES',30,8,0,l/2-endZone/2,Math.PI);
+    stamp('O',11,12,0,0,0,'#b31f37');
     for(let yard=10;yard<=50;yard+=10){
       const zz=(yard-50)*play/100;
       for(const sign of [-1,1]){
-        paintText(String(yard),4.2,2.2,-w*.33,sign*zz);
-        paintText(String(yard),4.2,2.2,w*.33,sign*zz,Math.PI);
+        stamp(String(yard),4.2,2.2,-w*.33,sign*zz);
+        stamp(String(yard),4.2,2.2,w*.33,sign*zz,Math.PI);
       }
     }
   }
@@ -163,18 +166,22 @@ function makeTerrace(section, surface, tier, project) {
       const startAngle = pointAtDistance(path, start).angle;
       const endAngle = pointAtDistance(path, end).angle;
       const spans = Math.max(1, Math.ceil((endAngle - startAngle) * 90 / Math.PI));
-      const shade = base.clone().lerp(new THREE.Color(0xb7b8b5),.89).multiplyScalar(.93 + (row % 2)*.06);
+      const shade = base.clone().lerp(new THREE.Color(0xb7b8b5),.89).multiplyScalar(.93 + (row % 2) * .06);
       const offset = vertices.length / 3;
       for (let i = 0; i <= spans; i++) {
         const angle = startAngle + (endAngle - startAngle) * i / spans;
         const near = modelPerimeterPoint(project, surface, angle, radial);
         const far = modelPerimeterPoint(project, surface, angle, radial + profile.depth);
-        // Flat tread followed by a concrete riser, not a sloped sheet.
-        vertices.push(near.x,y,near.z,far.x,y,far.z,far.x,y+profile.rise,far.z);
-        for(let j=0;j<3;j++){const fac=j===2?.72:1;colors.push(shade.r*fac,shade.g*fac,shade.b*fac);}
-        if(i<spans){
-          const k=offset+i*3;
-          indices.push(k,k+1,k+3,k+1,k+4,k+3);
+        // Flat tread followed by a concrete riser: not a single smooth sloped sheet.
+        vertices.push(near.x, y, near.z, far.x, y, far.z,
+          far.x, y + profile.rise, far.z);
+        for (let j = 0; j < 3; j++) {
+          const fac = j === 2 ? .72 : 1;
+          colors.push(shade.r * fac, shade.g * fac, shade.b * fac);
+        }
+        if (i < spans) {
+          const k = offset + i * 3;
+          indices.push(k, k+1, k+3, k+1, k+4, k+3);
           indices.push(k+1,k+2,k+4,k+2,k+5,k+4);
         }
       }
@@ -208,69 +215,93 @@ function addConcourse(group, surface, project, tier) {
   }
 }
 
-function createSeatMesh(seats,project) {
-  const high=project.detailLevel==='high',bleachers=isOhioReference(project);
-  const w=Math.min(.49,project.seatPitch*.86);
-  const geometries=[new THREE.BoxGeometry(w,.115,.4),new THREE.BoxGeometry(w,bleachers?.14:.60,.095)];
-  if(high)geometries.push(new THREE.BoxGeometry(.055,.42,.065));
-  const base=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.67,metalness:bleachers?.42:.07});
-  const meshes=geometries.map(g=>new THREE.InstancedMesh(g,base.clone(),seats.length));
-  const shades=project.sections.map(s=>new THREE.Color(s.color)),o=new THREE.Object3D(),c=new THREE.Color();
-  seats.forEach((seat,i)=>{
-    c.copy(shades[seat.sectionIndex]||new THREE.Color(0x8a9296)).lerp(new THREE.Color(bleachers?0xa8abad:0xffffff),bleachers?.62:.06);
-    c.multiplyScalar(.93+seat.row%4*.021);
-    o.rotation.set(0,seat.yaw,0);o.scale.set(1,1,1);
-    o.position.set(seat.x,seat.y+.44,seat.z);o.updateMatrix();
-    meshes[0].setMatrixAt(i,o.matrix);meshes[0].setColorAt(i,c);
-    o.position.set(seat.x,seat.y+(bleachers?.61:.76),seat.z);o.translateZ(-.2);o.updateMatrix();
-    meshes[1].setMatrixAt(i,o.matrix);meshes[1].setColorAt(i,c.clone().multiplyScalar(.84));
-    if(high){o.position.set(seat.x,seat.y+.37,seat.z);o.translateZ(.17);o.updateMatrix();meshes[2].setMatrixAt(i,o.matrix);meshes[2].setColorAt(i,new THREE.Color(0x858b89));}
+function createSeatMesh(seats, project) {
+  // Seven draw calls irrespective of stadium capacity. The seat body is always
+  // instance #0 so raycast instanceId continues to match model.seats[] exactly.
+  const high=project.detailLevel==='high', dims=seatAssetPlan(project);
+  const steel=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.52,metalness:.42});
+  const upholstery=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.75,metalness:.06});
+  const seatWidth=dims.seatWidth;
+  const defs=[
+    [new THREE.BoxGeometry(seatWidth,dims.seatThickness,dims.seatDepth),upholstery],
+    [new THREE.BoxGeometry(seatWidth*.94,.035,.045),upholstery],
+    [new THREE.BoxGeometry(seatWidth,dims.backHeight,dims.backThickness),upholstery],
+    [new THREE.BoxGeometry(dims.legThickness,.36,.035),steel],
+    [new THREE.BoxGeometry(dims.legThickness,.36,.035),steel],
+    [new THREE.BoxGeometry(dims.armThickness,.041,.27),steel],
+    [new THREE.BoxGeometry(dims.armThickness,.041,.27),steel],
+  ];
+  const meshes=defs.map(([geometry,m])=>new THREE.InstancedMesh(geometry,m,seats.length));
+  const colors=project.sections.map(v=>new THREE.Color(v.color));
+  const o=new THREE.Object3D(), seatTint=new THREE.Color(), silver=new THREE.Color(0xaeb5b8);
+  const steelTint=new THREE.Color(0x89949b);
+  const position=(seat,index,i,dx,dy,dz,show=true,lean=0)=>{
+    o.position.set(seat.x,seat.y+dy,seat.z);
+    o.rotation.set(lean,seat.yaw||0,0);
+    o.scale.setScalar(show?1:0);
+    o.translateX(dx);o.translateZ(dz);
+    o.updateMatrix();meshes[i].setMatrixAt(index,o.matrix);
+  };
+  seats.forEach((seat,index)=>{
+    const chair=dims.styleForTier(seat.tier)==='chair';
+    const base=colors[seat.sectionIndex]||new THREE.Color(0x87979b);
+    seatTint.copy(base).lerp(silver,chair?.24:.82);
+    seatTint.multiplyScalar(.965+(seat.row%3)*.012);
+    position(seat,index,0,0,dims.seatHeight,0);
+    position(seat,index,1,0,dims.seatHeight+.008,.187,high);
+    position(seat,index,2,0,.74,-.185,chair,-.09);
+    position(seat,index,3,-seatWidth*.38,.247,-.13,high);
+    position(seat,index,4,seatWidth*.38,.247,-.13,high);
+    position(seat,index,5,-seatWidth*.49,.625,.065,high && chair);
+    position(seat,index,6,seatWidth*.49,.625,.065,high && chair);
+    for(const i of [0,1,2]) meshes[i].setColorAt(index,seatTint);
+    for(const i of [3,4,5,6]) meshes[i].setColorAt(index,steelTint);
   });
-  meshes.forEach(m=>{m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;m.instanceMatrix.setUsage(THREE.StaticDrawUsage);});
+  meshes.forEach((mesh,i)=>{
+    mesh.instanceMatrix.needsUpdate=true;
+    if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+    mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    mesh.userData.architecturalQuality=i?'seat detail component':'primary seat picking surface';
+  });
   meshes[0].userData.isSeat=true;
+  meshes[2].userData.isSeat=true; // Backrest shares the seat instance index.
   return meshes;
 }
 
 // Architectural context is schematic, not a scanned/surveyed building model.
 function addArchitecturalDetails(group, surface, project, tiers) {
-  const metal = mat(0x859399, .5), concrete = mat(0xb8c2c5);
-  const lines = [], shellVertices = [], shellIndices = [];
-  for (const tier of tiers) {
-    for (const section of project.sections) {
-      if (!section.enabled) continue;
-      const profile = resolveSectionTier(tier, section.id, project);
-      if (!profile.rows) continue;
-      const angleSpan = (section.end - section.start) * Math.PI / 180;
-      const segments = Math.max(3, Math.ceil(angleSpan / .075));
-      const innerR = profile.startOffset;
-      const outerR = profile.startOffset + profile.rows * profile.depth;
-      const innerH = profile.startHeight, outerH = profile.startHeight + profile.rows * profile.rise;
-      for (const edge of [{r:innerR,y:innerH},{r:outerR,y:outerH}]) {
-        for (let i = 0; i < segments; i++) {
-          const a = (section.start*Math.PI/180) + i*angleSpan/segments;
-          const b = a+angleSpan/segments;
-          const p = modelPerimeterPoint(project,surface,a,edge.r);
-          const q = modelPerimeterPoint(project,surface,b,edge.r);
-          // The lower parapet is opaque and can block line-of-sight in first-person view.
-          const h = edge.r===innerR ? .65 : .9;
-          const k = shellVertices.length/3;
-          shellVertices.push(p.x,edge.y,p.z, q.x,edge.y,q.z, p.x,edge.y+h,p.z, q.x,edge.y+h,q.z);
-          shellIndices.push(k,k+1,k+2,k+1,k+3,k+2);
-          const rail = edge.y+h+.28;
-          lines.push(p.x,rail,p.z,q.x,rail,q.z);
-          if (i%3===0) lines.push(p.x,edge.y+h,p.z,p.x,rail,p.z);
+  // Continuous parapet shells used to seal aisle gaps at the tier front.
+  // Derive wall strips from the same row-level seating intervals so walkways
+  // and open entrances remain open in both the model and the human-eye view.
+  const vertices=[], indices=[];
+  for (const tier of tiers) for(const section of project.sections){
+    if(!section.enabled)continue;
+    const p=resolveSectionTier(tier,section.id,project);
+    if(!p.rows)continue;
+    const edges=[
+      {r:p.startOffset, row:1, y:p.startHeight, h:.62},
+      {r:p.startOffset+p.rows*p.depth,row:p.rows,y:p.startHeight+p.rows*p.rise,h:.85},
+    ];
+    for(const e of edges){
+      const path=modelPerimeterPath(project,surface,e.r,320);
+      const strips=seatingIntervals(path,section,project,tier.id,e.row);
+      for(const [start,end] of strips){
+        const divisions=Math.max(1,Math.ceil((end-start)/2.5));
+        for(let j=0;j<divisions;j++){
+          const a=pointAtDistance(path,start+(end-start)*j/divisions);
+          const b=pointAtDistance(path,start+(end-start)*(j+1)/divisions);
+          const k=vertices.length/3;
+          vertices.push(a.x,e.y,a.z,b.x,e.y,b.z,a.x,e.y+e.h,a.z,b.x,e.y+e.h,b.z);
+          indices.push(k,k+1,k+2,k+1,k+3,k+2);
         }
       }
     }
   }
-  if (shellVertices.length) {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position',new THREE.Float32BufferAttribute(shellVertices,3));g.setIndex(shellIndices);g.computeVertexNormals();
-    group.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0xb8c2c5,roughness:.92,side:THREE.DoubleSide})));
-  }
-  if (lines.length) {
-    const g = new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(lines,3));
-    group.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x667b83})));
+  if(vertices.length){
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
+    const parapets=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0xb8c2c5,roughness:.92,side:THREE.DoubleSide}));
+    parapets.userData.architecturalQuality='aisle-clipped parapet';group.add(parapets);
   }
 }
 
@@ -482,7 +513,7 @@ export class StadiumScene {
     const rect = this.canvas.getBoundingClientRect();
     this.pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const hit = this.raycaster.intersectObjects([...this.seatMeshes.slice(0, 1), ...this.terraces], false)[0];
+    const hit = this.raycaster.intersectObjects([this.seatMeshes[0], this.seatMeshes[2], ...this.terraces].filter(Boolean), false)[0];
     if (!hit) return;
     if (hit.object.userData.isSeat && Number.isInteger(hit.instanceId)) {
       const seat = this.model.seats[hit.instanceId];

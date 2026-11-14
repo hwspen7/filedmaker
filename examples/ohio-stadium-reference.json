@@ -1,0 +1,808 @@
+{
+  "schemaVersion": 5,
+  "title": "Ohio Stadium — architectural reference",
+  "country": "United States",
+  "city": "Columbus",
+  "surface": "nfl",
+  "shape": 3.15,
+  "seatPitch": 0.55,
+  "aisleWidth": 1.34,
+  "roof": false,
+  "detailLevel": "high",
+  "showExterior": true,
+  "showFixtures": true,
+  "venueReference": {
+    "id": "ohio-stadium",
+    "dataLevel": "documented-architecture/estimated-seating",
+    "seatNumbering": "synthetic",
+    "measurementNotice": "Architectural reference only. Exact section boundaries, seat locations and risers require survey."
+  },
+  "outline": {
+    "mode": "custom",
+    "points": [
+      {
+        "x": 36.202,
+        "z": 0
+      },
+      {
+        "x": 36.202,
+        "z": 4.862
+      },
+      {
+        "x": 36.202,
+        "z": 9.895
+      },
+      {
+        "x": 36.202,
+        "z": 15.297
+      },
+      {
+        "x": 36.202,
+        "z": 21.321
+      },
+      {
+        "x": 36.202,
+        "z": 28.337
+      },
+      {
+        "x": 36.202,
+        "z": 36.93
+      },
+      {
+        "x": 36.202,
+        "z": 48.128
+      },
+      {
+        "x": 36.202,
+        "z": 63.964
+      },
+      {
+        "x": 27.557,
+        "z": 67.867
+      },
+      {
+        "x": 17.827,
+        "z": 67.867
+      },
+      {
+        "x": 8.759,
+        "z": 67.867
+      },
+      {
+        "x": 0,
+        "z": 67.867
+      },
+      {
+        "x": -8.759,
+        "z": 67.867
+      },
+      {
+        "x": -17.827,
+        "z": 67.867
+      },
+      {
+        "x": -27.557,
+        "z": 67.867
+      },
+      {
+        "x": -36.202,
+        "z": 63.964
+      },
+      {
+        "x": -36.202,
+        "z": 48.128
+      },
+      {
+        "x": -36.202,
+        "z": 36.93
+      },
+      {
+        "x": -36.202,
+        "z": 28.337
+      },
+      {
+        "x": -36.202,
+        "z": 21.321
+      },
+      {
+        "x": -36.202,
+        "z": 15.297
+      },
+      {
+        "x": -36.202,
+        "z": 9.895
+      },
+      {
+        "x": -36.202,
+        "z": 4.862
+      },
+      {
+        "x": -36.202,
+        "z": 0
+      },
+      {
+        "x": -37.294,
+        "z": -4.91
+      },
+      {
+        "x": -37.294,
+        "z": -9.993
+      },
+      {
+        "x": -37.294,
+        "z": -15.448
+      },
+      {
+        "x": -37.294,
+        "z": -21.531
+      },
+      {
+        "x": -37.294,
+        "z": -28.616
+      },
+      {
+        "x": -37.294,
+        "z": -37.294
+      },
+      {
+        "x": -37.294,
+        "z": -48.602
+      },
+      {
+        "x": -37.294,
+        "z": -64.594
+      },
+      {
+        "x": -28.388,
+        "z": -68.536
+      },
+      {
+        "x": -18.364,
+        "z": -68.536
+      },
+      {
+        "x": -9.023,
+        "z": -68.536
+      },
+      {
+        "x": 0,
+        "z": -68.536
+      },
+      {
+        "x": 9.023,
+        "z": -68.536
+      },
+      {
+        "x": 18.364,
+        "z": -68.536
+      },
+      {
+        "x": 28.388,
+        "z": -68.536
+      },
+      {
+        "x": 37.294,
+        "z": -64.594
+      },
+      {
+        "x": 37.294,
+        "z": -48.602
+      },
+      {
+        "x": 37.294,
+        "z": -37.294
+      },
+      {
+        "x": 37.294,
+        "z": -28.616
+      },
+      {
+        "x": 37.294,
+        "z": -21.531
+      },
+      {
+        "x": 37.294,
+        "z": -15.448
+      },
+      {
+        "x": 37.294,
+        "z": -9.993
+      },
+      {
+        "x": 37.294,
+        "z": -4.91
+      }
+    ]
+  },
+  "aisles": [
+    {
+      "id": "illustrative-aisle-1",
+      "angle": 12.857,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-2",
+      "angle": 38.571,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-3",
+      "angle": 64.286,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-4",
+      "angle": 90,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-5",
+      "angle": 115.714,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-6",
+      "angle": 141.429,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-7",
+      "angle": 167.143,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-8",
+      "angle": 192.857,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-9",
+      "angle": 218.571,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-10",
+      "angle": 244.286,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-11",
+      "angle": 270,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-12",
+      "angle": 295.714,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-13",
+      "angle": 321.429,
+      "width": 1.45,
+      "tier": "all"
+    },
+    {
+      "id": "illustrative-aisle-14",
+      "angle": 347.143,
+      "width": 1.45,
+      "tier": "all"
+    }
+  ],
+  "portals": [
+    {
+      "id": "illustrative-east-lower",
+      "tierId": "T2",
+      "angle": 9,
+      "width": 5,
+      "firstRow": 11,
+      "lastRow": 17
+    },
+    {
+      "id": "illustrative-west-lower",
+      "tierId": "T2",
+      "angle": 171,
+      "width": 5,
+      "firstRow": 11,
+      "lastRow": 17
+    },
+    {
+      "id": "illustrative-north-lower",
+      "tierId": "T2",
+      "angle": 270,
+      "width": 5,
+      "firstRow": 11,
+      "lastRow": 17
+    },
+    {
+      "id": "illustrative-east-upper",
+      "tierId": "T4",
+      "angle": 345,
+      "width": 5,
+      "firstRow": 9,
+      "lastRow": 14
+    },
+    {
+      "id": "illustrative-west-upper",
+      "tierId": "T4",
+      "angle": 195,
+      "width": 5,
+      "firstRow": 9,
+      "lastRow": 14
+    }
+  ],
+  "sectionProfiles": [
+    {
+      "sectionId": "S05",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S05",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S06",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S06",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S07",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S07",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S08",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S08",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S09",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S09",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S10",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S10",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S11",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S11",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S12",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S12",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    }
+  ],
+  "plan": null,
+  "survey": {
+    "mode": "generated",
+    "venue": "Ohio Stadium",
+    "source": "Ohio State official architectural facts and seating maps; interpretive sector geometry",
+    "sourceUrl": "https://ohiostatebuckeyes.com/sports/2023/6/2/ohio-stadium",
+    "inputUnit": "m",
+    "yUnit": "m",
+    "heightOffset": 0,
+    "seats": [],
+    "anchors": [],
+    "obstacles": []
+  },
+  "sections": [
+    {
+      "id": "S01",
+      "label": "East bowl sector 01",
+      "start": 0,
+      "end": 11.25,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S02",
+      "label": "East bowl sector 02",
+      "start": 11.25,
+      "end": 22.5,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S03",
+      "label": "East bowl sector 03",
+      "start": 22.5,
+      "end": 33.75,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S04",
+      "label": "East bowl sector 04",
+      "start": 33.75,
+      "end": 45,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S05",
+      "label": "South bowl sector 05",
+      "start": 45,
+      "end": 56.25,
+      "enabled": true,
+      "color": "#a4a9a9"
+    },
+    {
+      "id": "S06",
+      "label": "South bowl sector 06",
+      "start": 56.25,
+      "end": 67.5,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S07",
+      "label": "South bowl sector 07",
+      "start": 67.5,
+      "end": 78.75,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S08",
+      "label": "South bowl sector 08",
+      "start": 78.75,
+      "end": 90,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S09",
+      "label": "South bowl sector 09",
+      "start": 90,
+      "end": 101.25,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S10",
+      "label": "South bowl sector 10",
+      "start": 101.25,
+      "end": 112.5,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S11",
+      "label": "South bowl sector 11",
+      "start": 112.5,
+      "end": 123.75,
+      "enabled": true,
+      "color": "#a4a9a9"
+    },
+    {
+      "id": "S12",
+      "label": "South bowl sector 12",
+      "start": 123.75,
+      "end": 135,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S13",
+      "label": "East bowl sector 13",
+      "start": 135,
+      "end": 146.25,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S14",
+      "label": "East bowl sector 14",
+      "start": 146.25,
+      "end": 157.5,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S15",
+      "label": "East bowl sector 15",
+      "start": 157.5,
+      "end": 168.75,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S16",
+      "label": "East bowl sector 16",
+      "start": 168.75,
+      "end": 180,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S17",
+      "label": "West bowl sector 17",
+      "start": 180,
+      "end": 191.25,
+      "enabled": true,
+      "color": "#a4a9a9"
+    },
+    {
+      "id": "S18",
+      "label": "West bowl sector 18",
+      "start": 191.25,
+      "end": 202.5,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S19",
+      "label": "West bowl sector 19",
+      "start": 202.5,
+      "end": 213.75,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S20",
+      "label": "West bowl sector 20",
+      "start": 213.75,
+      "end": 225,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S21",
+      "label": "North bowl sector 21",
+      "start": 225,
+      "end": 236.25,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S22",
+      "label": "North bowl sector 22",
+      "start": 236.25,
+      "end": 247.5,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S23",
+      "label": "North bowl sector 23",
+      "start": 247.5,
+      "end": 258.75,
+      "enabled": true,
+      "color": "#a4a9a9"
+    },
+    {
+      "id": "S24",
+      "label": "North bowl sector 24",
+      "start": 258.75,
+      "end": 270,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S25",
+      "label": "North bowl sector 25",
+      "start": 270,
+      "end": 281.25,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S26",
+      "label": "North bowl sector 26",
+      "start": 281.25,
+      "end": 292.5,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S27",
+      "label": "North bowl sector 27",
+      "start": 292.5,
+      "end": 303.75,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S28",
+      "label": "North bowl sector 28",
+      "start": 303.75,
+      "end": 315,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S29",
+      "label": "West bowl sector 29",
+      "start": 315,
+      "end": 326.25,
+      "enabled": true,
+      "color": "#a4a9a9"
+    },
+    {
+      "id": "S30",
+      "label": "West bowl sector 30",
+      "start": 326.25,
+      "end": 337.5,
+      "enabled": true,
+      "color": "#778387"
+    },
+    {
+      "id": "S31",
+      "label": "West bowl sector 31",
+      "start": 337.5,
+      "end": 348.75,
+      "enabled": true,
+      "color": "#a9293d"
+    },
+    {
+      "id": "S32",
+      "label": "West bowl sector 32",
+      "start": 348.75,
+      "end": 360,
+      "enabled": true,
+      "color": "#a9293d"
+    }
+  ],
+  "tiers": [
+    {
+      "id": "T1",
+      "label": "AA deck / field-level interpretation",
+      "rows": 12,
+      "depth": 0.8,
+      "rise": 0.28,
+      "offset": 4.5,
+      "height": 0.9,
+      "gap": 2,
+      "heightGap": 1.9
+    },
+    {
+      "id": "T2",
+      "label": "A deck / lower bowl interpretation",
+      "rows": 25,
+      "depth": 0.81,
+      "rise": 0.34,
+      "offset": 1,
+      "height": 0.4,
+      "gap": 2.4,
+      "heightGap": 2.5
+    },
+    {
+      "id": "T3",
+      "label": "B / club-tier interpretation",
+      "rows": 12,
+      "depth": 0.83,
+      "rise": 0.38,
+      "offset": 1,
+      "height": 0.4,
+      "gap": 2.4,
+      "heightGap": 3.1
+    },
+    {
+      "id": "T4",
+      "label": "C / upper horseshoe interpretation",
+      "rows": 22,
+      "depth": 0.86,
+      "rise": 0.52,
+      "offset": 1,
+      "height": 0.4,
+      "gap": 0,
+      "heightGap": 0
+    }
+  ]
+}
