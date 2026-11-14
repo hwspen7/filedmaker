@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111a29" />
+  <meta name="description" content="FiledMaker — a parametric stadium and arena modelling workspace." />
+  <title>FiledMaker | Stadium Modeling Studio</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <script type="importmap">
+  {"imports":{
+    "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }}
+  </script>
+</head>
+<body>
+  <div class="workspace">
+    <aside class="sidebar">
+      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FILEDMAKER</strong><small>STADIUM MODELING STUDIO</small></div><span class="version">BETA 1.0</span></header>
+      <div class="sidebar-scroll">
+        <section class="side-panel">
+          <div class="eyebrow">PROJECT</div>
+          <div class="project-identity"><div class="project-avatar">◈</div><div><strong id="projectNameSmall">Untitled Stadium</strong><small id="projectSubline">United States · NFL</small></div></div>
+          <div class="quick-actions"><button id="newProject" class="outline-btn">＋ New</button><button id="saveProject" class="outline-btn">Save locally</button></div>
+        </section>
+        <section class="side-panel">
+          <div class="eyebrow">START FROM A TEMPLATE</div>
+          <div class="template-grid">
+            <button data-preset="nfl" class="template-option"><span>▤</span><strong>Football</strong><small>NFL / NCAA</small></button>
+            <button data-preset="soccer" class="template-option"><span>▧</span><strong>Soccer</strong><small>MLS / CPL</small></button>
+            <button data-preset="nba" class="template-option"><span>◉</span><strong>Arena</strong><small>NBA / NCAA</small></button>
+          </div>
+        </section>
+        <section class="side-panel settings-panel">
+          <div class="panel-head"><div class="eyebrow">MODEL PROPERTIES</div><span id="dirtyBadge">EDITABLE</span></div>
+          <div class="tab-row" role="tablist" aria-label="Editor properties">
+            <button class="tab active" data-tab="bowl">Bowl</button>
+            <button class="tab" data-tab="tiers">Tiers</button>
+            <button class="tab" data-tab="sections">Sections</button>
+            <button class="tab" data-tab="info">Info</button>
+          </div>
+          <div id="tabContent"></div>
+        </section>
+      </div>
+      <footer class="sidebar-footer"><span class="status-dot"></span><span id="saveStatus">All changes stored in this browser</span></footer>
+    </aside>
+
+    <main class="main">
+      <div class="topbar"><div class="breadcrumbs">WORKSPACE <span>/</span> <strong id="breadcrumbTitle">Untitled Stadium</strong></div><div class="top-actions"><button id="undoBtn" class="icon-btn" title="Undo (Ctrl+Z)">↶</button><button id="redoBtn" class="icon-btn" title="Redo (Ctrl+Y)">↷</button><div class="top-divider"></div><button id="openProject" class="plain-btn">Open</button><button id="exportJson" class="plain-btn">Export JSON</button><button id="exportGlb" class="primary-btn">Export 3D model ↓</button></div></div>
+      <div class="stage">
+        <div class="viewport" id="viewport">
+          <canvas id="stadiumCanvas" aria-label="Interactive 3D stadium model"></canvas>
+          <div class="viewport-header"><div><div class="viewport-overline"><span class="live-dot"></span> LIVE 3D PREVIEW</div><h1 id="viewportTitle">Untitled Stadium</h1><div class="viewport-subtitle" id="viewportSubtitle">Parametric bowl · Draft model</div></div><button id="screenshot" class="viewport-icon" title="Save viewport screenshot" aria-label="Save screenshot">▣</button></div>
+          <div class="view-switch" aria-label="View mode"><button data-view="orbit" class="view-btn active">3D Orbit</button><button data-view="plan" class="view-btn">Top plan</button><button data-view="seat" class="view-btn">Seat view</button></div>
+          <div class="axis-tip">DRAG TO ORBIT <span>·</span> SCROLL TO ZOOM <span>·</span> CLICK A SEAT</div>
+          <div id="loadingState" class="loading-state" hidden><div class="spinner"></div><strong>Generating stadium</strong><small>Building seating geometry and the 3D scene</small></div>
+          <div id="renderError" class="render-error" hidden><strong>3D engine unavailable</strong><p id="renderErrorMessage">Please check your connection and reload this page.</p><button id="retryRender" class="primary-btn">Reload renderer</button></div>
+        </div>
+        <aside class="inspector">
+          <div class="inspector-heading"><span>INSPECTOR</span><span class="inspector-live">● LIVE MODEL</span></div>
+          <div class="stat-card"><small>ESTIMATED SEATING CAPACITY</small><strong id="capacityValue">—</strong><div class="stat-suffix">parametrically generated seats</div></div>
+          <div class="mini-stats"><div><small>TIERS</small><strong id="tierCount">—</strong></div><div><small>SECTIONS</small><strong id="sectionCount">—</strong></div><div><small>FIELD</small><strong id="fieldSize">—</strong></div></div>
+          <div class="inspector-block"><div class="inspector-title">SELECTION <span>01</span></div><div id="selectionInfo" class="selection-info"><div class="empty-selection">Click a seat or seating section to inspect its position.</div></div><div class="seat-actions"><button id="prevSeat" class="outline-btn">← Previous</button><button id="nextSeat" class="outline-btn">Next →</button></div></div>
+          <div class="inspector-block"><div class="inspector-title">OUTPUT <span>02</span></div><button id="exportCsv" class="full-outline">Download seat coordinates (.csv) <span>↓</span></button><button id="exportProjectAlt" class="full-outline">Download editable project (.json) <span>↓</span></button></div>
+          <div class="inspector-note"><span>◈</span><p>Models are generated from editable parameters, not surveyed venue measurements. Validate geometry before using it for ticketing or real sightlines.</p></div>
+        </aside>
+      </div>
+      <div class="bottom-bar"><div><span class="bottom-dot"></span><span id="bottomStatus">Model ready</span></div><div>METERS <span class="bottom-sep">/</span> LOCAL DATA <span class="bottom-sep">/</span> <span id="modelVersion">SCHEMA v1</span></div></div>
+    </main>
+  </div>
+
+  <dialog id="projectDialog" class="project-dialog"><form method="dialog"><div class="dialog-header"><div><div class="eyebrow">PROJECT LIBRARY</div><h2>Open a project</h2></div><button value="cancel" class="icon-btn" aria-label="Close">×</button></div><div id="savedProjects" class="saved-projects"></div><div class="dialog-footer"><label class="outline-btn upload-label" for="jsonImport">Import JSON file</label><input type="file" id="jsonImport" accept=".json,application/json" hidden /><button value="cancel" class="plain-btn">Close</button></div></form></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
