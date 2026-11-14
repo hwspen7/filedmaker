@@ -6,7 +6,7 @@ import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates, resolveEyeClearance } from './view.mjs';
 import { addDetailedVenue } from './architecture.js';
 import { seatAssetPlan } from './detailKit.mjs';
-import { isOhioReference } from './venues.mjs';
+import { isOhioReference, isSchottensteinReference } from './venues.mjs';
 import { treadEdgeCap } from './geometryIntegrity.mjs';
 
 const white = 0xf2f6ef;
@@ -120,12 +120,13 @@ function soccer(group, surface) {
     pole(group, [-3.66, 2.44, end], [3.66, 2.44, end], 0.065, white);
   }
 }
-function basketball(group, surface) {
+function basketball(group, surface, project) {
   const { width: w, length: l } = surface;
   box(group, w + 9, 0.22, l + 10, 0, -0.11, 0, mat(0x29434e));
-  box(group, w, 0.09, l, 0, 0.045, 0, mat(0xd4b486));
+  const schott=isSchottensteinReference(project);
+  box(group, w, 0.09, l, 0, 0.045, 0, mat(schott?0xbcbec1:0xd4b486));
   for (let i = 0; i < 16; i++) {
-    if (i % 2) box(group, w / 16, 0.003, l, -w / 2 + w * (i + 0.5) / 16, 0.092, 0, mat(0xc8a676));
+    if (i % 2) box(group, w / 16, 0.003, l, -w / 2 + w * (i + 0.5) / 16, 0.092, 0, mat(schott?0xaeb1b5:0xc8a676));
   }
   outline(group, 0, 0, w, l, 0.065);
   stripe(group, -w / 2, 0, w / 2, 0, 0.065);
@@ -453,7 +454,7 @@ export class StadiumScene {
     this.model = model;
     const { project, surface, tiers, seats } = model;
     const floor = new THREE.Group();
-    if (surface.sport === 'basketball') basketball(floor, surface);
+    if (surface.sport === 'basketball') basketball(floor, surface, project);
     else if (surface.sport === 'soccer') soccer(floor, surface);
     else football(floor, surface, project);
     this.root.add(floor);

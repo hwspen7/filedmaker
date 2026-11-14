@@ -96,6 +96,12 @@ export function validateProject(input) {
         seatNumbering:'synthetic',
         measurementNotice:'Architectural reference only. Exact section boundaries, seat locations and risers require survey.'
       };
+    } else if (referenceId === 'schottenstein-center' && project.surface === 'ncaa') {
+      project.venueReference = {
+        id:'schottenstein-center', dataLevel:'published-building-facts/estimated-bowl',
+        seatNumbering:'synthetic',
+        measurementNotice:'Official capacity and screen features are documented. Every generated sector, row, seat coordinate and opening is estimated.'
+      };
     } else if (referenceId.startsWith('nba:') && project.surface === 'nba' && getNBAArena(referenceId.slice(4))) {
       const arena = getNBAArena(referenceId.slice(4));
       project.venueReference = {

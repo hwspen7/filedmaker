@@ -1,5 +1,18 @@
 # FiledMaker
 
+
+## v8.0 — OSU dual-venue NCAA reference samples
+
+The advanced editor now includes both **Ohio Stadium** and the **Jerome Schottenstein Center**. Their published building facts are maintained separately from estimates used to render 3D seats.
+
+| Sample | Published reference capacity | Real measurements used | Still estimated |
+| --- | --- | --- | --- |
+| Ohio Stadium | **102,041** (October 2026 OSU game notes and stadium page; May 2026 guide lists 102,780) | Building envelope 919 × 679 ft; building and press-box heights; 2012 screen dimensions | Individual seats, section angles, row depths and elevations, aisle and tunnel locations |
+| Schottenstein Center | **19,500** basketball (OSU description; arena lists up to 19,700) | Gross floor area **770,000 sq ft**, NCAA court **94 × 50 ft**, documented 2026 board features | Building footprint and height, aisle positions, synthetic arena sectors and seating geometry |
+
+**Generated seat counts are not the published capacity**. Download the evidence and capacity QA report from the **Info** tab of an OSU reference project. These sample projects are not certified exact-seat previews and are not ready to be used for paid ticket inventory. See [`docs/OSU_DUAL_SAMPLE_V8.md`](docs/OSU_DUAL_SAMPLE_V8.md) for data provenance, version discrepancies, and the remaining field-measurement requirements.
+
+
 A browser-based **parametric 3D stadium and arena modeling studio** for the United States and Canada. Create editable football stadiums, soccer stadiums and basketball arenas with repeatable geometry rather than placing every seat manually.
 
 ![CI](https://github.com/hwspen7/filedmaker/actions/workflows/quality.yml/badge.svg)
@@ -292,7 +305,7 @@ Bowl → **NBA Arena Reconstruction** includes all 30 NBA 2026–27 home-arena i
 
 This update is a production pipeline foundation, **not** 30 finished measured arena digital twins.
 
-## v7.2 — Stadium geometry integrity and human-eye correction
+## v8.0 — Stadium geometry integrity and human-eye correction
 
 This scoped release repairs the common white rectangular cutouts seen in old stadium mockups. Unverified Ohio Stadium entrance openings were removed from the default real-venue reference, and unchanged legacy openings are migrated away without deleting user edits. Authored openings now require sufficient row rise, generate fitted corridor linings and closed tread edge skirts, and report unusable requests instead of carving phantom holes. High-detail seats use softer, thinner instanced backrests and seat cushions. Human view now models independent seat/hip/eye/look anchors and bounds neighbor collision correction without moving the model's original seat coordinates.
 

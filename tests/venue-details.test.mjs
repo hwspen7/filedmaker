@@ -17,7 +17,7 @@ test('Ohio Stadium published dimensions use physically exact imperial conversion
 test('Ohio reference generates a distinct horseshoe and detached upper south end',()=>{
   const project=createOhioStadiumProject();
   const model=generateSeats(project);
-  assert.equal(project.surface,'nfl');
+  assert.equal(project.surface,'ncaa-football');
   assert.equal(project.tiers.length,4);
   assert.equal(project.sections.length,32);
   assert.equal(project.outline.points.length,48);

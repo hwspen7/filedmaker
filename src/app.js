@@ -3,7 +3,8 @@ import { parseSvgPlan, planPoint, tracePlanOutline } from './plan.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, sightlineNote, nearbySeat, seatDescriptor } from './view.mjs';
 import { parseSeatCSV, fitPlanRegistration, seatRegistration, obstructionReport, demoSurveyRows } from './survey.mjs';
 import { fieldLandmarks, fitPhotoView } from './photo.mjs';
-import { createOhioStadiumProject, OHIO_STADIUM, isOhioReference, ohioFactReport } from './venues.mjs';
+import { createOhioStadiumProject, OHIO_STADIUM, isOhioReference, ohioFactReport, createSchottensteinCenterProject, isSchottensteinReference, SCHOTTENSTEIN_CENTER } from './venues.mjs';
+import { OSU_FACTS, venueQualityReport } from './osuFacts.mjs';
 import { stadiumProvenance } from './stadiumDetails.mjs';
 import { NBA_CATALOG, createNBAArenaProject, nbaArenaReport } from './nbaArenas.mjs';
 import { createSchoolProject } from './schoolPipeline.mjs';
@@ -69,9 +70,16 @@ function renderTab() {
     html += `<label class="toggle-row"><input data-project="showFixtures" type="checkbox" ${project.showFixtures ? 'checked' : ''} /> Sports equipment, player benches and field fixtures</label>`;
     html += `<label class="toggle-row"><input data-project="roof" type="checkbox" ${project.roof ? 'checked' : ''} /> Show schematic roof canopy</label>`;
     html += `<div class="subheading">SCHOOL VENUE STUDIO</div><a class="school-entry" href="./school/">Open school automation studio →<small>Generate a school arena from row inventories, export a selectable seat viewer</small></a>`;
-    html += `<div class="subheading">REAL STADIUM REFERENCE</div><button class="full-outline reference-venue-button" data-build-ohio-stadium>Build Ohio Stadium reference <span>↗</span></button>`;
+    html += `<div class="subheading">OSU REAL VENUE SAMPLES</div><button class="full-outline reference-venue-button" data-build-ohio-stadium>Ohio Stadium · NCAA football <span>↗</span></button><button class="full-outline reference-venue-button" data-build-schottenstein>Schottenstein Center · NCAA basketball <span>↗</span></button>`;
     html += `<p class="hint">Based on Ohio State's published dimensions, historic horseshoe layout and south-stand/press-box features. Seat rows, individual sections and elevations remain approximate, not surveyed.</p>`;
-    if(isOhioReference(project)) html += `<div class="venue-facts"><strong>Ohio Stadium · Columbus</strong><span>Official envelope ${OHIO_STADIUM.lengthM.toFixed(1)} × ${OHIO_STADIUM.widthM.toFixed(1)} m</span><span>Official capacity ${num(OHIO_STADIUM.publishedCapacity)} · generated seats are NOT official</span><span>Separate southern stands · west press box · north rotunda</span><a href="${OHIO_STADIUM.sources[0]}" target="_blank" rel="noopener noreferrer">Ohio State published stadium facts ↗</a></div>`;
+    if(isOhioReference(project)) {
+      const facts=OSU_FACTS['ohio-stadium'];
+      html += `<div class="venue-facts"><strong>Ohio Stadium · official facts</strong><span>October 2026 published capacity ${num(facts.capacity.value)} · earlier 2026 media guide ${num(facts.historicalCapacity.value)}</span><span>Published building envelope ${facts.dimensions.buildingLengthM.toFixed(1)} × ${facts.dimensions.buildingWidthM.toFixed(1)} m</span><span>Main building height ${facts.dimensions.buildingHeightM.toFixed(1)} m · press-box roof ${facts.dimensions.pressBoxRoofHeightM.toFixed(1)} m</span><span>A / AA / B / C / D deck figures are published but are NOT additive with South Stands and suites.</span><span>Generated model seat count ${model ? num(model.capacity) : 'computing'} · synthetic, not official</span><a href="${facts.capacity.source}" target="_blank" rel="noopener noreferrer">Ohio State 2026 official media guide ↗</a></div>`;
+    }
+    if(isSchottensteinReference(project)) {
+      const facts=OSU_FACTS['schottenstein-center'];
+      html += `<div class="venue-facts"><strong>Jerome Schottenstein Center · official facts</strong><span>Basketball: ${num(facts.capacity.value)} published · alternative venue maximum ${num(facts.alternativeCapacity.value)}</span><span>Published gross floor area ${Math.round(facts.dimensions.buildingGrossFloorAreaSqM).toLocaleString()} m² · NOT building footprint</span><span>NCAA playing court ${facts.court.lengthM.toFixed(2)} × ${facts.court.widthM.toFixed(2)} m</span><span>2026 video boards: four curved display faces, underbelly panels, 36-inch ribbon, 43 vomitory displays (positions unverified)</span><span>Generated model seat count ${model ? num(model.capacity) : 'computing'} · synthetic, not official</span><a href="${facts.videoUpgrade.source}" target="_blank" rel="noopener noreferrer">Ohio State 2026 video upgrade ↗</a></div>`;
+    }
     html += `<p class="hint">Bowl squareness controls the superellipse contour. Adjust seat pitch and aisle gaps to recalculate every seat in all tiers.</p>`;
     html += `<div class="subheading">MODEL SYSTEM <span class="pill">METRIC COORDINATES</span></div><p class="hint">All seat positions use meters. The pitch is centered on (0, 0, 0), with its long axis along Z.</p>`;
   } else if (activeTab === 'tiers') {
@@ -189,6 +197,11 @@ function renderTab() {
     html = fieldText('Project name', 'title', project.title);
     html += fieldText('City', 'city', project.city);
     html += fieldSelect('Country', 'country', project.country, [['United States', 'United States'], ['Canada', 'Canada']]);
+    const audit=venueQualityReport(project, model?.capacity ?? 0);
+    if(audit){
+      html += `<div class="subheading">OSU VENUE DATA QUALITY</div><div class="venue-facts"><strong>${safe(audit.venue)}</strong><span>Published capacity: ${num(audit.sourceBackedCapacity)} (${safe(audit.publishedCapacityScope)})</span><span>Generated seats: ${num(audit.generatedSeatCount)} (estimated unless source-verified)</span><span>Difference: ${num(audit.generatedMinusPublished)} · NOT an official seat inventory</span><span>${safe(audit.warnings[0])}</span><span>Verified seat-level survey: NO</span></div>`;
+      html += `<button class="full-outline" data-export-osu-qa>Download source & capacity QA report ↓</button>`;
+    }
     html += `<div class="subheading">WORKFLOW</div><p class="hint">Save a named local snapshot, import a JSON project, or download the editable project. You can export a GLB model and a CSV containing every seat's 3D coordinates.</p>`;
     html += `<p class="hint">Local projects remain in this browser. Download a JSON backup before clearing site data or moving to another device.</p>`;
   }
@@ -201,7 +214,7 @@ function updateHeader() {
   byId('breadcrumbTitle').textContent = project.title;
   byId('viewportTitle').textContent = project.title;
   byId('projectSubline').textContent = `${project.country} · ${surface.label}`;
-  byId('viewportSubtitle').textContent = `${surface.label} · ${project.city || 'Custom venue'} · ${isOhioReference(project) ? 'Ohio Stadium architectural reference / estimated seats' : project.survey.mode==='imported' ? 'Imported positions — verify provenance' : 'Parametric draft'}`;
+  byId('viewportSubtitle').textContent = `${surface.label} · ${project.city || 'Custom venue'} · ${isOhioReference(project) ? 'Ohio Stadium architectural reference / estimated seats' : isSchottensteinReference(project) ? 'Schottenstein Center basketball reference / estimated seats' : project.survey.mode==='imported' ? 'Imported positions — verify provenance' : 'Parametric draft'}`;
   $all('[data-preset]').forEach(button => button.classList.toggle('active', (button.dataset.preset === 'nfl' && ['nfl', 'cfl', 'cfl27'].includes(project.surface)) || (button.dataset.preset === 'nba' && ['nba', 'ncaa'].includes(project.surface)) || button.dataset.preset === project.surface));
   $all('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === activeTab));
   byId('undoBtn').disabled = !history.length;
@@ -221,7 +234,7 @@ function showSelection(seat = stadium?.selectedSeat) {
 function updateStats() {
   if (!model) return;
   byId('capacityValue').textContent = num(model.capacity);
-  byId('seatSourceLabel').textContent=model.seatOrigin==='imported'?'imported, not independently verified':isOhioReference(project)?'reconstructed sectors · NOT official seat count':'parametrically generated seats';
+  byId('seatSourceLabel').textContent=model.seatOrigin==='imported'?'imported, not independently verified':(isOhioReference(project)||isSchottensteinReference(project))?'reconstructed sectors · NOT official seat count':'parametrically generated seats';
   byId('tierCount').textContent = model.tiers.length;
   byId('sectionCount').textContent = model.project.sections.filter(s => s.enabled).length;
   byId('fieldSize').textContent = `${model.surface.length.toFixed(0)}×${model.surface.width.toFixed(0)}`;
@@ -352,6 +365,13 @@ async function exportGlb() {
   } catch (error) { toast(`GLB export failed: ${error.message}`, true); }
   finally { button.disabled = false; button.textContent = before; }
 }
+function exportVenueQA(){
+  const report=venueQualityReport(project,model?.capacity??0);
+  if(!report)return toast('Load an OSU sample first.',true);
+  downloadBlob(new Blob([JSON.stringify({schema:'filedmaker-osu-venue-qa.v1',...report},null,2)],
+    {type:'application/json'}),`${slug()}-source-capacity-QA.json`);
+  toast('Source-backed capacity and seat-data confidence report exported.');
+}
 function exportSurveyQA(){
   const survey=project.survey;
   let fit=null,warning=null;
@@ -440,6 +460,12 @@ byId('tabContent').addEventListener('click', e => {
       toast(`${arena.arena} loaded · only verified venue facts are treated as real.`);
     }
   }
+  else if(target.hasAttribute('data-build-schottenstein')){
+    if(confirm('Load the Schottenstein Center basketball reference? Unsaved edits will be replaced. Seats and structure remain approximate.')) {
+      activeTab='bowl'; replaceProject(createSchottensteinCenterProject());
+      toast('Loaded Schottenstein Center. Official facts and estimated bowl geometry are separated.');
+    }
+  }
   else if(target.hasAttribute('data-build-ohio-stadium')){
     if(confirm('Load the Ohio Stadium architectural reference? Current unsaved model will be replaced. This is not an accurate seat survey.')) {
       activeTab='bowl'; replaceProject(createOhioStadiumProject());
@@ -468,6 +494,7 @@ byId('tabContent').addEventListener('click', e => {
   }
   else if(target.hasAttribute('data-remove-obstacle'))commit(next=>{next.survey.obstacles.splice(Number(target.dataset.removeObstacle),1);});
   else if(target.hasAttribute('data-export-survey-report'))exportSurveyQA();
+  else if(target.hasAttribute('data-export-osu-qa'))exportVenueQA();
   else if (target.dataset.addTier !== undefined) {
     commit(next => {
       const prev = next.tiers.at(-1);
@@ -799,6 +826,7 @@ byId('clearReference').addEventListener('click', () => {
 
 byId('newProject').addEventListener('click', () => { if (confirm('Create a new NCAA school venue draft?')) replaceProject(createSchoolProject('college-gym',{school:'Your School',venue:'School Gymnasium'})); });
 byId('ohioVenueShortcut').addEventListener('click', () => { if(confirm('Load the Ohio Stadium reference? Unsaved edits will be replaced.')) {activeTab='bowl'; replaceProject(createOhioStadiumProject()); toast('Ohio Stadium geometry loaded. All seat positions remain estimated.');}});
+byId('schottVenueShortcut').addEventListener('click', () => { if(confirm('Load Schottenstein Center reference? Unsaved edits will be replaced.')) {activeTab='bowl'; replaceProject(createSchottensteinCenterProject()); toast('Schottenstein Center loaded. Generated seats remain estimates.');}});
 byId('saveProject').addEventListener('click', saveSlot);
 byId('openProject').addEventListener('click', () => { drawLibrary(); byId('projectDialog').showModal(); });
 byId('projectDialog').addEventListener('click', e => {

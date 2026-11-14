@@ -2,7 +2,8 @@
 // Geometry is created using bounded mesh counts and seat/step instancing.
 import * as THREE from 'three';
 import { SURFACES, modelPerimeterPoint, resolveTiers, resolveSectionTier } from './model.mjs';
-import { OHIO_STADIUM, isOhioReference } from './venues.mjs';
+import { OHIO_STADIUM, isOhioReference, isSchottensteinReference } from './venues.mjs';
+import { schottensteinFeaturePlan } from './schottensteinKit.mjs';
 import { aisleStairPlan, facadeArcPlan } from './stadiumDetails.mjs';
 import { entranceFramePlan, fieldEquipmentPlan, guardrailPlan } from './detailKit.mjs';
 import { nbaArenaId } from './nbaGeometry.mjs';
@@ -199,6 +200,61 @@ function ohioSpecific(root,project){
     for(let n=-2;n<=2;n++) addBox(root,1,.65,.6,x+n*1.23,47,zPos-.55,material(0xf3f2e7,.1,.25));
   }
 }
+// The central display is based on OSU's 2026 feature announcement. No public
+// drawing substantiates dimensions, screen curvature radius or mounting height.
+function schottensteinSpecific(root,project){
+  const spec=schottensteinFeaturePlan(project);
+  if(!spec)return;
+  const rootGroup=new THREE.Group();
+  rootGroup.name='SchottensteinCenter_2026_IllustrativeScreenKit';
+  const led=new THREE.MeshStandardMaterial({color:0x30475a,emissive:0x1c3854,emissiveIntensity:.25,roughness:.42,metalness:.08});
+  const frame=material(0x333841,.42,.42),trim=material(0x8c9199,.38,.52);
+  const pale=material(0xc4c6c9,.13,.67);
+  const {board,ribbon}=spec;
+  const boardGroup=new THREE.Group();boardGroup.position.y=board.y;
+  const radius=board.widthM*.52;
+  // Three facets per nominal face give a subtly convex four-sided silhouette.
+  for(let face=0;face<board.faceCount;face++){
+    const f=new THREE.Group();f.rotation.y=face*Math.PI/2;
+    for(let facet=0;facet<board.facetsPerFace;facet++){
+      const span=board.widthM/board.facetsPerFace;
+      const dx=(facet-1)*span;
+      const p=addBox(f,span+.025,board.heightM,.11,dx,0,radius-.14*Math.abs(facet-1),led);
+      p.rotation.y=(facet-1)*-.085;
+      p.userData.referenceQuality='screen faces documented; screen curvature and dimensions are estimated';
+    }
+    addBox(f,board.widthM+.28,.21,.28,0,board.heightM/2+.12,radius,trim);
+    addBox(f,board.widthM+.28,.21,.28,0,-board.heightM/2-.12,radius,trim);
+    const bottom=addBox(f,board.widthM*.75,.55,.12,0,-board.heightM/2-.58,radius*.60,led);
+    bottom.rotation.x=.25;
+    rootGroup.add(f);
+  }
+  addBox(boardGroup,board.widthM+1,.52,board.widthM+1,0,board.heightM/2+.21,0,frame);
+  addBox(boardGroup,board.widthM*.75,.28,board.widthM*.75,0,-board.heightM/2-.62,0,frame);
+  for(const x of [-2.4,2.4])for(const z of [-2.4,2.4])beam(boardGroup,[x,board.heightM/2+.30,z],[x,board.heightM/2+5,z],.045,trim);
+  // Add face groups to boardGroup (not root) so the central suspension height applies.
+  for(const item of [...rootGroup.children])boardGroup.add(item);
+  rootGroup.add(boardGroup);
+
+  const surface=SURFACES[project.surface],divisions=96;
+  for(let i=0;i<divisions;i++){
+    const a=(i/divisions)*Math.PI*2,b=((i+1)/divisions)*Math.PI*2;
+    // Ribbon follows a derived arena facade radius. Exact OSU curve is unknown.
+    const radial=resolveTiers(project)[1]?.startOffset || 25;
+    const q1=modelPerimeterPoint(project,surface,a,radial),q2=modelPerimeterPoint(project,surface,b,radial);
+    segment(rootGroup,q1,q2,.11,ribbon.widthM,ribbon.y,led);
+  }
+  for(const signX of [-1,1])for(const signZ of [-1,1]){
+    const w=3.8,h=1.7,x=signX*22,z=signZ*30;
+    const panel=addBox(rootGroup,w,h,.14,x,board.y+9,z,led);
+    panel.rotation.y=signZ*Math.PI/4;panel.userData.referenceQuality='upper-corner board feature documented, individual locations are estimated';
+    addBox(rootGroup,w+.18,.16,.24,x,board.y+9+h/2,z,pale);
+  }
+  rootGroup.userData={referenceQuality:spec.modelStatus,documentedVomitoryDisplays:spec.documentedVomitoryDisplayCount,
+    surveyedVomitoryDisplayPositions:spec.positionedVomitoryDisplays};
+  root.add(rootGroup);
+}
+
 function sportFurniture(root,project){
   const assets=fieldEquipmentPlan(project);
   const shell=material(0xc7ccd0,.28,.55), dark=material(0x30383d,.25,.68);
@@ -248,7 +304,7 @@ function sportFurniture(root,project){
       addBox(root,.10,.62,7.9,x-.86,.52,z,red);
     }
   }
-  if((project.surface==='nba'||project.surface==='ncaa-basketball') && !nbaArenaId(project)) {
+  if(SURFACES[project.surface].sport==='basketball' && !nbaArenaId(project) && !isSchottensteinReference(project)) {
     // Suspended four-way board, with shallow inset LED faces and mounting mast.
     addBox(root,5.9,3.85,5.9,0,15,0,dark);
     const LED=material(0x334d58,.14,.42);
@@ -272,5 +328,5 @@ export function addDetailedVenue(root,model){
     facade(root,project);
     if(isOhioReference(project) && project.showExterior)ohioSpecific(root,project);
   }
-  if(project.showFixtures){sportFurniture(root,project);addNBAArenaArchitecture(root,project);}
+  if(project.showFixtures){sportFurniture(root,project);addNBAArenaArchitecture(root,project);schottensteinSpecific(root,project);}
 }
