@@ -230,7 +230,7 @@ function saveSlot() {
 function drawLibrary() {
   const library = getStored(KEY_LIBRARY, {});
   const entries = Object.entries(library).sort((a, b) => b[1].saved.localeCompare(a[1].saved));
-  byId('savedProjects').innerHTML = entries.length ? entries.map(([key, value]) => `<div class="saved-entry"><div><strong>${safe(value.name)}</strong><small>${safe(new Date(value.saved).toLocaleString())}</small></div><div><button data-load-slot="${safe(key)}">Open</button><button class="delete" data-delete-slot="${safe(key)}" aria-label="Delete project">×</button></div></div>`).join('') : '<p class="hint">No saved snapshots yet. Use “Save locally” in the sidebar, or import an existing project.</p>';
+  byId('savedProjects').innerHTML = entries.length ? entries.map(([key, value]) => `<div class="saved-entry"><div><strong>${safe(value.name)}</strong><small>${safe(new Date(value.saved).toLocaleString())}</small></div><div><button type="button" data-load-slot="${safe(key)}">Open</button><button type="button" class="delete" data-delete-slot="${safe(key)}" aria-label="Delete project">×</button></div></div>`).join('') : '<p class="hint">No saved snapshots yet. Use “Save locally” in the sidebar, or import an existing project.</p>';
 }
 
 byId('tabContent').addEventListener('change', e => {

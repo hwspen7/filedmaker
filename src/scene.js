@@ -295,15 +295,18 @@ export class StadiumScene {
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), mat(0x172a33));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.33;
+    ground.userData.editorOnly = true;
     this.root.add(ground);
     const grid = new THREE.GridHelper(320, 32, 0x415869, 0x2d3d4c);
     grid.position.y = -0.31;
     grid.material.transparent = true;
     grid.material.opacity = 0.24;
+    grid.userData.editorOnly = true;
     this.root.add(grid);
     if (project.roof) this.addRoof();
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(0.43, 12, 10), new THREE.MeshBasicMaterial({ color: 0xffc46b, depthTest: false }));
     this.marker.renderOrder = 10;
+    this.marker.userData.editorOnly = true;
     this.root.add(this.marker);
     this.selectedSeat = seats.find(s => s.uid === savedUid) || seats.find(s => s.tier === 0 && s.row === 7) || seats[0] || null;
     this.highlight(this.selectedSeat);
@@ -400,8 +403,18 @@ export class StadiumScene {
   async exportGLB() {
     if (!this.model) throw new Error('Generate a stadium before exporting.');
     const exporter = new GLTFExporter();
+    const hidden = [];
+    this.root.traverse(object => {
+      if (object.userData.editorOnly && object.visible) { hidden.push(object); object.visible = false; }
+    });
+    const restore = () => hidden.forEach(object => { object.visible = true; });
     return new Promise((resolve, reject) => {
-      exporter.parse(this.root, result => resolve(new Blob([result], { type: 'model/gltf-binary' })), error => reject(error), { binary: true, onlyVisible: false, trs: true });
+      try {
+        exporter.parse(this.root, result => {
+          restore();
+          resolve(new Blob([result], { type: 'model/gltf-binary' }));
+        }, error => { restore(); reject(error); }, { binary: true, onlyVisible: true, trs: true });
+      } catch (error) { restore(); reject(error); }
     });
   }
 
