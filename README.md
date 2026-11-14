@@ -291,3 +291,9 @@ Bowl → **NBA Arena Reconstruction** includes all 30 NBA 2026–27 home-arena i
 - **NBA data:** see [NBA Real Arena Pipeline](docs/NBA_REAL_ARENA_PIPELINE.md) for evidence and acceptance requirements.
 
 This update is a production pipeline foundation, **not** 30 finished measured arena digital twins.
+
+## v7.2 — Stadium geometry integrity and human-eye correction
+
+This scoped release repairs the common white rectangular cutouts seen in old stadium mockups. Unverified Ohio Stadium entrance openings were removed from the default real-venue reference, and unchanged legacy openings are migrated away without deleting user edits. Authored openings now require sufficient row rise, generate fitted corridor linings and closed tread edge skirts, and report unusable requests instead of carving phantom holes. High-detail seats use softer, thinner instanced backrests and seat cushions. Human view now models independent seat/hip/eye/look anchors and bounds neighbor collision correction without moving the model's original seat coordinates.
+
+See [Geometry Integrity — Phase 1](docs/GEOMETRY_INTEGRITY_PHASE1.md) for precise acceptance criteria, limitations and verification. The geometry is still **schematic**, and a successful unit-test run is not proof of accurate real-world seat views or complete watertight mesh topology.

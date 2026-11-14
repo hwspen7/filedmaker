@@ -106,13 +106,10 @@ export function createOhioStadiumProject() {
   p.aisles = Array.from({length: 14}, (_,i)=>({
     id:`illustrative-aisle-${i+1}`, angle: Number(((i+.5)*360/14).toFixed(3)), width: 1.45, tier:'all',
   }));
-  p.portals = [
-    {id:'illustrative-east-lower',tierId:'T2',angle:9,width:5,firstRow:11,lastRow:17},
-    {id:'illustrative-west-lower',tierId:'T2',angle:171,width:5,firstRow:11,lastRow:17},
-    {id:'illustrative-north-lower',tierId:'T2',angle:270,width:5,firstRow:11,lastRow:17},
-    {id:'illustrative-east-upper',tierId:'T4',angle:345,width:5,firstRow:9,lastRow:14},
-    {id:'illustrative-west-upper',tierId:'T4',angle:195,width:5,firstRow:9,lastRow:14},
-  ];
+  // Real portal locations and opening dimensions have not been verified.
+  // Do not invent conspicuous cutouts in a named real stadium. Schools can
+  // add evidence-backed openings from surveyed CAD/SVG or venue photos.
+  p.portals = [];
   p.survey.venue = 'Ohio Stadium';
   p.survey.source = 'Ohio State official architectural facts and seating maps; interpretive sector geometry';
   p.survey.sourceUrl = OHIO_STADIUM.sources[0];

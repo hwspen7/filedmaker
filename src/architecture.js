@@ -82,30 +82,42 @@ function ribbons(root,project){
   }
 }
 function entryPortals(root,project){
-  // Open portal aperture: only piers, a lintel and a tread-level threshold.
-  // A solid black cuboid here would obstruct the seat view and appear to float.
-  const pierMat=material(0xb5b5b0), capMat=material(0xe1e2de), thresholdMat=material(0x909c9f,.12,.7);
+  // A vomitory is a walk-through *volume*, not a floating dark cuboid. Keep its
+  // tread, side cheek walls and far lintel in the identical local frame that
+  // produced the row cutout. Inactive/under-height cuts are never emitted.
+  const concrete=material(0xc5c8c5), wall=material(0xd4d6d4);
+  const nosing=material(0x969f9f,.12,.7), interior=material(0x46535a,.02,.91);
   for(const portal of entranceFramePlan(project)){
-    const {near,far,width,clearHeight,entranceFloor,topOfStands,yaw}=portal;
-    // Short landings are a plausible schematic treatment, not a surveyed tunnel.
-    const rootGroup=new THREE.Group();
-    rootGroup.position.set(far.x,0,far.z);
-    rootGroup.rotation.y=yaw;
-    const h=Math.max(1.9,clearHeight);
-    const fromY=topOfStands-h;
-    // Only draw a real doorway where there is enough vertical relief.
-    for(const sign of [-1,1]){
-      addBox(rootGroup,.20,h,.80,sign*(width/2+.10),fromY+h/2,-.32,pierMat);
+    const {near,far,width,clearHeight,entranceFloor,yaw,openingDepth}=portal;
+    const group=new THREE.Group();
+    group.position.set((near.x+far.x)/2,0,(near.z+far.z)/2);
+    group.rotation.y=yaw;
+    const depth=openingDepth, floor=entranceFloor, h=clearHeight;
+    // Visible circulation floor aligns with the first removed riser.
+    addBox(group,width+.12,.13,depth+.12,0,floor-.065,0,concrete);
+    addBox(group,width+.12,.025,.10,0,floor+.013,-depth/2-.04,nosing);
+    // Trapezoidal cheek walls gradually follow the rising stand surface;
+    // extruding full-height walls along the whole run made tall floating blocks.
+    for(const side of [-1,1]) {
+      const x=side*(width/2+.07);
+      const p=[x,floor,-depth/2-.1,x,floor,depth/2+.10,
+        x,floor+h+.05,depth/2+.10,x,floor+.30,-depth/2-.10];
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
+      g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();
+      group.add(new THREE.Mesh(g,wall));
+      addBox(group,.14,h,.24,x,floor+h/2,depth/2-.10,concrete);
     }
-    addBox(rootGroup,width+.6,.23,.92,0,topOfStands+.12,-.3,capMat);
-    // Thin front lip at the first removed row; does not cover the passage.
-    const localFront=new THREE.Vector3(near.x-far.x,0,near.z-far.z);
-    localFront.applyAxisAngle(new THREE.Vector3(0,1,0),-yaw);
-    addBox(rootGroup,width+.35,.08,.50,0,entranceFloor+.04,localFront.z,thresholdMat);
-    rootGroup.userData={portalId:portal.id,referenceQuality:'illustrative open portal',solidInAperture:false};
-    root.add(rootGroup);
+    addBox(group,width+.48,.27,.45,0,floor+h+.12,depth/2-.12,concrete);
+    // A recessed dark surface models the unlit concourse interior, rather
+    // than a black *solid in the aperture* in front of the spectators.
+    const back=addBox(group,width-.12,h-.20,.05,0,floor+h/2,depth/2+.46,interior);
+    back.userData={recessedPortalBackdrop:true,referenceQuality:'visual inference only'};
+    group.userData={portalId:portal.id,referenceQuality:'illustrative lined portal',solidInAperture:false};
+    root.add(group);
   }
 }
+
 function railings(root,project){
   if(project.detailLevel!=='high')return;
   const {rails,posts}=guardrailPlan(project);

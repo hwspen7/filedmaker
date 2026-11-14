@@ -182,6 +182,22 @@ export function validateProject(input) {
     if (base.startHeight + profile.heightShift < 0.15) throw new Error('Section elevation must remain above the playing surface.');
   });
   if (project.portals === undefined) project.portals = [];
+  // Remove only untouched legacy sketch openings from the Ohio reference.
+  // Earlier versions embedded five guessed portals. Those produced false
+  // rectangular voids in the named real stadium. An edited user opening is
+  // intentionally retained to avoid silently discarding authored geometry.
+  if (project.venueReference?.id === 'ohio-stadium' && Array.isArray(project.portals)) {
+    const legacy=[
+      ['illustrative-east-lower','T2',9,5,11,17],
+      ['illustrative-west-lower','T2',171,5,11,17],
+      ['illustrative-north-lower','T2',270,5,11,17],
+      ['illustrative-east-upper','T4',345,5,9,14],
+      ['illustrative-west-upper','T4',195,5,9,14],
+    ];
+    project.portals=project.portals.filter(portal=>!legacy.some(([id,tierId,angle,width,firstRow,lastRow])=>
+      portal.id===id&&portal.tierId===tierId&&portal.angle===angle&&
+      portal.width===width&&portal.firstRow===firstRow&&portal.lastRow===lastRow));
+  }
   if (!Array.isArray(project.portals) || project.portals.length > 40) throw new Error('Use at most 40 entrance openings.');
   const portalIds = new Set();
   project.portals.forEach((portal, index) => {
@@ -340,6 +356,24 @@ export function modelPerimeterPath(project, surface, margin = 0, resolution = 51
 
 // Split a section's seat row at aisle strips, including wraparound at 0°.
 // The same intervals drive visible terrace geometry and generated seat positions.
+// An entrance is only cut when the enabled tier supplies enough rise for a
+// walk-through aperture. A two-row opening must not become a floating hole.
+// Returned geometry is schematic unless a measured opening is supplied.
+export function eligiblePortal(project, portal) {
+  if (!portal || !Number.isFinite(Number(portal.angle))) return null;
+  const section = project.sections.find(s => s.enabled && portal.angle >= s.start && portal.angle < s.end);
+  const tier = resolveTiers(project).find(t => t.id === portal.tierId);
+  if (!section || !tier) return null;
+  const profile = resolveSectionTier(tier, section.id, project);
+  const firstRow = Math.max(1, Math.trunc(portal.firstRow));
+  const lastRow = Math.min(profile.rows, Math.trunc(portal.lastRow));
+  if (!Number.isFinite(firstRow) || !Number.isFinite(lastRow) || firstRow > lastRow) return null;
+  const clearRise = (lastRow - firstRow + 1) * profile.rise;
+  // Under-height cutouts were being rendered as white slots in the stand.
+  if (clearRise < 1.85 || portal.width < 1.0) return null;
+  return { portal, section, tier, profile, firstRow, lastRow, clearRise };
+}
+
 export function seatingIntervals(path, section, project, tierId = 'T1', row = null) {
   const start = distanceAtAngle(path, section.start * Math.PI / 180) + project.aisleWidth / 2;
   const end = distanceAtAngle(path, section.end * Math.PI / 180) - project.aisleWidth / 2;
@@ -365,7 +399,8 @@ export function seatingIntervals(path, section, project, tierId = 'T1', row = nu
   // Vomitories / entrance portals only remove seats within the specified row band.
   if (row !== null) {
     for (const portal of project.portals || []) {
-      if (portal.tierId !== tierId || row < portal.firstRow || row > portal.lastRow) continue;
+      const valid = eligiblePortal(project, portal);
+      if (!valid || valid.tier.id !== tierId || valid.section.id !== section.id || row < valid.firstRow || row > valid.lastRow) continue;
       const at = distanceAtAngle(path, portal.angle * Math.PI / 180);
       for (const shift of [-path.length, 0, path.length]) {
         const low = at + shift - portal.width / 2, high = at + shift + portal.width / 2;

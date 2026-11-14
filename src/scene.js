@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveSectionTier } from './model.mjs';
-import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates } from './view.mjs';
+import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates, resolveEyeClearance } from './view.mjs';
 import { addDetailedVenue } from './architecture.js';
 import { seatAssetPlan } from './detailKit.mjs';
 import { isOhioReference } from './venues.mjs';
+import { treadEdgeCap } from './geometryIntegrity.mjs';
 
 const white = 0xf2f6ef;
 const mat = (color, roughness = 0.85) => new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.06 });
@@ -185,6 +187,17 @@ function makeTerrace(section, surface, tier, project) {
           indices.push(k+1,k+2,k+4,k+2,k+5,k+4);
         }
       }
+      // Seal exposed tread edges on both sides of aisle/vomitory cuts.
+      // These edge skirts are part of the same terrace mesh, eliminating
+      // background-colored "holes" produced by one-sided stepped sheets.
+      for(const distance of [start,end]) {
+        const corners=treadEdgeCap(project,surface,path,radial,profile.depth,y,distance);
+        const k=vertices.length/3;
+        for(const point of corners)vertices.push(point.x,point.y,point.z);
+        const tone=shade.clone().multiplyScalar(.79);
+        for(let j=0;j<4;j++)colors.push(tone.r,tone.g,tone.b);
+        indices.push(k,k+1,k+2,k+1,k+3,k+2);
+      }
     }
   }
   const geometry = new THREE.BufferGeometry();
@@ -194,6 +207,7 @@ function makeTerrace(section, surface, tier, project) {
   geometry.computeVertexNormals();
   const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.95 }));
   mesh.userData.sectionId = section.id;
+  mesh.userData.closedTreadCuts = true;
   return mesh;
 }
 
@@ -222,10 +236,16 @@ function createSeatMesh(seats, project) {
   const steel=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.52,metalness:.42});
   const upholstery=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.75,metalness:.06});
   const seatWidth=dims.seatWidth;
+  // Round-edged, thinner seat and backrest remain instanced. Geometry is
+  // shared by all seats, even in a 100k-capacity campus stadium.
+  const seatBody=high ? new RoundedBoxGeometry(seatWidth,dims.seatThickness,dims.seatDepth,2,.018)
+    : new THREE.BoxGeometry(seatWidth,dims.seatThickness,dims.seatDepth);
+  const chairBack=high ? new RoundedBoxGeometry(seatWidth*.94,dims.backHeight,dims.backThickness,2,.018)
+    : new THREE.BoxGeometry(seatWidth*.94,dims.backHeight,dims.backThickness);
   const defs=[
-    [new THREE.BoxGeometry(seatWidth,dims.seatThickness,dims.seatDepth),upholstery],
-    [new THREE.BoxGeometry(seatWidth*.94,.035,.045),upholstery],
-    [new THREE.BoxGeometry(seatWidth,dims.backHeight,dims.backThickness),upholstery],
+    [seatBody,upholstery],
+    [new THREE.BoxGeometry(seatWidth*.88,.018,.028),upholstery],
+    [chairBack,upholstery],
     [new THREE.BoxGeometry(dims.legThickness,.36,.035),steel],
     [new THREE.BoxGeometry(dims.legThickness,.36,.035),steel],
     [new THREE.BoxGeometry(dims.armThickness,.041,.27),steel],
@@ -504,6 +524,7 @@ export class StadiumScene {
 
   highlight(seat) {
     this.selectedSeat = seat || null;
+    this.nearbySeats = this.model && seat ? crowdCandidates(this.model,seat,32) : [];
     if (this.model) this.refreshCrowd();
     if (!this.marker) return;
     this.marker.visible = Boolean(seat);
@@ -575,8 +596,11 @@ export class StadiumScene {
     this.hideCurrentSeatForViewer(true);
     this.camera.near=.045;
     this.camera.up.set(0,1,0);
-    this.camera.position.set(p.origin.x,p.origin.y,p.origin.z);
-    this.camera.lookAt(p.origin.x+p.direction.x*30,p.origin.y+p.direction.y*30,p.origin.z+p.direction.z*30);
+    // Do not let the camera enter a neighboring chair's rendered backrest.
+    // The authored seat position and the viewer's gaze remain unchanged.
+    const safe=resolveEyeClearance(this.selectedSeat,p.origin,this.nearbySeats||[]);
+    this.camera.position.set(safe.origin.x,safe.origin.y,safe.origin.z);
+    this.camera.lookAt(safe.origin.x+p.direction.x*30,safe.origin.y+p.direction.y*30,safe.origin.z+p.direction.z*30);
     this.camera.fov=p.fov;
     this.camera.updateProjectionMatrix();
     if (this.marker) this.marker.visible=false;

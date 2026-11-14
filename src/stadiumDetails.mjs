@@ -1,5 +1,5 @@
 // Pure scene-planning helpers: stable, testable, no WebGL dependency.
-import { SURFACES, modelPerimeterPoint, resolveTiers, resolveSectionTier } from './model.mjs';
+import { SURFACES, modelPerimeterPoint, resolveTiers, resolveSectionTier, eligiblePortal } from './model.mjs';
 import { OHIO_STADIUM, isOhioReference } from './venues.mjs';
 
 const rad = degrees => degrees*Math.PI/180;
@@ -21,7 +21,10 @@ export function aisleStairPlan(project, minSegmentLength = .4) {
       const width= Math.max(minSegmentLength, (project.aisles||[]).find(v=>Math.abs(v.angle-angle)<.005)?.width||project.aisleWidth);
       if(!p.rows||width<.5)continue;
       for(let row=0;row<p.rows;row++) {
-        if((project.portals||[]).some(v=>v.tierId===tier.id && row+1>=v.firstRow && row+1<=v.lastRow && Math.abs(v.angle-angle)<5)) continue;
+        if((project.portals||[]).some(v=>{
+          const checked=eligiblePortal(project,v);
+          return checked && checked.tier.id===tier.id && row+1>=checked.firstRow && row+1<=checked.lastRow && Math.abs(v.angle-angle)<5;
+        })) continue;
         const distance=p.startOffset+(row+.5)*p.depth;
         const coord=modelPerimeterPoint(project,surface,rad(angle),distance);
         result.push({x:coord.x,z:coord.z,y:p.startHeight+row*p.rise-.10,angle,width:Math.min(2.8,width),depth:p.depth,rise:p.rise,tierId:tier.id});

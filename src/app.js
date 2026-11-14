@@ -1,4 +1,4 @@
-import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers, resolveSectionTier } from './model.mjs';
+import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers, resolveSectionTier, eligiblePortal } from './model.mjs';
 import { parseSvgPlan, planPoint, tracePlanOutline } from './plan.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, sightlineNote, nearbySeat, seatDescriptor } from './view.mjs';
 import { parseSeatCSV, fitPlanRegistration, seatRegistration, obstructionReport, demoSurveyRows } from './survey.mjs';
@@ -141,7 +141,10 @@ function renderTab() {
       html += field('Tier', `<select data-portal-index="${i}" data-portal-prop="tierId">${optionList(portal.tierId, project.tiers.map(t => [t.id,t.label]))}</select>`);
       html += `<div class="two-fields">${field('Angle (°)', `<input type="number" min="0" max="359.99" step="0.5" data-portal-index="${i}" data-portal-prop="angle" value="${portal.angle}" />`)}${field('Width (m)', `<input type="number" min="0.8" max="18" step="0.1" data-portal-index="${i}" data-portal-prop="width" value="${portal.width}" />`)}</div>`;
       html += `<div class="two-fields">${field('Start row', `<input type="number" min="1" max="75" step="1" data-portal-index="${i}" data-portal-prop="firstRow" value="${portal.firstRow}" />`)}${field('End row', `<input type="number" min="1" max="75" step="1" data-portal-index="${i}" data-portal-prop="lastRow" value="${portal.lastRow}" />`)}</div>`;
-      html += `<p class="hint">${safe(tier?.label || 'Tier')} · seat and terrace cutout</p></div>`;
+      const opening=eligiblePortal(project,portal);
+      html += `<p class="hint">${safe(tier?.label || 'Tier')} · ${opening
+        ? `lined entrance · ${opening.clearRise.toFixed(2)} m rise clearance`
+        : 'No cutout: verify enabled section, row range and 1.85 m minimum rise clearance'}</p></div>`;
     });
   } else if (activeTab === 'plan') {
     html = `<p class="hint">Import a vector seating plan (SVG). Its shapes become inert geometry guides, not executable SVG. Set scale, offset, and rotation before tracing a closed stadium contour.</p>`;

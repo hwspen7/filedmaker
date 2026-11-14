@@ -32,15 +32,42 @@ export function viewingTarget(surface, target = 'center', seat = null) {
 // eyes are slightly forward of the chair centre, away from the backrest.
 // A viewer-only local clearance also prevents intersecting their own seat mesh.
 export function eyePosition(seat, posture = 'seated') {
-  const eye = POSTURE_HEIGHT[posture] || POSTURE_HEIGHT.seated;
-  const forward = posture === 'leaning' ? 0.38 : posture === 'standing' ? .20 : .23;
-  const yaw = Number.isFinite(seat.yaw) ? seat.yaw : Math.atan2(-seat.x,-seat.z);
+  return seatViewAnchors(seat,posture).eye;
+}
+// The four anchors have distinct meanings: the authored seat center is never
+// rewritten by posture adjustments. All coordinates are in meters.
+export function seatViewAnchors(seat, posture='seated') {
+  const yaw=Number.isFinite(seat.yaw)?seat.yaw:Math.atan2(-seat.x,-seat.z);
+  const forward=posture==='leaning' ? .38 : posture==='standing' ? .20 : .23;
+  const direction={x:Math.sin(yaw),z:Math.cos(yaw)};
   return {
-    x: seat.x + Math.sin(yaw)*forward,
-    y: seat.y + eye,
-    z: seat.z + Math.cos(yaw)*forward,
+    seat:{x:seat.x,y:seat.y,z:seat.z},
+    hip:{x:seat.x+direction.x*.03,y:seat.y+.49,z:seat.z+direction.z*.03},
+    eye:{x:seat.x+direction.x*forward,y:seat.y+(POSTURE_HEIGHT[posture]||POSTURE_HEIGHT.seated),z:seat.z+direction.z*forward},
+    lookAnchor:{x:seat.x+direction.x*1.5,y:seat.y+1.1,z:seat.z+direction.z*1.5},
   };
 }
+
+// Renderer-side near-neighbor clearance for schematic seat meshes. This is
+// not a substitute for measured sightline obstruction data and is capped at
+// 0.24m to avoid pretending the person moved to another seat.
+export function resolveEyeClearance(seat, origin, neighbors=[], safeRadius=.22) {
+  const yaw=Number.isFinite(seat.yaw)?seat.yaw:Math.atan2(-seat.x,-seat.z);
+  let forwardShift=0;
+  const candidates=neighbors.filter(n=>n.uid!==seat.uid&&Math.abs(n.y-origin.y)<1.6&&Math.hypot(n.x-origin.x,n.z-origin.z)<1.0);
+  const collides=(x,z)=>candidates.some(n=>
+    Math.hypot(n.x-x,n.z-z)<safeRadius&&
+    origin.y>=n.y+.36 && origin.y<=n.y+1.02
+  );
+  let x=origin.x,z=origin.z;
+  while(collides(x,z)&&forwardShift<.24-1e-8){
+    forwardShift+=.04;
+    x=origin.x+Math.sin(yaw)*forwardShift;
+    z=origin.z+Math.cos(yaw)*forwardShift;
+  }
+  return {origin:{x,y:origin.y,z},shift:Math.round(forwardShift*1000)/1000,clear:!collides(x,z)};
+}
+
 export function spectatorSeatClearance(seat, eye, width=.48) {
   // Pure geometry sanity check for the chair's own volume in local coordinates.
   const yaw=Number.isFinite(seat.yaw)?seat.yaw:Math.atan2(-seat.x,-seat.z);

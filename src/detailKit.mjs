@@ -1,7 +1,7 @@
 // Reusable, survey-agnostic stadium detail plans. All values are in meters.
 // This module deliberately has no Three.js dependency so topology and placement
 // can be checked in Node before any visual render or GPU allocation.
-import { SURFACES, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveTiers, resolveSectionTier } from './model.mjs';
+import { SURFACES, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveTiers, resolveSectionTier, eligiblePortal } from './model.mjs';
 import { isOhioReference } from './venues.mjs';
 
 const rad = degrees => degrees * Math.PI / 180;
@@ -9,33 +9,26 @@ const within = (angle, section) => angle >= section.start && (angle < section.en
 
 export function entranceFramePlan(project) {
   const surface = SURFACES[project.surface];
-  const tiers = resolveTiers(project);
   const results = [];
   for (const portal of project.portals || []) {
-    const tier = tiers.find(t => t.id === portal.tierId);
-    const section = project.sections.find(s => s.enabled && within(portal.angle, s));
-    if (!tier || !section) continue;
-    const p = resolveSectionTier(tier, section.id, project);
-    const first = Math.max(1, portal.firstRow);
-    const last = Math.min(p.rows, portal.lastRow);
-    if (first > last) continue;
-    const startR = p.startOffset + (first - 1) * p.depth;
-    const endR = p.startOffset + last * p.depth;
-    const openingDepth = endR - startR;
-    const entranceFloor = p.startHeight + (first - 1) * p.rise - .15;
-    const topOfStands = p.startHeight + last * p.rise - .15;
-    // The frame touches the *upper* edge of the seat void. No opaque block is
-    // put into the opening, and no fixture is placed inside an inactive tier.
+    const valid = eligiblePortal(project, portal);
+    if (!valid) continue;
+    const {section, tier, profile, firstRow, lastRow, clearRise} = valid;
+    const startR = profile.startOffset + (firstRow - 1) * profile.depth;
+    const endR = profile.startOffset + lastRow * profile.depth;
+    const entranceFloor = profile.startHeight + (firstRow - 1) * profile.rise - .15;
+    const topOfStands = profile.startHeight + lastRow * profile.rise - .15;
     const near = modelPerimeterPoint(project, surface, rad(portal.angle), startR);
     const far = modelPerimeterPoint(project, surface, rad(portal.angle), endR);
+    const depth = Math.hypot(far.x - near.x, far.z - near.z);
+    if (depth < .75) continue;
     results.push({
-      id: portal.id, sectionId: section.id, tierId: tier.id, firstRow: first,
-      lastRow: last, angle: portal.angle, width: portal.width,
-      near, far, openingDepth, entranceFloor, topOfStands,
-      yaw: Math.PI / 2 - rad(portal.angle),
-      // 1.8m clear portal is possible only when rows provide sufficient rise.
-      clearHeight: Math.max(0, topOfStands - entranceFloor),
-      kind: 'open-jamb-and-lintel', provenance: 'schematic',
+      id:portal.id,sectionId:section.id,tierId:tier.id,firstRow,lastRow,
+      angle:portal.angle,width:portal.width,near,far,openingDepth:depth,
+      entranceFloor,topOfStands,
+      yaw:Math.atan2(far.x-near.x,far.z-near.z),
+      // The portal shell and seat cutout reference this same validation.
+      clearHeight:clearRise,kind:'open-jamb-and-lintel',liner:'recessed-walk-through',provenance:'schematic',
     });
   }
   return results;
@@ -50,9 +43,9 @@ export function seatAssetPlan(project) {
     type: ohio ? 'mixed-bleacher' : 'folding-chair',
     seatWidth: Math.min(.46, Math.max(.35, pitch - .10)),
     seatDepth: .38,
-    seatThickness: .055,
-    backHeight: .43,
-    backThickness: .065,
+    seatThickness: .048,
+    backHeight: .40,
+    backThickness: .048,
     legThickness: .027,
     seatHeight: .45,
     armThickness: .035,
