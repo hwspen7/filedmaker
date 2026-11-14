@@ -58,8 +58,8 @@ test('3D scene includes new architecture, human seat view and sport equipment',(
  const arch=readFileSync(new URL('../src/architecture.js',import.meta.url),'utf8');
  assert.match(scene,/addDetailedVenue\(this\.root,model\)/);
  assert.match(scene,/concrete riser/);
- assert.match(arch,/function ohioArchitecture/);
- assert.match(arch,/function fieldEquipment/);
+ assert.match(arch,/function ohioSpecific/);
+ assert.match(arch,/function sportFurniture/);
  assert.match(arch,/scoreboardWidthM/);
 });
 test('UI exposes Ohio Stadium reconstruction and discloses uncertain capacity',()=>{
