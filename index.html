@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="FiledMaker — stadium modeling, seat views and sightline preview workspace." />
-  <title>FiledMaker | Stadium Modeling Studio</title>
+  <title>FiledMaker | Seat-first Venue Generator</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   <script type="importmap">
@@ -18,7 +18,7 @@
 <body>
   <div class="workspace">
     <aside class="sidebar">
-      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>School venue modeling</small></div><span class="version">v8.0</span></header>
+      <header class="brand"><span class="brand-symbol">F<span></span></span><div><strong>FiledMaker</strong><small>School venue modeling</small></div><span class="version">v9.0</span></header>
       <div class="sidebar-scroll">
         <section class="side-panel">
           <div class="eyebrow">School-first tools</div><a href="./school/" class="school-entry">Open School Studio →<small>Import row maps, build a venue and export a selectable seat preview</small></a><div class="eyebrow">Advanced model project</div>
@@ -49,9 +49,9 @@
             <button class="tab" data-tab="sections">Sections</button>
             <button class="tab" data-tab="outline">Outline</button>
             <button class="tab" data-tab="aisles">Aisles</button><button class="tab" data-tab="plan">SVG plan</button>
-            <button class="tab" data-tab="survey">Real data</button><button class="tab" data-tab="info">Info</button>
+            <button class="tab" data-tab="survey">Real data</button><button class="tab" data-tab="ticket">Ticket data</button><button class="tab" data-tab="info">Info</button>
           </div>
-          <div id="tabContent"></div><input id="seatCsvUpload" type="file" accept=".csv,text/csv" hidden />
+          <div id="tabContent"></div><input id="seatCsvUpload" type="file" accept=".csv,text/csv" hidden /><input id="ticketCsvUpload" type="file" accept=".csv,text/csv" hidden />
         </section>
       </div>
       <footer class="sidebar-footer"><span class="status-dot"></span><span id="saveStatus">All changes stored in this browser</span></footer>
@@ -80,7 +80,7 @@
         </div>
         <aside class="inspector">
           <div class="inspector-heading"><span>Inspector</span><span class="inspector-live">● Live</span></div>
-          <div class="stat-card"><small>Modeled seat locations</small><strong id="capacityValue">—</strong><div class="stat-suffix" id="seatSourceLabel">parametrically generated seats</div></div>
+          <div class="stat-card"><small>Modeled seat locations</small><strong id="capacityValue">—</strong><div class="stat-suffix" id="seatSourceLabel">parametrically generated seats</div><div class="stat-suffix" id="officialCapacityInfo">Official capacity: not supplied</div></div>
           <div class="mini-stats"><div><small>Tiers</small><strong id="tierCount">—</strong></div><div><small>Sections</small><strong id="sectionCount">—</strong></div><div><small>Field</small><strong id="fieldSize">—</strong></div></div>
           <div class="inspector-block"><div class="inspector-title">Selection <span>01</span></div><div id="selectionInfo" class="selection-info"><div class="empty-selection">Click a seat or seating section to inspect its position.</div></div><div class="seat-actions"><button id="prevSeat" class="outline-btn">← Previous</button><button id="nextSeat" class="outline-btn">Next →</button></div></div>
           <div class="inspector-block viewpoint-panel" id="viewpointPanel">

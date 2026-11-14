@@ -5,6 +5,8 @@ import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance, seatingIntervals, resolveSectionTier } from './model.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates, resolveEyeClearance } from './view.mjs';
 import { addDetailedVenue } from './architecture.js';
+import { addUniversalMarkers } from './markerKit.js';
+import { tierBlue, importedTreadPairs } from './seatFirst.mjs';
 import { seatAssetPlan } from './detailKit.mjs';
 import { isOhioReference, isSchottensteinReference } from './venues.mjs';
 import { treadEdgeCap } from './geometryIntegrity.mjs';
@@ -158,7 +160,9 @@ function basketball(group, surface, project) {
 
 function makeTerrace(section, surface, tier, project) {
   const vertices = [], colors = [], indices = [];
-  const base = new THREE.Color(section.color);
+  const sectionIndex=project.sections.findIndex(s=>s.id===section.id);
+  const tierIndex=project.tiers.findIndex(t=>t.id===tier.id);
+  const base = new THREE.Color(project.seatFirst && project.blueTheme ? tierBlue(tierIndex,sectionIndex) : section.color);
   const profile = resolveSectionTier(tier, section.id, project);
   for (let row = 0; row < profile.rows; row++) {
     const radial = profile.startOffset + row * profile.depth;
@@ -169,7 +173,7 @@ function makeTerrace(section, surface, tier, project) {
       const startAngle = pointAtDistance(path, start).angle;
       const endAngle = pointAtDistance(path, end).angle;
       const spans = Math.max(1, Math.ceil((endAngle - startAngle) * 90 / Math.PI));
-      const shade = base.clone().lerp(new THREE.Color(0xb7b8b5),.89).multiplyScalar(.93 + (row % 2) * .06);
+      const shade = base.clone().lerp(new THREE.Color(0xb7b8b5),project.seatFirst?.66:.89).multiplyScalar(.93 + (row % 2) * .06);
       const offset = vertices.length / 3;
       for (let i = 0; i <= spans; i++) {
         const angle = startAngle + (endAngle - startAngle) * i / spans;
@@ -254,6 +258,7 @@ function createSeatMesh(seats, project) {
   ];
   const meshes=defs.map(([geometry,m])=>new THREE.InstancedMesh(geometry,m,seats.length));
   const colors=project.sections.map(v=>new THREE.Color(v.color));
+  const tierColors=project.seatFirst && project.blueTheme ? project.tiers.map((t,i)=>project.sections.map((sec,j)=>new THREE.Color(tierBlue(i,j)))) : null;
   const o=new THREE.Object3D(), seatTint=new THREE.Color(), silver=new THREE.Color(0xaeb5b8);
   const steelTint=new THREE.Color(0x89949b);
   const position=(seat,index,i,dx,dy,dz,show=true,lean=0)=>{
@@ -265,8 +270,8 @@ function createSeatMesh(seats, project) {
   };
   seats.forEach((seat,index)=>{
     const chair=dims.styleForTier(seat.tier)==='chair';
-    const base=colors[seat.sectionIndex]||new THREE.Color(0x87979b);
-    seatTint.copy(base).lerp(silver,chair?.24:.82);
+    const base=tierColors?.[seat.tier]?.[seat.sectionIndex] || colors[seat.sectionIndex] || new THREE.Color(0x87979b);
+    seatTint.copy(base).lerp(silver,project.seatFirst ? (chair?.10:.21) : (chair?.24:.82));
     seatTint.multiplyScalar(.965+(seat.row%3)*.012);
     position(seat,index,0,0,dims.seatHeight,0);
     position(seat,index,1,0,dims.seatHeight+.008,.187,high);
@@ -291,6 +296,27 @@ function createSeatMesh(seats, project) {
 }
 
 // Architectural context is schematic, not a scanned/surveyed building model.
+function addImportedSeatTreads(group,seats) {
+  // These are shallow local platforms behind supplied seat points, not a
+  // fabricated auditorium shell. Preserve voids where the roster has gaps.
+  const vertices=[],indices=[];
+  for(const [a,b] of importedTreadPairs(seats)){
+    const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);
+    if(len<.001)continue;
+    const nx=-dz/len*.32,nz=dx/len*.32;
+    const y=Math.min(a.y,b.y)-.19,k=vertices.length/3;
+    vertices.push(a.x+nx,y,a.z+nz,b.x+nx,y,b.z+nz,
+      a.x-nx,y,a.z-nz,b.x-nx,y,b.z-nz);
+    indices.push(k,k+1,k+2,k+1,k+3,k+2);
+  }
+  if(!indices.length)return;
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  g.setIndex(indices);g.computeVertexNormals();
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0xb9c6d3,roughness:.94,side:THREE.DoubleSide}));
+  m.userData.schematicSeatTreads=true;group.add(m);
+}
+
 function addArchitecturalDetails(group, surface, project, tiers) {
   // Continuous parapet shells used to seal aisle gaps at the tier front.
   // Derive wall strips from the same row-level seating intervals so walkways
@@ -468,10 +494,14 @@ export class StadiumScene {
       }
       addConcourse(this.root, surface, project, tier);
     }
+    if(project.seatFirst && model.seatOrigin === 'imported') addImportedSeatTreads(this.root,seats);
     this.seatMeshes = createSeatMesh(seats, project);
     this.hiddenSeatIndex=-1;
     this.root.add(...this.seatMeshes);
-    if (model.seatOrigin !== 'imported') {
+    if (project.seatFirst) {
+      // The seat-first viewer intentionally skips expensive venue facades.
+      addUniversalMarkers(this.root,surface,project);
+    } else if (model.seatOrigin !== 'imported') {
       addArchitecturalDetails(this.root,surface,project,tiers);
       addDetailedVenue(this.root,model);
     }
@@ -487,7 +517,7 @@ export class StadiumScene {
     grid.material.opacity = 0.43;
     grid.userData.editorOnly = true;
     this.root.add(grid);
-    if (project.roof && model.seatOrigin !== 'imported') this.addRoof();
+    if (project.roof && !project.seatFirst && model.seatOrigin !== 'imported') this.addRoof();
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(0.43, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd08035, depthTest: false }));
     this.marker.renderOrder = 10;
     this.marker.userData.editorOnly = true;

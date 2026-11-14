@@ -1,6 +1,7 @@
 // Real-venue reference profiles. Architectural measurements are NOT a seat survey.
 // Reconstructed values are deliberately separate from documented facts.
 import { createProject, createCustomOutline, validateProject, makeSections } from './model.mjs';
+import { enableSeatFirst } from './seatFirst.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
 
 export const OHIO_STADIUM = Object.freeze({
@@ -118,7 +119,7 @@ export function createOhioStadiumProject() {
   p.survey.source = 'Ohio State official architectural facts and seating maps; interpretive sector geometry';
   p.survey.sourceUrl = OHIO_STADIUM.sources[0];
   p.survey.mode = 'generated';
-  return validateProject(p);
+  return enableSeatFirst(p);
 }
 
 // NCAA basketball sample. The venue identity, capacities and 2026 video-board
@@ -176,5 +177,5 @@ export function createSchottensteinCenterProject() {
   p.survey.source = 'OSU athletics and Schottenstein Center official public information; estimated arena geometry';
   p.survey.sourceUrl = SCHOTTENSTEIN_CENTER.sources[0];
   p.survey.mode='generated';
-  return validateProject(p);
+  return enableSeatFirst(p);
 }

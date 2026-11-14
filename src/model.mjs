@@ -49,6 +49,9 @@ export function createProject(preset = 'nfl') {
     detailLevel: 'standard',
     showExterior: true,
     showFixtures: true,
+    seatFirst: false,
+    blueTheme: false,
+    ticketing: null,
     venueReference: null,
     outline: { mode: 'parametric', points: [] },
     aisles: [],
@@ -87,6 +90,22 @@ export function validateProject(input) {
   if (!['draft','standard','high'].includes(project.detailLevel)) throw new Error('Invalid architectural detail level.');
   project.showExterior = project.showExterior !== false;
   project.showFixtures = project.showFixtures !== false;
+  project.seatFirst = project.seatFirst === true;
+  project.blueTheme = project.blueTheme === true;
+  if(project.ticketing !== undefined && project.ticketing !== null){
+    const t=project.ticketing;
+    if(!t||typeof t!=='object'||Array.isArray(t))throw new Error('Invalid ticket metadata.');
+    for(const key of ['officialCapacity','inventoryCount']){
+      const v=t[key];
+      if(v!==null&&v!==undefined&&(!Number.isInteger(v)||v<0||v>(key==='officialCapacity'?300000:150000))){
+        throw new Error(`${key} must be a non-negative whole number within the supported limit.`);
+      }
+    }
+    if(t.capacitySource&&(!/^https:\/\//i.test(t.capacitySource)||t.capacitySource.length>500))throw new Error('Official capacity source must be a short HTTPS URL.');
+    if(t.capacityScope&&String(t.capacityScope).length>180)throw new Error('Capacity scope is too long.');
+    if(t.inventoryMode&&!['none','file-import'].includes(t.inventoryMode))throw new Error('Invalid inventory metadata.');
+    if(t.coordinates&&!['none','estimated','supplied-unverified'].includes(t.coordinates))throw new Error('Invalid seat-coordinate source.');
+  } else project.ticketing=null;
   if (project.venueReference === undefined) project.venueReference = null;
   if (project.venueReference !== null) {
     const referenceId = String(project.venueReference?.id || '');

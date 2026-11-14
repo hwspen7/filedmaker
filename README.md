@@ -1,5 +1,15 @@
 # FiledMaker
 
+## v9.0 — Seat-first NCAA / K–12 school venue generator
+
+FiledMaker now prioritizes **ticket seat identities**, not complicated stadium architecture. School administrators can import a `section,row,seat` ticket roster and produce a tiered-blue 2D/3D seat preview with a generic court/field, hoops or goalposts and a simple scoreboard. The advanced editor's **Ticket data** tab performs published-capacity versus imported-ticket versus 3D-count reconciliation without manufacturing missing tickets. The **School Studio** at `/school/` supports row-count CSV, full ticket-inventory CSV, and XYZ survey CSV. Both export an editable project; School Studio also exports an independent HTML preview and ticket mapping CSV.
+
+**Critical accuracy boundary:** official capacity is metadata backed by an official source. Ticket identities come only from the school import. XYZ coordinates computed from a roster are estimates, not surveyed seat centers or certified views. A count match does not certify geometry, and the preview has no live inventory or payments. The current v9 modules do not automatically read Ticketmaster or school ticket providers.
+
+[Complete v9 seat-first workflow, CSV schemas, validation and limitations](docs/SEAT_FIRST_PIPELINE.md)
+
+---
+
 
 ## v8.0 — OSU dual-venue NCAA reference samples
 

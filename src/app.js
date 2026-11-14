@@ -8,6 +8,7 @@ import { OSU_FACTS, venueQualityReport } from './osuFacts.mjs';
 import { stadiumProvenance } from './stadiumDetails.mjs';
 import { NBA_CATALOG, createNBAArenaProject, nbaArenaReport } from './nbaArenas.mjs';
 import { createSchoolProject } from './schoolPipeline.mjs';
+import { enableSeatFirst, ticketReconciliation, importTicketRoster, ticketMappingCSV, demoTicketRosterCSV } from './seatFirst.mjs';
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];
@@ -64,6 +65,7 @@ function renderTab() {
     html = fieldSelect('Playing surface', 'surface', project.surface, Object.entries(SURFACES).map(([key, v]) => [key, v.label]));
     html += `<div class="two-fields">${fieldText('Bowl squareness', 'shape', project.shape, 'number', 'min="2" max="8" step="0.1"')}${fieldText('Seat pitch (m)', 'seatPitch', project.seatPitch, 'number', 'min="0.4" max="1.1" step="0.01"')}</div>`;
     html += fieldText('Aisle gap at each section boundary (m)', 'aisleWidth', project.aisleWidth, 'number', 'min="0" max="5" step="0.1"');
+    html += `<div class="subheading">SEAT-FIRST MODE</div><label class="toggle-row"><input data-seat-first-toggle type="checkbox" ${project.seatFirst ? 'checked' : ''} /> Seat-only bowl + universal sports markers</label><p class="hint">Blue tier shades, schematic stands, field/court/goal/scoreboard only. No expensive facade or invented arena architecture. Use Ticket data to import exact seat identities.</p>`;
     html += `<div class="subheading">ARCHITECTURAL DETAIL <span class="pill">SPORTS VENUES</span></div>`;
     html += fieldSelect('Scene detail', 'detailLevel', project.detailLevel, [['draft','Draft · low overhead'],['standard','Standard · architecture'],['high','High · terraces + fixtures']]);
     html += `<label class="toggle-row"><input data-project="showExterior" type="checkbox" ${project.showExterior ? 'checked' : ''} /> Facades, stadium structures and concourses</label>`;
@@ -193,6 +195,20 @@ function renderTab() {
     s.obstacles.forEach((o,i)=>{html+=`<div class="tier-card"><div class="tier-header"><strong>${safe(o.type)} · ${safe(o.id)}</strong><button data-remove-obstacle="${i}">Remove</button></div>${obsField(i,'type','Type',o.type)}${obsField(i,'source','Source note',o.source)}<div class="two-fields">${obsField(i,'x','Center X (m)',o.x)}${obsField(i,'z','Center Z (m)',o.z)}</div><div class="two-fields">${obsField(i,'y','Center Y (m)',o.y)}${obsField(i,'yaw','Yaw (°)',o.yaw)}</div><div class="two-fields">${obsField(i,'width','Width (m)',o.width)}${obsField(i,'height','Height (m)',o.height)}</div>${obsField(i,'depth','Depth (m)',o.depth)}</div>`;});
     html+=`<button data-add-obstacle class="full-outline">＋ Add barrier near selected seat</button>`;
     html+=`<button data-export-survey-report class="full-outline">↓ Export calibration QA report</button>`;
+  } else if(activeTab==='ticket') {
+    const report=ticketReconciliation(project,model?.capacity??null);
+    html=`<div class="outline-stat"><strong>Ticket-first seat mapping</strong><p>Use the school's section, row and seat IDs as the authority. No live availability, checkout or real-time ticket provider connection is implied.</p></div>`;
+    html+=`<div class="venue-facts"><strong>Capacity reconciliation</strong><span>Official reference: ${report.officialCapacity===null?'Not provided':num(report.officialCapacity)}</span><span>Uploaded inventory: ${report.inventoryCount===null?'Not uploaded':num(report.inventoryCount)}</span><span>3D seat coordinates: ${report.modelSeatCount===null?'—':num(report.modelSeatCount)}</span><span>Status: ${safe(report.status.replaceAll('_',' '))}</span><span>Coordinate provenance: ${safe(project.ticketing?.coordinates||'not measured')}</span></div>`;
+    html+=field('Published capacity (optional)',`<input id="ticketOfficialCapacity" type="number" min="0" max="300000" step="1" value="${project.ticketing?.officialCapacity??''}" placeholder="School-published figure" />`);
+    html+=field('Published source URL (HTTPS)',`<input id="ticketCapacitySource" type="url" value="${safe(project.ticketing?.capacitySource??'')}" placeholder="https://school.edu/venue" />`);
+    html+=field('Capacity configuration / scope',`<input id="ticketCapacityScope" value="${safe(project.ticketing?.capacityScope??'')}" placeholder="Basketball configuration" />`);
+    html+=`<button class="full-outline" data-save-capacity>Save published capacity reference</button>`;
+    html+=`<div class="subheading">SCHOOL TICKET INVENTORY</div><p class="hint">CSV: section,row,seat and optionally seat_id,tier. Add x_m,y_m,z_m only when the school supplied coordinates. Without XYZ the positions are algorithmic estimates.</p>`;
+    html+=`<button class="full-outline" data-import-ticket>Import full section / row / seat CSV <span>↑</span></button>`;
+    html+=`<button class="full-outline" data-demo-ticket>Load fictional 192-seat example <span>↗</span></button>`;
+    html+=`<button class="full-outline" data-export-ticket-csv>Export seat-to-ticket mapping <span>↓</span></button>`;
+    html+=`<button class="full-outline" data-export-ticket-report>Export reconciliation QA JSON <span>↓</span></button>`;
+    html+=`<p class="hint">Count agreement is not proof of accessibility, exact seat location, or live availability. Unmatched section names are placed in schematic sectors, never presented as measured.</p>`;
   } else {
     html = fieldText('Project name', 'title', project.title);
     html += fieldText('City', 'city', project.city);
@@ -234,6 +250,9 @@ function showSelection(seat = stadium?.selectedSeat) {
 function updateStats() {
   if (!model) return;
   byId('capacityValue').textContent = num(model.capacity);
+  const ticketInfo=ticketReconciliation(project,model.capacity);
+  const official=document.getElementById('officialCapacityInfo');
+  if(official)official.textContent = ticketInfo.officialCapacity===null ? 'Official capacity: not supplied' : `Official capacity ${num(ticketInfo.officialCapacity)} · ${ticketInfo.inventoryCount===null?'no roster':num(ticketInfo.inventoryCount)+' roster seats'} · ${ticketInfo.status.replaceAll('_',' ').toLowerCase()}`;
   byId('seatSourceLabel').textContent=model.seatOrigin==='imported'?'imported, not independently verified':(isOhioReference(project)||isSchottensteinReference(project))?'reconstructed sectors · NOT official seat count':'parametrically generated seats';
   byId('tierCount').textContent = model.tiers.length;
   byId('sectionCount').textContent = model.project.sections.filter(s => s.enabled).length;
@@ -400,7 +419,10 @@ function drawLibrary() {
 
 byId('tabContent').addEventListener('change', e => {
   const input = e.target;
-  if(input.dataset.surveyProp){
+  if(input.hasAttribute('data-seat-first-toggle')){
+    if(input.checked){ const next=enableSeatFirst(project);replaceProject(next); }
+    else commit(next=>{next.seatFirst=false;});
+  } else if(input.dataset.surveyProp){
     const key=input.dataset.surveyProp;
     commit(next=>{next.survey[key]=input.type==='number'?Number(input.value):input.value;});
   } else if(input.dataset.controlProp){
@@ -472,6 +494,26 @@ byId('tabContent').addEventListener('click', e => {
       toast('Loaded Ohio Stadium reference geometry — seat-level positions remain estimated.');
     }
   }
+  else if(target.hasAttribute('data-import-ticket'))byId('ticketCsvUpload').click();
+  else if(target.hasAttribute('data-save-capacity')){
+    try{
+      const raw=byId('ticketOfficialCapacity').value.trim();
+      const source=byId('ticketCapacitySource').value.trim();
+      if(raw&&!source)throw Error('Provide an official HTTPS URL when entering a published capacity.');
+      commit(next=>{next.ticketing={...(next.ticketing||{}),officialCapacity:raw===''?null:Number(raw),capacitySource:source,capacityScope:byId('ticketCapacityScope').value};});
+      toast('Official capacity recorded as metadata. No seats were added or removed.');
+    }catch(e){toast(e.message,true);}
+  }
+  else if(target.hasAttribute('data-demo-ticket')){
+    try{const result=importTicketRoster(project,demoTicketRosterCSV(),'Fictional ticket inventory example');replaceProject(result.project);toast('Loaded 192 fictional seat identities; XYZ is estimated.');}catch(e){toast(e.message,true);}
+  }
+  else if(target.hasAttribute('data-export-ticket-csv')){
+    try{downloadBlob(new Blob([ticketMappingCSV(project)],{type:'text/csv;charset=utf-8'}),`${slug()}-ticket-map.csv`);toast('Ticket seat mapping downloaded.');}catch(e){toast(e.message,true);}
+  }
+  else if(target.hasAttribute('data-export-ticket-report')){
+    const report=ticketReconciliation(project,model?.capacity??null);
+    downloadBlob(new Blob([JSON.stringify({schema:'filedmaker-ticket-reconciliation.v1',...report},null,2)],{type:'application/json'}),`${slug()}-ticket-qa.json`);
+  }
   else if(target.hasAttribute('data-import-seat-csv')) byId('seatCsvUpload').click();
   else if(target.hasAttribute('data-ohio-stadium')){
     if(confirm('Load the Ohio Stadium architectural reference model? Current unsaved edits will be replaced.')) {
@@ -484,7 +526,7 @@ byId('tabContent').addEventListener('click', e => {
     focusImported2D=true;
     toast('Loaded 24 fictional test seats. This is not real stadium data.');
   }
-  else if(target.hasAttribute('data-clear-seat-csv'))commit(next=>{next.survey.seats=[];next.survey.mode='generated';next.survey.anchors=[];});
+  else if(target.hasAttribute('data-clear-seat-csv'))commit(next=>{next.survey.seats=[];next.survey.mode='generated';next.survey.anchors=[];if(next.ticketing){next.ticketing.inventoryCount=null;next.ticketing.inventoryMode='none';next.ticketing.inventorySource='';next.ticketing.coordinates='none';}});
   else if(target.hasAttribute('data-add-control'))commit(next=>{const n=next.survey.anchors.length+1;next.survey.anchors.push({id:`CP${n}`,srcX:n*10,srcZ:0,dstX:n*10,dstZ:0});});
   else if(target.hasAttribute('data-remove-control'))commit(next=>{const i=Number(target.dataset.removeControl);next.survey.anchors.splice(i,1);if(next.survey.mode==='imported'&&next.survey.inputUnit==='drawing'&&next.survey.anchors.length<2)next.survey.mode='generated';});
   else if(target.hasAttribute('data-add-obstacle')){
@@ -796,6 +838,17 @@ byId('planUpload').addEventListener('change', async e => {
     toast(`${plan.paths.length} SVG paths imported. Calibrate drawing width before tracing.`);
   } catch (error) { toast(`SVG import failed: ${error.message}`, true); }
   e.target.value = '';
+});
+byId('ticketCsvUpload').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    if(file.size>32_000_000||!file.name.toLowerCase().endsWith('.csv'))throw Error('Choose a UTF-8 ticket CSV under 32 MB.');
+    const result=importTicketRoster(project,await file.text(),`School ticket file: ${file.name}`);
+    focusImported2D=true;activeTab='ticket';
+    replaceProject(result.project);
+    toast(`${num(result.report.inventoryCount)} ticket seat identities imported · ${result.report.status}. Views are ${result.project.ticketing.coordinates}.`);
+  }catch(e){toast('Ticket import failed: '+e.message,true);}
+  e.target.value='';
 });
 byId('seatCsvUpload').addEventListener('change',async e=>{
   const file=e.target.files?.[0];if(!file)return;

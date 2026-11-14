@@ -2,6 +2,7 @@
 // No school identity, accessibility designation or ticket availability is inferred.
 import { createProject, validateProject, makeSections, SURFACES, generateSeats } from './model.mjs';
 import { parseCSV, parseSeatCSV } from './survey.mjs';
+import { enableSeatFirst } from './seatFirst.mjs';
 
 const FT = 0.3048;
 export const SCHOOL_PROFILES = Object.freeze({
@@ -59,7 +60,7 @@ export function createSchoolProject(key, data={}) {
   };
   project.survey.venue=venue;
   project.survey.source='School configuration entered by an operator; geometry not surveyed.';
-  return validateProject(project);
+  return enableSeatFirst(project);
 }
 
 // Schools often own row-by-row counts but not survey coordinates.
@@ -125,6 +126,7 @@ export function applySchoolRowPlan(input, csv) {
   const outcome=schoolRowCoordinates(rows,project.surface);
   project.survey={...project.survey,mode:'imported',inputUnit:'m',yUnit:'m',seats:outcome.seats,anchors:[],
     source:'School-supplied row and seat identities; XYZ positions procedurally estimated (NOT surveyed).'};
+  project.ticketing={...(project.ticketing||{}),inventorySource:'School-provided row counts',inventoryCount:outcome.seats.length,inventoryMode:'file-import',coordinates:'estimated'};
   project.school={...(project.school||{}),status:'layout-provided',seatCoordinateMethod:'estimated-from-row-counts',rowRecords:rows.length,
     seatTypes:outcome.types,notice:'The row/seat identifiers come from the imported school roster; elevations, offsets and seat sightlines are approximations.'};
   return validateProject(project);
@@ -134,6 +136,7 @@ export function applySchoolSurvey(input,csv,source='School-provided measured sea
   const project=validateProject(input);
   const seats=parseSeatCSV(csv);
   project.survey={...project.survey,mode:'imported',inputUnit:'m',yUnit:'m',seats,anchors:[],source:clean(source,160)};
+  project.ticketing={...(project.ticketing||{}),inventorySource:source,inventoryCount:seats.length,inventoryMode:'file-import',coordinates:'supplied-unverified'};
   project.school={...(project.school||{}),status:'survey-imported',seatCoordinateMethod:'supplied-coordinates/unverified',
     notice:'Coordinates are supplied by the operator but have not been independently validated.'};
   return validateProject(project);

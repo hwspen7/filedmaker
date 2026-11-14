@@ -22,6 +22,9 @@ test('static server serves the app and module with correct MIME types', async t 
   const schoolModule = await fetch(`http://127.0.0.1:${port}/src/schoolPipeline.mjs`);
   assert.equal(schoolModule.status, 200);
   assert.match(schoolModule.headers.get('content-type'), /javascript/);
+  const seatEngine = await fetch(`http://127.0.0.1:${port}/src/seatFirst.mjs`);
+  assert.equal(seatEngine.status, 200);
+  assert.match(await seatEngine.text(), /importTicketRoster/);
   const module = await fetch(`http://127.0.0.1:${port}/src/model.mjs`);
   assert.equal(module.status, 200);
   assert.match(module.headers.get('content-type'), /javascript/);

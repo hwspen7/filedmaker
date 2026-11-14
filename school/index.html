@@ -9,15 +9,22 @@
 <button id="build" class="primary wide">Generate editable draft</button>
 <div class="line"></div><div class="section-label">02 / Replace guesses with data</div><p class="hint">Choose the data your school already has. A row roster keeps real section and seat labels, but its 3D positions are estimates.</p>
 <label class="upload" for="rowsCsv">↑ Import rows + seats CSV<input id="rowsCsv" type="file" accept=".csv,text/csv" hidden></label>
+<label class="upload" for="ticketCsv">↑ Import full ticket seat inventory CSV<input id="ticketCsv" type="file" accept=".csv,text/csv" hidden></label>
 <label class="upload" for="surveyCsv">↑ Import XYZ seat survey CSV<input id="surveyCsv" type="file" accept=".csv,text/csv" hidden></label>
-<div class="pair buttons"><button id="exampleCsv">Get row CSV example</button><button id="clearRows">Reset to draft</button></div>
-<div class="line"></div><div class="section-label">03 / Export to school website</div>
-<button id="publish" class="primary wide">Export standalone seat preview</button><button id="exportJson" class="wide">Export editable project JSON</button><button id="exportSeats" class="wide">Export seat coordinates CSV</button><button id="exportGlb" class="wide">Export GLB model</button>
+<div class="pair buttons"><button id="exampleCsv">Row CSV example</button><button id="ticketExample">Ticket CSV example</button><button id="clearRows">Reset to draft</button></div>
+<div class="line"></div><div class="section-label">03 / Published capacity reference</div>
+<p class="hint">Enter an official figure only if you have a school source. It does not create seats or claim a live ticket feed.</p>
+<label>Official capacity (optional)<input id="officialCapacity" type="number" min="0" max="300000" step="1" placeholder="School-published capacity"></label>
+<label>Source URL (HTTPS)<input id="capacitySource" type="url" placeholder="https://school.edu/athletics/venue"></label>
+<label>Capacity scope<input id="capacityScope" placeholder="Basketball configuration, seats only"></label>
+<button id="setCapacity" class="wide">Save capacity reference</button>
+<div class="line"></div><div class="section-label">04 / Export to school website</div>
+<button id="publish" class="primary wide">Export standalone seat preview</button><button id="exportJson" class="wide">Export editable project JSON</button><button id="exportSeats" class="wide">Export seat coordinates CSV</button><button id="exportTicketMapping" class="wide">Export ticket seat mapping CSV</button><button id="exportGlb" class="wide">Export GLB model</button>
 <p class="hint">Standalone preview works without a backend for 2D seat browsing. It offers optional Three.js 3D viewing when online. It does not manage ticket orders, payments or inventory.</p>
 </div><div class="status" id="sidebarStatus">Local draft · not published</div></aside>
-<main class="main"><header class="topbar"><div><div class="muted tiny">School Venue Studio / Workbench</div><strong id="title">Campus Gymnasium</strong></div><span class="tag">School-first · Preview only</span></header>
+<main class="main"><header class="topbar"><div><div class="muted tiny">School Venue Studio / Workbench</div><strong id="title">Campus Gymnasium</strong></div><span class="tag">Seat-first · Preview only</span></header>
 <div class="workspace"><div class="visual"><div class="overlay"><button id="orbit" class="active">3D orbit</button><button id="plan">Top view</button><button id="human">Human view</button></div><canvas id="canvas" aria-label="Interactive school sports venue"></canvas><div id="canvasNote">Select a seat to inspect its approximate view. Real seating data can be imported from the left.</div><div id="canvasError" hidden></div></div>
-<aside class="inspector"><div class="section-label">Venue readiness</div><div class="count"><strong id="count">—</strong><span>modeled seat positions</span></div><div class="metrics"><div><span>Reference</span><strong id="method">—</strong></div><div><span>Sections</span><strong id="sections">—</strong></div><div><span>Surface</span><strong id="court">—</strong></div></div>
+<aside class="inspector"><div class="section-label">Venue readiness</div><div class="count"><strong id="count">—</strong><span>modeled seat positions</span></div><div class="metrics"><div><span>Official capacity</span><strong id="officialCount">Not provided</strong></div><div><span>Ticket roster</span><strong id="inventoryCount">Not imported</strong></div><div><span>Reconciliation</span><strong id="deltaCount">Pending</strong></div><div><span>Reference</span><strong id="method">—</strong></div><div><span>Sections</span><strong id="sections">—</strong></div><div><span>Surface</span><strong id="court">—</strong></div></div>
 <h3>Selected seat</h3><div class="selected" id="chosen">Click a seat in the 3D view to inspect it.</div><div class="pair buttons"><button id="prevSeat">← Previous</button><button id="nextSeat">Next →</button></div>
 <h3>Quality checklist</h3><div id="quality" class="quality"></div>
 <div class="warn">Do not represent generated seat positions as measured. Accessibility and egress require school review. No live availability, booking or payments are included.</div>
