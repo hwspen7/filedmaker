@@ -4,6 +4,12 @@ A browser-based **parametric 3D stadium and arena modeling studio** for the Unit
 
 ![CI](https://github.com/hwspen7/filedmaker/actions/workflows/quality.yml/badge.svg)
 
+## Interface design (v2.1)
+
+The editor now uses a **light, neutral workspace** inspired by the understated layout of ChatGPT on the web, while retaining FiledMaker's own name and visual identity. The sidebar uses warm off-white surfaces, the modeling canvas and 2D outline grid are light, the inspector uses white cards, and high-priority export actions are near-black. All editing tools, model schema v2 and local project data are unchanged. No external font download or framework is needed for the interface.
+
+Use `Ctrl+Shift+R` if an older stylesheet remains in the browser cache after pulling the update.
+
 ## What you can build
 
 - **Football:** NFL-sized, CFL 2026-sized and CFL 2027-sized schematic playing surfaces.

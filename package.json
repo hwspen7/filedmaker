@@ -1,6 +1,6 @@
 {
   "name": "filedmaker",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "2D outline and 3D parametric stadium and arena modeling studio",

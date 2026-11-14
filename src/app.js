@@ -390,19 +390,19 @@ function renderOutlineSvg(projectValue = project) {
   const field = `<rect x="${-surface.width / 2}" y="${-surface.length / 2}" width="${surface.width}" height="${surface.length}" fill="${surface.sport === 'basketball' ? '#a48963' : '#2a7659'}" stroke="#b8eee2" stroke-width=".5"/><path d="M${-surface.width / 2},0 H${surface.width / 2} M0,${-surface.length / 2} V${surface.length / 2}" stroke="#d5f2e5" stroke-width=".35" opacity=".5"/>`;
   const basePath = svgPath(projectValue, surface, 0);
   const reference = referenceUrl ? `<image href="${safe(referenceUrl)}" x="${-backSize / 2}" y="${-backSize / 2}" width="${backSize}" height="${backSize}" opacity="${referenceOpacity}" preserveAspectRatio="xMidYMid meet"/>` : '';
-  let html = `<rect x="${-lim}" y="${-lim}" width="${2 * lim}" height="${2 * lim}" fill="#112334"/>`;
+  let html = `<rect x="${-lim}" y="${-lim}" width="${2 * lim}" height="${2 * lim}" fill="#f7f8f8"/>`;
   const gridStep = lim > 130 ? 25 : 10;
   for (let pos = -Math.floor(lim / gridStep) * gridStep; pos <= lim; pos += gridStep) {
-    html += `<path d="M${pos} ${-lim}V${lim} M${-lim} ${pos}H${lim}" stroke="#3b5363" stroke-width=".28" opacity=".65"/>`;
+    html += `<path d="M${pos} ${-lim}V${lim} M${-lim} ${pos}H${lim}" stroke="#d8dddd" stroke-width=".28" opacity=".65"/>`;
   }
   html += reference;
   for (let i = tiers.length - 1; i >= 0; i--) {
     const tier = tiers[i];
     const outerMargin = tier.startOffset + tier.rows * tier.depth;
-    html += `<path d="${svgPath(projectValue, surface, outerMargin)}" fill="#254a59" fill-opacity=".28" stroke="${['#7cc3d2','#98acde','#ddb98e','#a4c3a4'][i]}" stroke-width=".85"/>`;
-    html += `<path d="${svgPath(projectValue, surface, tier.startOffset)}" fill="none" stroke="#7897a9" stroke-width=".6" stroke-dasharray="2 2"/>`;
+    html += `<path d="${svgPath(projectValue, surface, outerMargin)}" fill="#bfd0d2" fill-opacity=".32" stroke="${['#739e98','#8c9bb1','#caa880','#a4aab8'][i]}" stroke-width=".85"/>`;
+    html += `<path d="${svgPath(projectValue, surface, tier.startOffset)}" fill="none" stroke="#96a5a8" stroke-width=".6" stroke-dasharray="2 2"/>`;
   }
-  html += `<path d="${basePath}" fill="#172b34" stroke="#77d2d0" stroke-width=".7"/>${field}`;
+  html += `<path d="${basePath}" fill="#e7eceb" stroke="#628980" stroke-width=".7"/>${field}`;
   // Aisle directions are drawn as translucent corridors, matching the seating cutouts.
   for (const aisle of projectValue.aisles) {
     const angle = aisle.angle * Math.PI / 180;
@@ -410,15 +410,15 @@ function renderOutlineSvg(projectValue = project) {
       if (aisle.tier !== 'all' && aisle.tier !== tier.id) continue;
       const near = modelPerimeterPoint(projectValue, surface, angle, tier.startOffset);
       const far = modelPerimeterPoint(projectValue, surface, angle, tier.startOffset + tier.rows * tier.depth);
-      html += `<line x1="${near.x}" y1="${near.z}" x2="${far.x}" y2="${far.z}" stroke="#ebc47a" stroke-width="${aisle.width}" stroke-opacity=".65" stroke-linecap="butt"/>`;
+      html += `<line x1="${near.x}" y1="${near.z}" x2="${far.x}" y2="${far.z}" stroke="#eab766" stroke-width="${aisle.width}" stroke-opacity=".65" stroke-linecap="butt"/>`;
     }
   }
   if (projectValue.outline.mode === 'custom') {
     const size = Math.max(2.1, lim * .017);
     projectValue.outline.points.forEach((p, i) => {
       const selected = i === outlineHandleIndex;
-      html += `<circle data-handle="${i}" cx="${p.x}" cy="${p.z}" r="${size * (selected ? 1.3 : 1)}" fill="${selected ? '#ffe4a0' : '#7fe0d8'}" stroke="#082432" stroke-width=".85"/>`;
-      if (selected) html += `<text x="${p.x + size * 1.6}" y="${p.z - size * 1.6}" fill="#f9efc0" font-size="${size * 2.4}" font-weight="bold">${i + 1}</text>`;
+      html += `<circle data-handle="${i}" cx="${p.x}" cy="${p.z}" r="${size * (selected ? 1.3 : 1)}" fill="${selected ? '#fbc87b' : '#3f9b91'}" stroke="#ffffff" stroke-width=".85"/>`;
+      if (selected) html += `<text x="${p.x + size * 1.6}" y="${p.z - size * 1.6}" fill="#61431b" font-size="${size * 2.4}" font-weight="bold">${i + 1}</text>`;
     });
   }
   svg.innerHTML = html;

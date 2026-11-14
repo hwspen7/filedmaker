@@ -15,7 +15,7 @@ test('static server serves the app and module with correct MIME types', async t 
   const root = await fetch(`http://127.0.0.1:${port}/`);
   assert.equal(root.status, 200);
   assert.match(root.headers.get('content-type'), /text\/html/);
-  assert.match(await root.text(), /FILEDMAKER/);
+  assert.match(await root.text(), /FiledMaker/);
   const module = await fetch(`http://127.0.0.1:${port}/src/model.mjs`);
   assert.equal(module.status, 200);
   assert.match(module.headers.get('content-type'), /javascript/);
