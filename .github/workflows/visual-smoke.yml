@@ -1,7 +1,7 @@
 name: Schottenstein visual smoke
 on:
   push:
-    branches: [feature/schottenstein-audience-preview]
+    branches: [feature/schottenstein-audience-preview, feature/schottenstein-full-3d-architecture]
   workflow_dispatch:
 permissions:
   contents: read
