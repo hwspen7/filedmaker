@@ -90,7 +90,7 @@ export function buildVenuePlan(model,options={}) {
     if(!rows.has(key))rows.set(key,[]);
     rows.get(key).push({seat:s,index:i});
     const arenaTint=chartPreview
-      ? s.inferredRowColor==='courtside' ? '#323338' : ['#8a3046','#7c3146','#752e41'][s.tier]
+      ? s.inferredRowColor==='courtside' ? '#323338' : ['#972c40','#8a293e','#852b3e'][s.tier]
       : seatColor(project,s.tier,s.sectionIndex);
     const tint=colorRGB(options.palette?.[Math.max(0,Math.min(3,s.tier))] || arenaTint);
     const pitch=s.seatWidth??seatScale;
