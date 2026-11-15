@@ -3,6 +3,8 @@ import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
 import { getNBAArena } from './nbaCatalog.mjs';
 import { facingYaw } from './seatPresentation.mjs';
 import { buildSchottensteinSeating, schottensteinFootprints, usesSchottensteinChart } from './schottensteinSeating.mjs';
+import { GeometryEngine } from './next/engines/geometry.mjs';
+import { SeatingEngine } from './next/engines/seating.mjs';
 export const TAU = Math.PI * 2;
 export const CURRENT_SCHEMA = 5;
 
@@ -94,6 +96,10 @@ export function validateProject(input) {
   project.showFixtures = project.showFixtures !== false;
   project.seatFirst = project.seatFirst === true;
   project.blueTheme = project.blueTheme === true;
+  if(project.proceduralVenue != null){
+    const profile=GeometryEngine.normalize(project.proceduralVenue);
+    if(profile.surface!==project.surface)throw Error('Procedural surface must match project surface');
+  }
   if(project.ticketing !== undefined && project.ticketing !== null){
     const t=project.ticketing;
     if(!t||typeof t!=='object'||Array.isArray(t))throw new Error('Invalid ticket metadata.');
@@ -482,6 +488,14 @@ export function generateSeats(input, { audienceLayout = true } = {}) {
     const reference = buildSchottensteinSeating(project.seatPitch);
     return { project, surface, tiers, ...reference, capacity: reference.seats.length,
       seatOrigin: 'generated', registration: null, elevationCount: reference.seats.length };
+  }
+  if(project.proceduralVenue){
+    const output=SeatingEngine.generate(project.proceduralVenue);
+    return {project,surface,tiers,seats:output.seats,groups:output.groups,
+      seatingRows:output.seatingRows,proceduralGeometry:output.geometry,
+      proceduralSpec:output.spec,optimization:output.optimization,
+      capacity:output.seats.length,seatOrigin:'generated',registration:null,
+      elevationCount:output.seats.length};
   }
   const seats = [], groups = [];
   for (const tier of tiers) {
