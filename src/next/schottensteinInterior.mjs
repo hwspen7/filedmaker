@@ -1,6 +1,6 @@
 // Native visual geometry for the Schottenstein Center basketball configuration.
 // Metres are modeled estimates except for regulation court and published ribbon height.
-import { SCHOTTENSTEIN_TERRACE_RIM, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
+import { SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 const roofHeight = SCHOTTENSTEIN_TERRACE_RIM.rear + 4.85;
@@ -134,20 +134,7 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
 export function buildSchottensteinPedestal(seats) {
   if(!seats.length)return {body:new Float32Array(0),trim:new Float32Array(0)};
   const count=192,tau=Math.PI*2,body=[],trim=[];
-  const raw=Array.from({length:count},(_,i)=>{
-    const a=i*tau/count,p=schottensteinDeckPoint(2,a,1);
-    return Math.hypot(p.x,p.z)+7.65;
-  });
-  // A continuous footplate, smoothed so the outer foundation does not
-  // inherit sawtooth irregularities from individual truncated sections.
-  const radii=raw.map((_,i)=>{
-    let sum=0,total=0;
-    for(let k=-7;k<=7;k++){
-      const weight=8-Math.abs(k);
-      sum+=weight*raw[(i+k+count)%count];total+=weight;
-    }
-    return Math.max(raw[i],sum/total);
-  });
+  const radii=Array.from({length:count},(_,i)=>schottensteinBuildingRadius(i*tau/count,6.55));
   const point=(i,inset,y)=>{
     const a=(i%count)*tau/count,r=radii[i%count]+inset;
     return [r*Math.cos(a),y,r*Math.sin(a)];

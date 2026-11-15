@@ -120,21 +120,21 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
     && rows.at(-1).y > 27.9 && rows.at(-1).y < 29.1));
   const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
   assert.ok(pressSide.every(rows => rows.at(-1).y < 24));
-  for (const seat of model.seats.filter(seat => seat.tier > 0)) {
-    assert.equal(seat.y, schottensteinDeckHeight(seat.tier, seat), 'Seats share the deck curve');
+  const treadHeight = new Map(model.seatingRows.map(row=>[row.sectionId+':'+row.row,row.y]));
+  for(const seat of model.seats){
+    assert.equal(seat.y,treadHeight.get(seat.sectionId+':'+seat.row),'Each chair sits on its level tread');
   }
-  for (const tier of [1, 2]) {
-    for (const depth of [.22, .82]) {
-      const grades = Array.from({length: 513}, (_, i) => {
-        const angle = i * Math.PI / 256;
-        const a = schottensteinDeckPoint(tier, angle, depth);
-        const b = schottensteinDeckPoint(tier, angle, depth + .01);
-        return (schottensteinDeckHeight(tier,b) - schottensteinDeckHeight(tier,a))
-          / Math.hypot(a.x-b.x,a.z-b.z);
-      });
-      assert.ok(grades.every((grade, i) => grade > (tier === 2 ? .53 : .44) && grade < .95
-        && (i === 0 || Math.abs(grade - grades[i-1]) < .018)), 'No grade jump at a section seam');
-    }
+  for(let slot=0;slot<=20;slot++){
+    const elevations=regular.map(rows=>rows.find(row=>row.slot===slot).y);
+    assert.equal(new Set(elevations).size,1,'Regular upper banks share row elevations');
+  }
+  for(const tier of [1,2]){
+    const radii=Array.from({length:256},(_,i)=>{
+      const p=schottensteinDeckPoint(tier,i*Math.PI/128,.8);
+      return {r:Math.hypot(p.x,p.z),y:schottensteinDeckHeight(tier,p)};
+    });
+    assert.ok(Math.max(...radii.map(p=>p.y))-Math.min(...radii.map(p=>p.y))<.18,
+      'Terrace rake stays even around the building');
   }
   const violations=[];
   for(const section of model.sectionFootprints){

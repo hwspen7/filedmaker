@@ -12,7 +12,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('OSU arena has a full-depth structural gallery, inset windows and no invented exit signs or stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams','buildingRoof','entryMasonry','entryGlass','pressWalls','pressGlass']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams','buildingRoof','entryMasonry','entryGlass','pressWalls','pressGlass','cutawayFacade','externalTrim','galleryFloorMesh']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
@@ -52,6 +52,26 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(Math.max(...roofHeights)-Math.min(...roofHeights)<.001,
     'Building roof has one datum independently of the varying seat elevations');
   assert.equal(g.aisles.length+g.stepEdges.length,0,'No fabricated stair geometry');
+});
+
+test('the main roof perimeter is convex and independent of the media seating cutout',()=>{
+  const {seats,architectureGeometry:g}=build();
+  const edge=new Map();
+  for(let i=0;i<g.roofDeck.length;i+=6){
+    const [x,,z]=g.roofDeck.subarray(i,i+3),radius=Math.hypot(x,z);
+    const index=(Math.round(Math.atan2(z,x)*96/Math.PI)+192)%192;
+    if(!edge.has(index)||radius>edge.get(index).radius)edge.set(index,{x,z,radius});
+  }
+  const perimeter=[...edge].sort(([a],[b])=>a-b).map(([,point])=>point);
+  assert.equal(perimeter.length,192);
+  for(let i=0;i<perimeter.length;i++){
+    const a=perimeter[i],b=perimeter[(i+1)%192],c=perimeter[(i+2)%192];
+    assert.ok((b.x-a.x)*(c.z-b.z)-(b.z-a.z)*(c.x-b.x)>0,'Perimeter must not turn inward');
+  }
+  for(const seat of seats.filter(seat=>seat.tier===2)){
+    const index=(Math.round(Math.atan2(seat.z,seat.x)*96/Math.PI)+192)%192;
+    assert.ok(perimeter[index].radius>Math.hypot(seat.x,seat.z)+2);
+  }
 });
 
 test('architectural triangle winding agrees with outward normals',()=>{

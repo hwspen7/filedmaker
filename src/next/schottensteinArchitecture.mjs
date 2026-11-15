@@ -1,7 +1,7 @@
 // Schottenstein Center architectural cutaway: reconstructed, not surveyed.
 // All vertex coordinates are metres. Separate from ticket inventories and
 // authoritative imported-XYZ seats.
-import { SCHOTTENSTEIN_TERRACE_RIM, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
+import { SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
 import { addRoofShell, addRoundVolume } from './structuralMesh.mjs';
 
 const TAU=Math.PI*2;
@@ -58,25 +58,26 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[];
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[],cutawayFacade=[],externalTrim=[],galleryFloorMesh=[];
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
   // Treads are individual horizontal landings with a proper inward riser.
   const treadRows=model.seatingRows.filter(row=>row.tier===1||row.tier===2);
+  const heightBySlot=new Map(treadRows.map(row=>[row.sectionId+':'+row.slot,row.y]));
   const rowPoint=(row,t)=>{
     const x=row.left.x+(row.right.x-row.left.x)*t;
     const z=row.left.z+(row.right.z-row.left.z)*t;
-    const y=schottensteinDeckHeight(row.tier,{x,z});
-    return {x,z,y};
+    return {x,z,y:row.y};
   };
   for(const row of treadRows){
     if(!(row.width>.35&&row.depth>.12))continue;
     const strips=Math.max(8,Math.ceil(row.width/.62));
     const outward={x:-Math.sin(row.yaw),z:-Math.cos(row.yaw)};
     const depth=row.depth;
-    const front=depth*.46,back=depth*.48;
-    const rise=clamp(row.tier===2?.59:.37,.14,.68);
+    const front=depth*.5,back=depth*.5;
+    const previous=heightBySlot.get(row.sectionId+':'+(row.slot-1));
+    const rise=clamp(previous===undefined?(row.tier===2?.66:.40):row.y-previous,.14,.72)+.04;
     for(let i=0;i<strips;i++){
       const a=rowPoint(row,i/strips),b=rowPoint(row,(i+1)/strips);
       // Each tessellated lateral strip is anchored to the seat height in
@@ -112,34 +113,16 @@ export function buildSchottensteinArchitecture(model){
   // Structural building volume: a seat-level concourse is enclosed by an
   // independent rear ring 5–6 m deep. This replaces the old zero-depth wall.
   const ROOF_Y=34.8;
-  const rawR=Array.from({length:SEGMENTS},(_,i)=>
-    radius(schottensteinDeckPoint(2,i*TAU/SEGMENTS,1)));
-  const chairEdge = new Float64Array(SEGMENTS);
-  for (const seat of model.seats) {
-    if (seat.tier!==2)continue;
+  const outerR=Array.from({length:SEGMENTS},(_,i)=>schottensteinBuildingRadius(i*TAU/SEGMENTS));
+  const chairEdge=Array(SEGMENTS).fill(null);
+  for(const seat of model.seats){
+    if(seat.tier!==2)continue;
     const station=Math.floor((Math.atan2(seat.z,seat.x)/TAU+1)*SEGMENTS)%SEGMENTS;
     for(let d=-1;d<=2;d++){
       const i=(station+d+SEGMENTS)%SEGMENTS;
-      chairEdge[i]=Math.max(chairEdge[i],radius(seat));
-      rawR[i]=Math.max(rawR[i],chairEdge[i]+.75);
+      if(!chairEdge[i]||radius(seat)>radius(chairEdge[i]))chairEdge[i]=seat;
     }
   }
-  // Smooth the envelope without ever allowing the wall to run into the seats.
-  // This removes the severe crown scalloping on the shorter press side.
-  const envelope=rawR.map((_,i)=>{
-    let r=0;
-    for(let k=-4;k<=4;k++)r=Math.max(r,rawR[(i+k+SEGMENTS)%SEGMENTS]);
-    return r;
-  });
-  const outerR=envelope.map((_,i)=>{
-    let sum=0,weight=0;
-    for(let k=-4;k<=4;k++){
-      const w=5-Math.abs(k);
-      sum+=w*envelope[(i+k+SEGMENTS)%SEGMENTS];
-      weight+=w;
-    }
-    return Math.max(rawR[i]+1.04,sum/weight+.58);
-  });
   const station=(index,offset,y)=>{
     const i=(index+SEGMENTS)%SEGMENTS,a=i*TAU/SEGMENTS;
     const r=outerR[i]+offset;
@@ -166,6 +149,7 @@ export function buildSchottensteinArchitecture(model){
   const facadeOuter=5.55;
   for(let i=0;i<SEGMENTS;i++){
     const isPier=i%7===0;
+    wallBand(cutawayFacade,i,facadeOuter,0,0,2.85,2.85,'out');
     let bottom=0;
     for(const [lo,hi] of externalWindowBands){
       wallBand(facade,i,facadeOuter,bottom,bottom,lo,lo,'out');
@@ -178,14 +162,14 @@ export function buildSchottensteinArchitecture(model){
       wallBand(pilasters,i,facadeOuter+.15,.08,.08,ROOF_Y-.52,ROOF_Y-.52,'out');
     }
     for(const height of [4.65,11.65,19.82,27.80]){
-      wallBand(trim,i,facadeOuter+.042,height,height,height+.13,height+.13,'out');
+      wallBand(externalTrim,i,facadeOuter+.042,height,height,height+.13,height+.13,'out');
     }
   }
   // The building's roof is carried by the outer wall and deep interior
   // frames. It is an open-centre arena: only an annular gallery canopy, never
   // an opaque roof across the court or an orphan white stripe.
   // Fine cornices tie the facade to the three seating elevations.
-  for(const [tier,fraction,yoffset] of [[0,1,.05],[1,1,.05],[2,1,.05]]){
+  for(const [tier,fraction,yoffset] of [[0,1,.05],[1,1,.05]]){
     const from=a=>{
       const p=ringPoint(tier,a,fraction,.06);
       return {...p,y:p.y+yoffset};
@@ -206,9 +190,8 @@ export function buildSchottensteinArchitecture(model){
   const galleryFloor=SCHOTTENSTEIN_TERRACE_RIM.rear+.55;
   const sill=galleryFloor+.94,head=roofUnderside-.91;
   const treadEdge=i=>{
-    const p=station(i,chairEdge[i]+.28-outerR[i],0);
-    p[1]=schottensteinDeckHeight(2,{x:p[0],z:p[2]})-.20;
-    return p;
+    const seat=chairEdge[i];
+    return station(i,radius(seat)+.35-outerR[i],seat.y-.20);
   };
   for(let i=0;i<SEGMENTS;i++){
     const j=(i+1)%SEGMENTS;
@@ -229,14 +212,14 @@ export function buildSchottensteinArchitecture(model){
     wallBand(backWall,i,galleryFront,head,head,roofUnderside,roofUnderside,'in');
     wallBand(windowFrames,i,frameOffset,sill-.105,sill-.105,sill+.075,sill+.075,'in');
     wallBand(windowFrames,i,frameOffset,head-.08,head-.08,head+.09,head+.09,'in');
-    horizontal(concourse,i,galleryFront,outerWall,galleryFloor,1);
+    horizontal(galleryFloorMesh,i,galleryFront,outerWall,galleryFloor,1);
     horizontal(soffit,i,galleryFront,outerWall,galleryFloor-.32,-1);
-    if(chairEdge[i]>0&&chairEdge[j]>0){
+    if(chairEdge[i]&&chairEdge[j]){
       const a=treadEdge(i),b=treadEdge(j);
       // Short press sections are served at the lower level, separate from
       // the upper landing.
       if(Math.abs(a[1]-galleryFloor)<.9&&Math.abs(b[1]-galleryFloor)<.9){
-        quad(concourse,a,b,station(j,galleryFront,galleryFloor),
+        quad(galleryFloorMesh,a,b,station(j,galleryFront,galleryFloor),
           station(i,galleryFront,galleryFloor),[0,1,0]);
       }
     }
@@ -306,7 +289,7 @@ export function buildSchottensteinArchitecture(model){
     addRoundVolume(entryMasonry,x,z,7.7,-.25,2.15);
     addRoundVolume(entryGlass,x,z,7.54,2.15,9.75);
     addRoundVolume(entryMasonry,x,z,7.7,9.75,11.15);
-    addRoundVolume(trim,x,z,7.87,11.15,11.36);
+    addRoundVolume(externalTrim,x,z,7.87,11.15,11.36);
   }
 
   // Model the mapped press enclosure at its own lower elevation. Its
@@ -330,6 +313,6 @@ export function buildSchottensteinArchitecture(model){
   // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
   // staircases are intentionally absent. The map's genuine seat-free
   // circulation gaps remain untouched.
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass})
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass,cutawayFacade,externalTrim,galleryFloorMesh})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }

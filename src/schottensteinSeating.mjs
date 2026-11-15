@@ -134,6 +134,19 @@ const lowerCornerAisles={
 const minimumPitch=.48;
 const tierElevations = [[.56, 6.34], [8.05, 11.56], [15.45, 28.55]];
 export const SCHOTTENSTEIN_TERRACE_RIM = { front: tierElevations[2][0], rear: tierElevations[2][1] };
+// Manually fitted to the chart's sideline and end stands, excluding local
+// seating notches. The building footprint is independent of seat run ends.
+const elevatedAxes = [null, [[27.5,42.6],[34.7,49.0]], [[34.5,49.7],[50.1,64.9]]];
+function roundedRadius(angle, x, z) {
+  const exponent = 2.9;
+  return (Math.abs(Math.cos(angle)/x)**exponent +
+    Math.abs(Math.sin(angle)/z)**exponent)**(-1/exponent);
+}
+
+export function schottensteinBuildingRadius(angle, offset=0) {
+  return roundedRadius(angle, 52.2+offset, 66.8+offset);
+}
+
 const turn = 2 * Math.PI;
 const azimuth = ({x,z}) => (Math.atan2(z,x) + turn) % turn;
 const chartRegions=[
@@ -238,41 +251,15 @@ function rowPlane(block, slot) {
   return {point, depth};
 }
 
-function traceRim(tier, rear, includeCutouts) {
-  return blocks.filter(block => {
-    if (block.tier !== tier) return false;
-    if (tier === 0) return rear || !['101', '110', '118', '127'].includes(block.id);
-    if (tier === 1 || includeCutouts) return true;
-    const id = Number(block.id);
-    if (rear) return block.depthRows === rowsAtoU.length;
-    return !accessibleTerrace.has(id) && id !== 321 && id !== 324;
-  }).flatMap(block => {
-    const {point, depth} = rowPlane(block, rear ? block.depthRows - 1 : 0);
-    const ranges = polygonSpans(block.projected, depth);
-    const stations = tier === 0 || !ranges.length ? [block.profileAxis]
-      : [ranges.at(-1)[0], block.profileAxis, ranges[0][1]];
-    return stations.map(station => {
-      const p = point(station);
-      return {angle: azimuth(p), radius: Math.hypot(p.x, p.z)};
-    });
-  }).sort((a, b) => a.angle - b.angle);
+function traceEntryRim(rear) {
+  return blocks.filter(block=>block.tier===0 && (rear || !['101','110','118','127'].includes(block.id)))
+    .map(block=>{
+      const {point}=rowPlane(block,rear?block.depthRows-1:0);
+      const p=point(block.profileAxis);
+      return {angle:azimuth(p),radius:Math.hypot(p.x,p.z)};
+    }).sort((a,b)=>a.angle-b.angle);
 }
-
-function smoothRim(edge, width) {
-  const samples = 256;
-  return Array.from({length: samples}, (_, i) => {
-    const angle = i * turn / samples;
-    const radius = [1, 4, 6, 4, 1].reduce((sum, weight, index) =>
-      sum + weight * rimRadius(edge, (angle + (index - 2) * width + turn) % turn), 0) / 16;
-    return {angle, radius};
-  });
-}
-
-const deckEdges = tierElevations.map((_, tier) => [false, true].map(rear => {
-  const edge = traceRim(tier, rear, false);
-  return tier === 0 ? edge : smoothRim(edge, .10);
-}));
-const terraceBack = smoothRim(traceRim(2, true, true), .055);
+const entryEdges=[false,true].map(traceEntryRim);
 
 function rimRadius(edge, angle) {
   const index = edge.findIndex(p => p.angle >= angle);
@@ -293,16 +280,22 @@ function deckHeight(tier, fraction) {
 
 export function schottensteinDeckHeight(tier, point) {
   const angle = azimuth(point);
-  const [front, rear] = deckEdges[tier].map(edge => rimRadius(edge, angle));
+  const [front, rear] = tier===0 ? entryEdges.map(edge=>rimRadius(edge,angle))
+    : elevatedAxes[tier].map(([x,z])=>roundedRadius(angle,x,z));
   const fraction = (Math.hypot(point.x, point.z) - front) / (rear - front);
   return deckHeight(tier, tier === 0 ? Math.max(0, Math.min(1, fraction)) : fraction);
 }
 
 export function schottensteinDeckPoint(tier, angle, fraction) {
-  const [front, rear] = deckEdges[tier].map(edge => rimRadius(edge, angle));
-  const edge = tier === 2 ? rimRadius(terraceBack, angle) : rear;
-  const radius = front - 1 + fraction * (edge - front + 2.05);
-  return {x: radius * Math.cos(angle), z: radius * Math.sin(angle)};
+  let radius;
+  if(tier===0){
+    const [front,rear]=entryEdges.map(edge=>rimRadius(edge,angle));
+    radius=front-1+fraction*(rear-front+2.05);
+  }else{
+    const [[x0,z0],[x1,z1]]=elevatedAxes[tier];
+    radius=roundedRadius(angle,x0+(x1-x0)*fraction,z0+(z1-z0)*fraction);
+  }
+  return {x:radius*Math.cos(angle),z:radius*Math.sin(angle)};
 }
 
 const lowerElevations = new Map(blocks.filter(block => block.tier === 0).map(block => {
@@ -311,6 +304,12 @@ const lowerElevations = new Map(blocks.filter(block => block.tier === 0).map(blo
   return [block.id, {first, rise: (last - first) / (block.depthRows - 1)}];
 }));
 
+// The media-side banks end on lower landings. These heights regularize the
+// reference reconstruction; the shorter row runs remain keyed to the chart.
+const shortTerraceRear = new Map([
+  ['321',22.25],['322',20.75],['323',21.5],['324',22],['325',23],['326',23.8],
+]);
+
 function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
   const {point, depth} = rowPlane(block, slot);
@@ -318,8 +317,11 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
   let ranges=polygonSpans(block.projected,depth);
   const lowerProfile = lowerElevations.get(block.id);
-  const heightAt = p => lowerProfile ? lowerProfile.first + slot * lowerProfile.rise : schottensteinDeckHeight(block.tier, p);
-  const y = heightAt(point(block.profileAxis));
+  const [frontY]=tierElevations[block.tier];
+  const shortTerrace=shortTerraceRear.get(block.id);
+  const y=lowerProfile ? lowerProfile.first + slot * lowerProfile.rise
+    : shortTerrace ? frontY+(shortTerrace-frontY)*slot/(block.depthRows-1)
+    : deckHeight(block.tier,slot/(block.depthRows-1));
   if(reserve){
     for(const [start,end] of polygonSpans(block.reserved,depth)){
       ranges=ranges.flatMap(([low,high])=>end<=low||start>=high?[[low,high]]:
@@ -329,7 +331,7 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const spans=ranges.map(([low,high])=>
     ({left:point(high),right:point(low),width:high-low}));
   return {spans,width:spans.reduce((sum,span)=>sum+span.width,0),yaw:Math.atan2(nx,nz),
-    y,heightAt,slot};
+    y,slot};
 }
 
 function pointAlongSpans(spans,distance) {
@@ -399,21 +401,7 @@ export function buildSchottensteinSeating(pitch) {
       // Fixed-width centering produced seat-sized empty margins at the ends.
       const fullPitch=width/count;
       const cappedPitch=Math.min(fullPitch,Math.max(minimumPitch,pitch));
-      // A restrained visual allowance keeps the chart-clipped row ends full
-      // without claiming these schematic seats are measured coordinates.
-      // Steep curved rows still fall back to the physical pitch below.
-      let spacing=fullPitch<=Math.max(.79,pitch*1.43)?fullPitch:cappedPitch;
-      // An edge-to-edge row can become laterally tilted in curved corners.
-      // Retain the normal seat pitch when expanded placement would make two
-      // neighbouring positions jump more than the supported tread tolerance.
-      if(spacing>cappedPitch&&count>1){
-        const centers=Array.from({length:count},(_,i)=>
-          lerp(left,right,(i+.5)/count));
-        const tilt=centers.some((center,i)=>i>0
-          &&Math.hypot(center.x-centers[i-1].x,center.z-centers[i-1].z)<pitch*1.7
-          &&Math.abs(g.heightAt(center)-g.heightAt(centers[i-1]))>.125);
-        if(tilt)spacing=cappedPitch;
-      }
+      const spacing=fullPitch<=Math.max(.79,pitch*1.43)?fullPitch:cappedPitch;
       const inset=(width-count*spacing)/2;
       // Keep the blank ends of the chart scan out of the circulation gaps.
       seatingRows.push({
@@ -423,7 +411,7 @@ export function buildSchottensteinSeating(pitch) {
       for(let i=0;i<count;i++){
         const position=lerp(left,right,(inset+(i+.5)*spacing)/width);
         const number=seats.length-from+1;
-        seats.push({...position,y:g.heightAt(position),yaw:g.yaw,tier:block.tier,sectionId:block.id,
+        seats.push({...position,y:g.y,yaw:g.yaw,tier:block.tier,sectionId:block.id,
           sectionIndex,row:rowLabel,number,uid:`DEMO-${block.id}-${rowLabel}-${number}`,
           seatingDepth:block.treadDepth,seatWidth:spacing,
           inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl'});
@@ -458,7 +446,7 @@ export function estimateSchottensteinRoster(roster) {
       if (members.length * .32 > g.width) throw new Error(`Section ${block.id}, row ${label} exceeds this estimated footprint. Supply XYZ for this roster.`);
       members.forEach((seat, i) => {
         const position = pointAlongSpans(g.spans,(i+.5)*g.width/members.length);
-        seats.push({ ...seat, ...position, y: g.heightAt(position), tier: `T${block.tier + 1}` });
+        seats.push({ ...seat, ...position, y: g.y, tier: `T${block.tier + 1}` });
       });
     });
   }

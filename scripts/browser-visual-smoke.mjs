@@ -91,6 +91,14 @@ async function main(){
       writeFileSync(join(dir,file+'-building.png'),Buffer.from(exterior.data,'base64'));
       await evaluate("document.querySelector('[data-view=overview]').click()");
       if(file==='osu'){
+        // Orbit close to vertical to expose inward pinching in the plan.
+        await evaluate("(()=>{const c=document.querySelector('#viewport3d');const r=c.getBoundingClientRect();const x=r.left+r.width*.50,y=r.top+r.height*.50;const capture=c.setPointerCapture;c.setPointerCapture=()=>{};try{for(const [kind,dy] of [['pointerdown',0],['pointermove',-142],['pointerup',-142]])c.dispatchEvent(new PointerEvent(kind,{bubbles:true,pointerId:1,clientX:x,clientY:y+dy,buttons:kind==='pointerup'?0:1}));}finally{c.setPointerCapture=capture;}})()");
+        await delay(650);
+        const overhead=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        if(overhead.data===result.data)throw Error('The overhead orbit did not change the frame');
+        writeFileSync(join(dir,'osu-overhead.png'),Buffer.from(overhead.data,'base64'));
+        await evaluate("document.querySelector('[data-view=overview]').click()");
+
         // Capture a separate architectural elevation to inspect the depth of
         // the rear gallery and external façade, not merely the overhead plan.
         await evaluate("(()=>{const c=document.querySelector('#viewport3d');const r=c.getBoundingClientRect();const x=r.left+r.width*.5,y=r.top+r.height*.5;const capture=c.setPointerCapture;c.setPointerCapture=()=>{};try{for(const [kind,dy] of [['pointerdown',0],['pointermove',34],['pointerup',34]])c.dispatchEvent(new PointerEvent(kind,{bubbles:true,pointerId:1,clientX:x,clientY:y+dy,buttons:kind==='pointerup'?0:1}));}finally{c.setPointerCapture=capture;}return true})()");

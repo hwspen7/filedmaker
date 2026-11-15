@@ -176,10 +176,12 @@ const structureLayers=[
   ['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],
   ['downlights',21],['roofDeck',22],['radialBeams',23],['buildingRoof',24],
   ['entryMasonry',25],['entryGlass',26],['pressWalls',27],['pressGlass',28],
+  ['cutawayFacade',8],['externalTrim',10],['galleryFloorMesh',7],
 ];
 const interiorLayers=new Set(['decks','fascias','concourse','aisles','stepEdges',
   'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
-  'downlights','roofDeck','radialBeams','pressWalls','pressGlass','buildingRoof']);
+  'downlights','roofDeck','radialBeams','pressWalls','pressGlass','buildingRoof','galleryFloorMesh']);
+const schottensteinCutaway=new Set(['decks','fascias','concourse','trim','pressWalls','pressGlass','cutawayFacade']);
 
 export class NativeVenueRenderer {
   // Keep the real seat-view deck, not the gray overview backing sheet.
@@ -361,7 +363,10 @@ export class NativeVenueRenderer {
       }
     }
     if(this.plan.arenaInterior && this.architecture){
+      const cutaway=this.mode!=='building'&&this.mode!=='human'&&this.architecture.cutawayFacade;
       for(const [name,index] of structureLayers){
+        if(cutaway&&!schottensteinCutaway.has(name))continue;
+        if(name==='cutawayFacade'&&!cutaway)continue;
         if(name==='buildingRoof'&&this.mode!=='building'&&this.mode!=='human')continue;
         if(this.mode==='human'&&!interiorLayers.has(name))continue;
         const mesh=this.architecture[name];
