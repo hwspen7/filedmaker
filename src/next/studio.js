@@ -55,7 +55,7 @@ function prepareAreaLabels(){
       const distance=seat=>Math.hypot(seat.x-labelPoint.x,seat.z-labelPoint.z);
       anchor=seats.reduce((closest,seat)=>distance(seat)<distance(closest)?seat:closest);
     }
-    if(anchor)labels.push({section:section.id,text:section.id,width:32,height:21,point:[anchor.x,anchor.y+1.12,anchor.z]});
+    if(anchor)labels.push({section:section.id,text:section.id,width:28,height:18,point:[anchor.x,anchor.y+1.12,anchor.z]});
   }
   for(const feature of plan.features){
     if(feature.outline)labels.push({text:feature.label,width:feature.kind==='accessible'?117:72,height:20,point:[feature.x,feature.y+1.12,feature.z]});
@@ -93,9 +93,11 @@ function positionAreaLabels(scene){
     const p=scene.projectPoint(label.point);
     if(!p)continue;
     const x=p[0]*sx,y=p[1]*sy;
-    const box={left:x-label.width/2-2,right:x+label.width/2+2,top:y-label.height/2-2,bottom:y+label.height/2+2};
-    if(box.left<0||box.top<0||box.right>bounds.width||box.bottom>bounds.height)continue;
     const active=label.section!==undefined&&label.section===selected?.sectionId;
+    const width=active?84:label.width,height=active?25:label.height;
+    const gap=mode==='overview'?6:2;
+    const box={left:x-width/2-gap,right:x+width/2+gap,top:y-height/2-gap,bottom:y+height/2+gap};
+    if(box.left<0||box.top<0||box.right>bounds.width||box.bottom>bounds.height)continue;
     projected.push({...label,x,y,box,active,depth:p[2]});
   }
   projected.sort((a,b)=>Number(b.active)-Number(a.active)||Number(Boolean(a.section))-Number(Boolean(b.section))||a.depth-b.depth);
@@ -106,6 +108,8 @@ function positionAreaLabels(scene){
     node.style.left=`${x}px`;
     node.style.top=`${y}px`;
     node.dataset.selected=String(active);
+    const text=active?`Section ${label.section}`:label.text;
+    if(node.textContent!==text)node.textContent=text;
     node.hidden=false;
     visibleAreaLabels.push(label);
   }

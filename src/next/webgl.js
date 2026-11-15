@@ -44,7 +44,10 @@ out vec3 vWorld;
 void main(){
   if(uDeck>.5){
     vNormal=aNormal;
-    vColor=vec3(.257,.233,.221);
+    bool base=aLocal.y<-.5;
+    if(base && uHuman>.5){gl_Position=vec4(3.,3.,3.,1.);return;}
+    vColor=base ? (aNormal.y>.5 ? vec3(.85,.842,.807) : vec3(.62,.616,.567))
+      : mix(vec3(.71,.686,.631),vec3(.46,.43,.39),uHuman);
     vWorld=aLocal;
     gl_Position=uVP*vec4(aLocal,1.);
     return;
@@ -61,6 +64,8 @@ void main(){
   float c=cos(aYaw),s=sin(aYaw);
   vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);
   vec3 world=aPos+r;
+  // The full floor plate belongs to seat view. Overview has a separate plinth.
+  if(aSeatId == -4. && uHuman < .5){gl_Position=vec4(3.,3.,3.,1.);return;}
   // Overhead elements stay visible from the seat and hidden in the cutaway.
   if(aSeatId == -2. && uHuman < .5){gl_Position=vec4(3.,3.,3.,1.);return;}
   // Nested seating decks expose the interior face of their ribbon and suites.
@@ -211,6 +216,10 @@ export class NativeVenueRenderer {
       this.corners=plan.seats.filter((_,i)=>i%stride===0).map(s=>[s.x,s.y+.9,s.z]);
       this.corners.push([-w/2,0,-l/2],[w/2,0,l/2],[0,maxY,0]);
     }
+    const deck=plan.deckGeometry;
+    for(let i=(deck?.length??0)-6;i>=0&&deck[i+1]<-.5;i-=18){
+      this.corners.push([deck[i],deck[i+1],deck[i+2]]);
+    }
     this.radius=Math.max(maxX-minX,maxZ-minZ)*.5;
     this.view('overview');
   }
@@ -250,7 +259,7 @@ export class NativeVenueRenderer {
       this.seat=seat;this.pan=[seat.x,seat.y,seat.z];
       this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
     }
-    if(mode==='overview'){this.theta=1.12;this.phi=.79;}
+    if(mode==='overview'){this.theta=1.12;this.phi=this.plan.arenaInterior ? .50 : .79;}
     if(mode==='overview'||mode==='top')this.zoomFactor=1;
     this.render();
   }
@@ -265,6 +274,7 @@ export class NativeVenueRenderer {
   render(){if(!this.plan||!this.gl)return;
     const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);
     if(this.plan.arenaInterior&&this.mode==='human')gl.clearColor(.19,.18,.205,1);
+    else if(this.plan.arenaInterior)gl.clearColor(.919,.926,.898,1);
     else gl.clearColor(.905,.932,.955,1);
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     const camera=this.currentCamera(),vp=multiply(perspective(camera.fov*Math.PI/180,this.canvas.width/this.canvas.height,.045,4000),lookAt(camera.eye,camera.target,camera.up));this.vp=vp;

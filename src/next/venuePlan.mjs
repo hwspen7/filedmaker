@@ -87,7 +87,7 @@ export function buildVenuePlan(model,options={}) {
     if(!rows.has(key))rows.set(key,[]);
     rows.get(key).push({seat:s,index:i});
     const arenaTint=chartPreview
-      ? s.inferredRowColor==='courtside' ? '#333238' : ['#783045','#813449','#722b3e'][s.tier]
+      ? s.inferredRowColor==='courtside' ? '#333238' : ['#812d40','#843345','#782b3d'][s.tier]
       : seatColor(project,s.tier,s.sectionIndex);
     const tint=colorRGB(options.palette?.[Math.max(0,Math.min(3,s.tier))] || arenaTint);
     const pitch=s.seatWidth??seatScale;
@@ -144,7 +144,7 @@ export function buildVenuePlan(model,options={}) {
   }
   const features=model.features??[];
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
-  const deckGeometry = model.seatingRows ? buildSchottensteinDecks(seats) : undefined;
+  const deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
   const courtColors=chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
@@ -161,7 +161,7 @@ export function buildVenuePlan(model,options={}) {
     for(let i=0;i<strips;i++){
       const x=near+(i+.5)*stripWidth;
       for(const [lo,hi] of polygonSpans([schottensteinDiagramEdge],x)){
-        add([x,-.36,(lo+hi)/2],[stripWidth+.002,.27,hi-lo],0,base);
+        add([x,-.36,(lo+hi)/2],[stripWidth+.002,.27,hi-lo],0,base,-4);
       }
     }
     addFloorBorder(add,surface.width+apron,surface.length+apron,1.35,-.12,.20,colorRGB('#38363b'));

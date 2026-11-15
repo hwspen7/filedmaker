@@ -17,7 +17,7 @@ function addChartRegions(add,color,features,spanAt) {
     const limits=feature.outline.map(p=>p.x);
     const near=Math.min(...limits),far=Math.max(...limits);
     const segments=Math.ceil((far-near)/.40), depth=(far-near)/segments;
-    const tint=color(feature.kind==='press'?'#3e3535':feature.kind==='band'?'#413837':'#554944');
+    const tint=color(feature.kind==='press'?'#696258':feature.kind==='band'?'#5e594f':'#898073');
     for(let i=0;i<segments;i++){
       const x=near+(i+.5)*depth;
       for(const [lo,hi] of spanAt([feature.outline],x)){
@@ -29,10 +29,10 @@ function addChartRegions(add,color,features,spanAt) {
 
 // Use one continuous mesh per elevated deck, including the surface across
 // section boundaries. The outer edge closes around the press-side cutout.
-export function buildSchottensteinDecks(seats) {
+export function buildSchottensteinDecks(seats, footprints, showDecks) {
   const segments = 256, bands = 20, turn = 2 * Math.PI;
   const data = [];
-  for (const tier of [1, 2]) {
+  for (const tier of showDecks ? [1, 2] : []) {
     const rim = Array.from({length: segments}, (_, i) => {
       const angle = i * turn / segments;
       const front = schottensteinDeckPoint(tier, angle, 0);
@@ -77,13 +77,31 @@ export function buildSchottensteinDecks(seats) {
       }
     }
   }
+  // A thin presentation base, sized to the bowl rather than the floor diagram.
+  const outlines = footprints.filter(section => section.tier === 2).flatMap(section => section.outlines.flat());
+  const rx = Math.max(...outlines.map(point => Math.abs(point.x))) + 6;
+  const rz = Math.max(...outlines.map(point => Math.abs(point.z))) + 7;
+  const edge = (i, height, normal) => {
+    const angle = i * turn / segments;
+    const c = Math.cos(angle), s = Math.sin(angle);
+    return [rx*c,height,rz*s,...normal];
+  };
+  for (let i = 0; i < segments; i++) {
+    const angle = (i+.5) * turn / segments;
+    const normal = [Math.cos(angle)/rx,0,Math.sin(angle)/rz];
+    const top = -.54, bottom = -1.0;
+    const a = edge(i,top,normal), b = edge(i+1,top,normal);
+    const c = edge(i+1,bottom,normal), d = edge(i,bottom,normal);
+    data.push(...a,...b,...c,...a,...c,...d);
+    data.push(0,top,0,0,1,0,...edge(i+1,top,[0,1,0]),...edge(i,top,[0,1,0]));
+  }
   return new Float32Array(data);
 }
 
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
-  const tread=color('#45403d'), fascia=color('#393237');
-  const suite=color('#574e4b'), glass=color('#887e71');
-  const red=color('#a51c30'), led=color('#c94b41');
+  const tread=color('#81786d'), fascia=color('#575248');
+  const suite=color('#a09783'), glass=color('#6c665b');
+  const red=color('#962c3a'), led=color('#9f4650');
   // The entry level has distinct seating banks close to the court.
   // The elevated tiers use the continuous decks instead of row slabs.
   for(const {left,right,y,depth,tier} of rows){

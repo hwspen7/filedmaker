@@ -240,6 +240,8 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  assert.deepEqual(plan.features.map(feature=>feature.label),
    ['Band Area','Press Box','Accessible Platform']);
  const boxes=decode(plan);
+ assert.ok(boxes.some(box=>box.id===-4&&box.pos[1]<0), 'The arena floor plate is retained for seat views');
+ assert.ok(plan.deckGeometry.some((number,i)=>i%6===1&&number===-1), 'The overview has a capped presentation plinth');
  const courtside=boxes.filter(box=>box.id===-1&&Math.abs(box.size[0]-.456)<1e-5&&Math.abs(box.size[2]-.42)<1e-5);
  assert.ok(courtside.length>100);
  assert.ok(courtside.every(box=>Math.abs(box.pos[0])>model.surface.width/2
