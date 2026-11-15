@@ -55,10 +55,61 @@ function betweenDecks(out,innerTier,outerTier,elevation){
   ringStrip(out,from,to,'up');
 }
 
+// A continuous concrete section through the upper stand. Fit the rim to the
+// arena's rounded corners and lower it gradually behind the press-side banks.
+function addUpperBowl(out){
+  const bands=20;
+  const frontY=SCHOTTENSTEIN_TERRACE_RIM.front-1.23;
+  const rearY=SCHOTTENSTEIN_TERRACE_RIM.rear-.39;
+  const pressBlend=(angle,start,end)=>{
+    const degrees=Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))*360/TAU;
+    const t=clamp((degrees-start)/(end-start),0,1);
+    return 1-t*t*(3-2*t);
+  };
+  const profile=angle=>{
+    const inner=radius(schottensteinDeckPoint(2,angle,0))-1.12;
+    const outer=radius(schottensteinDeckPoint(2,angle,1))+.55+1.95*Math.sin(2*angle)**4
+      -5.45*pressBlend(angle,1,27);
+    const rise=rearY-4.18*pressBlend(angle,3,42)-frontY;
+    const point=(r,y)=>[r*Math.cos(angle),y,r*Math.sin(angle)];
+    const section=Array.from({length:bands+1},(_,i)=>{
+      const t=i/bands;
+      return point(inner+(outer-inner)*t,frontY+rise*t**2.15);
+    });
+    // Roll each lip into the underside so a close orbit shows a chamfer
+    // instead of a paper-thin cut. Close the section all the way to the front.
+    return [
+      ...section,
+      point(outer+.14,frontY+rise-.16),
+      point(outer+.14,frontY+rise-.48),
+      point(outer-.12,frontY+rise-.67),
+      ...section.slice(0,-1).reverse().map(([x,y,z])=>[x,y-.67,z]),
+      point(inner-.12,frontY-.50),
+      point(inner-.12,frontY-.14)
+    ];
+  };
+  const stations=Array.from({length:SEGMENTS},(_,i)=>profile(i*TAU/SEGMENTS));
+  const vertices=stations.map((section,i)=>section.map((point,k)=>{
+    const before=stations[(i+SEGMENTS-1)%SEGMENTS][k],after=stations[(i+1)%SEGMENTS][k];
+    const previous=section[(k+section.length-1)%section.length],next=section[(k+1)%section.length];
+    const incoming=normalize(subtract(point,previous)),outgoing=normalize(subtract(next,point));
+    const across=incoming.map((v,axis)=>v+outgoing[axis]);
+    return [...point,...normalize(cross(subtract(after,before),across))];
+  }));
+  for(let i=0;i<SEGMENTS;i++){
+    const a=vertices[i],b=vertices[(i+1)%SEGMENTS];
+    for(let k=0;k<a.length;k++){
+      const l=(k+1)%a.length;
+      const p=a[k],q=b[k],r=b[l],s=a[l];
+      out.push(...p,...q,...r,...p,...r,...s);
+    }
+  }
+}
 
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[],cutawayFacade=[],externalTrim=[],galleryFloorMesh=[];
+  const decks=[],fascias=[],upperBowl=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[],cutawayFacade=[],externalTrim=[],galleryFloorMesh=[];
+  addUpperBowl(upperBowl);
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
@@ -320,6 +371,6 @@ export function buildSchottensteinArchitecture(model){
   // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
   // staircases are intentionally absent. The map's genuine seat-free
   // circulation gaps remain untouched.
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass,cutawayFacade,externalTrim,galleryFloorMesh})
+  return Object.fromEntries(Object.entries({decks,fascias,upperBowl,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass,cutawayFacade,externalTrim,galleryFloorMesh})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
