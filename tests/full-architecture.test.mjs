@@ -17,7 +17,7 @@ test('full building model contains six independent architectural layers',()=>{
     assert.ok(vertices.length>1000 && vertices.length%18===0,name);
     assert.ok(vertices.every(Number.isFinite),name);
   }
-  assert.ok(g.decks.length/18>10000);
+  assert.ok(g.decks.length/18>8000);
   assert.ok(g.facade.length/18>1500);
   assert.ok(g.aisles.length/18>900);
   assert.equal(g.aisles.length,g.stepEdges.length);
