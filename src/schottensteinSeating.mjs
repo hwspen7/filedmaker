@@ -133,6 +133,8 @@ const lowerCornerAisles={
 };
 const minimumPitch=.48;
 const tierElevations = [[.56, 6.34], [8.05, 11.56], [15.45, 28.55]];
+// Model datum shared by the enclosure and the suspended interior fixtures.
+export const SCHOTTENSTEIN_ROOF_EAVE = 36.6;
 export const SCHOTTENSTEIN_TERRACE_RIM = { front: tierElevations[2][0], rear: tierElevations[2][1] };
 // Manually fitted to the chart's sideline and end stands, excluding local
 // seating notches. The building footprint is independent of seat run ends.

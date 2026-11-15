@@ -1,7 +1,7 @@
 // Schottenstein Center architectural cutaway: reconstructed, not surveyed.
 // All vertex coordinates are metres. Separate from ticket inventories and
 // authoritative imported-XYZ seats.
-import { SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
+import { SCHOTTENSTEIN_ROOF_EAVE, SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
 import { addRoofShell, addRoundVolume } from './structuralMesh.mjs';
 
 const TAU=Math.PI*2;
@@ -112,7 +112,6 @@ export function buildSchottensteinArchitecture(model){
 
   // Structural building volume: a seat-level concourse is enclosed by an
   // independent rear ring 5–6 m deep. This replaces the old zero-depth wall.
-  const ROOF_Y=34.8;
   const outerR=Array.from({length:SEGMENTS},(_,i)=>schottensteinBuildingRadius(i*TAU/SEGMENTS));
   const chairEdge=Array(SEGMENTS).fill(null);
   for(const seat of model.seats){
@@ -157,9 +156,9 @@ export function buildSchottensteinArchitecture(model){
       else wallBand(glazing,i,facadeOuter-.095,lo,lo,hi,hi,'out');
       bottom=hi;
     }
-    wallBand(facade,i,facadeOuter,bottom,bottom,ROOF_Y-.44,ROOF_Y-.44,'out');
+    wallBand(facade,i,facadeOuter,bottom,bottom,SCHOTTENSTEIN_ROOF_EAVE-.44,SCHOTTENSTEIN_ROOF_EAVE-.44,'out');
     if(i%7===0){
-      wallBand(pilasters,i,facadeOuter+.15,.08,.08,ROOF_Y-.52,ROOF_Y-.52,'out');
+      wallBand(pilasters,i,facadeOuter+.15,.08,.08,SCHOTTENSTEIN_ROOF_EAVE-.52,SCHOTTENSTEIN_ROOF_EAVE-.52,'out');
     }
     for(const height of [4.65,11.65,19.82,27.80]){
       wallBand(externalTrim,i,facadeOuter+.042,height,height,height+.13,height+.13,'out');
@@ -186,9 +185,9 @@ export function buildSchottensteinArchitecture(model){
   // glazing, substantial columns, a ceiling soffit and enclosing roof beam.
   // The upper silhouette is level even where the short press-side seating ends.
   const galleryFront=1.00,glassOffset=1.11,frameOffset=.995;
-  const outerWall=facadeOuter,roofUnderside=ROOF_Y-.70,roofTop=ROOF_Y+.12;
+  const outerWall=facadeOuter,roofUnderside=SCHOTTENSTEIN_ROOF_EAVE-.70,roofTop=SCHOTTENSTEIN_ROOF_EAVE+.12;
   const galleryFloor=SCHOTTENSTEIN_TERRACE_RIM.rear+.55;
-  const sill=galleryFloor+.94,head=roofUnderside-.91;
+  const sill=galleryFloor+.94,head=sill+3.15;
   const treadEdge=i=>{
     const seat=chairEdge[i];
     return station(i,radius(seat)+.35-outerR[i],seat.y-.20);

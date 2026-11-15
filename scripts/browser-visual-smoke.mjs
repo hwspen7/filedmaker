@@ -127,6 +127,32 @@ async function main(){
         const frame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
         const closeup=join(dir,'osu-seat.png');writeFileSync(closeup,Buffer.from(frame.data,'base64'));
         if(statSync(closeup).size<12000)throw Error('OSU seat-view screenshot is empty');
+        const upperRow=await evaluate(`(()=>{
+          const section=document.querySelector('#sectionPicker');
+          section.value='305';
+          section.dispatchEvent(new Event('change',{bubbles:true}));
+          const row=document.querySelector('#rowPicker');
+          row.value='U';
+          row.dispatchEvent(new Event('change',{bubbles:true}));
+          return row.value==='U'&&document.querySelector('#seatDetails').textContent.includes('305 · Row U');
+        })()`);
+        if(!upperRow)throw Error('The upper-row roof check could not select section 305, row U');
+        await evaluate(`(()=>{
+          const canvas=document.querySelector('#viewport3d');
+          const {left,top,width,height}=canvas.getBoundingClientRect();
+          const capture=canvas.setPointerCapture;
+          canvas.setPointerCapture=()=>{};
+          try{
+            for(const [type,dy] of [['pointerdown',0],['pointermove',-245],['pointerup',-245]]){
+              canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:1,
+                clientX:left+width/2,clientY:top+height/2+dy,buttons:type==='pointerup'?0:1}));
+            }
+          }finally{canvas.setPointerCapture=capture;}
+        })()`);
+        await delay(650);
+        const roofFrame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        if(roofFrame.data===frame.data)throw Error('The upper-row roof check did not change the frame');
+        writeFileSync(join(dir,'osu-upper-roof.png'),Buffer.from(roofFrame.data,'base64'));
         console.log('osu-seat: human-eye WebGL2 screenshot verified');
         await evaluate("document.querySelector('[data-view=overview]').click()");
       }
