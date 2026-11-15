@@ -46,7 +46,8 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>14.5)vColor=vec3(.80,.18,.21); // Recessed exit indicator
+    if(uDeck>15.5)vColor=vec3(.97,.96,.91); // Geometry-backed exit lettering
+    else if(uDeck>14.5)vColor=vec3(.80,.18,.21); // Recessed exit indicator
     else if(uDeck>13.5)vColor=vec3(.16,.19,.22); // Dark exit sign panel
     else if(uDeck>12.5)vColor=vec3(.61,.60,.57); // Integrated upper-bowl wall
     else if(uDeck>11.5)vColor=vec3(.68,.64,.58); // Reserved for tread risers
@@ -337,8 +338,20 @@ export class NativeVenueRenderer {
       }
     }
     if(NativeVenueRenderer.architectureVisibleInMode(this.plan,this.mode)){
-      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['crown',13],['signs',14],['exitLights',15]]){
+      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['crown',13],['signs',14],['exitLights',15],['exitGlyphs',16]]){
         const mesh=this.architecture?.[name];
+        if(!mesh)continue;
+        gl.uniform1f(this.locations.Deck,index);
+        gl.bindVertexArray(mesh.vao);
+        gl.drawArrays(gl.TRIANGLES,0,mesh.vertices);
+      }
+    }
+    if(this.mode==='human' && this.plan.arenaInterior && this.architecture){
+      // The inner enclosing wall and attached exit signs remain part of
+      // first-person architecture. External cladding and the base stay hidden.
+      for(const [name,index] of [['crown',13],['glazing',9],['signs',14],
+        ['exitLights',15],['exitGlyphs',16]]){
+        const mesh=this.architecture[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
         gl.bindVertexArray(mesh.vao);
