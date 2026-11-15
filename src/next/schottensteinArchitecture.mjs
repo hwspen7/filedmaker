@@ -215,12 +215,12 @@ export function buildSchottensteinArchitecture(model){
     // Inner, outer and capped faces form real wall volume; the openings are
     // recessed into the inner face, never laid across occupied seat rows.
     if(!portal){
-      paintWall(crown,a,b,innerOffset,innerOffset,-.48,2.58,inside);
+      paintWall(crown,a,b,innerOffset,innerOffset,-.48,3.34,inside);
       if(i%18>=4&&i%18<=13){
-        paintWall(glazing,a,b,innerOffset-.022,innerOffset-.022,1.68,2.22,inside);
+        paintWall(glazing,a,b,innerOffset-.024,innerOffset-.024,2.62,3.12,inside);
       }
     }else{
-      paintWall(crown,a,b,innerOffset,innerOffset,1.82,2.58,inside);
+      paintWall(crown,a,b,innerOffset,innerOffset,1.82,3.34,inside);
       paintWall(glazing,a,b,innerOffset+.068,innerOffset+.068,-.43,1.82,inside);
       paintWall(signs,a,b,innerOffset-.045,innerOffset-.045,1.88,2.46,inside);
       // A small red lamp identifies the opening without claiming an
@@ -228,14 +228,14 @@ export function buildSchottensteinArchitecture(model){
       const c=m,delta=Math.min(.006,(b-a)*.20);
       paintWall(exitLights,c-delta,c+delta,innerOffset-.061,innerOffset-.061,1.77,1.88,inward(c));
     }
-    paintWall(crown,a,b,outerOffset,outerOffset,-.50,2.58,outside);
-    quad(crown,wallPoint(a,innerOffset,2.58),wallPoint(b,innerOffset,2.58),
-      wallPoint(b,outerOffset,2.58),wallPoint(a,outerOffset,2.58),[0,1,0]);
+    paintWall(crown,a,b,outerOffset,outerOffset,-.50,3.34,outside);
+    quad(crown,wallPoint(a,innerOffset,3.34),wallPoint(b,innerOffset,3.34),
+      wallPoint(b,outerOffset,3.34),wallPoint(a,outerOffset,3.34),[0,1,0]);
     // Thin charcoal coping / cornice rather than a tall white parapet.
-    quad(trim,wallPoint(a,innerOffset-.05,2.62),wallPoint(b,innerOffset-.05,2.62),
-      wallPoint(b,outerOffset+.06,2.62),wallPoint(a,outerOffset+.06,2.62),[0,1,0]);
+    quad(trim,wallPoint(a,innerOffset-.045,3.37),wallPoint(b,innerOffset-.045,3.37),
+      wallPoint(b,outerOffset+.055,3.37),wallPoint(a,outerOffset+.055,3.37),[0,1,0]);
     if(i%12===0){
-      paintWall(trim,a,b,innerOffset-.031,innerOffset-.031,-.48,1.64,inside);
+      paintWall(trim,a,b,innerOffset-.031,innerOffset-.031,-.48,3.32,inside);
     }
   }
   // Intentionally no generated stair treads or radial stair ribbons.
