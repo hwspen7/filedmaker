@@ -46,17 +46,19 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>12.5)vColor=vec3(.91,.88,.82); // Raised ivory signature parapet
-    else if(uDeck>11.5)vColor=vec3(.67,.63,.57); // Individual stair risers
-    else if(uDeck>10.5)vColor=vec3(.89,.86,.81); // Warm limestone treads
+    if(uDeck>14.5)vColor=vec3(.80,.18,.21); // Recessed exit indicator
+    else if(uDeck>13.5)vColor=vec3(.16,.19,.22); // Dark exit sign panel
+    else if(uDeck>12.5)vColor=vec3(.61,.60,.57); // Integrated upper-bowl wall
+    else if(uDeck>11.5)vColor=vec3(.68,.64,.58); // Reserved for tread risers
+    else if(uDeck>10.5)vColor=vec3(.82,.80,.76); // Reserved for aisle surfaces
     else if(uDeck>9.5)vColor=vec3(.72,.64,.54); // Muted champagne fascia trim
     else if(uDeck>8.5)vColor=vec3(.22,.25,.27); // Recessed graphite glazing
-    else if(uDeck>7.5)vColor=vec3(.69,.68,.65); // Light warm-stone exterior cladding
+    else if(uDeck>7.5)vColor=vec3(.58,.57,.54); // Architectural warm-stone facade
     else if(uDeck>6.5)vColor=vec3(.75,.73,.69); // Continuous tier concourses
     else if(uDeck>5.5)vColor=vec3(.65,.63,.60); // Stepped row fascias
     else if(uDeck>4.5)vColor=vec3(.80,.78,.74); // Row-aligned stone seat decks
-    else if(uDeck>2.5)vColor=vec3(.65,.46,.41);
-    else if(uDeck>1.5)vColor=aNormal.y>.5?vec3(.44,.45,.45):vec3(.28,.30,.31);
+    else if(uDeck>2.5)vColor=vec3(.29,.30,.31); // Recessed plinth joints
+    else if(uDeck>1.5)vColor=aNormal.y>.5?vec3(.53,.52,.50):vec3(.42,.41,.40);
     else vColor=mix(vec3(.76,.75,.73),vec3(.43,.43,.44),uHuman);
     vWorld=aLocal;
     gl_Position=uVP*vec4(aLocal,1.);
@@ -335,7 +337,7 @@ export class NativeVenueRenderer {
       }
     }
     if(NativeVenueRenderer.architectureVisibleInMode(this.plan,this.mode)){
-      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['crown',13]]){
+      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['crown',13],['signs',14],['exitLights',15]]){
         const mesh=this.architecture?.[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
