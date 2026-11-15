@@ -187,7 +187,7 @@ export function buildSchottensteinArchitecture(model){
     const maxSlots=Math.max(...model.sectionFootprints.filter(s=>s.tier===tier).map(s=>s.depthRows));
     // Try several offsets. The winner maximizes clear individual steps.
     // Unlike the old algorithm, any step touching a chair is omitted.
-    const widths=.34;
+    const width=.34;
     const sectionSteps=[];
     for(let i=0;i<centers.length;i++){
       const next=i+1<centers.length?centers[i+1]:centers[0]+TAU;
