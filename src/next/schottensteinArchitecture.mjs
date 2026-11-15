@@ -64,7 +64,7 @@ function addUpperBowl(out,seats){
   const frontY=SCHOTTENSTEIN_TERRACE_RIM.front-.22;
   const rearY=SCHOTTENSTEIN_TERRACE_RIM.rear-.22;
   const rearEdge=fitRearSeatEnvelope(seats,{
-    tier:2,segments:SEGMENTS,clearance:.43,spread:2
+    tier:2,segments:SEGMENTS,clearance:.38,spread:1
   });
   const pressBlend=(angle,start,end)=>{
     const degrees=Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))*360/TAU;
