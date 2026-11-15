@@ -399,7 +399,10 @@ export function buildSchottensteinSeating(pitch) {
       // Fixed-width centering produced seat-sized empty margins at the ends.
       const fullPitch=width/count;
       const cappedPitch=Math.min(fullPitch,Math.max(minimumPitch,pitch));
-      let spacing=fullPitch<=Math.max(.72,pitch*1.30)?fullPitch:cappedPitch;
+      // A restrained visual allowance keeps the chart-clipped row ends full
+      // without claiming these schematic seats are measured coordinates.
+      // Steep curved rows still fall back to the physical pitch below.
+      let spacing=fullPitch<=Math.max(.79,pitch*1.43)?fullPitch:cappedPitch;
       // An edge-to-edge row can become laterally tilted in curved corners.
       // Retain the normal seat pitch when expanded placement would make two
       // neighbouring positions jump more than the supported tread tolerance.
