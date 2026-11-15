@@ -58,7 +58,7 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[];
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[];
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
@@ -248,7 +248,7 @@ export function buildSchottensteinArchitecture(model){
     // Continuous deep roof canopy, with a visible charcoal underside,
     // graphite edge beam and a light upper weather cap.
     horizontal(soffit,i,galleryFront-.70,outerWall+.32,roofUnderside,-1);
-    horizontal(roofEdge,i,galleryFront-.70,outerWall+.32,roofTop,1);
+    horizontal(roofDeck,i,galleryFront-.70,outerWall+.32,roofTop,1);
     wallBand(roofEdge,i,galleryFront-.70,roofUnderside,roofUnderside,
       roofTop,roofTop,'in');
     wallBand(roofEdge,i,outerWall+.32,roofUnderside,roofUnderside,
@@ -261,6 +261,26 @@ export function buildSchottensteinArchitecture(model){
         (outerR[i]+offset)*Math.sin(angle)];
       const p=a-off,q=a+off;
       const bottom=baseA-.28,top=roofUnderside;
+      const beamTop=roofUnderside+.035,beamBottom=roofUnderside-.39;
+      // Exposed radial structural ribs connect the inner gallery columns
+      // to the external wall. Both web faces and the soffit have real depth.
+      const inside=galleryFront-.70,outside=outerWall+.26;
+      const beam=(angle,offset,height)=>[
+        (outerR[i]+offset)*Math.cos(angle),height,
+        (outerR[i]+offset)*Math.sin(angle)
+      ];
+      const tangent=[-Math.sin(a),0,Math.cos(a)];
+      quad(radialBeams,beam(p,inside,beamBottom),beam(p,outside,beamBottom),
+        beam(p,outside,beamTop),beam(p,inside,beamTop),tangent);
+      quad(radialBeams,beam(q,inside,beamBottom),beam(q,outside,beamBottom),
+        beam(q,outside,beamTop),beam(q,inside,beamTop),tangent.map(v=>-v));
+      quad(radialBeams,beam(p,inside,beamBottom),beam(q,inside,beamBottom),
+        beam(q,outside,beamBottom),beam(p,outside,beamBottom),[0,-1,0]);
+      // Fine panel-joint lines prevent the upper roof from reading as a
+      // featureless single-color collar around the arena.
+      const seamY=roofTop+.013;
+      quad(roofEdge,beam(p,inside,seamY),beam(q,inside,seamY),
+        beam(q,outside,seamY),beam(p,outside,seamY),[0,1,0]);
       quad(pilasters,axis(p,near,bottom),axis(q,near,bottom),
         axis(q,near,top),axis(p,near,top),[-Math.cos(a),0,-Math.sin(a)]);
       quad(pilasters,axis(p,far,bottom),axis(q,far,bottom),
@@ -284,6 +304,6 @@ export function buildSchottensteinArchitecture(model){
   // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
   // staircases are intentionally absent. The map's genuine seat-free
   // circulation gaps remain untouched.
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights})
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
