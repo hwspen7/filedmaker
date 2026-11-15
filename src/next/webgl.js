@@ -62,8 +62,6 @@ void main(){
   float c=cos(aYaw),s=sin(aYaw);
   vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);
   vec3 world=aPos+r;
-  // The full floor plate belongs to seat view. Overview has a separate plinth.
-  if(aSeatId == -4. && uHuman < .5){gl_Position=vec4(3.,3.,3.,1.);return;}
   // Overhead elements stay visible from the seat and hidden in the cutaway.
   if(aSeatId == -2. && uHuman < .5){gl_Position=vec4(3.,3.,3.,1.);return;}
   // Nested seating decks expose the interior face of their ribbon and suites.
@@ -144,6 +142,12 @@ function bevelGeometry(){
 const cube=boxGeometry(),roundedBox=bevelGeometry();
 const instanceAttributes=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
 const instanceStride=44;
+
+// The seating decks remain useful for first-person sightlines, but their
+// continuous concrete sheet must not cover the open bowl in overview or maps.
+export function deckVisibleInMode(plan, mode) {
+  return mode === 'human' && Boolean(plan?.arenaInterior && plan?.deckGeometry?.length);
+}
 
 export class NativeVenueRenderer {
   constructor(canvas,onPick=()=>{}){
@@ -283,7 +287,7 @@ export class NativeVenueRenderer {
     gl.uniform1f(this.locations.Human,this.mode==='human'?1:0);
     gl.uniform1f(this.locations.Selected,this.selectedIndex);
     const rounded=this.plan.roundedCount||0;
-    if(this.deck){
+    if(this.deck && deckVisibleInMode(this.plan,this.mode)){
       gl.uniform1f(this.locations.Deck,1);
       gl.bindVertexArray(this.deck.vao);
       gl.drawArrays(gl.TRIANGLES,0,this.deck.vertices);
