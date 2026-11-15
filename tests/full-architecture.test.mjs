@@ -11,7 +11,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('OSU arena has a full-depth structural gallery, inset windows and no invented exit signs or stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams');
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
