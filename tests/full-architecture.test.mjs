@@ -9,20 +9,26 @@ const build = () => buildVenuePlan(generateSeats({
   ...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men',
 }));
 
-test('full building model contains distinct seat decks, real stairs and a signature top crown',()=>{
+test('full building has seat-aligned decks, a closed wall and numbered exit portals with no invented stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown','signs','exitLights']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
-    assert.ok(vertices.length>1000 && vertices.length%18===0,name);
+    assert.ok(vertices.length%18===0,name);
+    if(!['aisles','stepEdges','signs','exitLights'].includes(name))assert.ok(vertices.length>1000,name);
     assert.ok(vertices.every(Number.isFinite),name);
   }
   assert.ok(g.decks.length/18>8000);
   assert.ok(g.facade.length/18>1500);
-  assert.ok(g.aisles.length/18>900);
-  assert.equal(g.aisles.length,g.stepEdges.length);
+  assert.equal(g.aisles.length,0,'No fabricated aisle geometry');
+  assert.equal(g.stepEdges.length,0,'No fabricated stair/riser geometry');
+  assert.ok(g.signs.length>0,'Portal signage is integrated into the wall');
+  assert.ok(g.exitLights.length>0,'Exit portals have a discreet red marker');
+  assert.equal(plan.exitMarkers.length,12);
+  assert.equal(new Set(plan.exitMarkers.map(m=>m.id)).size,12);
+  assert.ok(plan.exitMarkers.every(m=>!m.verified && Number.isFinite(m.x+m.y+m.z)));
   assert.ok(g.glazing.length/18>600);
-  assert.ok(g.crown.length/18>1100, 'Top deck crown has a full ring and press gallery');
+  assert.ok(g.crown.length/18>900,'The upper perimeter is a continuous structural wall');
 });
 
 test('architectural triangle winding agrees with outward normals',()=>{
