@@ -136,7 +136,7 @@ export function buildSchottensteinPedestal(seats) {
   const count=192,tau=Math.PI*2,body=[],trim=[];
   const raw=Array.from({length:count},(_,i)=>{
     const a=i*tau/count,p=schottensteinDeckPoint(2,a,1);
-    return Math.hypot(p.x,p.z)+1.72;
+    return Math.hypot(p.x,p.z)+7.65;
   });
   // A continuous footplate, smoothed so the outer foundation does not
   // inherit sawtooth irregularities from individual truncated sections.
@@ -146,7 +146,7 @@ export function buildSchottensteinPedestal(seats) {
       const weight=8-Math.abs(k);
       sum+=weight*raw[(i+k+count)%count];total+=weight;
     }
-    return sum/total;
+    return Math.max(raw[i],sum/total);
   });
   const point=(i,inset,y)=>{
     const a=(i%count)*tau/count,r=radii[i%count]+inset;
