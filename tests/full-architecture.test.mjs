@@ -9,9 +9,9 @@ const build = () => buildVenuePlan(generateSeats({
   ...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men',
 }));
 
-test('full building model contains six independent architectural layers',()=>{
+test('full building model contains distinct seat decks, real stairs and a signature top crown',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length>1000 && vertices.length%18===0,name);
@@ -22,6 +22,7 @@ test('full building model contains six independent architectural layers',()=>{
   assert.ok(g.aisles.length/18>900);
   assert.equal(g.aisles.length,g.stepEdges.length);
   assert.ok(g.glazing.length/18>600);
+  assert.ok(g.crown.length/18>1100, 'Top deck crown has a full ring and press gallery');
 });
 
 test('architectural triangle winding agrees with outward normals',()=>{
@@ -51,7 +52,7 @@ test('full building is limited to the estimated OSU basketball configuration',()
   assert.equal(buildVenuePlan(generateSeats(createOhioStadiumProject())).architectureGeometry,null);
 });
 
-test('exterior facade is grounded and seating terraces climb through three tiers',()=>{
+test('exterior facade is grounded and stepped seat decks follow their assigned elevations',()=>{
   const g=build().architectureGeometry;
   let minWall=Infinity,minDeck=Infinity,maxDeck=-Infinity,maxWall=-Infinity;
   for(let i=1;i<g.facade.length;i+=6){minWall=Math.min(minWall,g.facade[i]);maxWall=Math.max(maxWall,g.facade[i]);}
@@ -59,4 +60,9 @@ test('exterior facade is grounded and seating terraces climb through three tiers
   assert.ok(minWall>=-.01 && minWall<.1);
   assert.ok(minDeck>.25 && maxDeck>26);
   assert.ok(maxWall>26 && maxWall<31);
+  let minCrown=Infinity,maxCrown=-Infinity;
+  for(let i=1;i<g.crown.length;i+=6){minCrown=Math.min(minCrown,g.crown[i]);maxCrown=Math.max(maxCrown,g.crown[i]);}
+  assert.ok(minCrown>20 && maxCrown>minCrown+1.0);
+  const shader=String(NativeVenueRenderer);
+  assert.ok(shader.includes('architectureVisibleInMode'));
 });
