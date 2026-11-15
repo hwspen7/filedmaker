@@ -181,9 +181,9 @@ export function buildSchottensteinPedestal(seats) {
 
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
   // Restrained stone, graphite and scarlet trim. No broad gray rear shell.
-  const tread=color('#c5c5c4'), fascia=color('#686a72');
-  const suite=color('#565764'), glass=color('#353c46');
-  const led=color('#a3485e');
+  const tread=color('#d9d4cd'), fascia=color('#807a74');
+  const suite=color('#555152'), glass=color('#292d31');
+  const led=color('#9c475b');
   // The entry level has distinct seating banks close to the court.
   // The elevated tiers use the continuous decks instead of row slabs.
   for(const {left,right,y,depth,tier} of rows){
