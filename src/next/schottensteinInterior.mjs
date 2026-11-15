@@ -133,48 +133,53 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
 // and never appears in the first-person seating view.
 export function buildSchottensteinPedestal(seats) {
   if(!seats.length)return {body:new Float32Array(0),trim:new Float32Array(0)};
-  const count=160, tau=Math.PI*2;
-  const edge=Array.from({length:count},(_,i)=>{
-    const angle=i*tau/count;
-    const p=schottensteinDeckPoint(2,angle,1);
-    return Math.hypot(p.x,p.z)+.85;
+  const count=192,tau=Math.PI*2,body=[],trim=[];
+  const raw=Array.from({length:count},(_,i)=>{
+    const a=i*tau/count,p=schottensteinDeckPoint(2,a,1);
+    return Math.hypot(p.x,p.z)+1.72;
   });
-  // Distribute local chart irregularities over adjacent angular stations.
-  const smoothed=edge.map((_,i)=>{
-    let sum=0, weight=0;
-    for(let k=-4;k<=4;k++){
-      const w=5-Math.abs(k);
-      sum+=edge[(i+k+count)%count]*w;
-      weight+=w;
+  // A continuous footplate, smoothed so the outer foundation does not
+  // inherit sawtooth irregularities from individual truncated sections.
+  const radii=raw.map((_,i)=>{
+    let sum=0,total=0;
+    for(let k=-7;k<=7;k++){
+      const weight=8-Math.abs(k);
+      sum+=weight*raw[(i+k+count)%count];total+=weight;
     }
-    return sum/weight;
+    return sum/total;
   });
-  const rim=smoothed.map((r,i)=>{
-    const a=i*tau/count;
-    return {x:r*Math.cos(a),z:r*Math.sin(a)};
-  });
-  const body=[],trim=[];
-  const vertex=(p,y,n)=>[p.x,y,p.z,...n];
-  const topY=-.42, bottomY=-1.24, trimTop=-.48,trimBottom=-.56;
-  const up=[0,1,0];
+  const point=(i,inset,y)=>{
+    const a=(i%count)*tau/count,r=radii[i%count]+inset;
+    return [r*Math.cos(a),y,r*Math.sin(a)];
+  };
+  const vertex=(v,n)=>[...v,...n];
+  const triangle=(dest,a,b,c,n)=>{
+    const ab=b.map((x,i)=>x-a[i]),ac=c.map((x,i)=>x-a[i]);
+    const cross=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];
+    if(cross.reduce((s,x,i)=>s+x*n[i],0)<0)[b,c]=[c,b];
+    dest.push(...vertex(a,n),...vertex(b,n),...vertex(c,n));
+  };
+  const quad=(dest,a,b,c,d,n)=>{
+    triangle(dest,a,b,c,n);triangle(dest,a,c,d,n);
+  };
   for(let i=0;i<count;i++){
-    const a=rim[i],b=rim[(i+1)%count];
-    const center=vertex({x:0,z:0},topY,up);
-    // Counter-clockwise when viewed from above in the X-Z plane.
-    body.push(...center,...vertex(b,topY,up),...vertex(a,topY,up));
-    const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2};
-    const len=Math.hypot(mid.x,mid.z)||1;
-    const outward=[mid.x/len,0,mid.z/len];
-    const side=(buffer,hi,lo,offset=0)=>{
-      const shifted=p=>({x:p.x+outward[0]*offset,z:p.z+outward[2]*offset});
-      const aa=shifted(a),bb=shifted(b);
-      const v=(p,y)=>vertex(p,y,outward);
-      buffer.push(...v(aa,hi),...v(bb,hi),...v(bb,lo));
-      buffer.push(...v(aa,hi),...v(bb,lo),...v(aa,lo));
-    };
-    side(body,topY,bottomY);
-    // Slightly proud of the side wall to prevent coplanar trim flickering.
-    side(trim,trimTop,trimBottom,.025);
+    const j=(i+1)%count,m=(i+.5)*tau/count;
+    const n=[Math.cos(m),0,Math.sin(m)];
+    const cap=(y,inset)=>point(i,inset,y),next=(y,inset)=>point(j,inset,y);
+    // Upper table projects beyond the building's exterior by ~0.7 m.
+    triangle(body,[0,-.24,0],next(-.24,-.08),cap(-.24,-.08),[0,1,0]);
+    // Tapered architectural foundation, not a free-floating elliptical disc.
+    for(const [h0,r0,h1,r1] of [
+      [-.24,-.08,-.59,-.08],
+      [-.59,-.08,-.83,-.26],
+      [-.83,-.26,-1.63,-.26],
+      [-1.63,-.26,-1.93,.11],
+      [-1.93,.11,-2.28,.11]
+    ])quad(body,cap(h0,r0),next(h0,r0),next(h1,r1),cap(h1,r1),n);
+    // Recessed shadow joints give the base credible modelled thickness.
+    for(const [top,bottom,r] of [[-.55,-.65,-.055],[-1.55,-1.69,-.24],[-2.18,-2.27,.125]]){
+      quad(trim,cap(top,r),next(top,r),next(bottom,r),cap(bottom,r),n);
+    }
   }
   return {body:new Float32Array(body),trim:new Float32Array(trim)};
 }
