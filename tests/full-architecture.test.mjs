@@ -103,7 +103,16 @@ test('Press Box lower gallery is structurally connected to the short rear seatin
   const local=p=>angularDiff(Math.atan2(p.z,p.x))<.52;
   const seatY=plan.seats.filter(s=>s.tier===2&&local(s));
   const minimumSeatY=Math.min(...seatY.map(s=>s.y));
-  const infill=vertices(g.backWall).filter(p=>local(p)&&p.y<28.5);
+  const allBackWall=vertices(g.backWall);
+  const infill=allBackWall.filter(p=>local(p)&&p.y<28.5);
+  console.log('press geometry diagnostic',JSON.stringify({
+    pressAngle:center,pressRadius:Math.hypot(press.x,press.z),
+    totalBackWall:g.backWall.length,seatMax:Math.max(...seatY.map(p=>p.y)),
+    lowestBackWall:Math.min(...allBackWall.map(p=>p.y)),
+    localBackWall:allBackWall.filter(local).length,
+    infill:infill.length,
+    lowDeck:vertices(g.galleryFloorMesh).filter(p=>local(p)&&p.y<28).length
+  }));
   assert.ok(infill.length>100,'Continuous under-gallery masonry is missing');
   assert.ok(Math.min(...infill.map(p=>p.y))<=minimumSeatY+2,
     'Press masonry must extend down towards the occupied chair height');
