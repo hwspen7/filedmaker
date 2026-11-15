@@ -76,9 +76,9 @@ export function buildVenuePlan(model,options={}) {
     if(!pos.every(Number.isFinite)||!size.every(x=>Number.isFinite(x)&&x>0.0001))return;
     (rounded?seatShells:elements).push(...pos,...size,Number(yaw)||0,...color,id);
   };
-  const concrete=colorRGB(chartPreview?'#c9c7c5':'#bccad5');
-  const riseFace=colorRGB(chartPreview?'#9c9da2':'#778fa5');
-  const steel=colorRGB(chartPreview?'#41434a':'#34465a');
+  const concrete=colorRGB(chartPreview?'#d8d3cb':'#bccad5');
+  const riseFace=colorRGB(chartPreview?'#b1aba3':'#778fa5');
+  const steel=colorRGB(chartPreview?'#39393d':'#34465a');
   const seatScale=clamp(Number(project.seatPitch)||.53,.42,.76);
   const rows=new Map();
   let chairCount=0,benchCount=0;
@@ -90,7 +90,7 @@ export function buildVenuePlan(model,options={}) {
     if(!rows.has(key))rows.set(key,[]);
     rows.get(key).push({seat:s,index:i});
     const arenaTint=chartPreview
-      ? s.inferredRowColor==='courtside' ? '#34363e' : ['#903549','#823348','#743245'][s.tier]
+      ? s.inferredRowColor==='courtside' ? '#323338' : ['#8a3046','#7c3146','#752e41'][s.tier]
       : seatColor(project,s.tier,s.sectionIndex);
     const tint=colorRGB(options.palette?.[Math.max(0,Math.min(3,s.tier))] || arenaTint);
     const pitch=s.seatWidth??seatScale;
