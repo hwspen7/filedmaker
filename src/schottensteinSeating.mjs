@@ -197,9 +197,23 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
       nx=inward.x/length;nz=inward.z/length;
     }
     if (id === 334) {
-      // The corner wedge follows the aisle tangent towards section 301.
-      const turn = Math.PI / 15;
-      [nx,nz] = [nx*Math.cos(turn)-nz*Math.sin(turn), nx*Math.sin(turn)+nz*Math.cos(turn)];
+      // Blend neighbouring chart bearings instead of imposing a fixed turn.
+      // This makes the 333 -> 334 -> 301 bank rotation progressive through
+      // the corner, without modifying the actual section outline or aisle.
+      const headingOf=neighbor=>{
+        const [, ...pixels]=upper.find(entry=>entry[0]===neighbor);
+        const [fl,fr,bl,br]=unpack(pixels);
+        const heading=schottensteinRowHeading(neighbor,
+          {x:fr.x-fl.x,z:fr.z-fl.z},{x:br.x-bl.x,z:br.z-bl.z});
+        const scale=Math.hypot(heading.x,heading.z);
+        return {x:heading.x/scale,z:heading.z/scale};
+      };
+      const from=headingOf(333),to=headingOf(301);
+      const dx=.63*from.x+.37*to.x,dz=.63*from.z+.37*to.z;
+      const length=Math.hypot(dx,dz);
+      nx=-dz/length;
+      nz=dx/length;
+      if(nx*center.x+nz*center.z>0){nx=-nx;nz=-nz;}
     }
     const outlines=refineSchottensteinContour(id,SCHOTTENSTEIN_SECTION_CONTOURS[id]).map(unpack);
     // Local X runs outward, local Z runs to a spectator's right.
