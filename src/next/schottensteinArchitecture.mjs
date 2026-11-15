@@ -403,10 +403,33 @@ export function buildSchottensteinArchitecture(model){
       if(Math.abs(signedAngle(angle))<=halfSpan)pressSegments.push(i);
     }
     if(pressSegments.length<8)throw Error('Press gallery requires sufficient facade segments');
+    const rearSeats=fitRearSeatEnvelope(model.seats,{
+      tier:2,segments:SEGMENTS,clearance:.38,spread:1
+    });
     for(const i of pressSegments){
+      const j=(i+1)%SEGMENTS,angle=i*TAU/SEGMENTS,nextAngle=j*TAU/SEGMENTS;
+      const seatA=chairEdge[i],seatB=chairEdge[j];
+      if(!seatA||!seatB)continue;
+      // Behind the shorter media-side bank, extend the SAME gallery wall down
+      // to the last occupied chair. The old wall started at the high, global
+      // gallery floor and left a giant white hole below the Press Box.
+      // Keep this infill in the existing backWall layer, not a detached slab.
+      const lowA=Math.min(base-.54,seatA.y-.23);
+      const lowB=Math.min(base-.54,seatB.y-.23);
+      wallBand(backWall,i,frontOffset,lowA,lowB,base,base,'in');
+
+      // Connect that continuous wall to the actual rear lip behind the seats.
+      // Each bay is matched to its two end chairs, avoiding a long, flat gray
+      // ribbon floating above the individual rows.
+      const innerA=rearSeats.radii[i]-.02,innerB=rearSeats.radii[j]-.02;
+      const outerA=outerR[i]+frontOffset,outerB=outerR[j]+frontOffset;
+      if(innerA<outerA-.12&&innerB<outerB-.12){
+        const p=(radius,a,y)=>[radius*Math.cos(a),y,radius*Math.sin(a)];
+        quad(galleryFloorMesh,p(innerA,angle,lowA),p(innerB,nextAngle,lowB),
+          station(j,frontOffset,lowB),station(i,frontOffset,lowA),[0,1,0]);
+      }
       // Wall, glazing and narrow mullions occupy one vertical plane. Their
-      // geometry is part of the building facade: there is NO wide, flat
-      // roof polygon or separate press canopy crossing the chair banks.
+      // geometry is part of the building facade: no hovering roof/canopy.
       wallBand(pressWalls,i,frontOffset,base,base,sill,sill,'in');
       wallBand(pressGlass,i,frontOffset-.028,sill,sill,header,header,'in');
       wallBand(pressWalls,i,frontOffset,header,header,top,top,'in');
