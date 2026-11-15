@@ -384,6 +384,7 @@ test('Schottenstein native viewport has no near-white backdrop or beige deck sha
  assert.match(shader,/\['crown',13\]/);
  assert.match(shader,/\['signs',14\]/);
  assert.match(shader,/\['exitLights',15\]/);
+ assert.match(shader,/\['exitGlyphs',16\]/);
  assert.match(shader,/uDeck>2\.5/);
  assert.match(shader,/uDeck>1\.5/);
 });
