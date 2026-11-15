@@ -46,7 +46,12 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>22.5)vColor=vec3(.30,.31,.32); // Radial roof beams with actual depth
+    if(uDeck>27.5)vColor=vec3(.24,.28,.30); // Press enclosure glazing
+    else if(uDeck>26.5)vColor=vec3(.48,.43,.39); // Press enclosure walls
+    else if(uDeck>25.5)vColor=vec3(.23,.29,.33); // Rotunda glazing
+    else if(uDeck>24.5)vColor=vec3(.49,.28,.23); // Rotunda masonry
+    else if(uDeck>23.5)vColor=aNormal.y>0.?vec3(.68,.67,.63):vec3(.23,.24,.25); // Enclosed building roof
+    else if(uDeck>22.5)vColor=vec3(.30,.31,.32); // Radial roof beams with actual depth
     else if(uDeck>21.5)vColor=vec3(.65,.64,.62); // Muted roof decking
     else if(uDeck>20.5)vColor=vec3(.96,.84,.67); // Recessed warm architectural lights
     else if(uDeck>19.5)vColor=vec3(.30,.31,.32); // Structural roof soffit
@@ -165,11 +170,22 @@ const cube=boxGeometry(),roundedBox=bevelGeometry();
 const instanceAttributes=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
 const instanceStride=44;
 
+const structureLayers=[
+  ['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],
+  ['trim',10],['aisles',11],['stepEdges',12],['backWall',13],['galleryGlass',15],
+  ['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],
+  ['downlights',21],['roofDeck',22],['radialBeams',23],['buildingRoof',24],
+  ['entryMasonry',25],['entryGlass',26],['pressWalls',27],['pressGlass',28],
+];
+const interiorLayers=new Set(['decks','fascias','concourse','aisles','stepEdges',
+  'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
+  'downlights','roofDeck','radialBeams','pressWalls','pressGlass','buildingRoof']);
+
 export class NativeVenueRenderer {
   // Keep the real seat-view deck, not the gray overview backing sheet.
   // The renderer is also bundled as a classic script for offline exports.
   static deckVisibleInMode(plan, mode) {
-    return mode === 'human' && Boolean(plan?.arenaInterior && plan?.deckGeometry?.length);
+    return mode === 'human' && Boolean(plan?.arenaInterior && plan?.deckGeometry?.length && !plan.architectureGeometry?.decks?.length);
   }
   static pedestalVisibleInMode(plan, mode) {
     return mode !== 'human' && Boolean(plan?.arenaInterior && plan?.pedestalGeometry?.length);
@@ -308,8 +324,8 @@ export class NativeVenueRenderer {
       this.seat=seat;this.pan=[seat.x,seat.y,seat.z];
       this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
     }
-    if(mode==='overview'){this.theta=1.12;this.phi=this.plan.arenaInterior ? .76 : .79;}
-    if(mode==='overview'||mode==='top')this.zoomFactor=mode==='overview'&&this.plan.arenaInterior?.85:1;
+    if(mode==='overview'||mode==='building'){this.theta=1.12;this.phi=mode==='building' ? .47 : this.plan.arenaInterior ? .76 : .79;}
+    if(mode==='overview'||mode==='top'||mode==='building')this.zoomFactor=mode==='overview'&&this.plan.arenaInterior ? .93 : 1;
     this.render();
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
@@ -344,20 +360,10 @@ export class NativeVenueRenderer {
         gl.drawArrays(gl.TRIANGLES,0,this.pedestalTrim.vertices);
       }
     }
-    if(NativeVenueRenderer.architectureVisibleInMode(this.plan,this.mode)){
-      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['backWall',13],['galleryGlass',15],['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21],['roofDeck',22],['radialBeams',23]]){
-        const mesh=this.architecture?.[name];
-        if(!mesh)continue;
-        gl.uniform1f(this.locations.Deck,index);
-        gl.bindVertexArray(mesh.vao);
-        gl.drawArrays(gl.TRIANGLES,0,mesh.vertices);
-      }
-    }
-    if(this.mode==='human' && this.plan.arenaInterior && this.architecture){
-      // Keep the real inner gallery, framing and ceiling in first-person views;
-      // external façade and the foundation remain cut away.
-      for(const [name,index] of [['backWall',13],['galleryGlass',15],['galleryGlow',16],
-        ['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21],['roofDeck',22],['radialBeams',23]]){
+    if(this.plan.arenaInterior && this.architecture){
+      for(const [name,index] of structureLayers){
+        if(name==='buildingRoof'&&this.mode!=='building'&&this.mode!=='human')continue;
+        if(this.mode==='human'&&!interiorLayers.has(name))continue;
         const mesh=this.architecture[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
@@ -390,7 +396,7 @@ export class NativeVenueRenderer {
     this.canvas.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY,theta:this.theta,phi:this.phi,yaw:this.humanYaw,pitch:this.humanPitch};changed=false;this.canvas.setPointerCapture(e.pointerId);});
     this.canvas.addEventListener('pointermove',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.hypot(dx,dy)>4)changed=true;
       if(this.mode==='human'){this.humanYaw=start.yaw-dx*.004;this.humanPitch=clamp(start.pitch+dy*.004,-1.3,1.3);}else{this.theta=start.theta-dx*.006;this.phi=clamp(start.phi-dy*.005,.10,1.49);}this.render();});
-    this.canvas.addEventListener('pointerup',e=>{if(start&&!changed&&this.mode!=='human')this.pick(e);start=null;});
+    this.canvas.addEventListener('pointerup',e=>{if(start&&!changed&&this.mode!=='human'&&this.mode!=='building')this.pick(e);start=null;});
     this.canvas.addEventListener('pointercancel',()=>{start=null;});
     this.canvas.addEventListener('wheel',e=>{
       e.preventDefault();

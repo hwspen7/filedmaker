@@ -1,5 +1,6 @@
 // Generic architectural assembly from analytic tiers, independent of OSU references.
 import { GeometryEngine } from './geometry.mjs';
+import { addRoofShell, addRoundVolume } from '../structuralMesh.mjs';
 const TAU=Math.PI*2;
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
@@ -23,7 +24,7 @@ export const ArchitectureEngine={
     const {spec,point}=geometry;
     if(!Number.isInteger(segments)||segments<32||segments>512)throw Error('Invalid architecture resolution');
     if(!Number.isInteger(bands)||bands<2||bands>32)throw Error('Invalid architecture bands');
-    const layers={decks:[],fascias:[],concourse:[],facade:[],glazing:[],trim:[],aisles:[],stepEdges:[]};
+    const layers={decks:[],fascias:[],concourse:[],facade:[],glazing:[],trim:[],aisles:[],stepEdges:[],backWall:[],pilasters:[],soffit:[],roofDeck:[],buildingRoof:[]};
     const strip=(out,fn1,fn2,n=up)=>{
       for(let i=0;i<segments;i++){
         const a=i*TAU/segments,b=(i+1)*TAU/segments;
@@ -60,21 +61,50 @@ export const ArchitectureEngine={
       strip(layers.concourse,a=>({...first(a),y}),a=>({...second(a),y}));
     }
     const outerTier=spec.tiers.length-1;
-    const outer=a=>point(outerTier,a,1,.72);
+    const indoor=spec.template==='indoor-arena';
+    const rearY=point(outerTier,0,1).y;
+    const slabY=rearY-.20;
+    const roofY=rearY+4.85;
+    const galleryWidth=indoor?5.1:4.2;
+    const inner=a=>point(outerTier,a,1,.15);
+    const outer=a=>point(outerTier,a,1,galleryWidth);
+    strip(layers.concourse,a=>({...inner(a),y:slabY}),a=>({...outer(a),y:slabY}));
+    strip(layers.soffit,a=>({...inner(a),y:slabY-.32}),a=>({...outer(a),y:slabY-.32}),[0,-1,0]);
+    if(indoor){
+      const overhang=a=>point(outerTier,a,1,galleryWidth+.32);
+      strip(layers.roofDeck,a=>({...inner(a),y:roofY}),a=>({...overhang(a),y:roofY}));
+      strip(layers.soffit,a=>({...inner(a),y:roofY-.38}),a=>({...overhang(a),y:roofY-.38}),[0,-1,0]);
+      addRoofShell(layers.buildingRoof,i=>{
+        const {x,z}=inner(i*TAU/segments);
+        return [x,roofY+.012,z];
+      },segments,2,.38);
+    }
     for(let i=0;i<segments;i++){
-      const a=i*TAU/segments,b=(i+1)*TAU/segments,p=outer(a),q=outer(b),top=Math.min(p.y,q.y)-.28;
-      const glazing=spec.template==='indoor-arena';
-      const windows=glazing?[[2.5,3.35],[8.5,9.6],[15,16.1]]:[];
+      const a=i*TAU/segments,b=(i+1)*TAU/segments,p=outer(a),q=outer(b);
+      const top=indoor?roofY:rearY+.98;
+      const windows=indoor?[[2.5,3.35],[8.5,9.6],[slabY+1,roofY-.65]]
+        .filter(([low,high])=>low>0&&low<high).sort(([x],[y])=>x-y):[];
+      const pier=i%8===0;
+      const inset=angle=>point(outerTier,angle,1,galleryWidth-.18);
       let previous=0;
       for(const [low,high] of windows){
         if(low>=top)break;
-        if(low>previous)vertical(layers.facade,p,q,previous,low);
-        const roof=Math.min(high,top);
-        if(roof>low)vertical(layers.glazing,p,q,low,roof);
-        previous=roof;
+        const sill=Math.max(previous,low),head=Math.min(high,top);
+        if(head<=sill)continue;
+        if(sill>previous)vertical(layers.facade,p,q,previous,sill);
+        if(pier)vertical(layers.facade,p,q,sill,head);
+        else vertical(layers.glazing,inset(a),inset(b),sill,head);
+        previous=head;
       }
       if(top>previous)vertical(layers.facade,p,q,previous,top);
-      if(i%8===0)vertical(layers.trim,p,q,.05,top);
+      vertical(layers.trim,p,q,slabY-.32,slabY);
+      const ia=inner(a),ib=inner(b),n=outside(ia,ib).map(v=>-v);
+      quad(layers.backWall,[ia.x,slabY-.32,ia.z],[ib.x,slabY-.32,ib.z],
+        [ib.x,slabY+.55,ib.z],[ia.x,slabY+.55,ia.z],n);
+      if(pier){
+        const post=point(outerTier,(a+b)/2,1,galleryWidth-1.25);
+        addRoundVolume(layers.pilasters,post.x,post.z,.33,0,indoor?roofY-.36:slabY-.32);
+      }
     }
     // Aisles are real unoccupied angular wedges in SeatingEngine, not raised
     // meshes spanning occupied chairs. Architectural overlays stay on the deck.

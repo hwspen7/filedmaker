@@ -41,10 +41,13 @@ test('seating engine is deterministic, respects voids and never invents verified
 test('architecture engine reuses the same geometry for an indoor arena and outdoor stadium',()=>{
   for(const demo of [PROCEDURAL_DEMOS.arena,PROCEDURAL_DEMOS.stadium]){
     const geo=GeometryEngine.create(demo),layers=ArchitectureEngine.build(geo,{segments:64,bands:5});
-    assert.deepEqual(Object.keys(layers),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges']);
+    assert.deepEqual(Object.keys(layers),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','pilasters','soffit','roofDeck','buildingRoof']);
     assert.ok(layers.decks.length>4000);
     assert.ok(layers.facade.length>1000);
     assert.ok(layers.aisles.length>0);
+    assert.ok(layers.soffit.length>0 && layers.pilasters.length>0);
+    assert.equal(layers.buildingRoof.length>0,demo.template==='indoor-arena');
+    assert.equal(layers.roofDeck.length>0,demo.template==='indoor-arena');
     assert.ok(layers.decks.every(Number.isFinite));
     const audit=ValidationEngine.validate({seats:SeatingEngine.generate(geo).seats,architectureGeometry:layers,spec:geo.spec});
     assert.deepEqual(audit.errors,[],audit.errors.join('\n'));

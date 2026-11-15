@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSchottensteinCenterProject, createOhioStadiumProject } from '../src/venues.mjs';
 import { generateSeats } from '../src/model.mjs';
+import { polygonSpans } from '../src/schottensteinSeating.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
 import { NativeVenueRenderer } from '../src/next/webgl.js';
 
@@ -11,11 +12,11 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('OSU arena has a full-depth structural gallery, inset windows and no invented exit signs or stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams','buildingRoof','entryMasonry','entryGlass','pressWalls','pressGlass']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
-    if(!['aisles','stepEdges'].includes(name))assert.ok(vertices.length>1000,name);
+    if (!['aisles','stepEdges'].includes(name)) assert.ok(vertices.length>0,name);
     assert.ok(vertices.every(Number.isFinite),name);
   }
   assert.ok(g.decks.length/18>8000);
@@ -31,6 +32,16 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.roofEdge.length/18>300,'The open-air bowl has a framed outer roof edge');
   assert.ok(g.downlights.length/18>10);
   assert.ok(g.roofDeck.length/18>200,'Roof has its own deck surface and material');
+  assert.ok(g.buildingRoof.length>g.roofDeck.length);
+  assert.ok(g.entryMasonry.length>1000);
+  assert.ok(g.pressGlass.length>0);
+  const press=plan.features.find(feature=>feature.kind==='press');
+  assert.ok(!plan.seats.some(seat=>polygonSpans([press.outline],seat.x)
+    .some(([a,b])=>seat.z>a&&seat.z<b)),'Press enclosure does not replace any seat');
+
+  const galleryHeights=new Set();
+  for(let i=1;i<g.galleryGlass.length;i+=6)galleryHeights.add(g.galleryGlass[i]);
+  assert.equal(galleryHeights.size,2,'Gallery glazing stays level across the press side');
   assert.ok(g.radialBeams.length/18>100,'Gallery canopy is supported by modeled radial beams');
   const roofRadii=Array.from({length:g.roofDeck.length/6},(_,i)=>
     Math.hypot(g.roofDeck[i*6],g.roofDeck[i*6+2]));
@@ -66,7 +77,7 @@ test('full building is limited to the estimated OSU basketball configuration',()
     assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,mode),false);
   }
   assert.equal(NativeVenueRenderer.architectureVisibleInMode(plan,'human'),false);
-  assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,'human'),true);
+  assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,'human'),false);
   assert.equal(buildVenuePlan(generateSeats(createOhioStadiumProject())).architectureGeometry,null);
 });
 

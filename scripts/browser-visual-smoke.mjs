@@ -82,6 +82,14 @@ async function main(){
       const target=join(dir,file+'.png');writeFileSync(target,Buffer.from(result.data,'base64'));
       if(statSync(target).size<12000)throw Error('Screenshot is suspiciously small: '+target);
       console.log(file+': WebGL2 OK; '+state.shown+' estimated seats; PNG '+statSync(target).size+' bytes');
+      await evaluate("document.querySelector('[data-view=building]').click()");
+      const building=await evaluate("document.querySelector('[data-view=building]').classList.contains('current')");
+      if(!building)throw Error('Building view did not open for '+file);
+      await delay(650);
+      const exterior=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      if(exterior.data===result.data)throw Error('Building view did not change the frame for '+file);
+      writeFileSync(join(dir,file+'-building.png'),Buffer.from(exterior.data,'base64'));
+      await evaluate("document.querySelector('[data-view=overview]').click()");
       if(file==='osu'){
         // Capture a separate architectural elevation to inspect the depth of
         // the rear gallery and external façade, not merely the overhead plan.

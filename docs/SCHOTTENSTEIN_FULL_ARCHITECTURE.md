@@ -9,9 +9,10 @@ The renderer combines the following independent layers:
 - **Lower bowl:** Existing per-row tread and riser modules retain the chart-derived elevations. A generic lower-deck surface is intentionally **not** overlaid because it would intersect seats where sector elevations differ.
 - **Club and terrace bowls:** Continuous, analytic sloping seating surfaces aligned to the corresponding seat coordinates, with front and rear fascias.
 - **Circulation:** Intermediate walking decks and narrow transition bands between bowl tiers.
-- **Section aisles:** Visual stair runs are fitted to gaps between neighboring section centroids. Each ray is checked against existing chair positions and discarded if it conflicts with more than three modeled chairs. No extra selectable seats are introduced.
-- **Facade:** Modular neutral cladding, glazing courses, columns and a crown following the upper deck perimeter, rather than one opaque under-seat backing sheet.
-- **Plinth:** Existing thin, separately drawn presentation base remains below the playing surface.
+- **Circulation openings:** The chart-derived seat gaps remain visible. The preview has no invented exit signs or radial stairs.
+- **Building exterior:** A complete roof shell, projecting corner rotundas, ground-level cladding and recessed glazing are visible in **Building** mode. **3D overview** cuts away the main roof to show the seats.
+- **Upper gallery and press enclosure:** The rear gallery has a level floor, soffit and window heads. The press enclosure follows its own chart footprint at a lower elevation and keeps the documented seating gaps clear.
+- **Foundation:** A structural base sits below court level and is hidden in **Seat view**.
 - **Interior equipment:** The basketball court, scorer's area, video board and spectator-view interior are retained. Overhead roof structure and hangers appear only in enclosed human view.
 
 The new independent geometry lives in `src/next/schottensteinArchitecture.mjs`. `src/next/venuePlan.mjs` includes it in Schottenstein chart previews, and `src/next/webgl.js` renders each layer through native WebGL2 as separate meshes. This path is not applied to generic schools, Ohio Stadium, or imported layouts without reconstructed seating rows.
@@ -29,4 +30,4 @@ npm run verify
 npm start
 ```
 
-Open the development server and select **Schottenstein Center**. Orbit, overhead and section views display the reconstructed architecture. Selecting a seat switches to spectator view, which hides the external architectural facade and uses the existing interior deck geometry. Geometry and CI validation are not substitutes for checking GPU rendering and sightlines on the target device.
+Open the development server and select **Schottenstein Center**. Orbit, overhead and section views display the reconstructed architecture. Select **Building** for the enclosed exterior. **Seat view** uses the same row treads as the architectural cutaway and hides the exterior facade. Geometry and CI validation are not substitutes for checking GPU rendering and sightlines on the target device.

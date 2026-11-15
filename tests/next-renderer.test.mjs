@@ -362,7 +362,7 @@ test('Schottenstein overview hides the gray backing while preserving seat-view g
    assert.equal(NativeVenueRenderer.pedestalVisibleInMode(plan,mode),true,mode);
  }
  assert.equal(NativeVenueRenderer.pedestalVisibleInMode(plan,'human'),false);
- assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,'human'),true);
+ assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,'human'),false);
  assert.equal(NativeVenueRenderer.deckVisibleInMode({deckGeometry:new Float32Array(0)},'human'),false);
  assert.ok(!decode(plan).some(box=>box.id===-4));
  const webgl=read('../src/next/webgl.js');

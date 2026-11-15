@@ -17,7 +17,7 @@ This branch implements a **working, deterministic, data-driven venue preview**. 
 
 The public API lives in `src/next/engines/factory.mjs`.
 
-`createProceduralProject(spec)` returns a normal FiledMaker project carrying a validated `proceduralVenue` input. `generateSeats()` uses the generic seating engine for that project. `buildVenuePlan()` creates the generic architecture, spectator deck and audit, which the existing `NativeVenueRenderer` displays in 3D. Existing Schottenstein, Ohio Stadium, school and imported-seat branches remain separate. The generic system does not overwrite imported coordinates.
+`createProceduralProject(spec)` returns a normal FiledMaker project carrying a validated `proceduralVenue` input. `generateSeats()` uses the generic seating engine for that project. `buildVenuePlan()` creates the generic architecture, spectator deck and audit, which the existing `NativeVenueRenderer` displays in 3D. Existing Schottenstein, Ohio Stadium, school and imported-seat branches remain separate. The generic system does not overwrite imported coordinates. Both presets include a rear concourse with structural depth, an exterior wall and columns. The indoor template adds a complete roof for **Building** view. The outdoor template leaves the field uncovered. **3D overview** exposes the seating in both cases.
 
 `generateVenuePackage(spec, options)` executes all six components and returns `{project,model,plan,reference,audit}`.
 

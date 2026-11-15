@@ -223,7 +223,7 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   for(let i=0;i<roofBays;i++){
     const z=-outerZ+(i+.5)*bayDepth;
     const half=Math.max(outerX*.55,outerX-Math.max(0,Math.abs(z)-outerZ*.58)*.6);
-    add([0,roofHeight,z],[half*2,.36,bayDepth+.05],0,ceiling,HIDDEN_IN_CUTAWAY);
+    if(!rows.length)add([0,roofHeight,z],[half*2,.36,bayDepth+.05],0,ceiling,HIDDEN_IN_CUTAWAY);
     add([0,roofHeight-.95,z],[half*2,.34,.37],0,truss,HIDDEN_IN_CUTAWAY);
     add([0,roofHeight-1.8,z],[half*2,.12,.18],0,truss,HIDDEN_IN_CUTAWAY);
     for(let x=-half+5;x<half;x+=6){
