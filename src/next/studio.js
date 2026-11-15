@@ -446,6 +446,25 @@ for(const reference of SCHOTTENSTEIN_REFERENCE_VIEWS){
   $('referenceButtons').append(button);
 }
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>setPreset(b.dataset.preset));
+$('generateVenue').onclick=()=>{
+  try{
+    const sport=$('generateSurface').value;
+    const outdoor=['ncaa-football','soccer'].includes(sport);
+    const base=outdoor?PROCEDURAL_DEMOS.stadium:PROCEDURAL_DEMOS.arena;
+    const name=$('generateName').value.trim()||'Custom Venue';
+    const id='custom-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,42);
+    const target=$('generateCapacity').value.trim();
+    const spec={...base,id,name,surface:sport,
+      template:outdoor?'open-stadium':'indoor-arena',
+      sections:Number($('generateSections').value),
+      tiers:base.tiers.map((tier,i)=>({...tier,rows:Number($(i?'generateUpperRows':'generateLowerRows').value)})),
+      targetCapacity:target?Number(target):null,voids:[]};
+    project=createProceduralProject(spec);
+    selected=null;
+    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+    renderProject();
+  }catch(e){error('Cannot generate venue: '+e.message);}
+};
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
 $('sectionPicker').onchange=e=>{
   if(e.target.value)pickSection(e.target.value);
