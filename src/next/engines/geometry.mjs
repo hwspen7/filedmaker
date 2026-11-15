@@ -29,6 +29,17 @@ export const GeometryEngine={
     const pitch=finite(input.seatPitch??.54,'Seat pitch',.43,.90);
     const exponent=finite(input.roundness??4.2,'Outline exponent',2,8);
     const capacity=input.targetCapacity==null?null:integer(input.targetCapacity,'Target capacity',1,150000);
+    const exterior=input.exterior==null?null:(()=>{
+      if(typeof input.exterior!=='object'||Array.isArray(input.exterior))throw Error('Exterior profile must be an object');
+      const profile=input.exterior.profile??'metal-and-brick';
+      if(!['metal-and-brick','modern-glass','masonry'].includes(profile))throw Error('Unsupported facade material profile');
+      const entrances=input.exterior.entrances??[];
+      if(!Array.isArray(entrances)||entrances.length>12)throw Error('Maximum twelve entrance volumes');
+      return {profile,entrances:entrances.map((item,index)=>({
+        angle:finite(item.angle,'Entrance angle '+index,0,Math.PI*2),
+        role:item.role==='primary'?'primary':'secondary'
+      }))};
+    })();
     const rawVoids=input.voids??[];
     if(!Array.isArray(rawVoids)||rawVoids.length>256)throw Error('Too many restricted seating regions');
     const voids=rawVoids.map(v=>{
@@ -42,6 +53,7 @@ export const GeometryEngine={
       name:String(input.name??'Procedural venue').slice(0,100),surface,field,tiers,sections,
       clearance:tiers[0].frontRadiusOffset,aisleWidth,seatPitch:pitch,roundness:exponent,
       targetCapacity:capacity,capacityTolerance:finite(input.capacityTolerance??.02,'Capacity tolerance',0,.2),
+      exterior,
       template:input.template==='open-stadium'?'open-stadium':'indoor-arena',voids};
   },
   create(input){
