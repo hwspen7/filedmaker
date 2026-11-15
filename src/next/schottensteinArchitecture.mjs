@@ -55,9 +55,50 @@ function betweenDecks(out,innerTier,outerTier,elevation){
   ringStrip(out,from,to,'up');
 }
 
+
+/**
+ * Schematic exit portals in gaps between the upper-bowl chart sections.
+ * Labels are illustrative, NOT confirmed Ohio State exit designations.
+ * They do not alter any seats or verified circulation features.
+ */
+export function buildSchottensteinExitMarkers(model){
+  const blocks=(model?.sectionFootprints??[]).filter(block=>block.tier===2);
+  if(!blocks.length)return [];
+  const centers=blocks.map(block=>{
+    const pts=block.outlines.flat();
+    const x=pts.reduce((sum,p)=>sum+p.x,0)/pts.length;
+    const z=pts.reduce((sum,p)=>sum+p.z,0)/pts.length;
+    return (Math.atan2(z,x)+TAU)%TAU;
+  }).sort((a,b)=>a-b);
+  const gaps=centers.map((c,i)=>{
+    const next=i+1<centers.length?centers[i+1]:centers[0]+TAU;
+    return (c+(next-c)/2)%TAU;
+  });
+  const chosen=new Set(),output=[];
+  const distance=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
+  for(let i=0;i<12&&i<gaps.length;i++){
+    const ideal=(i+.5)*TAU/12;
+    let best=-1,score=Infinity;
+    for(let j=0;j<gaps.length;j++){
+      if(chosen.has(j))continue;
+      const d=distance(gaps[j],ideal);
+      if(d<score){best=j;score=d;}
+    }
+    if(best<0)continue;
+    chosen.add(best);
+    const angle=gaps[best],anchor=ringPoint(2,angle,1,.32);
+    const number=String(output.length+1).padStart(2,'0');
+    output.push({id:'EX-'+number,number,
+      label:'EXIT '+number,angle,
+      x:anchor.x,y:anchor.y+2.10,z:anchor.z,
+      verified:false});
+  }
+  return output;
+}
+
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],crown=[];
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],crown=[],signs=[],exitLights=[];
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
@@ -150,128 +191,55 @@ export function buildSchottensteinArchitecture(model){
     };
     ringStrip(trim,from,to,'up');
   }
-  // Architectural signature: a smooth, raised perimeter parapet. The crown
-  // is referenced to the real upper deck rather than an independent oval
-  // and therefore follows its short press-side edge and changing elevations.
-  const upperRim=(angle,offset,up)=>{
-    const p=ringPoint(2,angle,1);
-    return {x:p.x+Math.cos(angle)*offset,z:p.z+Math.sin(angle)*offset,y:p.y+up};
-  };
-  ringStrip(crown,a=>upperRim(a,-.08,.49),a=>upperRim(a,1.00,.49),'up');
-  ringStrip(crown,a=>upperRim(a,-.08,.93),a=>upperRim(a,1.00,.93),'up');
-  ringStrip(crown,a=>upperRim(a,1.00,.49),a=>upperRim(a,1.00,.93),'out');
-  ringStrip(trim,a=>upperRim(a,1.015,.46),a=>upperRim(a,1.015,.39),'out');
 
-  // A recessed press gallery is a recognizable upper-stand silhouette.
-  // Its position follows the mapped press region. Details are schematic and
-  // do not claim OSU construction dimensions or verified seating.
-  const press=model.features?.find(feature=>feature.kind==='press');
-  if(press && Number.isFinite(press.x) && Number.isFinite(press.z)){
-    const angle=Math.atan2(press.z,press.x),out=[Math.cos(angle),Math.sin(angle)];
-    const tangent=[-out[1],out[0]],p=upperRim(angle,1.85,.0);
-    const base=p.y+.62,top=base+2.40;
-    const at=(along,depth,height)=>[p.x+tangent[0]*along+out[0]*depth,
-      height,p.z+tangent[1]*along+out[1]*depth];
-    const faceIn=[-out[0],0,-out[1]],faceOut=[out[0],0,out[1]];
-    const half=6.4,back=2.65,front=-1.15;
-    quad(crown,at(-half,front,top),at(half,front,top),at(half,back,top),at(-half,back,top),[0,1,0]);
-    quad(crown,at(-half,front,base),at(half,front,base),at(half,back,base),at(-half,back,base),[0,1,0]);
-    quad(glazing,at(-half+.45,front-.025,base+.52),at(half-.45,front-.025,base+.52),
-      at(half-.45,front-.025,top-.30),at(-half+.45,front-.025,top-.30),faceIn);
-    quad(facade,at(-half,front,base),at(half,front,base),
-      at(half,front,base+.52),at(-half,front,base+.52),faceIn);
-    quad(facade,at(-half,back,base),at(half,back,base),at(half,back,top),at(-half,back,top),faceOut);
-    for(const side of [-1,1]){
-      const sideNormal=[tangent[0]*side,0,tangent[1]*side];
-      quad(facade,at(side*half,front,base),at(side*half,back,base),
-        at(side*half,back,top),at(side*half,front,top),sideNormal);
-    }
-    for(const pos of [-half,0,half]){
-      const n=faceIn;
-      quad(trim,at(pos-.045,front-.055,base+.51),at(pos+.045,front-.055,base+.51),
-        at(pos+.045,front-.055,top-.26),at(pos-.045,front-.055,top-.26),n);
-    }
-  }
-
-  // Fit each staircase to a vacant corridor between traced sections.
-  // A row contributes one level tread and one visible riser (not a sloped
-  // white ribbon). No step is accepted over a selectable chair.
-  const byTier=new Map([1,2].map(t=>[t,model.seats.filter(s=>s.tier===t)]));
-  const cellSize=1.0;
-  const hashes=new Map();
-  for(const [tier,seats] of byTier){
-    const hash=new Map();
-    for(const seat of seats){
-      const key=Math.floor(seat.x/cellSize)+','+Math.floor(seat.z/cellSize);
-      if(!hash.has(key))hash.set(key,[]);
-      hash.get(key).push(seat);
-    }
-    hashes.set(tier,hash);
-  }
-  const conflict=(tier,p,clearance=.55)=>{
-    const hash=hashes.get(tier);
-    const x=Math.floor(p.x/cellSize),z=Math.floor(p.z/cellSize);
-    for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)
-      for(const seat of hash.get((x+dx)+','+(z+dz))??[]){
-        if(Math.hypot(p.x-seat.x,p.z-seat.z)<clearance
-          &&Math.abs(p.y-seat.y)<1.6)return true;
-      }
-    return false;
+  // The upper bowl terminates in a solid, two-sided arena wall. Its bottom
+  // follows the traced upper tier and joins the exterior cladding. A narrow
+  // coping closes the wall: there is NO free-standing white crown ribbon.
+  const exits=buildSchottensteinExitMarkers(model);
+  const innerOffset=.38,outerOffset=.94;
+  const wallPoint=(angle,offset,height)=>{
+    const base=ringPoint(2,angle,1,offset);
+    return [base.x,base.y+height,base.z];
   };
-  const angleOf=s=>{
-    const pts=s.outlines.flat();
-    const x=pts.reduce((sum,p)=>sum+p.x,0)/pts.length;
-    const z=pts.reduce((sum,p)=>sum+p.z,0)/pts.length;
-    return (Math.atan2(z,x)+TAU)%TAU;
+  const inward=angle=>[-Math.cos(angle),0,-Math.sin(angle)];
+  const outward=angle=>[Math.cos(angle),0,Math.sin(angle)];
+  const angularDistance=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+  const paintWall=(out,a,b,ra,rb,lo,hi,normal)=>{
+    quad(out,wallPoint(a,ra,lo),wallPoint(b,rb,lo),
+      wallPoint(b,rb,hi),wallPoint(a,ra,hi),normal);
   };
-  for(const tier of [1,2]){
-    const centers=model.sectionFootprints.filter(s=>s.tier===tier)
-      .map(angleOf).sort((a,b)=>a-b);
-    const maxSlots=Math.max(...model.sectionFootprints.filter(s=>s.tier===tier).map(s=>s.depthRows));
-    // Try several offsets. The winner maximizes clear individual steps.
-    // Unlike the old algorithm, any step touching a chair is omitted.
-    const width=.34;
-    const sectionSteps=[];
-    for(let i=0;i<centers.length;i++){
-      const next=i+1<centers.length?centers[i+1]:centers[0]+TAU;
-      const midway=(centers[i]+next)/2;
-      let selected=null,best=-1;
-      for(let offset=-.072;offset<=.07201;offset+=.012){
-        const angle=midway+offset,valid=[];
-        for(let j=0;j<maxSlots;j++){
-          const u=j/maxSlots,v=(j+1)/maxSlots;
-          const center=ringPoint(tier,angle,(u+v)/2);
-          const inner=ringPoint(tier,angle,u);
-          const outer=ringPoint(tier,angle,v);
-          const tangent={x:-Math.sin(angle),z:Math.cos(angle)};
-          const clearance=[center,inner,outer].every(p=>
-            !conflict(tier,p,.50)&&!conflict(tier,{x:p.x+tangent.x*width,z:p.z+tangent.z*width,y:p.y},.34)
-              &&!conflict(tier,{x:p.x-tangent.x*width,z:p.z-tangent.z*width,y:p.y},.34));
-          valid.push(clearance);
-        }
-        const score=valid.reduce((count,yes)=>count+(yes?1:0),0);
-        if(score>best){best=score;selected={angle,valid};}
+  for(let i=0;i<SEGMENTS;i++){
+    const a=i*TAU/SEGMENTS,b=(i+1)*TAU/SEGMENTS,m=(a+b)/2;
+    const inside=inward(m),outside=outward(m);
+    const portal=exits.some(exitMarker=>Math.abs(angularDistance(m,exitMarker.angle))<.024);
+    // Inner, outer and capped faces form real wall volume; the openings are
+    // recessed into the inner face, never laid across occupied seat rows.
+    if(!portal){
+      paintWall(crown,a,b,innerOffset,innerOffset,-.48,2.58,inside);
+      if(i%18>=4&&i%18<=13){
+        paintWall(glazing,a,b,innerOffset-.022,innerOffset-.022,1.68,2.22,inside);
       }
-      if(!selected||best===0)continue;
-      for(let j=0;j<maxSlots;j++){
-        if(!selected.valid[j])continue;
-        const {angle}=selected,u=j/maxSlots,v=(j+1)/maxSlots;
-        const low=ringPoint(tier,angle,u),high=ringPoint(tier,angle,v);
-        const mid=ringPoint(tier,angle,(u+v)/2);
-        const y=mid.y-.10;
-        const tangent={x:-Math.sin(angle),z:Math.cos(angle)};
-        const corner=(p,sign,height)=>[p.x+sign*tangent.x*width,height,p.z+sign*tangent.z*width];
-        // A flat tread with a contrasting vertical riser at its inner edge.
-        const a=corner(low,-1,y),b=corner(low,1,y);
-        const c=corner(high,1,y),d=corner(high,-1,y);
-        quad(aisles,a,b,c,d,[0,1,0]);
-        const previous=ringPoint(tier,angle,Math.max(0,(j-.5)/maxSlots));
-        const bottom=y-clamp(mid.y-previous.y,.13,.65);
-        quad(stepEdges,a,b,corner(low,1,bottom),corner(low,-1,bottom),
-          [-Math.cos(angle),0,-Math.sin(angle)]);
-      }
+    }else{
+      paintWall(crown,a,b,innerOffset,innerOffset,1.82,2.58,inside);
+      paintWall(glazing,a,b,innerOffset+.068,innerOffset+.068,-.43,1.82,inside);
+      paintWall(signs,a,b,innerOffset-.045,innerOffset-.045,1.88,2.46,inside);
+      // A small red lamp identifies the opening without claiming an
+      // architectural or code-compliant exit installation.
+      const c=m,delta=Math.min(.006,(b-a)*.20);
+      paintWall(exitLights,c-delta,c+delta,innerOffset-.061,innerOffset-.061,1.77,1.88,inward(c));
+    }
+    paintWall(crown,a,b,outerOffset,outerOffset,-.50,2.58,outside);
+    quad(crown,wallPoint(a,innerOffset,2.58),wallPoint(b,innerOffset,2.58),
+      wallPoint(b,outerOffset,2.58),wallPoint(a,outerOffset,2.58),[0,1,0]);
+    // Thin charcoal coping / cornice rather than a tall white parapet.
+    quad(trim,wallPoint(a,innerOffset-.05,2.62),wallPoint(b,innerOffset-.05,2.62),
+      wallPoint(b,outerOffset+.06,2.62),wallPoint(a,outerOffset+.06,2.62),[0,1,0]);
+    if(i%12===0){
+      paintWall(trim,a,b,innerOffset-.031,innerOffset-.031,-.48,1.64,inside);
     }
   }
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,crown})
+  // Intentionally no generated stair treads or radial stair ribbons.
+  // The actual empty aisles remain visible between the mapped seat banks.
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,crown,signs,exitLights})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
