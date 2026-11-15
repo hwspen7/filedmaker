@@ -257,7 +257,6 @@ export function buildSchottensteinArchitecture(model){
       // Column faces project into the gallery and link the lower parapet
       // to the roof beam; even at the press end this forms real volume.
       const a=i*TAU/SEGMENTS,off=.0045,near=galleryFront-.16,far=galleryFront+.48;
-      const local=angle=>outerR[i]*1;
       const axis=(angle,offset,y)=>[(outerR[i]+offset)*Math.cos(angle),y,
         (outerR[i]+offset)*Math.sin(angle)];
       const p=a-off,q=a+off;
