@@ -1,0 +1,34 @@
+name: Schottenstein visual smoke
+on:
+  push:
+    branches: [feature/schottenstein-audience-preview]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Start FiledMaker
+        run: |
+          node scripts/server.mjs >/tmp/venue-server.log 2>&1 &
+          sleep 2
+          curl --fail http://127.0.0.1:5174/ >/dev/null
+      - name: Render WebGL overview in headless Chrome
+        run: |
+          set -e
+          CHROME="$(command -v google-chrome || command -v chromium || true)"
+          test -n "$CHROME" || { echo 'No browser installed'; exit 1; }
+          timeout 60s "$CHROME" --headless --no-sandbox --disable-dev-shm-usage --enable-webgl --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --window-size=1440,900 --virtual-time-budget=8500 --screenshot=schottenstein-overview.png http://127.0.0.1:5174/
+          timeout 60s "$CHROME" --headless --no-sandbox --disable-dev-shm-usage --enable-webgl --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --window-size=1440,900 --virtual-time-budget=8500 --dump-dom http://127.0.0.1:5174/ >/tmp/venue-dom.html
+          grep -q 'WebGL2 · Offline' /tmp/venue-dom.html || { echo 'WebGL renderer was not initialized'; exit 1; }
+          test "$(stat -c %s schottenstein-overview.png)" -gt 30000
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: schottenstein-visual-smoke
+          path: schottenstein-overview.png
