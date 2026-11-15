@@ -82,6 +82,19 @@ async function main(){
       const target=join(dir,file+'.png');writeFileSync(target,Buffer.from(result.data,'base64'));
       if(statSync(target).size<12000)throw Error('Screenshot is suspiciously small: '+target);
       console.log(file+': WebGL2 OK; '+state.shown+' estimated seats; PNG '+statSync(target).size+' bytes');
+      if(file==='osu'){
+        const selected=await evaluate("(()=>{const select=document.querySelector('#sectionPicker');if(!select)return false;const pick=[...select.options].find(o=>o.value==='323')||[...select.options].find(o=>o.value);if(!pick)return false;select.value=pick.value;select.dispatchEvent(new Event('change',{bubbles:true}));return !document.querySelector('[data-view=human]').disabled})()");
+        if(!selected)throw Error('Cannot select an OSU spectator seat for interior acceptance');
+        await evaluate("document.querySelector('[data-view=human]').click()");
+        const interior=await poll(async()=>await evaluate("document.querySelector('[data-view=human]')?.classList.contains('current')"),30);
+        if(!interior)throw Error('OSU interior seat view did not open');
+        await delay(850);
+        const frame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        const closeup=join(dir,'osu-seat.png');writeFileSync(closeup,Buffer.from(frame.data,'base64'));
+        if(statSync(closeup).size<12000)throw Error('OSU seat-view screenshot is empty');
+        console.log('osu-seat: human-eye WebGL2 screenshot verified');
+        await evaluate("document.querySelector('[data-view=overview]').click()");
+      }
     }
     await evaluate("document.querySelector('#generateName').value='Custom QA Soccer Stadium';document.querySelector('#generateSurface').value='soccer';document.querySelector('#generateSections').value='22';document.querySelector('#generateLowerRows').value='13';document.querySelector('#generateUpperRows').value='18';document.querySelector('#generateCapacity').value='16500';document.querySelector('#generateVenue').click()");
     const custom=await poll(async()=>{
