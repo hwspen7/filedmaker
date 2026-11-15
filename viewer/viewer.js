@@ -2,6 +2,7 @@ import { generateSeats } from '../src/model.mjs';
 import { createSchoolProject, applySchoolRowPlan, schoolExampleRowsCSV } from '../src/schoolPipeline.mjs';
 import { ticketReconciliation } from '../src/seatFirst.mjs';
 import { VIEW_DEFAULTS } from '../src/view.mjs';
+import { seatColor, canSelectOfficialSeat } from '../src/seatPresentation.mjs';
 
 const $ = id => document.getElementById(id);
 const modelKey = 'filedmaker.viewer.project';
@@ -34,7 +35,7 @@ $('school').textContent = project.school?.school || 'Custom school venue';
 $('seatCount').textContent = seats.length.toLocaleString();
 $('capacity').textContent = reconcile.officialCapacity === null ? 'Not supplied' : reconcile.officialCapacity.toLocaleString();
 $('source').textContent = source.includes('estimated') || source.includes('parametric') ? 'Estimated placement' : 'Imported / unverified';
-$('dataNote').textContent = `Source: ${source}. Published capacity and modeled seat count are separate. Every sightline requires school review.`;
+$('dataNote').textContent = `Source: ${source}. ${canSelectOfficialSeat(project,model.seatOrigin)?'Imported seat identifiers; positions may remain estimated.':'These are illustrative positions, NOT official ticket seats.'} Published capacity and model count are separate. School approval required.`;
 $('topSub').textContent = `${model.surface.label} · ${seats.length.toLocaleString()} seat identities`;
 $('bottom').textContent = `${seats.length.toLocaleString()} ticket/seat identities · ${source} · approximate preview · no real-time availability or checkout`;
 const tiers = [...new Set(seats.map(s => s.tier))].sort((a,b) => a-b);
@@ -42,7 +43,7 @@ for(const tier of tiers) {const o=new Option(model.tiers[tier]?.label || `Level 
 const sections = [...new Set(seats.map(s=>s.sectionId))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
 for(const section of sections) $('section').add(new Option(section,section));
 const byId = new Map(seats.map(s=>[String(s.uid),s]));
-const colors=['#153d6a','#226ba6','#4d91c3','#87b8d8'];
+const colors=[0,1,2,3].map(t=>seatColor(project,t,0));
 const canvas=$('seatmap'),ctx=canvas.getContext('2d',{alpha:false});
 let width=0,height=0,scale=1,tx=0,ty=0,mode='map',scene=null,loading3d=false;
 let drawQueued=false,grid=new Map(),labelBoxes=[];
@@ -99,7 +100,7 @@ function draw(){
   const x=px(s.x),y=py(s.z);if(x<-8||x>width+8||y<-8||y>height+8)continue;
   visibleN++;
   const r=Math.max(1.15,Math.min(3.7,scale*.14));
-  ctx.fillStyle=colors[Math.min(3,Math.max(0,s.tier))]||colors[0];
+  ctx.fillStyle=seatColor(project,s.tier,s.sectionIndex)||colors[0];
   ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
   if(s===selected){ctx.strokeStyle='#f79336';ctx.lineWidth=2.8;ctx.beginPath();ctx.arc(x,y,r+5,0,Math.PI*2);ctx.stroke();}
   else if(s===highlighted){ctx.strokeStyle='#f79336';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(x,y,r+3,0,Math.PI*2);ctx.stroke();}

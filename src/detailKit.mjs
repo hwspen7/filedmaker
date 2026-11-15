@@ -42,10 +42,10 @@ export function seatAssetPlan(project) {
     // styles must ultimately be read from a seat-level source.
     type: ohio ? 'mixed-bleacher' : 'folding-chair',
     seatWidth: Math.min(.46, Math.max(.35, pitch - .10)),
-    seatDepth: .38,
+    seatDepth: .37,
     seatThickness: .048,
-    backHeight: .40,
-    backThickness: .048,
+    backHeight: .38,
+    backThickness: .045,
     legThickness: .027,
     seatHeight: .45,
     armThickness: .035,

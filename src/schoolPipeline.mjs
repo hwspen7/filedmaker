@@ -53,6 +53,7 @@ export function createSchoolProject(key, data={}) {
     ];
   }
   project.school = {
+    primaryColor:/^#[0-9a-f]{6}$/i.test(String(data.primaryColor||''))?String(data.primaryColor):null,
     school, venue, level:profile.level, sport:profile.sport, profile:key,
     status:'draft', seatCoordinateMethod:'parametric-estimate',
     source:clean(data.source,300), updatedAt:'',

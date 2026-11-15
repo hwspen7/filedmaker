@@ -1,3 +1,4 @@
+import { facingYaw } from './seatPresentation.mjs';
 // Real-world seat-data ingestion and 2D registration. Pure functions with no DOM access.
 // All finished coordinates are meters in the stadium model's X (lateral), Y (up), Z (longitudinal) frame.
 export const MAX_IMPORT_SEATS = 150000;
@@ -163,6 +164,24 @@ export function importedSeats(survey, project) {
     return {uid:s.id,sectionId:s.section,sectionIndex:index,tier,row:s.row,number:s.number,
       x:p.x,y,z:p.z,yaw:Math.atan2(-p.x,-p.z),dataOrigin:'imported',elevationKnown:s.y!==null&&!yIsEstimated};
   });
+  // Infer local seat facing from row tangent, not from radial angle to
+  // the global origin (that misorients seats in long rectangular stands).
+  const rows=new Map();
+  for(const seat of seats){const key=JSON.stringify([seat.sectionId,seat.tier,seat.row]);
+    if(!rows.has(key)) rows.set(key,[]);rows.get(key).push(seat);}
+  for(const row of rows.values()){
+    row.sort((a,b)=>{
+      const n=Number(a.number),m=Number(b.number);
+      return Number.isFinite(n)&&Number.isFinite(m)?n-m:String(a.number).localeCompare(String(b.number),undefined,{numeric:true});
+    });
+    for(let i=0;i<row.length;i++){
+      const prev=row[Math.max(0,i-1)],next=row[Math.min(row.length-1,i+1)];
+      row[i].yaw=facingYaw(row[i].x,row[i].z,prev===row[i]?null:prev,next===row[i]?null:next);
+      // For the end seat in a two-seat row the tangent still comes from
+      // the other seat. No fabricated nearby positions are introduced.
+      if(row.length>1 && (i===0||i===row.length-1)) row[i].yaw=facingYaw(row[i].x,row[i].z,row[0],row[row.length-1]);
+    }
+  }
   return {seats,registration,elevationCount:yIsEstimated?0:survey.seats.filter(s=>s.y!==null).length};
 }
 

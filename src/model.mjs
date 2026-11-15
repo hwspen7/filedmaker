@@ -1,6 +1,7 @@
 // Deterministic parametric geometry and project validation. No DOM or 3D dependencies.
 import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
 import { getNBAArena } from './nbaCatalog.mjs';
+import { facingYaw } from './seatPresentation.mjs';
 export const TAU = Math.PI * 2;
 export const CURRENT_SCHEMA = 5;
 
@@ -495,7 +496,7 @@ export function generateSeats(input) {
             const number = ++seatNumber;
             seats.push({
               x: position.x, y, z: position.z,
-              yaw: Math.atan2(-position.x, -position.z),
+              yaw: facingYaw(position.x,position.z,pointAtDistance(path,Math.max(0,start+(i+0.5)*step-.22)),pointAtDistance(path,Math.min(path.length,start+(i+0.5)*step+.22))),
               tier: tier.index, sectionId: section.id, sectionIndex,
               row: row + 1, number,
               uid: `${tier.id}-${section.id}-${row + 1}-${number}`,

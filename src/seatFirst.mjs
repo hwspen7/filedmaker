@@ -23,12 +23,13 @@ export function tierBlue(tier=0,section=0){
 export function enableSeatFirst(input,opts={}) {
   const p=structuredClone(input);
   p.seatFirst=true;
-  p.blueTheme=true;
+  // Blue is a fallback for unsourced schools, not a universal venue color.
+  p.blueTheme=!['ohio-stadium','schottenstein-center'].includes(p.venueReference?.id);
   p.showExterior=false;
   p.roof=false;
   p.showFixtures=true;
   p.detailLevel='standard';
-  p.sections.forEach((s,i)=>{s.color=tierBlue(0,i);});
+  if(p.blueTheme) p.sections.forEach((s,i)=>{s.color=tierBlue(0,i);});
   const facts=venueFacts(p.venueReference?.id);
   const original=p.ticketing||{};
   p.ticketing={

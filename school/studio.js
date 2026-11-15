@@ -4,7 +4,7 @@ import { createSchoolProject, applySchoolRowPlan, applySchoolSurvey, schoolReadi
 import { buildSchoolViewerHTML } from '../src/schoolPublisher.mjs';
 import { enableSeatFirst, importTicketRoster, ticketReconciliation, ticketMappingCSV, demoTicketRosterCSV } from '../src/seatFirst.mjs';
 const $=id=>document.getElementById(id);
-let project=createSchoolProject('college-gym',{school:$('schoolName').value,venue:$('venueName').value});
+let project=createSchoolProject('college-gym',{school:$('schoolName').value,venue:$('venueName').value,primaryColor:$('schoolColor').value});
 let model=null,stadium=null,selected=null,view='orbit';
 const text=(id,value)=>$(id).textContent=value;
 function toast(m,error=false){text('message',m);$('message').style.color=error?'#ad3227':'#4f6657';}
@@ -33,7 +33,7 @@ function render(){
 }
 function setModes(){for(const id of ['orbit','plan','human'])$(id).classList.toggle('active',(id==='human'?'seat':id)===view);}
 function setView(v){if(v==='seat'&&!selected){toast('Select a seat first.',true);return;}if(!stadium){toast('3D renderer not loaded.',true);return;}view=v;stadium.setView(v);setModes();}
-$('build').addEventListener('click',()=>{if(!confirm('Replace this draft with a newly generated school template?'))return;try{project=createSchoolProject($('profile').value,{school:$('schoolName').value,venue:$('venueName').value,city:$('city').value,country:$('country').value});render();}catch(e){toast(e.message,true);}});
+$('build').addEventListener('click',()=>{if(!confirm('Replace this draft with a newly generated school template?'))return;try{project=createSchoolProject($('profile').value,{school:$('schoolName').value,venue:$('venueName').value,primaryColor:$('schoolColor').value,city:$('city').value,country:$('country').value});render();}catch(e){toast(e.message,true);}});
 $('rowsCsv').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>8_000_000)throw Error('Row CSV exceeds 8MB.');project=applySchoolRowPlan(project,await file.text());render();toast(`Imported school-provided row labels: ${model.capacity.toLocaleString()} seat positions (XYZ estimated).`);}catch(err){toast(err.message,true);}finally{e.target.value='';}});
 $('ticketCsv').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>32_000_000)throw Error('Ticket CSV exceeds 32MB.');const result=importTicketRoster(project,await file.text(),`Uploaded file: ${file.name}`);project=result.project;render();toast(`${result.report.inventoryCount.toLocaleString()} ticket identities preserved · ${result.report.status}. Positions are ${project.ticketing.coordinates}; ${result.unmatchedSections.length} section placements are schematic.`);}catch(err){toast(err.message,true);}finally{e.target.value='';}});
 $('surveyCsv').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>32_000_000)throw Error('Survey CSV exceeds 32MB.');project=applySchoolSurvey(project,await file.text());render();toast('Imported school-provided XYZ positions. Independent measurement verification remains required.');}catch(err){toast(err.message,true);}finally{e.target.value='';}});

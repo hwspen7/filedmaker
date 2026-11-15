@@ -65,7 +65,7 @@ function renderTab() {
     html = fieldSelect('Playing surface', 'surface', project.surface, Object.entries(SURFACES).map(([key, v]) => [key, v.label]));
     html += `<div class="two-fields">${fieldText('Bowl squareness', 'shape', project.shape, 'number', 'min="2" max="8" step="0.1"')}${fieldText('Seat pitch (m)', 'seatPitch', project.seatPitch, 'number', 'min="0.4" max="1.1" step="0.01"')}</div>`;
     html += fieldText('Aisle gap at each section boundary (m)', 'aisleWidth', project.aisleWidth, 'number', 'min="0" max="5" step="0.1"');
-    html += `<div class="subheading">SEAT-FIRST MODE</div><label class="toggle-row"><input data-seat-first-toggle type="checkbox" ${project.seatFirst ? 'checked' : ''} /> Seat-only bowl + universal sports markers</label><p class="hint">Blue tier shades, schematic stands, field/court/goal/scoreboard only. No expensive facade or invented arena architecture. Use Ticket data to import exact seat identities.</p>`;
+    html += `<div class="subheading">SEAT-FIRST MODE</div><label class="toggle-row"><input data-seat-first-toggle type="checkbox" ${project.seatFirst ? 'checked' : ''} /> Seat-only bowl + universal sports markers</label><p class="hint">Venue-aware tier colors, schematic stands, field/court/goal/scoreboard only. No expensive facade or invented arena architecture. Use Ticket data to import exact seat identities.</p>`;
     html += `<div class="subheading">ARCHITECTURAL DETAIL <span class="pill">SPORTS VENUES</span></div>`;
     html += fieldSelect('Scene detail', 'detailLevel', project.detailLevel, [['draft','Draft · low overhead'],['standard','Standard · architecture'],['high','High · terraces + fixtures']]);
     html += `<label class="toggle-row"><input data-project="showExterior" type="checkbox" ${project.showExterior ? 'checked' : ''} /> Facades, stadium structures and concourses</label>`;
@@ -244,8 +244,9 @@ function showSelection(seat = stadium?.selectedSeat) {
   const tier = model.tiers[seat.tier];
   const section = model.project.sections[seat.sectionIndex];
   const stats = sectionStats(model, seat.sectionId);
-  const sectionLabel=model.seatOrigin==='imported'?seat.sectionId:section.label;
-  target.innerHTML = `<strong>${safe(sectionLabel)} · Row ${safe(seat.row)}</strong><p>${safe(model.seatOrigin==='imported'?seat.tierLabel||'Imported deck':tier.label)} · Seat ${safe(seat.number)}<br />Section count ${num(stats.seats)} seats</p><code>X ${seat.x.toFixed(2)} · Y ${seat.y.toFixed(2)} · Z ${seat.z.toFixed(2)} m${seat.elevationKnown===false?' · ELEVATION UNKNOWN':''}</code>`;
+  const syntheticNamed=model.seatOrigin!=='imported' && Boolean(project.venueReference);
+  const sectionLabel=model.seatOrigin==='imported'?seat.sectionId:(syntheticNamed?`Illustrative region ${section.label}`:section.label);
+  target.innerHTML = `<strong>${safe(sectionLabel)} · Row ${safe(seat.row)}</strong><p>${safe(model.seatOrigin==='imported'?seat.tierLabel||'Imported deck':tier.label)} · ${syntheticNamed?'Synthetic sample point':'Seat'} ${safe(seat.number)}<br />${syntheticNamed?'Generated display count (not an official inventory)':'Section count'} ${num(stats.seats)} positions</p><code>X ${seat.x.toFixed(2)} · Y ${seat.y.toFixed(2)} · Z ${seat.z.toFixed(2)} m${seat.elevationKnown===false?' · ELEVATION UNKNOWN':''}</code>`;
 }
 function updateStats() {
   if (!model) return;

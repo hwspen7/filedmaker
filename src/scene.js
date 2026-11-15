@@ -6,7 +6,7 @@ import { SURFACES, TAU, modelPerimeterPoint, modelPerimeterPath, pointAtDistance
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, crowdCandidates, resolveEyeClearance } from './view.mjs';
 import { addDetailedVenue } from './architecture.js';
 import { addUniversalMarkers } from './markerKit.js';
-import { tierBlue } from './seatFirst.mjs';
+import { seatColor, seatKind } from './seatPresentation.mjs';
 import { seatingSupportPlan, supportFootprint, schematicAisleSteps } from './seatingSupport.mjs';
 import { seatAssetPlan } from './detailKit.mjs';
 import { venueBounds, overviewCamera } from './seatCamera.mjs';
@@ -164,7 +164,7 @@ function makeTerrace(section, surface, tier, project) {
   const vertices = [], colors = [], indices = [];
   const sectionIndex=project.sections.findIndex(s=>s.id===section.id);
   const tierIndex=project.tiers.findIndex(t=>t.id===tier.id);
-  const base = new THREE.Color(project.seatFirst && project.blueTheme ? tierBlue(tierIndex,sectionIndex) : section.color);
+  const base = new THREE.Color(seatColor(project,tierIndex,sectionIndex));
   const profile = resolveSectionTier(tier, section.id, project);
   for (let row = 0; row < profile.rows; row++) {
     const radial = profile.startOffset + row * profile.depth;
@@ -260,7 +260,7 @@ function createSeatMesh(seats, project) {
   ];
   const meshes=defs.map(([geometry,m])=>new THREE.InstancedMesh(geometry,m,seats.length));
   const colors=project.sections.map(v=>new THREE.Color(v.color));
-  const tierColors=project.seatFirst && project.blueTheme ? project.tiers.map((t,i)=>project.sections.map((sec,j)=>new THREE.Color(tierBlue(i,j)))) : null;
+  const tierColors=project.tiers.map((t,i)=>project.sections.map((sec,j)=>new THREE.Color(seatColor(project,i,j))));
   const o=new THREE.Object3D(), seatTint=new THREE.Color(), silver=new THREE.Color(0xaeb5b8);
   const steelTint=new THREE.Color(0x89949b);
   const position=(seat,index,i,dx,dy,dz,show=true,lean=0)=>{
@@ -271,15 +271,15 @@ function createSeatMesh(seats, project) {
     o.updateMatrix();meshes[i].setMatrixAt(index,o.matrix);
   };
   seats.forEach((seat,index)=>{
-    const chair=project.seatFirst || dims.styleForTier(seat.tier)==='chair';
+    const chair=seatKind(project,seat)==='chair';
     const base=tierColors?.[seat.tier]?.[seat.sectionIndex] || colors[seat.sectionIndex] || new THREE.Color(0x87979b);
     seatTint.copy(base).lerp(silver,project.seatFirst ? (chair?.10:.21) : (chair?.24:.82));
     seatTint.multiplyScalar(.965+(seat.row%3)*.012);
-    position(seat,index,0,0,dims.seatHeight,0);
-    position(seat,index,1,0,dims.seatHeight+.008,.187,high);
+    position(seat,index,0,0,chair?dims.seatHeight:.09,0);
+    position(seat,index,1,0,dims.seatHeight+.008,.187,chair&&high);
     position(seat,index,2,0,.74,-.185,chair,-.09);
-    position(seat,index,3,-seatWidth*.38,.185,-.13,true);
-    position(seat,index,4,seatWidth*.38,.185,-.13,true);
+    position(seat,index,3,-seatWidth*.38,.185,-.13,chair);
+    position(seat,index,4,seatWidth*.38,.185,-.13,chair);
     position(seat,index,5,-seatWidth*.49,.625,.065,chair);
     position(seat,index,6,seatWidth*.49,.625,.065,chair);
     for(const i of [0,1,2]) meshes[i].setColorAt(index,seatTint);

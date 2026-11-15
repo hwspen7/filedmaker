@@ -3,6 +3,7 @@
 import { generateSeats } from './model.mjs';
 import { schoolReadiness } from './schoolPipeline.mjs';
 import { BLUE_TIERS, ticketReconciliation } from './seatFirst.mjs';
+import { seatColor, seatKind } from './seatPresentation.mjs';
 const escape = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const scriptJSON = value => JSON.stringify(value).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
 export function buildSchoolViewerHTML(input) {
@@ -11,8 +12,8 @@ export function buildSchoolViewerHTML(input) {
   const readiness=schoolReadiness(project,model);
   const reconciliation=ticketReconciliation(project,model.seats.length);
   const payload={name:project.school?.venue||project.title,school:project.school?.school||'School venue',
-    surface:model.surface,seatOrigin:readiness.sourceMethod,officialCapacity:reconciliation.officialCapacity,capacityStatus:reconciliation.status,tierColors:project.blueTheme?BLUE_TIERS:null,sections:project.sections.map(s=>({id:s.id,label:s.label})),
-    seats:model.seats.map(s=>({id:String(s.uid),tier:Number(s.tier),section:String(s.sectionId),row:String(s.row),seat:String(s.number),x:Number(s.x.toFixed(3)),y:Number(s.y.toFixed(3)),z:Number(s.z.toFixed(3)),yaw:Number((s.yaw||0).toFixed(4))}))};
+    surface:model.surface,seatOrigin:readiness.sourceMethod,officialCapacity:reconciliation.officialCapacity,capacityStatus:reconciliation.status,tierColors:[0,1,2,3].map(t=>seatColor(project,t,0)),sections:project.sections.map(s=>({id:s.id,label:s.label})),
+    seats:model.seats.map(s=>({id:String(s.uid),tier:Number(s.tier),section:String(s.sectionId),row:String(s.row),seat:String(s.number),x:Number(s.x.toFixed(3)),y:Number(s.y.toFixed(3)),z:Number(s.z.toFixed(3)),yaw:Number((s.yaw||0).toFixed(4)),style:seatKind(project,s),color:seatColor(project,s.tier,s.sectionIndex)}))};
   const html=`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escape(payload.name)} | Seat Preview</title>
@@ -43,11 +44,11 @@ function el(tag,attributes,parent=svg){const n=document.createElementNS(svgNS,ta
 el('rect',{x:-cw/2,y:-cl/2,width:cw,height:cl,class:data.surface.sport==='basketball'?'court':'field',rx:.2});
 el('line',{x1:-cw/2,y1:0,x2:cw/2,y2:0,stroke:'white','stroke-width':.16});
 const dots=new Array(data.seats.length);const layer=el('g',{});
-for(let i=0;i<data.seats.length;i++){const s=data.seats[i];const c=el('circle',{cx:s.x,cy:s.z,r:Math.max(.17,Math.min(.36,maxZ/190)),class:'seat','data-index':i,fill:data.tierColors?data.tierColors[Math.max(0,Math.min(3,s.tier))]: '#2875ae'},layer);dots[i]=c;}
+for(let i=0;i<data.seats.length;i++){const s=data.seats[i];const c=el('circle',{cx:s.x,cy:s.z,r:Math.max(.17,Math.min(.36,maxZ/190)),class:'seat','data-index':i,fill:s.color||data.tierColors[Math.max(0,Math.min(3,s.tier))]},layer);dots[i]=c;}
 function filtered(){const section=$('section').value,q=$('search').value.trim().toLowerCase();for(let i=0;i<data.seats.length;i++){const s=data.seats[i];dots[i].style.display=((!section||s.section===section)&&(!q||[s.id,s.row,s.seat].some(v=>v.toLowerCase().includes(q))))?'':'none';}}
 $('section').onchange=filtered;$('search').oninput=filtered;
 function choose(i,scroll=false){if(!(i>=0&&i<data.seats.length))return;if(selected>=0)dots[selected].classList.remove('active');selected=i;dots[i].classList.add('active');const s=data.seats[i];
-$('details').replaceChildren();for(const line of ['Section '+s.section,'Row '+s.row+' · Seat '+s.seat,s.id,'Position estimate X '+s.x.toFixed(2)+' m · Y '+s.y.toFixed(2)+' m · Z '+s.z.toFixed(2)+' m']){const p=document.createElement('div');p.textContent=line;$('details').append(p);}if(scene&&mode==='eye')scene.seatView(s);}
+$('details').replaceChildren();for(const line of ['Section '+s.section,'Row '+s.row+' · Seat '+s.seat,s.id,'3D coordinate (review needed) X '+s.x.toFixed(2)+' m · Y '+s.y.toFixed(2)+' m · Z '+s.z.toFixed(2)+' m']){const p=document.createElement('div');p.textContent=line;$('details').append(p);}if(scene&&mode==='eye')scene.seatView(s);}
 layer.addEventListener('click',e=>{const n=e.target.closest('[data-index]');if(n)choose(Number(n.getAttribute('data-index')));});
 $('search').addEventListener('keydown',e=>{if(e.key==='Enter'){const i=data.seats.findIndex(s=>s.id.toLowerCase()===$('search').value.trim().toLowerCase());if(i>=0){$('section').value='';$('search').value='';filtered();choose(i);}}});
 const hash=decodeURIComponent(location.hash.replace(/^#seat=/,''));if(byId.has(hash))choose(byId.get(hash));
@@ -60,7 +61,7 @@ const world=new THREE.Scene();world.background=new THREE.Color(0xf2f3f1);world.a
 const camera=new THREE.PerspectiveCamera(53,1,.06,1500);camera.position.set(maxX*1.6,Math.max(20,maxZ*.75),maxZ*1.45);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);controls.update();
 const floor=new THREE.Mesh(new THREE.BoxGeometry(cw,.15,cl),new THREE.MeshStandardMaterial({color:data.surface.sport==='basketball'?0xd0ab79:0x4e9272}));world.add(floor);
-const geometry=new THREE.BoxGeometry(.42,.12,.36),back=new THREE.BoxGeometry(.42,.56,.08);const colors=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.8});
+const geometry=new THREE.BoxGeometry(.42,.075,.36),back=new THREE.BoxGeometry(.40,.39,.055);const colors=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.8});
 const seatMesh=new THREE.InstancedMesh(geometry,colors,data.seats.length),backMesh=new THREE.InstancedMesh(back,colors,data.seats.length);
 // Even a self-contained school preview needs structural treads, otherwise
 // seat cushions look like disconnected colored stripes in empty space.
@@ -69,9 +70,9 @@ const metal=new THREE.MeshStandardMaterial({color:0x8496a5,roughness:.56,metalne
 const leg=new THREE.InstancedMesh(new THREE.BoxGeometry(.025,.48,.035),metal,data.seats.length);
 const leg2=new THREE.InstancedMesh(new THREE.BoxGeometry(.025,.48,.035),metal,data.seats.length);
 let obj=new THREE.Object3D();
-for(let i=0;i<data.seats.length;i++){const s=data.seats[i];obj.position.set(s.x,s.y+.36,s.z);obj.rotation.set(0,s.yaw,0);obj.scale.set(1,1,1);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);if(data.tierColors)seatMesh.setColorAt(i,new THREE.Color(data.tierColors[Math.min(3,Math.max(0,s.tier))]));
-obj.position.set(s.x-Math.sin(s.yaw)*.17,s.y+.62,s.z-Math.cos(s.yaw)*.17);obj.updateMatrix();backMesh.setMatrixAt(i,obj.matrix);
-if(data.tierColors)backMesh.setColorAt(i,new THREE.Color(data.tierColors[Math.min(3,Math.max(0,s.tier))]));
+for(let i=0;i<data.seats.length;i++){const s=data.seats[i];obj.position.set(s.x,s.y+(s.style==='bleacher'?.09:.45),s.z);obj.rotation.set(0,s.yaw,0);obj.scale.set(1,1,1);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);seatMesh.setColorAt(i,new THREE.Color(s.color||data.tierColors[Math.min(3,Math.max(0,s.tier))]));
+obj.position.set(s.x-Math.sin(s.yaw)*.17,s.y+.71,s.z-Math.cos(s.yaw)*.17);obj.scale.setScalar(s.style==='bleacher'?0:1);obj.updateMatrix();backMesh.setMatrixAt(i,obj.matrix);obj.scale.setScalar(1);
+backMesh.setColorAt(i,new THREE.Color(s.color||data.tierColors[Math.min(3,Math.max(0,s.tier))]));
 obj.position.set(s.x,s.y-.20,s.z);obj.updateMatrix();support.setMatrixAt(i,obj.matrix);
 obj.position.set(s.x-Math.cos(s.yaw)*.16,s.y+.13,s.z+Math.sin(s.yaw)*.16);obj.updateMatrix();leg.setMatrixAt(i,obj.matrix);
 obj.position.set(s.x+Math.cos(s.yaw)*.16,s.y+.13,s.z-Math.sin(s.yaw)*.16);obj.updateMatrix();leg2.setMatrixAt(i,obj.matrix);
@@ -79,7 +80,7 @@ obj.position.set(s.x+Math.cos(s.yaw)*.16,s.y+.13,s.z-Math.sin(s.yaw)*.16);obj.up
 
 world.add(support,leg,leg2,seatMesh,backMesh);const dim=new THREE.Vector2();let running=true;
 function frame(){if(!running)return;requestAnimationFrame(frame);const w=root.clientWidth||300,h=root.clientHeight||300;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();if(mode!=='eye')controls.update();renderer.render(world,camera);}frame();
-const clear=()=>{if(scene?.hiddenIndex!==undefined&&scene.hiddenIndex>=0){const i=scene.hiddenIndex;const s=data.seats[i];obj.scale.set(1,1,1);obj.rotation.set(0,s.yaw,0);obj.position.set(s.x,s.y+.36,s.z);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);obj.position.set(s.x-Math.sin(s.yaw)*.17,s.y+.62,s.z-Math.cos(s.yaw)*.17);obj.updateMatrix();backMesh.setMatrixAt(i,obj.matrix);seatMesh.instanceMatrix.needsUpdate=true;backMesh.instanceMatrix.needsUpdate=true;scene.hiddenIndex=-1;}};
+const clear=()=>{if(scene?.hiddenIndex!==undefined&&scene.hiddenIndex>=0){const i=scene.hiddenIndex;const s=data.seats[i];obj.scale.set(1,1,1);obj.rotation.set(0,s.yaw,0);obj.position.set(s.x,s.y+.36,s.z);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);obj.position.set(s.x-Math.sin(s.yaw)*.17,s.y+.71,s.z-Math.cos(s.yaw)*.17);obj.scale.setScalar(s.style==='bleacher'?0:1);obj.updateMatrix();backMesh.setMatrixAt(i,obj.matrix);obj.scale.setScalar(1);seatMesh.instanceMatrix.needsUpdate=true;backMesh.instanceMatrix.needsUpdate=true;scene.hiddenIndex=-1;}};
 scene={hiddenIndex:-1,orbit(){clear();controls.enabled=true;camera.fov=53;camera.position.set(maxX*1.6,Math.max(20,maxZ*.75),maxZ*1.45);controls.target.set(0,0,0);camera.updateProjectionMatrix();controls.update();},seatView(s){clear();controls.enabled=false;const i=byId.get(s.id);if(i!==undefined){obj.scale.set(0,0,0);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);backMesh.setMatrixAt(i,obj.matrix);seatMesh.instanceMatrix.needsUpdate=true;backMesh.instanceMatrix.needsUpdate=true;scene.hiddenIndex=i;obj.scale.set(1,1,1);}
 const forward=new THREE.Vector3(-s.x,0,-s.z).normalize();camera.position.set(s.x+forward.x*.22,s.y+1.17,s.z+forward.z*.22);camera.up.set(0,1,0);camera.lookAt(0,data.surface.sport==='basketball'?2.3:1.2,0);camera.fov=65;camera.updateProjectionMatrix();}};
 return scene;}catch(e){$('loadError').style.display='block';$('loadError').textContent='3D preview requires internet access to load Three.js. 2D seat selection remains available. '+e.message;display('map');throw e;}}

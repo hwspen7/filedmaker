@@ -341,3 +341,13 @@ The v9.0 imported-ticket viewer drew only thin, two-triangle strips beneath the 
 The seat mesh now has visible support legs and backrests in the seat-first viewer even at standard detail quality. The default seats remain stylized, not representations of an institution's actual seat furniture. No imported ticket identifiers, coordinates, or official capacities are changed.
 
 Verification: `npm run verify`. Real WebGL appearance, lighting, and performance need a browser screenshot check before labeling the graphics as visually accepted.
+
+
+## Visual fidelity notes (v9.3)
+
+A venue name, published capacity and generic 3D template are **not** a surveyed seat map.
+For Ohio Stadium and the Schottenstein Center, the generated sector numbers and individual seats remain synthetic until a verified ticket manifest is imported. No synthetic seat is a purchasable ticket.
+
+The visual renderer now shares seating type and school color rules across Studio and exported previews. OSU football uses a simplified bleacher-like representation instead of rendering every spectator position as an oversized folding chair. Seats use locally derived row normals; official seat sightlines still require verified geometry.
+
+For actual ticket-sale integration, the school must supply canonical section/row/seat identifiers, valid coordinates or photographed controls, and a real ticket-provider inventory API. A published capacity does **not** establish the number or location of sellable seats.

@@ -6,6 +6,7 @@
 <label>Venue type<select id="profile"><option value="college-basketball">NCAA basketball arena</option><option value="college-gym">NCAA small gymnasium</option><option value="college-football">NCAA football stadium</option><option value="high-basketball">High-school gym</option><option value="high-football">High-school football bleachers</option><option value="middle-basketball">Middle-school gym</option></select></label>
 <label>School or district name<input id="schoolName" value="Example Community College" placeholder="Enter school name"></label><label>Venue name<input id="venueName" value="Campus Gymnasium" placeholder="Enter actual venue name"></label>
 <div class="pair"><label>City<input id="city" placeholder="City"></label><label>Country<input id="country" value="United States"></label></div>
+<label>School seat color (optional)<input id="schoolColor" type="color" value="#356b9f"></label><p class="hint">Choose an actual school seating color if known. This is a visualization preference, not a verified seating record.</p>
 <button id="build" class="primary wide">Generate editable draft</button>
 <div class="line"></div><div class="section-label">02 / Replace guesses with data</div><p class="hint">Choose the data your school already has. A row roster keeps real section and seat labels, but its 3D positions are estimates.</p>
 <label class="upload" for="rowsCsv">↑ Import rows + seats CSV<input id="rowsCsv" type="file" accept=".csv,text/csv" hidden></label>
