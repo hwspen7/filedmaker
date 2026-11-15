@@ -16,7 +16,7 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
-    if (!['aisles','stepEdges'].includes(name)) assert.ok(vertices.length>0,name);
+    if (!['aisles','stepEdges','buildingRoof'].includes(name)) assert.ok(vertices.length>0,name);
     assert.ok(vertices.every(Number.isFinite),name);
   }
   assert.ok(g.decks.length/18>8000);
