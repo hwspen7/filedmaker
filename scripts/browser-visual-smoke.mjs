@@ -83,6 +83,18 @@ async function main(){
       if(statSync(target).size<12000)throw Error('Screenshot is suspiciously small: '+target);
       console.log(file+': WebGL2 OK; '+state.shown+' estimated seats; PNG '+statSync(target).size+' bytes');
       if(file==='osu'){
+        // Capture a separate architectural elevation to inspect the depth of
+        // the rear gallery and external façade, not merely the overhead plan.
+        await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:730,y:375});
+        await client.send('Input.dispatchMouseEvent',{type:'mousePressed',x:730,y:375,button:'left',clickCount:1});
+        await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:730,y:408,button:'left',buttons:1});
+        await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:730,y:408,button:'left',clickCount:1});
+        await delay(650);
+        const facadeImage=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        const facadePath=join(dir,'osu-facade.png');
+        writeFileSync(facadePath,Buffer.from(facadeImage.data,'base64'));
+        if(statSync(facadePath).size<12000)throw Error('OSU façade screenshot missing');
+        await evaluate("document.querySelector('[data-view=overview]').click()");
         const markers=await evaluate("document.querySelectorAll('.area-label.exit').length");
         if(markers!==0)throw Error('Removed EXIT overlays unexpectedly returned');
         const selected=await evaluate("(()=>{const select=document.querySelector('#sectionPicker');if(!select)return false;const pick=[...select.options].find(o=>o.value==='323')||[...select.options].find(o=>o.value);if(!pick)return false;select.value=pick.value;select.dispatchEvent(new Event('change',{bubbles:true}));return !document.querySelector('[data-view=human]').disabled})()");
