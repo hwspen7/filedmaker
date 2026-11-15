@@ -79,6 +79,16 @@ test('shared exterior engine builds validated 3D masonry and glass for distinct 
       architectureGeometry:result});
     assert.deepEqual(audit.errors,[],audit.errors.join('\n'));
   }
+  const samePerimeter=a=>({x:31*Math.cos(a),z:39*Math.sin(a)});
+  const metal=ExteriorEngine.build({footprint:samePerimeter,height:29,segments:64,profile:'metal-and-brick'});
+  const masonry=ExteriorEngine.build({footprint:samePerimeter,height:29,segments:64,profile:'masonry'});
+  const glass=ExteriorEngine.build({footprint:samePerimeter,height:29,segments:64,profile:'modern-glass'});
+  assert.ok(metal.metalPanels.length>0);
+  assert.ok(metal.metalSeams.length>0);
+  assert.equal(masonry.metalPanels.length,0,'Masonry profile contains no silver siding');
+  assert.equal(masonry.metalSeams.length,0,'Masonry cannot have metal seams');
+  assert.ok(masonry.brickBase.length>metal.brickBase.length);
+  assert.ok(glass.baseWindows.length>metal.baseWindows.length);
   assert.throws(()=>ExteriorEngine.build({footprint:a=>({x:20*Math.cos(a),z:20*Math.sin(a)}),height:2}));
   assert.throws(()=>GeometryEngine.normalize({...PROCEDURAL_DEMOS.arena,exterior:{profile:'unknown'}}));
 });
