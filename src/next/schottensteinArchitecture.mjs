@@ -58,28 +58,44 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
   const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[];
-  // Upper and club tier surfaces share the analytic rake of the selectable
-  // seats. The lower bowl uses the existing individual row treads because
-  // its chart-derived per-section elevations are not one global surface.
-  for(const tier of [1,2]){
-    for(let i=0;i<SEGMENTS;i++){
-      const a=i*TAU/SEGMENTS,b=(i+1)*TAU/SEGMENTS;
-      for(let j=0;j<BANDS;j++){
-        const u=j/BANDS,v=(j+1)/BANDS;
-        const pa=ringPoint(tier,a,u),pb=ringPoint(tier,b,u);
-        const pc=ringPoint(tier,b,v),pd=ringPoint(tier,a,v);
-        const height=[pa,pb,pc,pd].map(p=>p.y-.18);
-        const nearR=(radius(pa)+radius(pb))/2,farR=(radius(pc)+radius(pd))/2;
-        const grade=((height[2]+height[3])-(height[0]+height[1]))/2/Math.max(.5,farR-nearR);
-        const mid=(a+b)/2;
-        const n=normalize([-grade*Math.cos(mid),1,-grade*Math.sin(mid)]);
-        quad(decks,vec(pa,height[0]),vec(pb,height[1]),vec(pc,height[2]),vec(pd,height[3]),n);
-      }
+  // Geometry must follow the actual generated row spans, not an unrelated
+  // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
+  // and made chairs appear detached from irregular section elevations.
+  // Treads are individual horizontal landings with a proper inward riser.
+  const treadRows=model.seatingRows.filter(row=>row.tier===1||row.tier===2);
+  const rowPoint=(row,t)=>{
+    const x=row.left.x+(row.right.x-row.left.x)*t;
+    const z=row.left.z+(row.right.z-row.left.z)*t;
+    const y=schottensteinDeckHeight(row.tier,{x,z});
+    return {x,z,y};
+  };
+  for(const row of treadRows){
+    if(!(row.width>.35&&row.depth>.12))continue;
+    const strips=Math.max(8,Math.ceil(row.width/.62));
+    const outward={x:-Math.sin(row.yaw),z:-Math.cos(row.yaw)};
+    const depth=clamp(row.depth,.62,1.12);
+    const front=depth*.46,back=depth*.48;
+    const rise=clamp(row.tier===2?.59:.37,.14,.68);
+    for(let i=0;i<strips;i++){
+      const a=rowPoint(row,i/strips),b=rowPoint(row,(i+1)/strips);
+      // Each tessellated lateral strip is anchored to the seat height in
+      // exactly the same section. Neither slope nor a generic annulus is
+      // allowed to bridge a missing seat run.
+      const p=(v,d,y=v.y-.15)=>[v.x+outward.x*d,y,v.z+outward.z*d];
+      const innerA=p(a,-front),innerB=p(b,-front);
+      const outerA=p(a,back),outerB=p(b,back);
+      quad(decks,innerA,innerB,outerB,outerA,[0,1,0]);
+      // The low face is placed on the aisle-facing edge, below this row's
+      // seat height, and never rises across the visible seating surface.
+      const downA=p(a,-front,a.y-.15-rise);
+      const downB=p(b,-front,b.y-.15-rise);
+      const inward=[-outward.x,0,-outward.z];
+      quad(fascias,innerA,innerB,downB,downA,inward);
     }
-    // Proper riser depth at the front and rear, never a ground-to-seat sheet.
-    radialFace(fascias,tier,0,-.82,-.16);
-    radialFace(fascias,tier,1,-.50,-.14);
   }
+  // Only the two global level fronts need a continuous trim. Occupied rows
+  // remain separate, with the real mapped section gaps preserved.
+  for(const tier of [1,2]) radialFace(fascias,tier,0,-.68,-.18);
   // Walkable terraces bridge tier interruptions and expose an open bowl.
   betweenDecks(concourse,0,1,6.65);
   betweenDecks(concourse,1,2,13.45);
@@ -134,44 +150,82 @@ export function buildSchottensteinArchitecture(model){
     };
     ringStrip(trim,from,to,'up');
   }
-  // Regularized stair ribbons follow the actual gaps between sections.
-  // Search nearby rays and reject candidates that cross existing chairs.
-  const seatsByTier=[0,1,2].map(tier=>model.seats.filter(s=>s.tier===tier));
+  // Fit each staircase to a vacant corridor between traced sections.
+  // A row contributes one level tread and one visible riser (not a sloped
+  // white ribbon). No step is accepted over a selectable chair.
+  const byTier=new Map([1,2].map(t=>[t,model.seats.filter(s=>s.tier===t)]));
+  const cellSize=1.0;
+  const hashes=new Map();
+  for(const [tier,seats] of byTier){
+    const hash=new Map();
+    for(const seat of seats){
+      const key=Math.floor(seat.x/cellSize)+','+Math.floor(seat.z/cellSize);
+      if(!hash.has(key))hash.set(key,[]);
+      hash.get(key).push(seat);
+    }
+    hashes.set(tier,hash);
+  }
+  const conflict=(tier,p,clearance=.55)=>{
+    const hash=hashes.get(tier);
+    const x=Math.floor(p.x/cellSize),z=Math.floor(p.z/cellSize);
+    for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)
+      for(const seat of hash.get((x+dx)+','+(z+dz))??[]){
+        if(Math.hypot(p.x-seat.x,p.z-seat.z)<clearance
+          &&Math.abs(p.y-seat.y)<1.6)return true;
+      }
+    return false;
+  };
   const angleOf=s=>{
-    const points=s.outlines.flat();
-    const x=points.reduce((sum,p)=>sum+p.x,0)/points.length;
-    const z=points.reduce((sum,p)=>sum+p.z,0)/points.length;
+    const pts=s.outlines.flat();
+    const x=pts.reduce((sum,p)=>sum+p.x,0)/pts.length;
+    const z=pts.reduce((sum,p)=>sum+p.z,0)/pts.length;
     return (Math.atan2(z,x)+TAU)%TAU;
   };
   for(const tier of [1,2]){
     const centers=model.sectionFootprints.filter(s=>s.tier===tier)
       .map(angleOf).sort((a,b)=>a-b);
-    const tierSeats=seatsByTier[tier];
+    const maxSlots=Math.max(...model.sectionFootprints.filter(s=>s.tier===tier).map(s=>s.depthRows));
+    // Try several offsets. The winner maximizes clear individual steps.
+    // Unlike the old algorithm, any step touching a chair is omitted.
+    const widths=.34;
+    const sectionSteps=[];
     for(let i=0;i<centers.length;i++){
       const next=i+1<centers.length?centers[i+1]:centers[0]+TAU;
-      const target=(centers[i]+next)/2;
-      const score=angle=>tierSeats.reduce((sum,seat)=>{
-        const radial=Math.hypot(seat.x,seat.z);
-        const across=Math.abs(seat.x*Math.sin(angle)-seat.z*Math.cos(angle));
-        return sum+(radial>8&&across<.43?1:0);
-      },0);
-      let selected=target,least=Infinity;
-      for(let j=-7;j<=7;j++){
-        const candidate=target+j*.009;
-        const count=score(candidate);
-        if(count<least){least=count;selected=candidate;}
+      const midway=(centers[i]+next)/2;
+      let selected=null,best=-1;
+      for(let offset=-.072;offset<=.07201;offset+=.012){
+        const angle=midway+offset,valid=[];
+        for(let j=0;j<maxSlots;j++){
+          const u=j/maxSlots,v=(j+1)/maxSlots;
+          const center=ringPoint(tier,angle,(u+v)/2);
+          const inner=ringPoint(tier,angle,u);
+          const outer=ringPoint(tier,angle,v);
+          const tangent={x:-Math.sin(angle),z:Math.cos(angle)};
+          const clearance=[center,inner,outer].every(p=>
+            !conflict(tier,p,.50)&&!conflict(tier,{x:p.x+tangent.x*width,z:p.z+tangent.z*width,y:p.y},.34)
+              &&!conflict(tier,{x:p.x-tangent.x*width,z:p.z-tangent.z*width,y:p.y},.34));
+          valid.push(clearance);
+        }
+        const score=valid.reduce((count,yes)=>count+(yes?1:0),0);
+        if(score>best){best=score;selected={angle,valid};}
       }
-      if(least>3)continue;
-      const at=(depth,offset,above=.01)=>{
-        const p=ringPoint(tier,selected,depth);
-        return [p.x-offset*Math.sin(selected),p.y-.18+above,p.z+offset*Math.cos(selected)];
-      };
-      const steps=tier===1?12:22;
-      for(let j=0;j<steps;j++){
-        const u=j/steps,v=(j+1)/steps;
-        quad(aisles,at(u,-.43),at(u,.43),at(v,.43),at(v,-.43),[0,1,0]);
-        const end=Math.max(u,v-.008);
-        quad(stepEdges,at(end,-.44,.024),at(end,.44,.024),at(v,.44,.024),at(v,-.44,.024),[0,1,0]);
+      if(!selected||best===0)continue;
+      for(let j=0;j<maxSlots;j++){
+        if(!selected.valid[j])continue;
+        const {angle}=selected,u=j/maxSlots,v=(j+1)/maxSlots;
+        const low=ringPoint(tier,angle,u),high=ringPoint(tier,angle,v);
+        const mid=ringPoint(tier,angle,(u+v)/2);
+        const y=mid.y-.10;
+        const tangent={x:-Math.sin(angle),z:Math.cos(angle)};
+        const corner=(p,sign,height)=>[p.x+sign*tangent.x*width,height,p.z+sign*tangent.z*width];
+        // A flat tread with a contrasting vertical riser at its inner edge.
+        const a=corner(low,-1,y),b=corner(low,1,y);
+        const c=corner(high,1,y),d=corner(high,-1,y);
+        quad(aisles,a,b,c,d,[0,1,0]);
+        const previous=ringPoint(tier,angle,Math.max(0,(j-.5)/maxSlots));
+        const bottom=y-clamp(mid.y-previous.y,.13,.65);
+        quad(stepEdges,a,b,corner(low,1,bottom),corner(low,-1,bottom),
+          [-Math.cos(angle),0,-Math.sin(angle)]);
       }
     }
   }
