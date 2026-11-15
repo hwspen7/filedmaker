@@ -9,6 +9,7 @@ import { seatViewAnchors } from '../src/view.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
 import { schottensteinDeckHeight, schottensteinDeckPoint, allocateSeats } from '../src/schottensteinSeating.mjs';
 import { buildSchottensteinDecks } from '../src/next/schottensteinInterior.mjs';
+import { deckVisibleInMode } from '../src/next/webgl.js';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const decode=plan=>{const a=plan.instanceData,result=[];for(let i=0;i<a.length;i+=11)result.push({pos:[a[i],a[i+1],a[i+2]],size:[a[i+3],a[i+4],a[i+5]],yaw:a[i+6],id:a[i+10]});return result;};
 test('Ohio Stadium always distinguishes official capacity from synthetic model',()=>{
@@ -276,7 +277,7 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  assert.deepEqual(plan.features.map(feature=>feature.label),
    ['Band Area','Press Box','Accessible Platform']);
  const boxes=decode(plan);
- assert.ok(boxes.some(box=>box.id===-4&&box.pos[1]<0), 'The arena floor plate is retained for seat views');
+ assert.ok(!boxes.some(box=>box.id===-4), 'The gray elliptical floor plate must not exist in any view');
  assert.ok(!plan.deckGeometry.some((number,i)=>i%6===1&&number===-1), 'The decorative plinth must not reappear');
  const courtside=boxes.filter(box=>box.id===-1&&Math.abs(box.size[0]-.456)<1e-5&&Math.abs(box.size[2]-.42)<1e-5);
  assert.ok(courtside.length>100);
@@ -336,13 +337,19 @@ test('the seating chart clips rendered rows and preserves marked circulation ope
  }
 });
 
-test('Schottenstein overview draws no invented oval plinth',()=>{
+test('Schottenstein overview hides the gray backing while preserving seat-view geometry',()=>{
  const p={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
  const model=generateSeats(p),plan=buildVenuePlan(model);
  assert.ok(plan.deckGeometry.length>200000);
  for(let i=1;i<plan.deckGeometry.length;i+=6)
    assert.ok(plan.deckGeometry[i]>1,'Only elevated seating decks belong to the native mesh');
  assert.equal(buildSchottensteinDecks([],model.sectionFootprints,false).length,0);
+ assert.equal(plan.chairCount,19049);
+ assert.equal(plan.official.officialCapacity,19049);
+ for(const mode of ['overview','top','section']) assert.equal(deckVisibleInMode(plan,mode),false,mode);
+ assert.equal(deckVisibleInMode(plan,'human'),true);
+ assert.equal(deckVisibleInMode({deckGeometry:new Float32Array(0)},'human'),false);
+ assert.ok(!decode(plan).some(box=>box.id===-4));
  const webgl=read('../src/next/webgl.js');
  assert.match(webgl,/alpha:true/);
  assert.match(webgl,/clearColor\(0,0,0,0\)/);
