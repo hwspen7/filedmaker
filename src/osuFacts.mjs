@@ -39,6 +39,7 @@ export const OSU_FACTS = Object.freeze({
       source:'https://ohiostatebuckeyes.com/news/2026/7/17/mens-ice-hockey-schottenstein-center-to-feature-video-board-enhancements-this-season',
       note:'Screen feature counts are published; their exact physical dimensions and positions are not established by this source.'},
     seatingMap:'https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts',
+    mensSeatingChartImage:'https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/ohiostatebuckeyes.com/documents/2023/7/12/Mens-basketball-2023-diagram.jpeg?timestamp=20230823042629',
     modelNotice:'Lower, premium and upper bowls are illustrative until measured seat rows, floor elevations and architectural plans are supplied.'
   }
 });

@@ -1,32 +1,96 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FiledMaker — Seat Studio</title><meta name="description" content="Offline, data-first venue seating preview and verified capacity reconciliation.">
-<link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./studio.css"></head>
-<body><div id="app">
-<header class="topbar"><div class="brand"><div class="brandmark">F</div><div><strong>FiledMaker</strong><small>Seat Studio</small></div></div><div class="top-meta"><span class="tag">NCAA / Schools</span><span id="sourceTag" class="tag amber">Illustrative geometry</span></div><div class="top-actions"><a href="./school/">School data tool</a><a href="./legacy/">Legacy editor</a><label class="btn secondary" style="cursor:pointer">Open JSON<input id="openProject" type="file" accept="application/json,.json" hidden></label><button id="exportProject" class="btn secondary">Export JSON</button><button id="capture" class="btn dark">Save image</button></div></header>
-<div class="body-layout"><aside class="sidebar"><div class="side-scroll">
-<div class="section-head"><span>VENUE</span><small>Choose a reference</small></div>
-<div class="venue-list"><button class="venue-option active" data-preset="schott"><span class="venue-symbol">◈</span><span><strong>Schottenstein Center</strong><small>Basketball · NCAA</small></span></button><button class="venue-option" data-preset="ohio"><span class="venue-symbol">▤</span><span><strong>Ohio Stadium</strong><small>Football · NCAA</small></span></button><button class="venue-option" data-preset="gym"><span class="venue-symbol">▥</span><span><strong>School gym demo</strong><small>Demonstration · NFHS</small></span></button></div>
-<div class="section-head"><span>REAL TICKET DATA</span><small>Optional</small></div>
-<div class="import-panel"><div class="small-title">Import seat inventory</div><p>CSV with section, row, seat and optional measured x/y/z. Original identifiers are preserved.</p><label class="btn import-btn">Select CSV file<input type="file" id="csv" accept=".csv,text/csv" hidden></label><p class="muted">No roster means no verified selectable seats.</p><a href="./examples/fictional-ticket-roster.csv" download>Example CSV format</a></div>
-<div class="section-head"><span>DISPLAY</span><small>Context only</small></div><div class="control-stack"><label>Seat color scheme<select id="palette"><option value="navy">Layered blue</option><option value="venue">Venue reference</option><option value="slate">Neutral slate</option><option value="scarlet">Scarlet accents</option></select></label><label>Display detail<select id="detail"><option value="standard">Detailed seating</option><option value="compact">Performance</option></select></label></div>
-<div class="system-note"><strong>Data integrity</strong><p>Venue names, capacity and sports surface are sourced separately. Generated positions remain illustrative unless a school supplies a seat roster and validates its geometry.</p></div>
-</div></aside>
-<main class="main"><div class="viewport-top"><div><div id="title" class="venue-title">Schottenstein Center</div><div id="subtitle" class="venue-subtitle">Ohio State University · NCAA Basketball</div></div><div id="modelStatus" class="status"><span class="pulse"></span> Schematic preview</div></div>
-<div class="view-tabs"><button data-view="overview" class="current">3D overview</button><button data-view="top">2D map</button><button data-view="section">Section</button><button data-view="human">Seat view</button></div>
-<div class="viewport"><canvas id="viewport3d" aria-label="3D venue seat model"></canvas><canvas id="viewport2d" aria-label="2D venue seating overview" hidden></canvas><div class="viewport-float top"><div class="status-pill"><span id="viewLabel">Overall bowl</span><small id="viewHint">Drag to orbit · Scroll to zoom · Click a seat</small></div></div><div class="viewport-float bottom"><span id="selectedPreview">Select a section or seat</span><span id="renderInfo">WebGL2 · offline</span></div><div id="loading" class="loading">Preparing venue geometry…</div></div>
-<div id="cameraControls" class="camera-controls" hidden><label>Look at <select id="cameraTarget"><option value="center">Playing surface</option><option value="near-rim">Near basket</option><option value="far-rim">Far basket</option><option value="scoreboard">Scoreboard</option></select></label><label><input type="checkbox" id="phoneView"> Phone framing</label><button type="button" id="resetCamera">Reset view</button></div><div class="viewport-foot"><span><i class="dot darkdot"></i> Programmatic geometry</span><span><i class="dot bluedot"></i> School-supplied coordinates</span><span>Not a live ticket inventory</span></div>
-</main>
-<aside class="inspector"><div class="section-head"><span>VENUE DATA</span><small id="reviewFlag">REFERENCE</small></div><div class="metric"><small>Published capacity</small><strong id="officialCapacity">—</strong><p id="capacitySource">Official venue information</p></div>
-<div class="two-metrics"><div><small>Visual seat positions</small><strong id="visualCount">—</strong></div><div><small>Imported ticket IDs</small><strong id="ticketCount">0</strong></div></div>
-<div id="capacityNote" class="notice">The visible seating geometry is illustrative and is not an official seat count.</div>
-<div class="section-head"><span>SEAT INSPECTOR</span><small>VIEW</small></div><div class="seat-picker">
-<label class="input-label">Section<select id="sectionPicker" aria-label="Section"></select></label>
-<div class="seat-picker-pair"><label class="input-label">Row<select id="rowPicker" aria-label="Row"></select></label><label class="input-label">Seat<select id="seatPicker" aria-label="Seat"></select></label></div>
-</div>
-<label class="input-label">Find a section, row or seat ID<input type="search" id="search" placeholder="Section / Row / Seat" autocomplete="off"></label><div class="search-help" id="searchHelp">Choose a venue or import a school's exact roster.</div>
-<div id="seatDetails" class="selected-card"><strong>No seat selected</strong><p>Click a seat in the model or search a seat ID. Modelled positions do not imply a real ticket location.</p></div>
-<div class="seat-actions"><button id="previous" class="btn secondary">← Previous</button><button id="next" class="btn secondary">Next →</button></div><button id="goHuman" class="btn dark fill">View from this location</button>
-<div class="section-head"><span>GEOMETRY CHECK</span><small id="geometryQuality">AUTO</small></div><div class="quality-grid"><div><strong id="rowsCount">—</strong><small>Row runs</small></div><div><strong id="gapCount">—</strong><small>Aisle breaks</small></div><div><strong id="kindCount">—</strong><small>Seat style</small></div></div><div id="warnings" class="warning-box">Preview generated from estimated positions. Confirm the real seat layout before deployment.</div>
-<div class="inspector-bottom"><a href="./viewer/">Existing viewer</a><span>Seat geometry / data QA</span></div>
-</aside></div></div><script type="module" src="./src/next/studio.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore Ohio State basketball at the Schottenstein Center with the published seating chart and official 3D virtual venue.">
+  <title>Schottenstein Center · FiledMaker</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./arena.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="monogram">F</span> FiledMaker</a>
+    <nav aria-label="Workspace"><a href="./studio/">Geometry Studio</a><a href="./school/">School tools</a></nav>
+  </header>
+
+  <main class="workspace">
+    <div class="venue-heading">
+      <div>
+        <p id="venueSubtitle" class="eyebrow">Ohio State University · Men’s basketball</p>
+        <h1 id="venueName">Schottenstein Center</h1>
+        <p id="venueLocation" class="location">Value City Arena · Columbus, Ohio</p>
+      </div>
+      <a id="launchOfficial" class="button primary" target="_blank" rel="noopener">Open official 3D viewer <span aria-hidden="true">↗</span></a>
+    </div>
+
+    <div class="arena-grid">
+      <section class="map-card" aria-label="Arena views">
+        <nav class="view-switch" aria-label="Venue view">
+          <button type="button" data-mode="chart" aria-pressed="true">Seating chart</button>
+          <button type="button" data-mode="official" aria-pressed="false">Official 3D</button>
+          <button type="button" data-mode="survey" aria-pressed="false" hidden>Survey points</button>
+        </nav>
+
+        <div id="chartPanel">
+          <div class="map-controls">
+            <label for="section">Find a section</label>
+            <select id="section"><option value="">All sections</option></select>
+            <div class="zoom" role="group" aria-label="Map zoom">
+              <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
+              <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+              <button type="button" id="resetChart">Fit map</button>
+            </div>
+          </div>
+          <div class="map-scroll" id="mapScroll">
+            <div class="chart" id="chart" hidden>
+              <img id="seatChart" alt="Ohio State men’s basketball seating chart with seating zones, section numbers and accessibility locations" width="1024" height="795">
+              <span id="sectionMarker" class="section-marker" aria-hidden="true" hidden></span>
+            </div>
+            <p class="map-message" id="mapMessage" role="status">Loading Ohio State’s seating chart…</p>
+          </div>
+          <p class="caption"><span id="chartStatus" aria-live="polite">Ohio State Athletics seating chart</span><a id="chartFile" target="_blank" rel="noopener">Open full-size chart ↗</a></p>
+        </div>
+
+        <div id="officialPanel" hidden>
+          <iframe id="officialFrame" class="official-frame" title="Ohio State Basketball Virtual Venue by IOMEDIA" referrerpolicy="no-referrer" allowfullscreen></iframe>
+          <p class="caption"><span>Ohio State Basketball Virtual Venue · IOMEDIA</span><a id="officialLink" target="_blank" rel="noopener">Open in a new tab ↗</a></p>
+        </div>
+
+        <div id="surveyPanel" hidden>
+          <canvas id="surveyCanvas" class="survey-canvas" aria-label="3D view of imported seat survey points"></canvas>
+          <p class="caption" id="surveyResult" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <aside class="venue-info" aria-label="Venue information">
+        <section>
+          <h2>Venue information</h2>
+          <dl>
+            <div><dt>Published basketball capacity</dt><dd id="publishedCapacity">—</dd></div>
+            <div><dt>NCAA court</dt><dd>94 × 50 ft</dd></div>
+          </dl>
+          <a id="capacitySource" target="_blank" rel="noopener">Ohio State venue information ↗</a>
+        </section>
+        <section>
+          <h2>Seat views</h2>
+          <p>Open the official virtual venue, choose a section, then select a view. Ohio State describes these as approximations of the view from the selected location.</p>
+          <a id="selectionGuide" target="_blank" rel="noopener">Ohio State seat selection guide ↗</a>
+        </section>
+        <section>
+          <h2>Survey data</h2>
+          <p>Import a CSV with section, row, seat and court-centered x_m, y_m and z_m. Import displays only the supplied points.</p>
+          <label class="button upload">Import seat survey<input type="file" id="surveyFile" accept=".csv,text/csv"></label>
+          <p id="surveyStatus" role="status">No local survey loaded.</p>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="sources">
+      <a id="athleticsCharts" target="_blank" rel="noopener">Ohio State seating charts ↗</a>
+      <a id="boardSource" target="_blank" rel="noopener">2026 video board update ↗</a>
+    </footer>
+  </main>
+  <script type="module" src="./src/next/officialVenue.js"></script>
+</body>
+</html>

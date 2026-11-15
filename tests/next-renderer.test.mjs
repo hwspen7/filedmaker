@@ -65,8 +65,8 @@ test('webgl shader handles camera-relative removal of current seat parts',()=>{
  assert.match(webgl,/getContext\('webgl2'/);
  assert.doesNotMatch(webgl,/cdn\.jsdelivr|three\/addons/);
 });
-test('new default homepage includes source and mismatch disclosure and requires no CDN',()=>{
- const html=read('../index.html');
+test('geometry studio includes source and mismatch disclosure and requires no CDN',()=>{
+ const html=read('../studio/index.html');
  assert.match(html,/Published capacity/);
  assert.match(html,/Visual seat positions/);
  assert.match(html,/Imported ticket IDs/);
@@ -122,4 +122,36 @@ test('chart-backed roster locations are independent of CSV order and keep suppli
   assert.ok(one.z>two.z);
   assert.ok(a.seats.some(s=>s.uid==='D'&&s.tier===2&&s.x>0));
   assert.throws(()=>load(['U,UNKNOWN,1,1']),/Supply XYZ/);
+});
+
+test('published arena entry links to the venue provider and excludes generated geometry', async () => {
+ const {NCAA_BASKETBALL_VENUES} = await import('../src/venueCatalog.mjs');
+ const venue = NCAA_BASKETBALL_VENUES['ohio-state-men'];
+ assert.equal(venue.capacity.value,19500);
+ assert.match(venue.seatingChart.image,/Mens-basketball-2023-diagram\.jpeg/);
+ assert.equal(venue.virtualVenue.url,'https://ohiostatebb.io-media.com/');
+ assert.equal(new Set(venue.seatingChart.sections.map(s=>s.id)).size,78);
+ assert.ok(venue.seatingChart.sections.every(s=>
+   s.x>=0 && s.y>=0 && s.x<venue.seatingChart.width && s.y<venue.seatingChart.height));
+ const html=read('../index.html'), script=read('../src/next/officialVenue.js');
+ assert.match(html,/officialVenue\.js/);
+ assert.doesNotMatch(html,/Visual seat positions|seatPicker|src\/next\/studio\.js/);
+ assert.doesNotMatch(script,/generateSeats|buildVenuePlan|estimateRoster/);
+});
+
+test('official venue survey maps exactly the supplied seat points and requires complete XYZ', async () => {
+ const {buildSurveyPointPlan,readSeatSurvey} = await import('../src/officialSeatSurvey.mjs');
+ const {SURFACES}=await import('../src/model.mjs');
+ const header='seat_id,section,row,seat,x_m,y_m,z_m\n';
+ assert.throws(()=>readSeatSurvey('section,row,seat\n105,L,1'),/Supply surveyed/);
+ assert.throws(()=>readSeatSurvey(header+'B,105,L,2,12.5,,3.25'),/Supply surveyed/);
+ assert.throws(()=>readSeatSurvey(header+'A,105,L,1,10,2,3\nB,105,L,2,10,2,3'),/Duplicate XYZ/);
+ const data=readSeatSurvey(header+'A,105,L,1,12.5,2.75,-3.25\nB,105,L,2,12.5,2.75,-2.75');
+ const plan=buildSurveyPointPlan(data,SURFACES.ncaa);
+ assert.equal(plan.instanceCount,2);
+ assert.equal(plan.instanceData.length,22);
+ assert.deepEqual(Array.from(plan.instanceData.slice(0,3)),[12.5,2.75,-3.25]);
+ assert.deepEqual(plan.seats.map(s=>[s.uid,s.sectionId,s.row,s.number]),[
+   ['A','105','L','1'],['B','105','L','2'],
+ ]);
 });

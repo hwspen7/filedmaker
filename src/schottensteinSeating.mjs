@@ -1,8 +1,8 @@
 // Approximate seating footprints traced from Ohio State's men's basketball diagram.
 // Pairs list the front edge and then the back edge, in matching endpoint order.
 // The diagram establishes section labels and relative location, not dimensions.
-export const SCHOTTENSTEIN_CHART_URL =
-  'https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/ohiostatebuckeyes.com/documents/2023/7/12/Mens-basketball-2023-diagram.jpeg?timestamp=20230823042629';
+import { venueFacts } from './osuFacts.mjs';
+export const SCHOTTENSTEIN_CHART_URL = venueFacts('schottenstein-center').mensSeatingChartImage;
 
 const horizontal = (id, left, right, front, back) =>
   [id, left, front, right, front, left, back, right, back];

@@ -296,4 +296,4 @@ $('capture').onclick=()=>{
   if(renderer){const a=document.createElement('a');a.href=renderer.capture();a.download='venue-view.png';a.click();}
 };
 window.addEventListener('resize',()=>{renderer?.resize();if(mode==='top')drawMap();});
-setPreset('schott');
+setPreset('gym');
