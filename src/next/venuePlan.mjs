@@ -4,6 +4,7 @@ import { seatColor, seatKind } from '../seatPresentation.mjs';
 import { ticketReconciliation } from '../seatFirst.mjs';
 import { polygonSpans } from '../schottensteinSeating.mjs';
 import { addSchottensteinBoard, addSchottensteinBowl, buildSchottensteinDecks, buildSchottensteinPedestal } from './schottensteinInterior.mjs';
+import { buildSchottensteinArchitecture } from './schottensteinArchitecture.mjs';
 
 const SCHOTTENSTEIN_COURT_COLORS = {
   wood:'#c7c7c3',
@@ -145,6 +146,7 @@ export function buildVenuePlan(model,options={}) {
   const features=model.features??[];
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
   const deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
+  const architectureGeometry = chartPreview ? buildSchottensteinArchitecture(model) : null;
   const pedestal = chartPreview && model.seatingRows ? buildSchottensteinPedestal(seats) : null;
   const courtColors=chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
   // Central surface is a physically scaled reference marker, not an entire building.
@@ -279,7 +281,7 @@ export function buildVenuePlan(model,options={}) {
   const instanceData=new Float32Array(seatShells.length+elements.length);
   instanceData.set(seatShells);
   instanceData.set(elements,seatShells.length);
-  return {instanceData,deckGeometry,pedestalGeometry:pedestal?.body,pedestalTrimGeometry:pedestal?.trim,
+  return {instanceData,deckGeometry,architectureGeometry,pedestalGeometry:pedestal?.body,pedestalTrimGeometry:pedestal?.trim,
     instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
     sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview,
     scoreboardHeight:chartPreview?16.3:13.6,features,seats,project,surface,official,
