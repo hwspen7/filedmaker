@@ -1,6 +1,6 @@
 // Generic architectural assembly from analytic tiers, independent of OSU references.
 import { GeometryEngine } from './geometry.mjs';
-import { addRoofShell, addRoundVolume } from '../structuralMesh.mjs';
+import { addRoundVolume } from '../structuralMesh.mjs';
 import { ExteriorEngine } from './exterior.mjs';
 const TAU=Math.PI*2;
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
@@ -75,10 +75,8 @@ export const ArchitectureEngine={
       const overhang=a=>point(outerTier,a,1,galleryWidth+.32);
       strip(layers.roofDeck,a=>({...inner(a),y:roofY}),a=>({...overhang(a),y:roofY}));
       strip(layers.soffit,a=>({...inner(a),y:roofY-.38}),a=>({...overhang(a),y:roofY-.38}),[0,-1,0]);
-      addRoofShell(layers.buildingRoof,i=>{
-        const {x,z}=inner(i*TAU/segments);
-        return [x,roofY+.012,z];
-      },segments,2,.38);
+      // Preserve the perimeter canopy but keep the central arena open so
+      // seats and the full exterior can be inspected together in overview.
     }
     for(let i=0;i<segments;i++){
       const a=i*TAU/segments,b=(i+1)*TAU/segments,p=outer(a),q=outer(b);
