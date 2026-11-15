@@ -32,6 +32,14 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.downlights.length/18>10);
   assert.ok(g.roofDeck.length/18>200,'Roof has its own deck surface and material');
   assert.ok(g.radialBeams.length/18>100,'Gallery canopy is supported by modeled radial beams');
+  const roofRadii=Array.from({length:g.roofDeck.length/6},(_,i)=>
+    Math.hypot(g.roofDeck[i*6],g.roofDeck[i*6+2]));
+  const firstTriangle=roofRadii.slice(0,3);
+  assert.ok(Math.max(...firstTriangle)-Math.min(...firstTriangle)>4.5,
+    'Roof spans a genuine multi-metre concourse, not a floating thin ribbon');
+  const roofHeights=Array.from({length:g.roofDeck.length/6},(_,i)=>g.roofDeck[i*6+1]);
+  assert.ok(Math.max(...roofHeights)-Math.min(...roofHeights)<.001,
+    'Building roof has one datum independently of the varying seat elevations');
   assert.equal(g.aisles.length+g.stepEdges.length,0,'No fabricated stair geometry');
 });
 
