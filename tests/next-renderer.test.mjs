@@ -119,7 +119,7 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   assert.ok(regular.every(rows => rows[0].y > 14.9 && rows[0].y < 16
     && rows.at(-1).y > 27.9 && rows.at(-1).y < 29.1));
   const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
-  assert.ok(pressSide.every(rows => rows.at(-1).y < 24));
+  assert.ok(pressSide.every(rows => rows.at(-1).y > 23 && rows.at(-1).y < 27));
   const treadHeight = new Map(model.seatingRows.map(row=>[row.sectionId+':'+row.row,row.y]));
   for(const seat of model.seats){
     assert.equal(seat.y,treadHeight.get(seat.sectionId+':'+seat.row),'Each chair sits on its level tread');
@@ -366,6 +366,26 @@ test('manual bowl fitting also fills clipped lower and club banks',()=>{
  assert.equal(count('314','B'),0);
  assert.equal(count('206','A'),14);
  assert.equal(count('206','J'),18);
+});
+
+test('manual front banks use three contiguous rows without occupying the access landing',()=>{
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const rows=id=>model.seatingRows.filter(row=>row.sectionId===id);
+ for(const id of ['304','307','314','331']){
+   const section=model.sectionFootprints.find(block=>block.id===id);
+   const bank=rows(id);
+   assert.deepEqual(bank.slice(0,3).map(row=>row.row),['A','A2','A3']);
+   const depth=row=>-section.nx*(row.left.x+row.right.x)*.5-section.nz*(row.left.z+row.right.z)*.5;
+   const front=bank[2],rear=bank[3];
+   assert.equal(rear.row,'H');
+   assert.ok(depth(rear)-depth(front)-(front.depth+rear.depth)*.5>=1.05);
+ }
+ const press=rows('323');
+ assert.deepEqual(press.slice(0,4).map(row=>row.row),['A','B','B2','F']);
+ for(const id of ['321','322','323','324','325']){
+   const bank=rows(id);
+   assert.ok(bank.at(-1).width>=bank.at(-2).width*.85,id+' keeps a full final row');
+ }
 });
 
 test('Schottenstein overview hides the gray backing while preserving seat-view geometry',()=>{

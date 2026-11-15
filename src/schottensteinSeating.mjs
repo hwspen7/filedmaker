@@ -2,8 +2,8 @@ import {
   SCHOTTENSTEIN_CHART_LABELS, SCHOTTENSTEIN_DIAGRAM_EDGE, SCHOTTENSTEIN_SECTION_CONTOURS,
 } from './schottensteinChartContours.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
-import { refineAccessibleRear, refineSchottensteinBank, refineSchottensteinContour,
-  schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
+import { ACCESS_FRONT_DEPTH, connectedSchottensteinRuns, refineAccessibleRear, refineSchottensteinBank, refineSchottensteinContour,
+  schottensteinMediaElevation, schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
 
 // The guide endpoints orient the rows. The traced chart contours clip them.
 export const SCHOTTENSTEIN_CHART_URL =
@@ -102,10 +102,10 @@ const rowDetails = new Map([
   ...club.map(([id])=>[String(id),{labels:rowsAtoU.slice(0,10)}]),
   ...upper.filter(([id])=>id!==323).map(([id])=>[
     String(id),accessibleTerrace.has(id)
-      ?{labels:['A',...rowsAtoU.slice(7)],slots:[0,...rowsAtoU.slice(7).map((_,i)=>i+7)]}
+      ?{labels:['A','A2','A3',...rowsAtoU.slice(7)],slots:[0,1,2,...rowsAtoU.slice(7).map((_,i)=>i+7)]}
       :{labels:rowsAtoU.slice(0,terraceEnds.get(id)??rowsAtoU.length)}
   ]),
-  ['323', {labels:letterRows('ABFGHIJKLMN'), slots:[0,1,5,6,7,8,9,10,11,12,13]}],
+  ['323', {labels:['A','B','B2',...letterRows('FGHIJKLMN')], slots:[0,1,2,5,6,7,8,9,10,11,12,13]}],
 ]);
 const referenceSite = 'https://www.rateyourseats.com/schottenstein-center/seating/sections/';
 export const SCHOTTENSTEIN_REFERENCE_VIEWS = Object.freeze([
@@ -233,7 +233,7 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
       ? (centerSpans[0][1] + centerSpans.at(-1)[0]) * .5 : project(center).z;
     const accessibleRear=refineAccessibleRear(id,near,treadDepth,spansAt);
     const publishedRowCounts=clubWithPublishedCounts.has(sectionId);
-    const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
+    const reserved=chartRegions.filter(region=>region.sectionId===sectionId||(tier===2&&region.kind==='press')).map(region=>region.outline.map(project));
     return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,
       treadDepth,accessibleRear,profileAxis,details,publishedRowCounts,labelPoint:labels.get(id)};
   })
@@ -257,10 +257,13 @@ export function usesSchottensteinChart(project) {
 
 function rowPlane(block, slot) {
   const rear=slot>=7?block.accessibleRear:null;
-  const depth=rear?rear.end-(20-slot)*rear.depth:block.near+(slot+.5)*block.treadDepth;
+  const front=block.accessibleRear&&slot<3;
+  const depth=rear?rear.end-(20-slot)*rear.depth
+    :front?block.near+block.treadDepth*.5+slot*ACCESS_FRONT_DEPTH
+    :block.near+(slot+.5)*block.treadDepth;
   const {nx,nz} = block;
   const point = lateral => ({x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral});
-  return {point,depth,treadDepth:rear?.depth??block.treadDepth};
+  return {point,depth,treadDepth:front?ACCESS_FRONT_DEPTH:rear?.depth??block.treadDepth};
 }
 
 function traceEntryRim(rear) {
@@ -313,12 +316,6 @@ const lowerElevations = new Map(blocks.filter(block => block.tier === 0).map(blo
   return [block.id, {first, rise: (last - first) / (block.depthRows - 1)}];
 }));
 
-// The media-side banks end on lower landings. These heights regularize the
-// reference reconstruction; the shorter row runs remain keyed to the chart.
-const shortTerraceRear = new Map([
-  ['321',22.25],['322',20.75],['323',21.5],['324',22],['325',23],['326',23.8],
-]);
-
 function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
   const {point,depth,treadDepth}=rowPlane(block,slot);
@@ -327,9 +324,10 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   let ranges=polygonSpans(block.projected,depth);
   const lowerProfile = lowerElevations.get(block.id);
   const [frontY]=tierElevations[block.tier];
-  const shortTerrace=shortTerraceRear.get(block.id);
+  const media=schottensteinMediaElevation(Number(block.id),frontY,block.depthRows,block.treadDepth);
   const y=lowerProfile ? lowerProfile.first + slot * lowerProfile.rise
-    : shortTerrace ? frontY+(shortTerrace-frontY)*slot/(block.depthRows-1)
+    : media ? media.front+(media.rear-media.front)*slot/(block.depthRows-1)
+    : block.accessibleRear&&slot<3 ? frontY+slot*.38
     : deckHeight(block.tier,slot/(block.depthRows-1));
   if(reserve){
     for(const [start,end] of polygonSpans(block.reserved,depth)){
@@ -338,7 +336,7 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
     }
   }
   const spans=ranges.map(([low,high])=>
-    ({left:point(high),right:point(low),width:high-low}));
+    ({left:point(high),right:point(low),width:high-low,low,high}));
   return {spans,width:spans.reduce((sum,span)=>sum+span.width,0),yaw:Math.atan2(nx,nz),
     y,slot,treadDepth};
 }
@@ -384,21 +382,29 @@ export function buildSchottensteinSeating(pitch) {
   const rows=[],unallocated=[];
   let assignedSeats=0;
   blocks.forEach((block,sectionIndex)=>{
+    const sectionRows=[];
     for(let row=0;row<block.rows;row++){
-      const g=rowGeometry(block,row);
+      const g=rowGeometry(block,row,{reserve:true});
       if(!g.spans.length)continue;
       const rowLabel=block.details?.labels?.[row]??row+1;
       const documentedCount=block.publishedRowCounts?(row<5?14:18):null;
-      const seatSpans=rowGeometry(block,row,{reserve:true}).spans.map(span=>({...span,count:0}));
+      const seatSpans=g.spans.map(span=>({...span,count:0}));
+      sectionRows.push({block,sectionIndex,rowLabel,g,seatSpans,documentedCount});
+    }
+    const retained=connectedSchottensteinRuns(sectionRows,minimumPitch);
+    for(const row of sectionRows){
+      const {documentedCount}=row;
+      if(!documentedCount)row.seatSpans=row.seatSpans.filter(span=>retained.has(span));
+      if(!row.seatSpans.length)continue;
       if(documentedCount){
-        allocateSeats(seatSpans,documentedCount);
+        allocateSeats(row.seatSpans,documentedCount);
         assignedSeats+=documentedCount;
       }else{
-        const widest=seatSpans.reduce((best,span)=>!best||span.width>best.width?span:best,null);
+        const widest=row.seatSpans.reduce((best,span)=>!best||span.width>best.width?span:best,null);
         if(widest?.width>=minimumPitch){widest.count=1;assignedSeats++;}
-        unallocated.push(...seatSpans);
+        unallocated.push(...row.seatSpans);
       }
-      rows.push({block,sectionIndex,rowLabel,g,seatSpans});
+      rows.push(row);
     }
   });
   allocateSeats(unallocated,publishedSeatTotal-assignedSeats);

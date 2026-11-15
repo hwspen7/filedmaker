@@ -7,7 +7,9 @@ const scanArtifacts = {
   320: [[735,694],[779,695],[735,696]],
 };
 
-const protectedBanks = new Set([105,114,131,321,322,323,324,325,326]);
+const protectedBanks = new Set([105,114,131]);
+const mediaBack = new Map([[321,23.8],[322,23.6],[323,24.4],[324,24.5],[325,25.4],[326,26.2]]);
+export const ACCESS_FRONT_DEPTH = .48;
 const accessBanks = new Set([304,307,314,331]);
 const alignToRear = new Set([313,315,320]);
 
@@ -26,7 +28,7 @@ export function refineSchottensteinContour(section, outlines) {
 
 export function schottensteinRowHeading(section, front, rear) {
   if (alignToRear.has(section)) return rear;
-  if (section < 200 || protectedBanks.has(section)) {
+  if (section < 200 || mediaBack.has(section)) {
     return {x:front.x+rear.x,z:front.z+rear.z};
   }
   // The two bearings describe the same bank. Weight them by direction
@@ -52,28 +54,76 @@ function broaderEnd(start, limit, direction, width, target) {
 // keyed inventories and documented voids on their original boundaries.
 export function refineSchottensteinBank(section, tier, near, far, rows, spansAt) {
   if (protectedBanks.has(section)||accessBanks.has(section))return {near,far};
-  const minimum = [.47,.58,.65][tier];
+  const minimum = mediaBack.has(section)?Math.min(.60,(far-near)/rows*.84):[.47,.58,.65][tier];
   const totalAdjustment=Math.max(0,(far-near)-minimum*rows);
-  const rearLimit=Math.min(totalAdjustment,[.85,1.15,2.25][tier]);
+  const rearLimit=Math.min(totalAdjustment,mediaBack.has(section)?1.75:[.85,1.15,2.25][tier]);
   const rear=broaderEnd(far,rearLimit,-1,end=>runWidth(spansAt,end-(end-near)/(2*rows)),.90);
-  const frontLimit=Math.min(.45,Math.max(0,totalAdjustment-(far-rear)));
-  const front=broaderEnd(near,frontLimit,1,start=>runWidth(spansAt,start+(rear-start)/(2*rows)),.83);
+  const firstWidth=start=>runWidth(spansAt,start+(rear-start)/(2*rows));
+  const pitch=(rear-near)/rows;
+  const neighbors=[1.5,2.5,3.5].map(slot=>runWidth(spansAt,near+slot*pitch)).sort((a,b)=>a-b);
+  const limit=tier===0?1.45:1.25;
+  const frontLimit=Math.min(limit,Math.max(0,totalAdjustment-(far-rear)));
+  const front=firstWidth(near)<neighbors[1]*.86
+    ?broaderEnd(near,frontLimit,1,firstWidth,.92)
+    :near;
   return {near:front,far:rear};
 }
 
-// Keep the chart's separate front row and access landing. Expand the
+// Keep a compact front bank and an open access landing. Expand the
 // continuous H–U bank to a full-width tread pitch close to its neighbors.
 export function refineAccessibleRear(section, near, treadDepth, spansAt) {
   if(!accessBanks.has(section))return null;
   const end=near+20.5*treadDepth;
   const desiredWidth=runWidth(spansAt,end)*.91;
+  const frontEnd=near+treadDepth*.5+2.5*ACCESS_FRONT_DEPTH;
   for(let depth=.72;depth>treadDepth;depth-=.01){
-    if(runWidth(spansAt,end-13*depth)>=desiredWidth &&
+    const firstRear=end-13*depth;
+    if(firstRear-depth*.5-frontEnd>=1.05 && runWidth(spansAt,firstRear)>=desiredWidth &&
        Array.from({length:13},(_,i)=>end-i*depth).every(p=>runWidth(spansAt,p)>=desiredWidth)){
       return {end,depth};
     }
   }
-  return null;
+  return {end,depth:treadDepth};
+}
+
+export function schottensteinMediaElevation(section,tierFront,slotCount,treadDepth){
+  const target=mediaBack.get(section);
+  if(target===undefined)return null;
+  // Lift the media-side floor while limiting the row-to-row rake.
+  const climb=1.08*treadDepth*(slotCount-1);
+  const front=Math.min(tierFront+2.15,Math.max(tierFront+.35,target-climb));
+  return {front,rear:Math.min(target,front+climb)};
+}
+
+// Drop thin fragments unsupported by a bank of three consecutive rows.
+// Compare lateral ranges within a section so aisles never tie two banks together.
+export function connectedSchottensteinRuns(rows, minimumWidth) {
+  const entries=rows.flatMap(row=>row.seatSpans.filter(span=>span.width>=minimumWidth)
+    .map(span=>({slot:row.g.slot,span})));
+  const rowsBySlot=new Map();
+  const retained=new Set(), seen=new Set();
+  for(const entry of entries){
+    const layer=rowsBySlot.get(entry.slot)??[];
+    layer.push(entry);
+    rowsBySlot.set(entry.slot,layer);
+  }
+  for(const entry of entries){
+    if(seen.has(entry))continue;
+    const connected=[entry],slots=new Set();
+    seen.add(entry);
+    for(let i=0;i<connected.length;i++){
+      const {slot,span}=connected[i];
+      slots.add(slot);
+      for(const neighbor of [...(rowsBySlot.get(slot-1)??[]),...(rowsBySlot.get(slot+1)??[])]){
+        const overlap=Math.min(span.high,neighbor.span.high)-Math.max(span.low,neighbor.span.low);
+        if(overlap<.16||seen.has(neighbor))continue;
+        seen.add(neighbor);
+        connected.push(neighbor);
+      }
+    }
+    if(slots.size>=3)for(const item of connected)retained.add(item.span);
+  }
+  return retained;
 }
 
 export function schottensteinRake(tier, fraction) {

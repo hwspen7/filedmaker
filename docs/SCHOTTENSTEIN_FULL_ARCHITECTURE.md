@@ -19,7 +19,7 @@ The new independent geometry lives in `src/next/schottensteinArchitecture.mjs`. 
 
 ## Manual seating refinement
 
-`src/schottensteinRefinement.mjs` keeps authored preview edits separate from the raw chart. It corrects narrow trace slits, rebalances clipped front and rear rows on all tiers, and aligns row bearings to the bank edges. The H–U run behind accessible landings uses a tread depth closer to its neighbors. The media banks, accessible gaps and published club inventories retain their documented constraints. The same allocator balances the adjusted spans to 19,049 modeled positions. Side closures follow the stair risers at aisle edges.
+`src/schottensteinRefinement.mjs` keeps authored preview edits separate from the raw chart. It corrects narrow trace slits, rebalances clipped front and rear rows on all tiers, and aligns row bearings to the bank edges. The H–U run behind accessible landings uses a tread depth closer to its neighbors. The press enclosure and accessible gaps stay seat-free. The display places modeled companion rows A2/A3 and B2 in short front banks. Those labels describe preview seats. The raised media-side banks retain a shorter rake than the full-depth terrace. Isolated contour fragments stay unoccupied, and published club inventories keep their row counts. The same allocator balances the adjusted spans to 19,049 modeled positions. Side closures follow the stair risers at aisle edges.
 
 ## Source integrity
 
