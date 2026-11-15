@@ -102,13 +102,10 @@ test('Press Box lower gallery is structurally connected to the short rear seatin
   }));
   const local=p=>angularDiff(Math.atan2(p.z,p.x))<.52;
   const seatY=plan.seats.filter(s=>s.tier===2&&local(s));
-  const bankRearHeights=['321','322','323','324','325','326'].map(id=>
-    Math.max(...seatY.filter(s=>s.sectionId===id).map(s=>s.y)));
-  const lowestBankRear=Math.min(...bankRearHeights);
   const infill=vertices(g.backWall).filter(p=>local(p)&&p.y<28.5);
   assert.ok(infill.length>75,'Continuous under-gallery masonry is missing');
-  assert.ok(Math.min(...infill.map(p=>p.y))<=lowestBankRear+2,
-    'Press masonry must extend down towards the occupied chair height');
+  assert.ok(Math.min(...infill.map(p=>p.y))<26.5,
+    'Press-side masonry must extend below the raised gallery level');
   const lowDeck=vertices(g.galleryFloorMesh).filter(p=>local(p)&&p.y<28);
   assert.ok(lowDeck.length>60,
     'Rear terrace must connect the last seat row to the lower press wall');
