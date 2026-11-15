@@ -83,8 +83,17 @@ async function main(){
       if(statSync(target).size<12000)throw Error('Screenshot is suspiciously small: '+target);
       console.log(file+': WebGL2 OK; '+state.shown+' estimated seats; PNG '+statSync(target).size+' bytes');
       if(file==='osu'){
+        const markers=await evaluate("({total:document.querySelectorAll('.area-label.exit').length,visible:[...document.querySelectorAll('.area-label.exit')].filter(x=>!x.hidden).length})");
+        if(markers.total!==12||markers.visible<1)throw Error('OSU exit sign overlay missing: '+JSON.stringify(markers));
         const selected=await evaluate("(()=>{const select=document.querySelector('#sectionPicker');if(!select)return false;const pick=[...select.options].find(o=>o.value==='323')||[...select.options].find(o=>o.value);if(!pick)return false;select.value=pick.value;select.dispatchEvent(new Event('change',{bubbles:true}));return !document.querySelector('[data-view=human]').disabled})()");
         if(!selected)throw Error('Cannot select an OSU spectator seat for interior acceptance');
+        await evaluate("document.querySelector('[data-view=section]').click()");
+        const section=await poll(async()=>await evaluate("document.querySelector('[data-view=section]')?.classList.contains('current')"),30);
+        if(!section)throw Error('OSU 3D section close-up did not open');
+        await delay(750);
+        const sectionShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        const sectionPath=join(dir,'osu-section.png');writeFileSync(sectionPath,Buffer.from(sectionShot.data,'base64'));
+        if(statSync(sectionPath).size<12000)throw Error('OSU 3D section screenshot is empty');
         await evaluate("document.querySelector('[data-view=human]').click()");
         const interior=await poll(async()=>await evaluate("document.querySelector('[data-view=human]')?.classList.contains('current')"),30);
         if(!interior)throw Error('OSU interior seat view did not open');
