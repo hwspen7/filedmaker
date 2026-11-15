@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seat Viewer · FiledMaker</title>
+<link rel="stylesheet" href="./viewer.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="app">
+  <aside class="left">
+    <div class="logo"><span>F</span><div><strong>FiledMaker</strong><small>School Seat Viewer</small></div></div>
+    <a class="back" href="../school/">← School Studio</a>
+    <div class="section-title">VENUE</div>
+    <h1 id="name">School venue</h1><p class="sub" id="school">Choose a seat to preview its view.</p>
+    <div class="stat"><span>Seat identities</span><strong id="seatCount">—</strong></div>
+    <div class="stat"><span>Official capacity</span><strong id="capacity">—</strong></div>
+    <div class="stat"><span>Seat coordinates</span><strong id="source">—</strong></div>
+    <hr>
+    <div class="section-title">FIND YOUR SEAT</div>
+    <label for="tier">Level</label><select id="tier"><option value="all">All levels</option></select>
+    <label for="section">Section</label><select id="section"><option value="all">All sections</option></select>
+    <label for="search">Seat ID / section / row</label><input id="search" autocomplete="off" placeholder="e.g. HOME-A-1">
+    <div class="smallbuttons"><button id="searchBtn">Find seat</button><button id="clearBtn">Clear</button></div>
+    <hr>
+    <div class="section-title">VIEW SETTINGS</div>
+    <label for="posture">Position</label><select id="posture"><option value="seated">Seated (1.17 m)</option><option value="leaning">Leaning (1.23 m)</option><option value="standing">Standing (1.60 m)</option></select>
+    <label for="target">Look towards</label><select id="target"><option value="center">Center of court / field</option><option value="near">Near end</option><option value="far">Far end</option><option value="left">Left sideline</option><option value="right">Right sideline</option><option value="scoreboard">Main scoreboard</option></select>
+    <div class="note" id="dataNote">Published venue and seating data are subject to school verification.</div>
+  </aside>
+  <main class="center">
+    <header class="top"><div><strong id="topTitle">Venue overview</strong><small id="topSub">Interactive seating map</small></div><div class="rightTop"><span class="status">Preview, not ticket sales</span></div></header>
+    <div class="workspace">
+      <canvas id="seatmap" aria-label="Interactive two-dimensional seat map"></canvas>
+      <canvas id="scene" aria-label="Three-dimensional seat view" hidden></canvas>
+      <div class="toolbar" role="group" aria-label="Choose view">
+        <button data-view="map" class="active">2D seat map</button>
+        <button data-view="orbit">3D overview</button>
+        <button data-view="section">Section view</button>
+        <button data-view="seat">Human view</button>
+      </div>
+      <div id="phoneFrame" hidden><span>PHONE VIEW · APPROXIMATE</span><div></div></div>
+      <div class="viewerControl"><button id="zoomOut" title="Zoom out">−</button><button id="zoomIn" title="Zoom in">+</button><button id="fit" title="Fit all seats">Fit</button><button id="phone" title="Preview phone framing">Phone</button></div>
+      <div class="hoverInfo" id="hoverInfo" hidden></div>
+      <div class="canvasNote" id="canvasNote">Drag to pan · Scroll to zoom · Click a seat · Click a section label to filter</div>
+      <div class="error" id="error" hidden></div>
+    </div>
+    <div class="bottom" id="bottom">Seat-view estimate · not a live booking service</div>
+  </main>
+  <aside class="right">
+    <div class="section-title">CURRENT SELECTION</div>
+    <div class="selected" id="selected"><strong>No seat selected</strong><p>Choose a seat on the map to see its exact ID.</p></div>
+    <div class="smallbuttons"><button id="previous">← Previous</button><button id="next">Next →</button></div>
+    <div class="actions"><button class="primary" id="seatView">View from this seat</button><button id="favorite">☆ Save seat</button><button id="share">Copy seat link</button></div>
+    <hr><div class="section-title">COMPARE VIEWS</div>
+    <div class="smallbuttons"><button id="compareA">Set A</button><button id="compareB">Set B</button></div>
+    <div class="compare"><div id="compareLeft">A · Not selected</div><div id="compareRight">B · Not selected</div></div>
+    <hr><div class="section-title">REAL PHOTO REFERENCE</div>
+    <label class="upload" for="photo">+ Choose local photo <input id="photo" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>
+    <div id="photoPreview" class="photoPreview">No photo loaded</div>
+    <div class="note">Photos stay in this browser session. A photograph is not proof of exact seat coordinates. School staff should validate any simulated sightline before publication.</div>
+    <hr><div class="section-title">SAVED SEATS</div><div id="favorites" class="favorites">No saved seats</div>
+  </aside>
+</div>
+<script type="module" src="./viewer.js"></script>
+</body></html>

@@ -1,3 +1,15 @@
+## New: School Seat Viewer (v9.2)
+
+The main production experience is now **seat-first**, not architectural cloning.
+
+- Launch the School Studio at `http://127.0.0.1:5174/school/`.
+- Import the actual school row CSV, ticket roster, or XYZ seat data.
+- Click **Open interactive Seat Viewer** to inspect the current data at `http://127.0.0.1:5174/viewer/`.
+- Viewer opens in 2D immediately and supports sections, levels, seat search, pan/zoom, favorites, local photo reference and A/B seat selection. It lazily loads Three.js for orbit, section and human-eye views. A failed WebGL load must not prevent 2D access.
+- Published capacity, ticket roster, and modeled seat count are distinct. Never infer a live ticket inventory.
+
+The external site used as a functional reference (`shijiao.xingpaste.com`) publicly marks some venues as schematic and their seat positions as estimated. Its private modeling code, complete datasets, and exact software stack are **not** available for verification. FiledMaker is an independent implementation, not a code copy.
+
 # FiledMaker
 
 ## v9.0 — Seat-first NCAA / K–12 school venue generator

@@ -9,6 +9,7 @@ import { addUniversalMarkers } from './markerKit.js';
 import { tierBlue } from './seatFirst.mjs';
 import { seatingSupportPlan, supportFootprint, schematicAisleSteps } from './seatingSupport.mjs';
 import { seatAssetPlan } from './detailKit.mjs';
+import { venueBounds, overviewCamera } from './seatCamera.mjs';
 import { isOhioReference, isSchottensteinReference } from './venues.mjs';
 import { treadEdgeCap } from './geometryIntegrity.mjs';
 
@@ -563,6 +564,7 @@ export class StadiumScene {
     this.clear();
     this.model = model;
     const { project, surface, tiers, seats } = model;
+    this.dataBounds = venueBounds(seats, surface);
     const floor = new THREE.Group();
     if (surface.sport === 'basketball') basketball(floor, surface, project);
     else if (surface.sport === 'soccer') soccer(floor, surface);
@@ -594,7 +596,8 @@ export class StadiumScene {
       addDetailedVenue(this.root,model);
     }
     addSurveyObstacles(this.root,project.survey);
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), mat(0xeff1f1));
+    const mapSpan = Math.max(this.dataBounds.width, this.dataBounds.depth) + 24;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(project.seatFirst ? mapSpan : 700, project.seatFirst ? mapSpan : 700), mat(0xeff1f1));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.33;
     ground.userData.editorOnly = true;
@@ -604,7 +607,7 @@ export class StadiumScene {
     grid.material.transparent = true;
     grid.material.opacity = 0.43;
     grid.userData.editorOnly = true;
-    this.root.add(grid);
+    if(!project.seatFirst) this.root.add(grid);
     if (project.roof && !project.seatFirst && model.seatOrigin !== 'imported') this.addRoof();
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(0.43, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd08035, depthTest: false }));
     this.marker.renderOrder = 10;
@@ -735,9 +738,10 @@ export class StadiumScene {
     if (mode === 'orbit') {
       this.controls.enabled = true;
       this.camera.up.set(0, 1, 0);
-      this.camera.position.set(span * 0.65, span * 0.57, span * 0.72);
-      this.controls.target.set(0, 6, 0);
-      this.camera.fov = 52;
+      const frame = overviewCamera(this.dataBounds, {fov:52,aspect:this.camera.aspect});
+      this.camera.position.set(frame.position.x,frame.position.y,frame.position.z);
+      this.controls.target.set(frame.target.x,frame.target.y,frame.target.z);
+      this.camera.fov = frame.fov;
       this.camera.updateProjectionMatrix();
       this.controls.update();
     } else if (mode === 'plan') {
