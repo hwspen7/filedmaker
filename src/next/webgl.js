@@ -371,8 +371,14 @@ export class NativeVenueRenderer {
       this.seat=seat;this.pan=[seat.x,seat.y,seat.z];
       this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
     }
-    if(mode==='overview'||mode==='building'){this.theta=1.12;this.phi=mode==='building' ? .47 : this.plan.arenaInterior ? .76 : .79;}
-    if(mode==='overview'||mode==='top'||mode==='building')this.zoomFactor=mode==='overview'&&this.plan.arenaInterior ? .93 : 1;
+    if(mode==='overview'||mode==='building'){
+      const entrances=this.plan?.project?.proceduralVenue?.exterior?.entrances;
+      const main=entrances?.find(item=>item.role==='primary');
+      this.theta=mode==='building'?(main?.angle??(this.plan.sectionFootprints?Math.PI/4:1.12)):1.12;
+      this.phi=mode==='building' ? .47 : this.plan.arenaInterior ? .76 : .79;
+    }
+    if(mode==='overview'||mode==='top'||mode==='building')
+      this.zoomFactor=mode==='building'?.87:mode==='overview'&&this.plan.arenaInterior?.93:1;
     this.render();
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
