@@ -2,6 +2,23 @@
 
 **New default entry point:** `http://127.0.0.1:5174/` is a rebuilt seat-first viewer powered by a single dependency-free WebGL2 renderer. 2D remains available when WebGL2 is blocked. The school tool at `/school/` and viewer at `/viewer/` share the same renderer. The previous advanced modeling UI is retained at `/legacy/` for compatibility and its GLB export.
 
+## Reusable six-engine venue generator (full-architecture branch)
+
+This development branch now includes six independent, data-driven modules: Geometry, Seating, Architecture, Optimization, Reference and Validation. The same algorithms generate **two distinct fictional venue previews** (an indoor basketball arena and an outdoor American-football stadium) without calling Schottenstein-specific building code. The existing OSU reconstruction is preserved separately. New **Procedural arena** and **Procedural stadium** presets and a **Generate a venue** form are available on the studio home page.
+
+Generate from a JSON template:
+
+```bash
+npm run generate:venue -- --input examples/procedural-arena.json --out build/arena --html
+npm run generate:venue -- --input examples/procedural-stadium.json --out build/stadium --html
+```
+
+Each run writes an editable project JSON and a validation/provenance report. The optional standalone HTML contains the generated architecture, WebGL2 viewer and illustrative seat locations, without an external CDN. Browser acceptance in GitHub Actions takes real screenshots for OSU, the arena demo and the stadium demo.
+
+[Six-engine API, schema, limitations and validation protocol](docs/SIX_ENGINE_VENUE_PIPELINE.md).
+
+**Important:** This is a parametric generation and manual-reference calibration tool, not automatic one-photo reconstruction or survey-grade stadium digitization. Target capacity is a modeling goal, not a published ticket count, and all generated seat IDs are explicitly synthetic.
+
 ## Audience preview
 
 The first venue is Ohio State men’s basketball at the Schottenstein Center. FiledMaker renders the arena, section map, camera and seating geometry in its own offline WebGL2 viewer. The seat inspector includes five reference positions for comparing the model to published seat-view photos.
