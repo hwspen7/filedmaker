@@ -117,7 +117,7 @@ test('exterior facade is grounded and stepped seat decks follow their assigned e
   const brickYs=Array.from({length:g.brickBase.length/6},(_,i)=>g.brickBase[i*6+1]);
   assert.ok(Math.min(...brickYs)>=-.01 && Math.min(...brickYs)<.1,'Ground-floor brick starts at grade');
   assert.ok(minDeck>.25 && maxDeck>26);
-  assert.ok(maxWall>40 && maxWall<41,'Facade reaches a uniform structural top');
+  assert.ok(maxWall>39.5 && maxWall<40.6,'Metal siding terminates just below the structural roof eave');
   let minRoof=Infinity,maxRoof=-Infinity;
   for(let i=1;i<g.roofEdge.length;i+=6){minRoof=Math.min(minRoof,g.roofEdge[i]);maxRoof=Math.max(maxRoof,g.roofEdge[i]);}
   assert.ok(minRoof>39.8 && maxRoof<41,'Roof is a level supported canopy, not a sawtooth crown');
