@@ -244,7 +244,8 @@ export class NativeVenueRenderer {
   // exterior and seat bowl, but never puts an opaque lid over the arena.
   static architectureLayerVisibleInMode(plan,mode,name){
     if(!plan?.arenaInterior||!plan?.architectureGeometry)return false;
-    if(name==='buildingRoof'||name==='cutawayFacade')return false;
+    if(name==='buildingRoof')return false;
+    if(name==='cutawayFacade')return mode==='section'&&Boolean(plan.architectureGeometry.cutawayFacade?.length);
     if(mode==='human')return interiorLayers.has(name);
     if(mode==='section'&&plan.architectureGeometry.cutawayFacade?.length)
       return schottensteinCutaway.has(name);
