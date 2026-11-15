@@ -82,12 +82,14 @@ async function main(){
       const target=join(dir,file+'.png');writeFileSync(target,Buffer.from(result.data,'base64'));
       if(statSync(target).size<12000)throw Error('Screenshot is suspiciously small: '+target);
       console.log(file+': WebGL2 OK; '+state.shown+' estimated seats; PNG '+statSync(target).size+' bytes');
-      await evaluate("document.querySelector('[data-view=building]').click()");
-      const building=await evaluate("document.querySelector('[data-view=building]').classList.contains('current')");
-      if(!building)throw Error('Building view did not open for '+file);
+      // Building and seating share one 3D overview, without an opaque roof.
+      const merged=await evaluate("({tab:!!document.querySelector('[data-view=building]'),overview:document.querySelector('[data-view=overview]')?.classList.contains('current')})");
+      if(merged.tab||!merged.overview)throw Error('3D overview has not replaced the Building tab');
+      // Lower the camera in the SAME overview to inspect entrance buildings.
+      await evaluate("(()=>{const c=document.querySelector('#viewport3d');const r=c.getBoundingClientRect();const x=r.left+r.width*.5,y=r.top+r.height*.5;const capture=c.setPointerCapture;c.setPointerCapture=()=>{};try{for(const [kind,dy] of [['pointerdown',0],['pointermove',82],['pointerup',82]])c.dispatchEvent(new PointerEvent(kind,{bubbles:true,pointerId:1,clientX:x,clientY:y+dy,buttons:kind==='pointerup'?0:1}));}finally{c.setPointerCapture=capture;}return true})()");
       await delay(650);
       const exterior=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
-      if(exterior.data===result.data)throw Error('Building view did not change the frame for '+file);
+      if(exterior.data===result.data)throw Error('Unified 3D overview orbit did not change the frame for '+file);
       writeFileSync(join(dir,file+'-building.png'),Buffer.from(exterior.data,'base64'));
       await evaluate("document.querySelector('[data-view=overview]').click()");
       if(file==='osu'){
