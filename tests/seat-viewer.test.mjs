@@ -52,7 +52,7 @@ test('school can open viewer using current project rather than a hardcoded venue
  assert.match(html,/id="openViewer"/);
  assert.match(studio,/localStorage\.setItem\('filedmaker\.viewer\.project'/);
  assert.match(studio,/window\.open\('\.\.\/viewer\/'/);
- assert.match(read('../viewer/viewer.js'),/localStorage\.removeItem\(modelKey\)/);
+ assert.match(read('../viewer/viewer.js'),/if \(value\) return JSON\.parse\(value\)/);
 });
 test('viewers must not present checkout, inferred coordinates or upload as verified',()=>{
  const html=read('../viewer/index.html');

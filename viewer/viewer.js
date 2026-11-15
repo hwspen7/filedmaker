@@ -8,7 +8,7 @@ const modelKey = 'filedmaker.viewer.project';
 function getProject() {
   try {
     const value = localStorage.getItem(modelKey);
-    if (value) { localStorage.removeItem(modelKey); return JSON.parse(value); }
+    if (value) return JSON.parse(value);
   } catch { /* The fallback has clearly labeled demo data. */ }
   return applySchoolRowPlan(createSchoolProject('college-gym', {
     school: 'Illustrative school (demo)', venue: 'Illustrative Basketball Gym (demo)',
@@ -26,7 +26,7 @@ try {
   project = createSchoolProject('college-gym',{school:'Illustrative school (demo)',venue:'Demo Gym'});
   model = generateSeats(project); seats = model.seats;
 }
-const source = project.ticketing?.coordinates || project.school?.seatCoordinateMethod || 'estimated';
+const source = (project.ticketing?.coordinates && project.ticketing.coordinates !== 'none' ? project.ticketing.coordinates : null) || project.school?.seatCoordinateMethod || 'estimated';
 const reconcile = ticketReconciliation(project, seats.length);
 $('name').textContent = project.school?.venue || project.title;
 $('topTitle').textContent = project.school?.venue || project.title;
@@ -46,10 +46,9 @@ const colors=['#153d6a','#226ba6','#4d91c3','#87b8d8'];
 const canvas=$('seatmap'),ctx=canvas.getContext('2d',{alpha:false});
 let width=0,height=0,scale=1,tx=0,ty=0,mode='map',scene=null,loading3d=false;
 let drawQueued=false,grid=new Map(),labelBoxes=[];
-const minX=Math.min(-model.surface.width/2-8,...seats.map(s=>s.x));
-const maxX=Math.max(model.surface.width/2+8,...seats.map(s=>s.x));
-const minZ=Math.min(-model.surface.length/2-8,...seats.map(s=>s.z));
-const maxZ=Math.max(model.surface.length/2+8,...seats.map(s=>s.z));
+let minX=-model.surface.width/2-8,maxX=model.surface.width/2+8;
+let minZ=-model.surface.length/2-8,maxZ=model.surface.length/2+8;
+for(const s of seats){minX=Math.min(minX,s.x);maxX=Math.max(maxX,s.x);minZ=Math.min(minZ,s.z);maxZ=Math.max(maxZ,s.z);}
 const spanX=maxX-minX,spanZ=maxZ-minZ;
 function size(){
  const b=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
@@ -208,7 +207,16 @@ try{fav=JSON.parse(localStorage.getItem(favKey)||'[]').filter(id=>byId.has(id)).
 function renderFavorites(){$('favorites').replaceChildren();if(!fav.length){$('favorites').textContent='No saved seats';return;}for(const id of fav){const s=byId.get(id),b=document.createElement('button');b.textContent=`${s.sectionId} · Row ${s.row} · Seat ${s.number}`;b.onclick=()=>choose(s,true);$('favorites').append(b);}}
 $('favorite').onclick=()=>{if(!selected)return;const id=String(selected.uid);fav=fav.includes(id)?fav.filter(x=>x!==id):[id,...fav].slice(0,100);try{localStorage.setItem(favKey,JSON.stringify(fav));}catch{}renderFavorites();$('favorite').textContent=fav.includes(id)?'★ Saved':'☆ Save seat';};renderFavorites();
 $('share').onclick=async()=>{if(!selected){setError('Select a seat first.');return;}const u=new URL(location.href);u.hash='seat='+encodeURIComponent(selected.uid);try{await navigator.clipboard.writeText(u.href);$('share').textContent='Link copied';}catch{setError('Copy this local link manually: '+u.href);}};
-const comparison=[null,null];for(const [slot,id] of [[0,'compareA'],[1,'compareB']])$(id).onclick=()=>{if(!selected)return;comparison[slot]={id:selected.uid,photo:scene&&mode==='seat'?scene.capture():null};const target=slot?'compareRight':'compareLeft';$(target).textContent=(slot?'B':'A')+' · '+selected.sectionId+' / '+selected.row+' / '+selected.number;};
+const comparison=[null,null];
+function renderComparison(slot){
+ const item=comparison[slot],target=$(slot?'compareRight':'compareLeft');target.replaceChildren();
+ if(!item){target.textContent=(slot?'B':'A')+' · Not selected';return;}
+ if(item.photo){const img=document.createElement('img');img.src=item.photo;img.alt='Captured simulated viewpoint';target.append(img);}
+ const text=document.createElement('span');text.textContent=(slot?'B':'A')+' · '+item.section+' / '+item.row+' / '+item.seat;target.append(text);
+}
+for(const [slot,id] of [[0,'compareA'],[1,'compareB']])$(id).onclick=()=>{
+ if(!selected)return;comparison[slot]={id:selected.uid,section:selected.sectionId,row:selected.row,seat:selected.number,photo:scene&&mode==='seat'?scene.capture():null};renderComparison(slot);
+};
 let photoURL=null;$('photo').onchange=e=>{const f=e.target.files?.[0];if(!f)return;if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>10_000_000){setError('Please upload JPEG, PNG or WebP under 10 MB.');return;}if(photoURL)URL.revokeObjectURL(photoURL);photoURL=URL.createObjectURL(f);const im=new Image();im.src=photoURL;im.alt='Local reference photo';$('photoPreview').replaceChildren(im);};
 const hash=new URLSearchParams(location.hash.slice(1));if(hash.has('seat')&&byId.has(hash.get('seat')))choose(byId.get(hash.get('seat')));
 const ro=new ResizeObserver(()=>{size();if(scale<=1)fit();});ro.observe(canvas.parentElement);
