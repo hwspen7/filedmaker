@@ -46,10 +46,15 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>15.5)vColor=vec3(.97,.96,.91); // Geometry-backed exit lettering
-    else if(uDeck>14.5)vColor=vec3(.80,.18,.21); // Recessed exit indicator
-    else if(uDeck>13.5)vColor=vec3(.16,.19,.22); // Dark exit sign panel
-    else if(uDeck>12.5)vColor=vec3(.61,.60,.57); // Integrated upper-bowl wall
+    if(uDeck>20.5)vColor=vec3(.96,.84,.67); // Recessed warm architectural lights
+    else if(uDeck>19.5)vColor=vec3(.30,.31,.32); // Structural roof soffit
+    else if(uDeck>18.5)vColor=vec3(.47,.43,.40); // Deep fascia and beam edges
+    else if(uDeck>17.5)vColor=vec3(.65,.61,.55); // Three-dimensional columns
+    else if(uDeck>16.5)vColor=vec3(.27,.29,.30); // Window mullions and frames
+    else if(uDeck>15.5)vColor=vec3(.55,.41,.31); // Warm gallery windows
+    else if(uDeck>14.5)vColor=vec3(.20,.23,.25); // Recessed dark glazing
+    else if(uDeck>13.5)vColor=vec3(.61,.59,.55); // Inner wall with true openings
+    else if(uDeck>12.5)vColor=vec3(.64,.61,.57); // Exterior gallery shell
     else if(uDeck>11.5)vColor=vec3(.68,.64,.58); // Reserved for tread risers
     else if(uDeck>10.5)vColor=vec3(.82,.80,.76); // Reserved for aisle surfaces
     else if(uDeck>9.5)vColor=vec3(.72,.64,.54); // Muted champagne fascia trim
@@ -338,7 +343,7 @@ export class NativeVenueRenderer {
       }
     }
     if(NativeVenueRenderer.architectureVisibleInMode(this.plan,this.mode)){
-      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['crown',13],['signs',14],['exitLights',15],['exitGlyphs',16]]){
+      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['backWall',13],['galleryGlass',15],['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21]]){
         const mesh=this.architecture?.[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
@@ -349,8 +354,8 @@ export class NativeVenueRenderer {
     if(this.mode==='human' && this.plan.arenaInterior && this.architecture){
       // The inner enclosing wall and attached exit signs remain part of
       // first-person architecture. External cladding and the base stay hidden.
-      for(const [name,index] of [['crown',13],['glazing',9],['signs',14],
-        ['exitLights',15],['exitGlyphs',16]]){
+      for(const [name,index] of [['backWall',13],['galleryGlass',15],['galleryGlow',16],
+        ['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21]]){
         const mesh=this.architecture[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
