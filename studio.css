@@ -16,7 +16,7 @@ button.area-label{pointer-events:auto}
 button.area-label:hover,button.area-label:focus-visible,.area-label[data-selected="true"]{background:#245c91;color:#fff;border-color:#fff}
 .area-label[data-selected="true"]{width:84px;height:25px;font-size:11px;z-index:1}
 .area-label.zone{color:#434237;background:#f7f4eaf5;border-color:#c8c4b6;font-size:10px;font-weight:650}
-.area-label.exit{white-space:pre-line;line-height:1.05;letter-spacing:.25px;text-align:center;background:#292e32f3;color:#f7f4ed;border:1px solid #676c6d;border-radius:3px;font:700 9px/1.07 Inter,system-ui,sans-serif;box-shadow:0 2px 7px #111b1d55;pointer-events:none}
+.area-label.exit{white-space:pre-line;line-height:1.05;letter-spacing:.25px;text-align:center;background:#292e32f3;color:#f7f4ed;border:1px solid #676c6d;border-radius:3px;font:700 7px/1.05 Inter,system-ui,sans-serif;box-shadow:0 2px 7px #111b1d55;pointer-events:none}
 @media(max-width:760px){
   .topbar{height:auto;min-height:58px;flex-wrap:wrap;gap:6px;padding:9px 12px}
   .top-actions{gap:5px;flex-wrap:wrap}
