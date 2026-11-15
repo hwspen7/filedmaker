@@ -1,14 +1,12 @@
 # FiledMaker v10 — Seat Studio Rebuild
 
-At `http://127.0.0.1:5174/`, the Ohio State men's basketball arena page displays [Ohio State Athletics' published 2D seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts). The Official 3D tab loads the [Ohio State Basketball Virtual Venue](https://ohiostatebb.io-media.com/) from its provider, IOMEDIA. The official source links remain available if embedded resources cannot load. Those published assets require an internet connection.
+**New default entry point:** `http://127.0.0.1:5174/` is a rebuilt seat-first viewer powered by a single dependency-free WebGL2 renderer. 2D remains available when WebGL2 is blocked. The school tool at `/school/` and viewer at `/viewer/` share the same renderer. The previous advanced modeling UI is retained at `/legacy/` for compatibility and its GLB export.
 
-## Venue data
+## Audience preview
 
-The arena page shows the university's published capacity. Section markers locate printed labels on the published diagram. Importing a local survey shows exactly the supplied points with their section, row, and seat labels. The CSV requires `section,row,seat,x_m,y_m,z_m` and supports an optional `seat_id`. Use meters, a court-centered origin, X across the court, Y up and Z along the court. Uploaded file contents stay in the local tab. Coordinates are displayed as supplied and need venue validation.
+The default Schottenstein Center preview follows [Ohio State's men's basketball seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts) for section names and relative locations. Choose a section on the 2D map, use the Section, Row and Seat controls, and open Seat View. The camera can face the court, either basket or the scoreboard, with optional phone framing. The preview uses layered blue seating by default, with a performance setting for simpler chair geometry.
 
-The venue catalog records the school, event configuration, chart, capacity source and virtual venue provider for each NCAA basketball entry. A native reconstruction of a real arena needs its venue-approved 3D geometry, seating survey and sightline validation.
-
-The parametric Geometry Studio at `/studio/` and school tools retain their offline rendering and explicitly schematic examples. The advanced modeling UI is at `/legacy/`.
+Section outlines are approximated from the chart. The row counts, numbered preview positions, elevations, furniture and sightlines are schematic. A coordinate-free CSV for this reference uses the chart's known section IDs and estimates positions within those sections. For sections outside the chart or for exact positions, supply XYZ in the venue's court-centered coordinate system.
 
 ## What changed
 

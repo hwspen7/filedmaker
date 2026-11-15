@@ -284,7 +284,7 @@ export class NativeVenueRenderer {
   pick(e){if(!this.plan)return;const rect=this.canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*this.canvas.width/rect.width,y=(e.clientY-rect.top)*this.canvas.height/rect.height;
     let best=-1,depth=Infinity,dist=13*13*(this.canvas.width/rect.width)**2;
     for(let i=0;i<this.plan.seats.length;i++){
-      const s=this.plan.seats[i],p=this.projectPoint([s.x,s.y+(this.plan.pointOnly?0:.5),s.z]);if(!p)continue;
+      const s=this.plan.seats[i],p=this.projectPoint([s.x,s.y+.5,s.z]);if(!p)continue;
       const d=(p[0]-x)**2+(p[1]-y)**2;if(d<dist || (d===dist&&p[2]<depth)){dist=d;depth=p[2];best=i;}
     }
     if(best>=0)this.onPick(this.plan.seats[best]);
