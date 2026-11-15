@@ -4,7 +4,6 @@
 import { SCHOTTENSTEIN_ROOF_EAVE, SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
 import { ExteriorEngine } from './engines/exterior.mjs';
 import { fitRearSeatEnvelope } from './engines/geometry.mjs';
-import { schottensteinRake } from '../schottensteinRefinement.mjs';
 
 const TAU=Math.PI*2;
 const SEGMENTS=192;
@@ -57,61 +56,85 @@ function betweenDecks(out,innerTier,outerTier,elevation){
   ringStrip(out,from,to,'up');
 }
 
-// The upper bowl is fitted to the actual outermost chairs, not a separate
-// analytic oval. Its integrated rear parapet rises directly behind row U.
+// A narrow, genuinely structural perimeter cap follows the final occupied
+// rows. The actual seat-level terrace slabs are generated separately below.
+//
+// Never span the entire seating bank with an analytic "upper bowl" sheet:
+// the real chart includes reduced-height press sections and empty access
+// wedges; a large continuous sheet covers those chairs in overview views.
 function addUpperBowl(out,seats){
-  const bands=20;
-  const frontY=SCHOTTENSTEIN_TERRACE_RIM.front-.22;
-  const rearY=SCHOTTENSTEIN_TERRACE_RIM.rear-.22;
-  const rearEdge=fitRearSeatEnvelope(seats,{
+  const edge=fitRearSeatEnvelope(seats,{
     tier:2,segments:SEGMENTS,clearance:.38,spread:1
   });
-  const pressBlend=(angle,start,end)=>{
-    const degrees=Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))*360/TAU;
-    const t=clamp((degrees-start)/(end-start),0,1);
-    return 1-t*t*(3-2*t);
-  };
-  const profile=(angle,index)=>{
-    const inner=radius(schottensteinDeckPoint(2,angle,0))-1.12;
-    const outer=Math.max(inner+2.0,rearEdge.radii[index]);
-    const rise=rearY-4.18*pressBlend(angle,3,42)-frontY;
-    const point=(r,y)=>[r*Math.cos(angle),y,r*Math.sin(angle)];
-    const section=Array.from({length:bands+1},(_,i)=>{
-      const t=i/bands;
-      return point(inner+(outer-inner)*t,frontY+rise*schottensteinRake(2,t));
-    });
-    // Roll each lip into the underside so a close orbit shows a chamfer
-    // instead of a paper-thin cut. Close the section all the way to the front.
-    const lip=frontY+rise;
+  const heights=new Float64Array(SEGMENTS).fill(-Infinity);
+  const furthest=new Float64Array(SEGMENTS).fill(-Infinity);
+  const wrap=i=>(i+SEGMENTS)%SEGMENTS;
+  for(const chair of seats){
+    if(chair.tier!==2)continue;
+    const angle=(Math.atan2(chair.z,chair.x)+TAU)%TAU;
+    const index=wrap(Math.round(angle*SEGMENTS/TAU));
+    const r=radius(chair);
+    // Choose the height of the rear-most occupied chair at each station,
+    // rather than the height of an unrelated radial stadium profile.
+    for(let delta=-1;delta<=1;delta++){
+      const j=wrap(index+delta);
+      if(r>furthest[j]){
+        furthest[j]=r;
+        heights[j]=chair.y;
+      }
+    }
+  }
+  // Interpolate only genuinely unoccupied angular stations. Section aisle
+  // breaks retain continuous concrete, not an arbitrary sawtooth edge.
+  for(let i=0;i<SEGMENTS;i++){
+    if(Number.isFinite(heights[i]))continue;
+    let before=wrap(i-1),after=wrap(i+1);
+    while(!Number.isFinite(heights[before]))before=wrap(before-1);
+    while(!Number.isFinite(heights[after]))after=wrap(after+1);
+    const total=wrap(after-before),fraction=total?wrap(i-before)/total:0;
+    heights[i]=heights[before]*(1-fraction)+heights[after]*fraction;
+  }
+  // Smooth elevation transitions through the short press-side banks without
+  // changing any chair, tier height or aisle. An abrupt step in the rear wall
+  // would look like the old broken bowl lip.
+  const y=Array.from({length:SEGMENTS},(_,i)=>{
+    let sum=0,weight=0;
+    for(let d=-4;d<=4;d++){
+      const w=5-Math.abs(d);
+      sum+=heights[wrap(i+d)]*w;
+      weight+=w;
+    }
+    return sum/weight;
+  });
+  // Closed six-sided cross-section: narrow seat-support lip, court-facing
+  // parapet, real cap thickness, external wall and underside. All points
+  // remain OUTSIDE the occupied chair footprint.
+  const sections=Array.from({length:SEGMENTS},(_,i)=>{
+    const a=i*TAU/SEGMENTS,r=edge.radii[i],base=y[i]-.16;
+    const p=(offset,height)=>[(r+offset)*Math.cos(a),height,(r+offset)*Math.sin(a)];
     return [
-      ...section,
-      // A short, solid parapet connects to the bowl itself. Its inner face
-      // begins less than half a metre behind the last chair, rather than
-      // leaving an empty belt of concrete around the upper tier.
-      point(outer+.06,lip+.07),
-      point(outer+.06,lip+.84),
-      point(outer+.34,lip+.84),
-      point(outer+.34,lip-.40),
-      point(outer-.12,lip-.66),
-      ...section.slice(0,-1).reverse().map(([x,y,z])=>[x,y-.67,z]),
-      point(inner-.12,frontY-.50),
-      point(inner-.12,frontY-.14)
+      p(-.13,base),
+      p(0,base),
+      p(0,base+.88),
+      p(.26,base+.88),
+      p(.26,base-.39),
+      p(-.13,base-.39)
     ];
-  };
-  const stations=Array.from({length:SEGMENTS},(_,i)=>profile(i*TAU/SEGMENTS,i));
-  const vertices=stations.map((section,i)=>section.map((point,k)=>{
-    const before=stations[(i+SEGMENTS-1)%SEGMENTS][k],after=stations[(i+1)%SEGMENTS][k];
-    const previous=section[(k+section.length-1)%section.length],next=section[(k+1)%section.length];
-    const incoming=normalize(subtract(point,previous)),outgoing=normalize(subtract(next,point));
+  });
+  const vertices=sections.map((section,i)=>section.map((point,k)=>{
+    const before=sections[wrap(i-1)][k],after=sections[wrap(i+1)][k];
+    const previous=section[(k+section.length-1)%section.length];
+    const next=section[(k+1)%section.length];
+    const incoming=normalize(subtract(point,previous));
+    const outgoing=normalize(subtract(next,point));
     const across=incoming.map((v,axis)=>v+outgoing[axis]);
     return [...point,...normalize(cross(subtract(after,before),across))];
   }));
   for(let i=0;i<SEGMENTS;i++){
-    const a=vertices[i],b=vertices[(i+1)%SEGMENTS];
+    const a=vertices[i],b=vertices[wrap(i+1)];
     for(let k=0;k<a.length;k++){
       const l=(k+1)%a.length;
-      const p=a[k],q=b[k],r=b[l],s=a[l];
-      out.push(...p,...q,...r,...p,...r,...s);
+      out.push(...a[k],...b[k],...b[l],...a[k],...b[l],...a[l]);
     }
   }
 }
