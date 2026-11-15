@@ -33,27 +33,10 @@ function addChartRegions(add,color,features,spanAt) {
   }
 }
 
-function addDeckRims(add,footprints,fascia,edge) {
-  for(let tier=0;tier<deckBottom.length;tier++){
-    const deck=footprints.filter(profile=>profile.tier===tier);
-    if(!deck.length)continue;
-    const rim=deck.flatMap(profile=>profile.corners.slice(0,2)).sort((a,b)=>
-      Math.atan2(a.z,a.x)-Math.atan2(b.z,b.x));
-    const top=deck[0].rimHeight-.055,bottom=deckBottom[tier];
-    for(let i=0;i<rim.length;i++){
-      const a=rim[i],b=rim[(i+1)%rim.length];
-      if(distance(a,b)<.06)continue;
-      spanBox(add,a,b,(top+bottom)*.5,top-bottom,.23,fascia);
-      spanBox(add,a,b,top-.06,.075,.25,edge);
-    }
-  }
-}
-
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
   const tread=color('#a0a0a4'), fascia=color('#393237'), edge=color('#bcb9b8');
   const suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
-  if(rows.length)addDeckRims(add,footprints,fascia,edge);
   for(const row of rows){
     const {left,right,y,depth,rise}=row;
     const forward={x:Math.sin(row.yaw),z:Math.cos(row.yaw)};
@@ -68,7 +51,7 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   const profileBySection=new Map(footprints.map(profile=>[profile.id,profile]));
   for(const row of rows){
     const profile=profileBySection.get(row.sectionId);
-    if(row.slot===profile.depthRows-1)spanBox(add,row.left,row.right,row.y-.36,.5,.27,fascia);
+    if(row.tier>0&&row.slot===profile.depthRows-1)spanBox(add,row.left,row.right,row.y-.36,.5,.27,fascia);
   }
   const pressSide=profileBySection.get('323');
   if(pressSide){
@@ -102,14 +85,19 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     matched.add(i);matched.add(best);
     const steps=Math.min(a.profile.depthRows,b.profile.depthRows);
     const stepDepth=(distance(a.front,a.back)+distance(b.front,b.back))/(2*steps);
+    const matchedLevels=a.profile.depthRows===b.profile.depthRows
+      &&Math.abs(a.profile.frontHeight-b.profile.frontHeight)<1e-6&&Math.abs(a.profile.rise-b.profile.rise)<1e-6;
     for(let j=0;j<steps;j++){
       const t=(j+.5)/steps;
       const p=mix(a.front,a.back,t),q=mix(b.front,b.back,t);
       const width=distance(p,q);
       if(width<.42||width>3.15)continue;
-      const left=rowHeightAt(a.profile,p),right=rowHeightAt(b.profile,q);
-      const guide=schottensteinDeckHeight(a.profile.tier,mix(p,q,.5));
-      const height=Math.max(Math.min(left,right),Math.min(Math.max(left,right),guide));
+      let height=a.profile.frontHeight+j*a.profile.rise;
+      if(!matchedLevels){
+        const left=rowHeightAt(a.profile,p),right=rowHeightAt(b.profile,q);
+        const guide=schottensteinDeckHeight(a.profile.tier,mix(p,q,.5));
+        height=Math.max(Math.min(left,right),Math.min(Math.max(left,right),guide));
+      }
       spanBox(add,mix(p,q,.08),mix(p,q,.92),height-.095,.19,stepDepth*.97,tread);
     }
   }
@@ -128,7 +116,11 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     const a=i*2*Math.PI/64,b=(i+1)*2*Math.PI/64;
     const p=point(a,outerX*.67,outerZ*.72),q=point(b,outerX*.67,outerZ*.72);
     spanBox(add,p,q,12.46,1.9,.48,suite,INWARD_FACING);
-    spanBox(add,mix(p,q,.10),mix(p,q,.88),12.51,1.03,.49,glass,INWARD_FACING);
+    const face=pos=>{
+      const radius=Math.hypot(pos.x,pos.z);
+      return {x:pos.x-.27*pos.x/radius,z:pos.z-.27*pos.z/radius};
+    };
+    spanBox(add,face(mix(p,q,.10)),face(mix(p,q,.88)),12.51,1.03,.045,glass,INWARD_FACING);
     spanBox(add,p,q,13.47,.9144,.39,led,INWARD_FACING);
     spanBox(add,p,q,13.98,.14,.43,fascia,INWARD_FACING);
     const outerA=point(a,outerX,outerZ),outerB=point(b,outerX,outerZ);

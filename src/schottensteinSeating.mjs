@@ -132,8 +132,12 @@ const lowerCornerAisles={
   134:[[319,349,408,349],[342,263,398,310]],
 };
 const minimumPitch=.48;
-// Approximate elevations shared by the chart's inner and outer deck lines.
-const tierDecks=[{front:.56,rear:5.96},{front:8.05,rear:11.10},{front:14.65,rear:21.50}];
+// Shared modeled row levels. These are reconstruction dimensions.
+const tierDecks=[
+  {front:.56,rear:6.34,rise:null,fullRows:null},
+  {front:8.05,rear:11.56,rise:.39,fullRows:10},
+  {front:14.65,rear:24.05,rise:.47,fullRows:21},
+];
 const fullTurn=Math.PI*2;
 const azimuth=({x,z})=>(Math.atan2(z,x)+fullTurn)%fullTurn;
 const deckLines=[lower,club,upper].map(level=>[0,2].map(edge=>
@@ -232,10 +236,15 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
     };
     const deck=tierDecks[tier];
     const rimHeight=deck.front;
-    const frontHeight=Math.min(deck.front+.42,schottensteinDeckHeight(tier,rowCenter(0)));
+    const first=schottensteinDeckHeight(tier,rowCenter(0));
     const last=schottensteinDeckHeight(tier,rowCenter(depthRows-1));
-    const maxRake=[.50,.55,.59][tier];
-    const rise=Math.max(treadDepth*.20,Math.min(treadDepth*maxRake,(last-frontHeight)/(depthRows-1)));
+    // Full-length adjacent blocks share the exact elevation of every row.
+    // The shorter blocks near the press box end below the common outer rim
+    // where their traced seating footprints stop.
+    const fullDeck=depthRows===deck.fullRows;
+    const frontHeight=fullDeck?deck.front:Math.min(deck.front+.50,first);
+    const rise=fullDeck?deck.rise:Math.max(treadDepth*.24,
+      Math.min(treadDepth*(tier===2?.72:.54),(last-frontHeight)/(depthRows-1)));
     const publishedRowCounts=clubWithPublishedCounts.has(sectionId);
     const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
     return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,

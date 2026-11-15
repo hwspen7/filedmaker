@@ -103,10 +103,12 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   }
   const terrace=model.sectionFootprints.filter(section=>section.tier===2);
   assert.ok(terrace.every(section=>section.rimHeight===terrace[0].rimHeight));
-  assert.ok(terrace.every(section=>section.rise/section.treadDepth<=.59000001));
+  assert.ok(terrace.filter(section=>section.depthRows===21).every(section=>section.rise===.47));
+  assert.ok(terrace.filter(section=>section.depthRows<21).every(section=>
+    section.frontHeight<=section.rimHeight+.50&&section.rise/section.treadDepth<=.72000001));
   const rear=model.seats.filter(seat=>['301','302','303','305','306','308'].includes(seat.sectionId)&&seat.row==='U');
   assert.ok(rear.length>0);
-  assert.ok(rear.every(seat=>Math.abs(seat.y-rear[0].y)<.20));
+  assert.ok(rear.every(seat=>Math.abs(seat.y-24.05)<1e-8));
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);
@@ -209,6 +211,8 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
    ||Math.abs(box.pos[2])>model.surface.length/2));
  assert.ok(!boxes.some(box=>box.id===-1&&Math.abs(box.size[0]-.038)<1e-5
    &&Math.abs(box.size[1]-.72)<1e-5));
+ assert.ok(!boxes.some(box=>box.id===-1&&box.pos[1]<.6&&box.size[0]>.8
+   &&Math.abs(box.size[2]-.23)<1e-5));
  const ceiling=boxes.filter(box=>box.id===-2);
  assert.ok(ceiling.some(box=>box.pos[1]>29));
  assert.ok(boxes.some(box=>box.id===-3&&Math.abs(box.size[1]-.9144)<.0001));
