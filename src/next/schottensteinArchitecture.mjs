@@ -58,9 +58,10 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
   const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[];
-  // Three tier surfaces share the same analytic rake as the 19,049
-  // estimated selectable positions. Local longitudinal grade is continuous.
-  for(const tier of [0,1,2]){
+  // Upper and club tier surfaces share the analytic rake of the selectable
+  // seats. The lower bowl uses the existing individual row treads because
+  // its chart-derived per-section elevations are not one global surface.
+  for(const tier of [1,2]){
     for(let i=0;i<SEGMENTS;i++){
       const a=i*TAU/SEGMENTS,b=(i+1)*TAU/SEGMENTS;
       for(let j=0;j<BANDS;j++){
@@ -142,7 +143,7 @@ export function buildSchottensteinArchitecture(model){
     const z=points.reduce((sum,p)=>sum+p.z,0)/points.length;
     return (Math.atan2(z,x)+TAU)%TAU;
   };
-  for(const tier of [0,1,2]){
+  for(const tier of [1,2]){
     const centers=model.sectionFootprints.filter(s=>s.tier===tier)
       .map(angleOf).sort((a,b)=>a-b);
     const tierSeats=seatsByTier[tier];
