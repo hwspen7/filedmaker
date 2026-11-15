@@ -225,7 +225,7 @@ const structureLayers=[
 ];
 const interiorLayers=new Set(['decks','fascias','upperBowl','concourse','aisles','stepEdges',
   'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
-  'downlights','roofDeck','radialBeams','pressWalls','pressGlass','buildingRoof','galleryFloorMesh']);
+  'downlights','roofDeck','radialBeams','pressWalls','pressGlass','galleryFloorMesh']);
 const schottensteinCutaway=new Set(['decks','fascias','upperBowl','concourse','trim','pressWalls','pressGlass','cutawayFacade']);
 
 export class NativeVenueRenderer {
@@ -239,6 +239,16 @@ export class NativeVenueRenderer {
   }
   static architectureVisibleInMode(plan,mode){
     return mode !== 'human' && Boolean(plan?.arenaInterior && plan?.architectureGeometry);
+  }
+  // Shared visual policy for every venue: the overview keeps the complete
+  // exterior and seat bowl, but never puts an opaque lid over the arena.
+  static architectureLayerVisibleInMode(plan,mode,name){
+    if(!plan?.arenaInterior||!plan?.architectureGeometry)return false;
+    if(name==='buildingRoof'||name==='cutawayFacade')return false;
+    if(mode==='human')return interiorLayers.has(name);
+    if(mode==='section'&&plan.architectureGeometry.cutawayFacade?.length)
+      return schottensteinCutaway.has(name);
+    return true;
   }
   constructor(canvas,onPick=()=>{}){
     this.canvas=canvas;this.onPick=onPick;
@@ -356,6 +366,7 @@ export class NativeVenueRenderer {
   }
   resize(){const dpr=Math.min(devicePixelRatio||1,1.5),rect=this.canvas.getBoundingClientRect(),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;this.render();}}
   view(mode,seat=null){
+    if(mode==='building')mode='overview'; // Legacy route, now unified.
     this.mode=mode;
     if(seat)this.selectedIndex=this.seatIndices?.get(seat.uid)??-1;
     if(mode==='human'&&seat){
@@ -371,14 +382,13 @@ export class NativeVenueRenderer {
       this.seat=seat;this.pan=[seat.x,seat.y,seat.z];
       this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
     }
-    if(mode==='overview'||mode==='building'){
-      const entrances=this.plan?.project?.proceduralVenue?.exterior?.entrances;
-      const main=entrances?.find(item=>item.role==='primary');
-      this.theta=mode==='building'?(main?.angle??(this.plan.sectionFootprints?Math.PI/4:1.12)):1.12;
-      this.phi=mode==='building' ? .47 : this.plan.arenaInterior ? .76 : .79;
+    if(mode==='overview'){
+      this.theta=1.12;
+      // High enough to see every seating bank above the retained outer facade.
+      this.phi=this.plan.arenaInterior?1.04:.79;
     }
-    if(mode==='overview'||mode==='top'||mode==='building')
-      this.zoomFactor=mode==='building'?1.05:mode==='overview'&&this.plan.arenaInterior?.93:1;
+    if(mode==='overview'||mode==='top')
+      this.zoomFactor=mode==='overview'&&this.plan.arenaInterior?1.0:1;
     this.render();
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
@@ -414,12 +424,8 @@ export class NativeVenueRenderer {
       }
     }
     if(this.plan.arenaInterior && this.architecture){
-      const cutaway=this.mode!=='building'&&this.mode!=='human'&&this.architecture.cutawayFacade;
       for(const [name,index] of structureLayers){
-        if(cutaway&&!schottensteinCutaway.has(name))continue;
-        if(name==='cutawayFacade'&&!cutaway)continue;
-        if(name==='buildingRoof'&&this.mode!=='building'&&this.mode!=='human')continue;
-        if(this.mode==='human'&&!interiorLayers.has(name))continue;
+        if(!NativeVenueRenderer.architectureLayerVisibleInMode(this.plan,this.mode,name))continue;
         const mesh=this.architecture[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
@@ -452,7 +458,7 @@ export class NativeVenueRenderer {
     this.canvas.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY,theta:this.theta,phi:this.phi,yaw:this.humanYaw,pitch:this.humanPitch};changed=false;this.canvas.setPointerCapture(e.pointerId);});
     this.canvas.addEventListener('pointermove',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.hypot(dx,dy)>4)changed=true;
       if(this.mode==='human'){this.humanYaw=start.yaw-dx*.004;this.humanPitch=clamp(start.pitch+dy*.004,-1.3,1.3);}else{this.theta=start.theta-dx*.006;this.phi=clamp(start.phi-dy*.005,.10,1.49);}this.render();});
-    this.canvas.addEventListener('pointerup',e=>{if(start&&!changed&&this.mode!=='human'&&this.mode!=='building')this.pick(e);start=null;});
+    this.canvas.addEventListener('pointerup',e=>{if(start&&!changed&&this.mode!=='human')this.pick(e);start=null;});
     this.canvas.addEventListener('pointercancel',()=>{start=null;});
     this.canvas.addEventListener('wheel',e=>{
       e.preventDefault();
