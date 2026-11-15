@@ -352,8 +352,8 @@ export class NativeVenueRenderer {
       }
     }
     if(this.mode==='human' && this.plan.arenaInterior && this.architecture){
-      // The inner enclosing wall and attached exit signs remain part of
-      // first-person architecture. External cladding and the base stay hidden.
+      // Keep the real inner gallery, framing and ceiling in first-person views;
+      // external façade and the foundation remain cut away.
       for(const [name,index] of [['backWall',13],['galleryGlass',15],['galleryGlow',16],
         ['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21]]){
         const mesh=this.architecture[name];
