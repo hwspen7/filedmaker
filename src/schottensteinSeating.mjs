@@ -132,7 +132,13 @@ const lowerCornerAisles={
   134:[[319,349,408,349],[342,263,398,310]],
 };
 const minimumPitch=.48;
-const tierElevations = [[.56, 6.34], [8.05, 11.56], [14.65, 24.05]];
+const tierElevations = [[.56, 6.34], [8.05, 11.56]];
+export const SCHOTTENSTEIN_TERRACE_RIM = { front: 15.45, rear: 26.5 };
+// Metres fitted from corresponding row-area landmarks in the public Virtual
+// Venue aerial views, with the regulation court as scale. These are estimates.
+const terraceProfile = [[0, SCHOTTENSTEIN_TERRACE_RIM.front], [1, 16.1], [6, 19.45],
+  [11, 22.65], [17, 25.2], [20, SCHOTTENSTEIN_TERRACE_RIM.rear]];
+const pressSideProfile = [[0, 15.65], [1, 16.15], [7, 19.4], [12, 21.9], [16, 23.95], [20, 25.95]];
 const turn = 2 * Math.PI;
 const azimuth = ({x,z}) => (Math.atan2(z,x) + turn) % turn;
 const chartRegions=[
@@ -232,17 +238,10 @@ function rowPlane(block, slot) {
   return {point, depth};
 }
 
-// Sample the traced tread edges and interpolate across the aisles. Omit the
-// accessible setbacks and the short press-side sections from the regular rim.
+// Sample the lower and club tread edges and interpolate across aisles.
 const deckEdges = tierElevations.map((_, tier) => [false, true].map(rear => blocks
-  .filter(block => {
-    if (block.tier !== tier) return false;
-    if (tier === 0) return rear || !['101', '110', '118', '127'].includes(block.id);
-    if (tier === 1) return true;
-    const id = Number(block.id);
-    return rear ? block.depthRows === rowsAtoU.length
-      : !accessibleTerrace.has(id) && id !== 321 && id !== 324;
-  })
+  .filter(block => block.tier === tier &&
+    (tier !== 0 || rear || !['101', '110', '118', '127'].includes(block.id)))
   .flatMap(block => {
     const {point, depth} = rowPlane(block, rear ? block.depthRows - 1 : 0);
     const ranges = polygonSpans(block.projected, depth);
@@ -273,11 +272,25 @@ function schottensteinDeckHeight(tier, point) {
 }
 
 // Project the common profile onto each block's straight seat-row axis.
-const elevationBySection = new Map(blocks.map(block => {
+const elevationBySection = new Map(blocks.filter(block => block.tier < 2).map(block => {
   const heightAt = slot => schottensteinDeckHeight(block.tier, rowPlane(block, slot).point(block.profileAxis));
   const first = heightAt(0), last = heightAt(block.depthRows - 1);
   return [block.id, {first, rise: (last - first) / (block.depthRows - 1)}];
 }));
+
+function terraceElevation(sectionId, slot) {
+  const id = Number(sectionId);
+  const profile = id >= 321 && id <= 326 ? pressSideProfile : terraceProfile;
+  const upper = profile.findIndex(([row]) => row > slot);
+  const next = upper < 0 ? profile.length - 1 : upper;
+  const [firstRow, firstHeight] = profile[next - 1];
+  const [lastRow, lastHeight] = profile[next];
+  const height = firstHeight + (lastHeight - firstHeight) * (slot - firstRow) / (lastRow - firstRow);
+  if (id === 321) return height - .85;
+  if (id === 324) return height - .85 * Math.max(0, Math.min(1, (12 - slot) / 5));
+  if (slot === 0 && accessibleTerrace.has(id)) return height - .25;
+  return height;
+}
 
 function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
@@ -285,8 +298,8 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const {nx,nz} = block;
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
   let ranges=polygonSpans(block.projected,depth);
-  const {first, rise} = elevationBySection.get(block.id);
-  const y = first + slot * rise;
+  const lowerProfile = elevationBySection.get(block.id);
+  const y = lowerProfile ? lowerProfile.first + slot * lowerProfile.rise : terraceElevation(block.id, slot);
   if(reserve){
     for(const [start,end] of polygonSpans(block.reserved,depth)){
       ranges=ranges.flatMap(([low,high])=>end<=low||start>=high?[[low,high]]:

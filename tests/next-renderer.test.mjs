@@ -112,12 +112,20 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
     const heights = [...bySlot.values()];
     assert.ok(heights.every((height, i) => i === 0 || height > heights[i - 1]), `Section ${section.id}`);
   }
-  const regular = ['301','302','303','305','306','308'].map(sectionRows);
-  assert.ok(regular.every(rows => Math.abs(rows[0].y - 14.65) < .0001
-    && Math.abs(rows.at(-1).y - 24.05) < .0001));
+  const regular = ['301','302','303','305','306','308','319','320'].map(sectionRows);
+  assert.ok(regular.every(rows => Math.abs(rows[0].y - 15.45) < .0001
+    && Math.abs(rows.at(-1).y - 26.5) < .0001));
+  for (const rows of regular) {
+    for (const [label, height] of [['B',16.1],['G',19.45],['L',22.65],['R',25.2]]) {
+      assert.ok(rows.some(row => row.row === label && Math.abs(row.y - height) < .0001));
+    }
+    assert.ok(rows.find(row => row.row === 'H').y > 19.8);
+  }
   const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
-  assert.ok(pressSide.every(rows => rows.at(-1).y < 21));
-  assert.ok(sectionRows('304')[0].y > regular[3][0].y);
+  assert.ok(pressSide.every(rows => rows.at(-1).y > 21 && rows.at(-1).y < 26));
+  assert.ok(sectionRows('304')[0].y < regular[3][0].y);
+  assert.equal(sectionRows('304').find(row => row.row === 'H').y,
+    sectionRows('305').find(row => row.row === 'H').y);
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);

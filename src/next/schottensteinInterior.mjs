@@ -1,5 +1,6 @@
 // Native visual geometry for the Schottenstein Center basketball configuration.
 // Metres are modeled estimates except for regulation court and published ribbon height.
+import { SCHOTTENSTEIN_TERRACE_RIM } from '../schottensteinSeating.mjs';
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 const deckBottom=[-.28,6.75,12.99];
@@ -46,21 +47,25 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   const terracePoints=footprints.filter(section=>section.tier===2).flatMap(section=>section.outlines.flat());
   const outerX=Math.max(...terracePoints.map(p=>Math.abs(p.x)))+1.5;
   const outerZ=Math.max(...terracePoints.map(p=>Math.abs(p.z)))+2.5;
+  // Keep the ribbon below the forward edge of the reconstructed terrace.
+  const ribbonTop = SCHOTTENSTEIN_TERRACE_RIM.front - .67;
+  const outerTrim = SCHOTTENSTEIN_TERRACE_RIM.rear + 1.35;
+  const outerWallBottom = 19.25;
   // Recessed suite band, ribbon and upper fascia observed in the arena photos.
   for(let i=0;i<64;i++){
     const a=i*2*Math.PI/64,b=(i+1)*2*Math.PI/64;
     const p=point(a,outerX*.67,outerZ*.72),q=point(b,outerX*.67,outerZ*.72);
-    spanBox(add,p,q,12.46,1.9,.48,suite,INWARD_FACING);
+    spanBox(add,p,q,ribbonTop-1.59,1.9,.48,suite,INWARD_FACING);
     const face=pos=>{
       const radius=Math.hypot(pos.x,pos.z);
       return {x:pos.x-.27*pos.x/radius,z:pos.z-.27*pos.z/radius};
     };
-    spanBox(add,face(mix(p,q,.10)),face(mix(p,q,.88)),12.51,1.03,.045,glass,INWARD_FACING);
-    spanBox(add,p,q,13.47,.9144,.39,led,INWARD_FACING);
-    spanBox(add,p,q,13.98,.14,.43,fascia,INWARD_FACING);
+    spanBox(add,face(mix(p,q,.10)),face(mix(p,q,.88)),ribbonTop-1.54,1.03,.045,glass,INWARD_FACING);
+    spanBox(add,p,q,ribbonTop-.58,.9144,.39,led,INWARD_FACING);
+    spanBox(add,p,q,ribbonTop-.07,.14,.43,fascia,INWARD_FACING);
     const outerA=point(a,outerX,outerZ),outerB=point(b,outerX,outerZ);
-    spanBox(add,outerA,outerB,22.6,6.7,.95,color('#353139'),HIDDEN_IN_CUTAWAY);
-    spanBox(add,outerA,outerB,26.1,.33,.90,red,HIDDEN_IN_CUTAWAY);
+    spanBox(add,outerA,outerB,(outerWallBottom+outerTrim)/2,outerTrim-outerWallBottom,.95,color('#353139'),HIDDEN_IN_CUTAWAY);
+    spanBox(add,outerA,outerB,outerTrim+.16,.33,.90,red,HIDDEN_IN_CUTAWAY);
   }
   // Interior overhead structure is visible from the spectator camera.
   const ceiling=color('#27262b'), truss=color('#535057'), light=color('#ddd8cf');
