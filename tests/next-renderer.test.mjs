@@ -101,14 +101,23 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
     const {yaw}=model.seats.find(s=>s.sectionId===id);
     assert.ok(Math.abs(Math.cos(yaw))>2*Math.abs(Math.sin(yaw)),`Section ${id} faces the near end of the court`);
   }
-  const terrace=model.sectionFootprints.filter(section=>section.tier===2);
-  assert.ok(terrace.every(section=>section.rimHeight===terrace[0].rimHeight));
-  assert.ok(terrace.filter(section=>section.depthRows===21).every(section=>section.rise===.47));
-  assert.ok(terrace.filter(section=>section.depthRows<21).every(section=>
-    section.frontHeight<=section.rimHeight+.50&&section.rise/section.treadDepth<=.72000001));
-  const rear=model.seats.filter(seat=>['301','302','303','305','306','308'].includes(seat.sectionId)&&seat.row==='U');
-  assert.ok(rear.length>0);
-  assert.ok(rear.every(seat=>Math.abs(seat.y-24.05)<1e-8));
+  const sectionRows = id => model.seatingRows.filter(row => row.sectionId === id);
+  for (const section of model.sectionFootprints) {
+    const rows = sectionRows(section.id);
+    const bySlot = new Map();
+    for (const row of rows) {
+      if (bySlot.has(row.slot)) assert.equal(row.y, bySlot.get(row.slot));
+      bySlot.set(row.slot, row.y);
+    }
+    const heights = [...bySlot.values()];
+    assert.ok(heights.every((height, i) => i === 0 || height > heights[i - 1]), `Section ${section.id}`);
+  }
+  const regular = ['301','302','303','305','306','308'].map(sectionRows);
+  assert.ok(regular.every(rows => Math.abs(rows[0].y - 14.65) < .0001
+    && Math.abs(rows.at(-1).y - 24.05) < .0001));
+  const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
+  assert.ok(pressSide.every(rows => rows.at(-1).y < 21));
+  assert.ok(sectionRows('304')[0].y > regular[3][0].y);
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);
@@ -213,6 +222,20 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
    &&Math.abs(box.size[1]-.72)<1e-5));
  assert.ok(!boxes.some(box=>box.id===-1&&box.pos[1]<.6&&box.size[0]>.8
    &&Math.abs(box.size[2]-.23)<1e-5));
+ assert.ok(!boxes.some(box=>box.id===-1&&box.pos[1]>.3&&box.size[0]>.4
+   &&Math.abs(box.size[1]-.19)<1e-5), 'No synthetic stair treads in the bowl');
+ const widthByRow = new Map();
+ const rowKey = ({sectionId, row}) => sectionId + '/' + row;
+ for (const seat of model.seats) {
+   const key = rowKey(seat);
+   widthByRow.set(key, (widthByRow.get(key) ?? 0) + seat.seatWidth);
+ }
+ for (const row of model.seatingRows) {
+   const key = rowKey(row);
+   widthByRow.set(key, widthByRow.get(key) - row.width);
+ }
+ assert.ok([...widthByRow.values()].every(width => Math.abs(width) < 1e-8),
+   'Row supports end at the occupied seat span');
  const ceiling=boxes.filter(box=>box.id===-2);
  assert.ok(ceiling.some(box=>box.pos[1]>29));
  assert.ok(boxes.some(box=>box.id===-3&&Math.abs(box.size[1]-.9144)<.0001));

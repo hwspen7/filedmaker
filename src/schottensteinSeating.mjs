@@ -132,39 +132,9 @@ const lowerCornerAisles={
   134:[[319,349,408,349],[342,263,398,310]],
 };
 const minimumPitch=.48;
-// Shared modeled row levels. These are reconstruction dimensions.
-const tierDecks=[
-  {front:.56,rear:6.34,rise:null,fullRows:null},
-  {front:8.05,rear:11.56,rise:.39,fullRows:10},
-  {front:14.65,rear:24.05,rise:.47,fullRows:21},
-];
-const fullTurn=Math.PI*2;
-const azimuth=({x,z})=>(Math.atan2(z,x)+fullTurn)%fullTurn;
-const deckLines=[lower,club,upper].map(level=>[0,2].map(edge=>
-  level.flatMap(([, ...pixels])=>{
-    const corners=unpack(pixels);
-    return Array.from({length:5},(_,i)=>{
-      const p=lerp(corners[edge],corners[edge+1],i/4);
-      return {angle:azimuth(p),radius:Math.hypot(p.x,p.z)};
-    });
-  }).sort((a,b)=>a.angle-b.angle)
-));
-function rimRadius(line,angle){
-  const index=line.findIndex(point=>point.angle>=angle);
-  const next=index<0?0:index;
-  const a=line[(next+line.length-1)%line.length],b=line[next];
-  const span=(b.angle-a.angle+fullTurn)%fullTurn;
-  const offset=(angle-a.angle+fullTurn)%fullTurn;
-  return span>1e-9?a.radius+(b.radius-a.radius)*offset/span:b.radius;
-}
-export function schottensteinDeckHeight(tier,point){
-  const angle=azimuth(point);
-  const [front,rear]=deckLines[tier].map(line=>rimRadius(line,angle));
-  const depth=Math.hypot(point.x,point.z)-front;
-  const progress=Math.max(0,Math.min(1,depth/Math.max(3,rear-front)));
-  const deck=tierDecks[tier];
-  return deck.front+(deck.rear-deck.front)*progress;
-}
+const tierElevations = [[.56, 6.34], [8.05, 11.56], [14.65, 24.05]];
+const turn = 2 * Math.PI;
+const azimuth = ({x,z}) => (Math.atan2(z,x) + turn) % turn;
 const chartRegions=[
   {kind:'band',label:'Band Area',sectionId:'114',outline:unpack([764,401,808,401,808,432,764,432])},
   {kind:'press',label:'Press Box',sectionId:'323',outline:unpack([439,697,706,695,733,727,439,727])},
@@ -227,28 +197,15 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
       treadDepth=(far-firstCenter)/(depthRows-.5);
       near=firstCenter-treadDepth*.5;
     }
-    const rowCenter=slot=>{
-      const depth=near+(slot+.5)*treadDepth;
-      const widest=polygonSpans(projected,depth).reduce((best,range)=>
-        !best||range[1]-range[0]>best[1]-best[0]?range:best,null);
-      const lateral=widest?(widest[0]+widest[1])*.5:0;
-      return {x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral};
-    };
-    const deck=tierDecks[tier];
-    const rimHeight=deck.front;
-    const first=schottensteinDeckHeight(tier,rowCenter(0));
-    const last=schottensteinDeckHeight(tier,rowCenter(depthRows-1));
-    // Full-length adjacent blocks share the exact elevation of every row.
-    // The shorter blocks near the press box end below the common outer rim
-    // where their traced seating footprints stop.
-    const fullDeck=depthRows===deck.fullRows;
-    const frontHeight=fullDeck?deck.front:Math.min(deck.front+.50,first);
-    const rise=fullDeck?deck.rise:Math.max(treadDepth*.24,
-      Math.min(treadDepth*(tier===2?.72:.54),(last-frontHeight)/(depthRows-1)));
+    // Keep the elevation sample on a fixed axis when an aisle interrupts
+    // a row. Sampling the center of the remaining seats skews the rake.
+    const centerSpans = polygonSpans(projected, (near + far) * .5);
+    const profileAxis = centerSpans.length
+      ? (centerSpans[0][1] + centerSpans.at(-1)[0]) * .5 : project(center).z;
     const publishedRowCounts=clubWithPublishedCounts.has(sectionId);
     const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
     return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,
-      treadDepth,rise,frontHeight,rimHeight,details,publishedRowCounts,labelPoint:labels.get(id)};
+      treadDepth,profileAxis,details,publishedRowCounts,labelPoint:labels.get(id)};
   })
 );
 const byId=new Map(blocks.map(block=>[block.id,block]));
@@ -259,8 +216,8 @@ export function schottensteinSeatTier(section) {
 }
 
 export function schottensteinFootprints() {
-  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,rimHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts})=>
-    ({id,tier,rows,depthRows,rise,frontHeight,rimHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts}));
+  return blocks.map(({id,tier,rows,depthRows,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts})=>
+    ({id,tier,rows,depthRows,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts}));
 }
 
 export function usesSchottensteinChart(project) {
@@ -268,13 +225,68 @@ export function usesSchottensteinChart(project) {
     project.venueReference?.id === 'schottenstein-center' && project.surface === 'ncaa';
 }
 
+function rowPlane(block, slot) {
+  const depth = block.near + (slot + .5) * block.treadDepth;
+  const {nx,nz} = block;
+  const point = lateral => ({x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral});
+  return {point, depth};
+}
+
+// Sample the traced tread edges and interpolate across the aisles. Omit the
+// accessible setbacks and the short press-side sections from the regular rim.
+const deckEdges = tierElevations.map((_, tier) => [false, true].map(rear => blocks
+  .filter(block => {
+    if (block.tier !== tier) return false;
+    if (tier === 0) return rear || !['101', '110', '118', '127'].includes(block.id);
+    if (tier === 1) return true;
+    const id = Number(block.id);
+    return rear ? block.depthRows === rowsAtoU.length
+      : !accessibleTerrace.has(id) && id !== 321 && id !== 324;
+  })
+  .flatMap(block => {
+    const {point, depth} = rowPlane(block, rear ? block.depthRows - 1 : 0);
+    const ranges = polygonSpans(block.projected, depth);
+    const lateralPoints = tier === 0 || !ranges.length ? [block.profileAxis]
+      : [ranges.at(-1)[0], block.profileAxis, ranges[0][1]];
+    return lateralPoints.map(lateral => {
+      const p = point(lateral);
+      return {angle: azimuth(p), radius: Math.hypot(p.x, p.z)};
+    });
+  }).sort((a, b) => a.angle - b.angle)));
+
+function rimRadius(edge, angle) {
+  const index = edge.findIndex(p => p.angle >= angle);
+  const next = index < 0 ? 0 : index;
+  const a = edge[(next + edge.length - 1) % edge.length], b = edge[next];
+  const span = (b.angle - a.angle + turn) % turn;
+  const offset = (angle - a.angle + turn) % turn;
+  return span > 1e-9 ? a.radius + offset / span * (b.radius - a.radius) : b.radius;
+}
+
+function schottensteinDeckHeight(tier, point) {
+  const angle = azimuth(point);
+  const [front, rear] = deckEdges[tier].map(edge => rimRadius(edge, angle));
+  const [base, top] = tierElevations[tier];
+  const depth = Math.hypot(point.x, point.z) - front;
+  const fraction = Math.max(0, Math.min(1, depth / (rear - front)));
+  return base + (top - base) * fraction;
+}
+
+// Project the common profile onto each block's straight seat-row axis.
+const elevationBySection = new Map(blocks.map(block => {
+  const heightAt = slot => schottensteinDeckHeight(block.tier, rowPlane(block, slot).point(block.profileAxis));
+  const first = heightAt(0), last = heightAt(block.depthRows - 1);
+  return [block.id, {first, rise: (last - first) / (block.depthRows - 1)}];
+}));
+
 function rowGeometry(block,rowIndex,{reserve=false}={}) {
-  const slot=block.details?.slots?.[rowIndex]??rowIndex;
-  const depth=block.near+(slot+.5)*block.treadDepth;
-  const {nx,nz}=block;
-  const point=lateral=>({x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral});
+  const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
+  const {point, depth} = rowPlane(block, slot);
+  const {nx,nz} = block;
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
   let ranges=polygonSpans(block.projected,depth);
+  const {first, rise} = elevationBySection.get(block.id);
+  const y = first + slot * rise;
   if(reserve){
     for(const [start,end] of polygonSpans(block.reserved,depth)){
       ranges=ranges.flatMap(([low,high])=>end<=low||start>=high?[[low,high]]:
@@ -284,7 +296,7 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const spans=ranges.map(([low,high])=>
     ({left:point(high),right:point(low),width:high-low}));
   return {spans,width:spans.reduce((sum,span)=>sum+span.width,0),yaw:Math.atan2(nx,nz),
-    y:block.frontHeight+slot*block.rise,slot};
+    y,slot};
 }
 
 function pointAlongSpans(spans,distance) {
@@ -337,8 +349,6 @@ export function buildSchottensteinSeating(pitch) {
         unallocated.push(...seatSpans);
       }
       rows.push({block,sectionIndex,rowLabel,g,seatSpans});
-      for(const span of g.spans)seatingRows.push({...span,y:g.y,yaw:g.yaw,slot:g.slot,
-        tier:block.tier,sectionId:block.id,row:rowLabel,depth:block.treadDepth,rise:block.rise});
     }
   });
   allocateSeats(unallocated,publishedSeatTotal-assignedSeats);
@@ -348,6 +358,11 @@ export function buildSchottensteinSeating(pitch) {
       if(!count)continue;
       const spacing=Math.min(width/count,Math.max(minimumPitch,pitch));
       const inset=(width-count*spacing)/2;
+      // Keep the blank ends of the chart scan out of the circulation gaps.
+      seatingRows.push({
+        left:lerp(left,right,inset/width),right:lerp(left,right,1-inset/width),width:count*spacing,
+        y:g.y,yaw:g.yaw,slot:g.slot,tier:block.tier,sectionId:block.id,row:rowLabel,depth:block.treadDepth,
+      });
       for(let i=0;i<count;i++){
         const position=lerp(left,right,(inset+(i+.5)*spacing)/width);
         const number=seats.length-from+1;

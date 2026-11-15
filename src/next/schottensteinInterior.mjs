@@ -1,15 +1,8 @@
 // Native visual geometry for the Schottenstein Center basketball configuration.
 // Metres are modeled estimates except for regulation court and published ribbon height.
-import { schottensteinDeckHeight } from '../schottensteinSeating.mjs';
-
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 const deckBottom=[-.28,6.75,12.99];
-const rowHeightAt=(profile,point)=>{
-  const depth=-profile.nx*point.x-profile.nz*point.z;
-  const row=Math.max(0,Math.min(profile.depthRows-1,(depth-profile.near)/profile.treadDepth-.5));
-  return profile.frontHeight+row*profile.rise;
-};
 const HIDDEN_IN_CUTAWAY = -2;
 const INWARD_FACING = -3;
 
@@ -34,72 +27,14 @@ function addChartRegions(add,color,features,spanAt) {
 }
 
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
-  const tread=color('#a0a0a4'), fascia=color('#393237'), edge=color('#bcb9b8');
+  const tread=color('#79767d'), fascia=color('#393237');
   const suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
-  for(const row of rows){
-    const {left,right,y,depth,rise}=row;
-    const forward={x:Math.sin(row.yaw),z:Math.cos(row.yaw)};
-    const a={x:left.x+forward.x*.025,z:left.z+forward.z*.025};
-    const b={x:right.x+forward.x*.025,z:right.z+forward.z*.025};
-    const slab=Math.min(y-deckBottom[row.tier],Math.max(.52,rise*1.8));
-    spanBox(add,a,b,y-slab*.5,slab,depth*1.025,tread);
-    const noseA={x:a.x+forward.x*depth/2,z:a.z+forward.z*depth/2};
-    const noseB={x:b.x+forward.x*depth/2,z:b.z+forward.z*depth/2};
-    spanBox(add,noseA,noseB,y-.028,.052,.048,edge);
-  }
-  const profileBySection=new Map(footprints.map(profile=>[profile.id,profile]));
-  for(const row of rows){
-    const profile=profileBySection.get(row.sectionId);
-    if(row.tier>0&&row.slot===profile.depthRows-1)spanBox(add,row.left,row.right,row.y-.36,.5,.27,fascia);
-  }
-  const pressSide=profileBySection.get('323');
-  if(pressSide){
-    const {corners:[a,b,c,d],frontHeight,depthRows,rise}=pressSide;
-    // Section 323's published gap behind row B remains a circulation break.
-    for(let depth=2;depth<5;depth++){
-      const t=(depth+.5)/depthRows, x=mix(a,c,t), z=mix(b,d,t);
-      const panelDepth=(distance(a,c)+distance(b,d))/2/depthRows;
-      spanBox(add,x,z,frontHeight+rise*.95,.27,panelDepth*1.03,tread);
-    }
-  }
-
-  const aisleEdges=footprints.flatMap(profile=>{
-    const [a,b,c,d]=profile.corners;
-    return [{front:a,back:c,profile},{front:b,back:d,profile}];
-  });
-  const matched=new Set();
-  for(let i=0;i<aisleEdges.length;i++){
-    const a=aisleEdges[i];
-    if(matched.has(i)) continue;
-    let best=-1,bestCost=Infinity;
-    for(let j=i+1;j<aisleEdges.length;j++){
-      const b=aisleEdges[j];
-      if(matched.has(j)||a.profile.tier!==b.profile.tier)continue;
-      const front=distance(a.front,b.front),back=distance(a.back,b.back);
-      if(front<.45||front>2.95||back<.45||back>3.25)continue;
-      if(front+back<bestCost){best=j;bestCost=front+back;}
-    }
-    if(best<0)continue;
-    const b=aisleEdges[best];
-    matched.add(i);matched.add(best);
-    const steps=Math.min(a.profile.depthRows,b.profile.depthRows);
-    const stepDepth=(distance(a.front,a.back)+distance(b.front,b.back))/(2*steps);
-    const matchedLevels=a.profile.depthRows===b.profile.depthRows
-      &&Math.abs(a.profile.frontHeight-b.profile.frontHeight)<1e-6&&Math.abs(a.profile.rise-b.profile.rise)<1e-6;
-    for(let j=0;j<steps;j++){
-      const t=(j+.5)/steps;
-      const p=mix(a.front,a.back,t),q=mix(b.front,b.back,t);
-      const width=distance(p,q);
-      if(width<.42||width>3.15)continue;
-      let height=a.profile.frontHeight+j*a.profile.rise;
-      if(!matchedLevels){
-        const left=rowHeightAt(a.profile,p),right=rowHeightAt(b.profile,q);
-        const guide=schottensteinDeckHeight(a.profile.tier,mix(p,q,.5));
-        height=Math.max(Math.min(left,right),Math.min(Math.max(left,right),guide));
-      }
-      spanBox(add,mix(p,q,.08),mix(p,q,.92),height-.095,.19,stepDepth*.97,tread);
-    }
+  // The bowl renders only the slabs under the seat-bearing row runs.
+  // Leave circulation gaps open where the chart shows a break.
+  for(const {left,right,y,depth,tier} of rows){
+    const slab=Math.min(y-deckBottom[tier],.82);
+    spanBox(add,left,right,y-slab*.5,slab,depth,tread);
   }
 
   addChartRegions(add,color,features,spanAt);
