@@ -46,7 +46,9 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>9.5)vColor=vec3(.78,.76,.72); // Architectural rim and slender piers
+    if(uDeck>11.5)vColor=vec3(.54,.55,.57); // Individual stair nosings
+    else if(uDeck>10.5)vColor=vec3(.88,.87,.85); // Section walkway surface
+    else if(uDeck>9.5)vColor=vec3(.78,.76,.72); // Architectural rim and slender piers
     else if(uDeck>8.5)vColor=vec3(.22,.26,.29); // Recessed glazing
     else if(uDeck>7.5)vColor=vec3(.49,.50,.51); // Exterior cladding
     else if(uDeck>6.5)vColor=vec3(.70,.69,.67); // Circulation decks
@@ -315,7 +317,7 @@ export class NativeVenueRenderer {
       }
     }
     if(NativeVenueRenderer.architectureVisibleInMode(this.plan,this.mode)){
-      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10]]){
+      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12]]){
         const mesh=this.architecture?.[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
