@@ -351,7 +351,12 @@ test('Schottenstein overview hides the gray backing while preserving seat-view g
  assert.ok(plan.pedestalTrimGeometry.length > 5000);
  assert.ok(plan.pedestalGeometry.every(Number.isFinite));
  assert.ok(plan.pedestalTrimGeometry.every(Number.isFinite));
- for(let i=1;i<plan.pedestalGeometry.length;i+=6) assert.ok(plan.pedestalGeometry[i]<-.30,'Base stays below the court');
+ const pedestalYs=[];
+ for(let i=1;i<plan.pedestalGeometry.length;i+=6){
+   const y=plan.pedestalGeometry[i];pedestalYs.push(y);
+   assert.ok(y<=-.20,'Pedestal cannot rise above the basketball court');
+ }
+ assert.ok(Math.min(...pedestalYs)<-2.2,'Architectural foundation must be a substantial modeled plinth');
  for(const mode of ['overview','top','section']) {
    assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,mode),false,mode);
    assert.equal(NativeVenueRenderer.pedestalVisibleInMode(plan,mode),true,mode);
@@ -377,6 +382,8 @@ test('Schottenstein native viewport has no near-white backdrop or beige deck sha
  assert.doesNotMatch(shader,/vec3\(\.55,\.60,\.62\)/);
  assert.match(shader,/uDeck>12\.5/);
  assert.match(shader,/\['crown',13\]/);
+ assert.match(shader,/\['signs',14\]/);
+ assert.match(shader,/\['exitLights',15\]/);
  assert.match(shader,/uDeck>2\.5/);
  assert.match(shader,/uDeck>1\.5/);
 });
