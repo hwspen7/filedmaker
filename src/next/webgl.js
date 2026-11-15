@@ -378,7 +378,7 @@ export class NativeVenueRenderer {
       this.phi=mode==='building' ? .47 : this.plan.arenaInterior ? .76 : .79;
     }
     if(mode==='overview'||mode==='top'||mode==='building')
-      this.zoomFactor=mode==='building'?.87:mode==='overview'&&this.plan.arenaInterior?.93:1;
+      this.zoomFactor=mode==='building'?1.05:mode==='overview'&&this.plan.arenaInterior?.93:1;
     this.render();
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
