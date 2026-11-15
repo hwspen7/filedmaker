@@ -304,7 +304,7 @@ function drawMap(){
   }
   const scale=.47*Math.min(c.width/(horizontal?extentZ:extentX),c.height/(horizontal?extentX:extentZ));
   const pos=s=>horizontal?[cx+(chart?-s.z:s.z)*scale,cy+s.x*scale]:[cx+s.x*scale,cy+s.z*scale];
-  ctx.fillStyle='#dce1de';
+  ctx.fillStyle='#e8e8e5';
   ctx.fillRect(0,0,c.width,c.height);
   const fw=(horizontal?plan.surface.length:plan.surface.width)*scale;
   const fl=(horizontal?plan.surface.width:plan.surface.length)*scale;
@@ -343,14 +343,17 @@ function drawMap(){
         points.slice(1).forEach(p=>path.lineTo(...p));
         path.closePath();
       }
-      ctx.fillStyle=id===selected?.sectionId?'#234869':available?tint(tier,0):'#d5e0eb';
+      const sectionColor=id===selected?.sectionId?'#a9495e':available?tint(tier,0):'#d5e0eb';
+      ctx.fillStyle=sectionColor;
       ctx.fill(path);
-      ctx.strokeStyle='#d5e3ee';
+      ctx.strokeStyle='#f2efec';
       ctx.lineWidth=.8*dpr;
       ctx.stroke(path);
       const center=pos(labelPoint);
-      const lightLabelBackground=tier===2||!ctx.isPointInPath(path,...center);
-      ctx.fillStyle=!available||lightLabelBackground&&id!==selected?.sectionId?'#163853':'#fff';
+      const labelOutside=!ctx.isPointInPath(path,...center);
+      const [r,g,b]=[1,3,5].map(index=>parseInt(sectionColor.slice(index,index+2),16));
+      const lightSection=(.2126*r+.7152*g+.0722*b)/255>.62;
+      ctx.fillStyle=!available||labelOutside||lightSection?'#263844':'#fff';
       const fontSize=Math.max(7,Math.min(12,scale*1.65/dpr));
       ctx.font=`600 ${fontSize*dpr}px system-ui`;
       ctx.textAlign='center';
