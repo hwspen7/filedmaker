@@ -162,18 +162,19 @@ export function buildSchottensteinPedestal(seats) {
     const center=vertex({x:0,z:0},topY,up);
     // Counter-clockwise when viewed from above in the X-Z plane.
     body.push(...center,...vertex(b,topY,up),...vertex(a,topY,up));
-    const az=(Math.atan2(a.z,a.x)+Math.atan2(b.z,b.x))/2;
-    // Wrapping angles near 2pi needs a geometric midpoint instead.
     const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2};
     const len=Math.hypot(mid.x,mid.z)||1;
     const outward=[mid.x/len,0,mid.z/len];
-    const side=(buffer,hi,lo)=>{
+    const side=(buffer,hi,lo,offset=0)=>{
+      const shifted=p=>({x:p.x+outward[0]*offset,z:p.z+outward[2]*offset});
+      const aa=shifted(a),bb=shifted(b);
       const v=(p,y)=>vertex(p,y,outward);
-      buffer.push(...v(a,hi),...v(b,hi),...v(b,lo));
-      buffer.push(...v(a,hi),...v(b,lo),...v(a,lo));
+      buffer.push(...v(aa,hi),...v(bb,hi),...v(bb,lo));
+      buffer.push(...v(aa,hi),...v(bb,lo),...v(aa,lo));
     };
     side(body,topY,bottomY);
-    side(trim,trimTop,trimBottom);
+    // Slightly proud of the side wall to prevent coplanar trim flickering.
+    side(trim,trimTop,trimBottom,.025);
   }
   return {body:new Float32Array(body),trim:new Float32Array(trim)};
 }
