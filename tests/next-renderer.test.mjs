@@ -364,7 +364,7 @@ test('Schottenstein native viewport has no near-white backdrop or beige deck sha
 test('Schottenstein elevated deck trims its outside edge to modeled seats',()=>{
  const source=read('../src/next/schottensteinInterior.mjs');
  assert.match(source,/occupiedFar/);
- assert.match(source,/outer\+\.45/);
+ assert.match(source,/outer\+\.22/);
  const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
  const deck=buildVenuePlan(model).deckGeometry;
  assert.ok(deck.length>200000);

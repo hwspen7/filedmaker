@@ -69,7 +69,7 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
       const index = Math.floor((Math.atan2(z,x) / turn + 1) * segments) % segments;
       const r = Math.hypot(x,z);
       // Capture each occupied angular station, retaining space for the seat.
-      for (let delta = -2; delta <= 2; delta++) {
+      for (let delta = -1; delta <= 2; delta++) {
         const station = (index+delta+segments)%segments;
         const edge = rim[station];
         edge.near = Math.min(edge.near,r-.55);
@@ -87,7 +87,7 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
       }
       if(Number.isFinite(outer)){
         const edge=rim[i];
-        edge.far=Math.max(edge.near+.6,Math.min(edge.far,outer+.45));
+        edge.far=Math.max(edge.near+.6,Math.min(edge.far,outer+.22));
       }
     }
     const vertex = (x,z) => {
