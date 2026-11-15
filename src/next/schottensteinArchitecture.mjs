@@ -57,7 +57,7 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[];
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[];
   // Three tier surfaces share the same analytic rake as the 19,049
   // estimated selectable positions. Local longitudinal grade is continuous.
   for(const tier of [0,1,2]){
@@ -133,6 +133,47 @@ export function buildSchottensteinArchitecture(model){
     };
     ringStrip(trim,from,to,'up');
   }
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim})
+  // Regularized stair ribbons follow the actual gaps between sections.
+  // Search nearby rays and reject candidates that cross existing chairs.
+  const seatsByTier=[0,1,2].map(tier=>model.seats.filter(s=>s.tier===tier));
+  const angleOf=s=>{
+    const points=s.outlines.flat();
+    const x=points.reduce((sum,p)=>sum+p.x,0)/points.length;
+    const z=points.reduce((sum,p)=>sum+p.z,0)/points.length;
+    return (Math.atan2(z,x)+TAU)%TAU;
+  };
+  for(const tier of [0,1,2]){
+    const centers=model.sectionFootprints.filter(s=>s.tier===tier)
+      .map(angleOf).sort((a,b)=>a-b);
+    const tierSeats=seatsByTier[tier];
+    for(let i=0;i<centers.length;i++){
+      const next=i+1<centers.length?centers[i+1]:centers[0]+TAU;
+      const target=(centers[i]+next)/2;
+      const score=angle=>tierSeats.reduce((sum,seat)=>{
+        const radial=Math.hypot(seat.x,seat.z);
+        const across=Math.abs(seat.x*Math.sin(angle)-seat.z*Math.cos(angle));
+        return sum+(radial>8&&across<.43?1:0);
+      },0);
+      let selected=target,least=Infinity;
+      for(let j=-7;j<=7;j++){
+        const candidate=target+j*.009;
+        const count=score(candidate);
+        if(count<least){least=count;selected=candidate;}
+      }
+      if(least>3)continue;
+      const at=(depth,offset,above=.01)=>{
+        const p=ringPoint(tier,selected,depth);
+        return [p.x-offset*Math.sin(selected),p.y-.18+above,p.z+offset*Math.cos(selected)];
+      };
+      const steps=tier===1?12:22;
+      for(let j=0;j<steps;j++){
+        const u=j/steps,v=(j+1)/steps;
+        quad(aisles,at(u,-.43),at(u,.43),at(v,.43),at(v,-.43),[0,1,0]);
+        const end=Math.max(u,v-.008);
+        quad(stepEdges,at(end,-.44,.024),at(end,.44,.024),at(v,.44,.024),at(v,-.44,.024),[0,1,0]);
+      }
+    }
+  }
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
