@@ -163,6 +163,28 @@ test('Schottenstein upper stand has a closed, continuously shaded structural bow
  assert.ok(peak>29&&pressPeak<26&&peak-pressPeak>3,'The rear parapet rises behind the last chairs while the press stand stays lower');
 });
 
+test('rear architecture cannot cover upper seats with a continuous gray terrace',()=>{
+  const plan=build(),vertices=plan.architectureGeometry.upperBowl;
+  const edge=fitRearSeatEnvelope(plan.seats,{
+    tier:2,segments:192,clearance:.38,spread:1
+  });
+  let minimum=Infinity,maximum=-Infinity;
+  for(let i=0;i<vertices.length;i+=6){
+    const x=vertices[i],z=vertices[i+2];
+    const radius=Math.hypot(x,z);
+    const delta=radius-edge.radiusAt(Math.atan2(z,x));
+    minimum=Math.min(minimum,delta);
+    maximum=Math.max(maximum,delta);
+    assert.ok(delta>-.16&&delta<.29,
+      'The narrow wall must stay at the last-chair envelope, delta '+delta);
+  }
+  assert.ok(minimum>-.16&&maximum<.29);
+  assert.ok(vertices.length>5000);
+  // The old 20-band analytic mesh extended 10–20 metres in front of the
+  // last chairs and drew the huge gray patches shown in the user screenshot.
+  assert.ok([...plan.seats.filter(s=>s.tier===2)].length>6000);
+});
+
 test('333 and 334 upper seats end close to the fitted rear parapet',()=>{
   const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
   const plan=buildVenuePlan(model);
