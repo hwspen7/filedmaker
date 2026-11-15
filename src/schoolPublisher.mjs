@@ -110,6 +110,7 @@ export function buildOfflineSchoolViewerHTML(input,rendererSource){
     coordinateQuality:project.ticketing?.coordinates||'estimated',
     seats:plan.seats.map(s=>({uid:String(s.uid),x:s.x,y:s.y,z:s.z,yaw:s.yaw,tier:s.tier,sectionId:String(s.sectionId),row:String(s.row),number:String(s.number)})),
     instanceCount:plan.instanceCount,
+    roundedCount:plan.roundedCount,
     packedInstances:base64,
   };
   const safe=JSON.stringify(payload).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
@@ -122,13 +123,13 @@ const data=JSON.parse(document.getElementById('payload').textContent),$=id=>docu
 $('name').textContent=data.name;$('school').textContent=data.school;$('capacity').textContent='Published capacity: '+(data.officialCapacity==null?'not supplied':data.officialCapacity.toLocaleString())+' · '+seats.length.toLocaleString()+' visual positions · '+(data.verifiedTicketIDs?'imported seat IDs':'synthetic seats only');
 $('note').textContent=data.verifiedTicketIDs?'School-supplied seat IDs; XYZ may be estimated':'Illustrative positions only — no official seat inventory';
 const raw=atob(data.packedInstances),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
-const plan={seats,surface:data.surface,instanceCount:data.instanceCount,instanceData:new Float32Array(bytes.buffer)};
+const plan={seats,surface:data.surface,instanceCount:data.instanceCount,roundedCount:data.roundedCount,instanceData:new Float32Array(bytes.buffer)};
 const map=$('map'),ctx=map.getContext('2d');let chosen=null,renderer=null,mode='two';
 let extent=Math.max(data.surface.width/2+5,data.surface.length/2+5);for(const s of seats)extent=Math.max(extent,Math.abs(s.x)+4,Math.abs(s.z)+4);
 function draw(){const r=map.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);map.width=r.width*dpr;map.height=r.height*dpr;const w=map.width,h=map.height,scale=.44*Math.min(w,h)/extent,cx=w/2,cy=h/2;ctx.fillStyle='#eef3f6';ctx.fillRect(0,0,w,h);ctx.fillStyle=data.surface.sport==='basketball'?'#bdb2a2':'#397f55';ctx.fillRect(cx-data.surface.width*scale/2,cy-data.surface.length*scale/2,data.surface.width*scale,data.surface.length*scale);ctx.strokeStyle='white';ctx.lineWidth=1.6*dpr;ctx.strokeRect(cx-data.surface.width*scale/2,cy-data.surface.length*scale/2,data.surface.width*scale,data.surface.length*scale);
  const step=Math.max(1,Math.ceil(seats.length/10000));for(let i=0;i<seats.length;i+=step){const s=seats[i];ctx.fillStyle=['#466b80','#668ca1','#8faaba','#b1c4cf'][s.tier%4];ctx.fillRect(cx+s.x*scale-1.1,cy+s.z*scale-1.1,2.2,2.2);}if(chosen){ctx.fillStyle='#f2ac48';ctx.beginPath();ctx.arc(cx+chosen.x*scale,cy+chosen.z*scale,5*dpr,0,Math.PI*2);ctx.fill();}map._transform={cx,cy,scale,dpr};}
 map.onclick=e=>{const r=map.getBoundingClientRect(),x=(e.clientX-r.left)*map.width/r.width,y=(e.clientY-r.top)*map.height/r.height;const {cx,cy,scale}=map._transform;let best=null,d=14*14*map.width/r.width;for(const s of seats){const dist=(cx+s.x*scale-x)**2+(cy+s.z*scale-y)**2;if(dist<d){d=dist;best=s;}}if(best)select(best);};
-function select(s){chosen=s;$('details').textContent='Section '+s.sectionId+' · Row '+s.row+' · Seat '+s.number+' · '+s.uid+(data.verifiedTicketIDs?' (imported ID)':' (illustrative ID)');if(mode==='two')draw();if(mode==='eye'&&renderer)renderer.view('human',s);}
+function select(s){chosen=s;renderer?.highlight(s);$('details').textContent='Section '+s.sectionId+' · Row '+s.row+' · Seat '+s.number+' · '+s.uid+(data.verifiedTicketIDs?' (imported ID)':' (illustrative ID)');if(mode==='two')draw();if(mode==='eye'&&renderer)renderer.view('human',s);}
 $('find').onclick=()=>{const q=$('search').value.trim().toLowerCase();const s=seats.find(s=>s.uid.toLowerCase()===q)||seats.find(s=>s.uid.toLowerCase().includes(q));if(s)select(s);else $('details').textContent='No match found.';};
 function scene(){if(!renderer){renderer=new NativeVenueRenderer($('stage'),s=>select(s));renderer.load(plan);}renderer.resize();return renderer;}
 function setMode(which){if(which==='eye'&&!chosen){$('details').textContent='Select a seat on the 2D map first.';return;}mode=which;map.hidden=which!=='two';$('stage').hidden=which==='two';for(const id of ['two','three','eye'])$(id).classList.toggle('active',id===which);if(which==='two')draw();else{try{scene().view(which==='three'?'overview':'human',chosen);}catch(e){$('details').textContent='3D unavailable on this device: '+e.message;setMode('two');}}}

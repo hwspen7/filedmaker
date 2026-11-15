@@ -3,7 +3,11 @@
 // Embedded eye/view helpers also permit standalone, zero-dependency school exports.
 const seatViewAnchors=(seat,posture='seated')=>{const yaw=Number.isFinite(seat.yaw)?seat.yaw:Math.atan2(-seat.x,-seat.z);const f=posture==='leaning'?.38:posture==='standing'?.20:.23;return {eye:{x:seat.x+Math.sin(yaw)*f,y:seat.y+({seated:1.17,leaning:1.23,standing:1.60}[posture]||1.17),z:seat.z+Math.cos(yaw)*f}};};
 function viewingTarget(surface,target='center',seat=null){const x=surface.width/2,z=surface.length/2;
-  if(target==='near-rim')return {x:0,y:3.05,z:z-1.6};if(target==='far-rim')return {x:0,y:3.05,z:-z+1.6};if(target==='scoreboard')return{x:0,y:15.5,z:0};
+  if(target==='near-rim'||target==='far-rim'){
+    const sign=(seat?.z<0?-1:1)*(target==='far-rim'?-1:1);
+    return {x:0,y:3.05,z:sign*(z-1.6)};
+  }
+  if(target==='scoreboard')return{x:0,y:13.6,z:0};
   if(target==='near'||target==='far'){const sign=(seat?.z<0?-1:1)*(target==='far'?-1:1);return{x:0,y:surface.sport==='basketball'?3:1.2,z:z*.65*sign};}
   if(target==='left')return{x:-x*.72,y:1.25,z:0};if(target==='right')return{x:x*.72,y:1.25,z:0};return{x:0,y:surface.sport==='basketball'?2.4:1.35,z:0};
 }
@@ -31,33 +35,50 @@ layout(location=6) in float aSeatId;
 uniform mat4 uVP;
 uniform vec3 uEye;
 uniform float uHuman;
+uniform float uRound;
+uniform float uSelected;
 out vec3 vColor;
 out vec3 vNormal;
+out vec3 vWorld;
 void main(){
   vec3 p=aLocal*aSize;
+  vec3 n=aNormal;
+  if(uRound>.5){
+    float radius=min(.027,min(aSize.x,min(aSize.y,aSize.z))*.38);
+    vec3 inset=aSize*.5-radius;
+    vec3 core=clamp(p,-inset,inset);
+    n=normalize(p-core);
+    p=core+n*radius;
+  }
   float c=cos(aYaw),s=sin(aYaw);
   vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);
   vec3 world=aPos+r;
   // Suppress occupied chair and immediate camera-intersecting furniture.
-  if(uHuman>.5 && aSeatId>=0. && distance(aPos,uEye)<.83){gl_Position=vec4(3.,3.,3.,1.);return;}
-  vec3 n=aNormal;
+  if(uHuman>.5 && aSeatId>=0. && (abs(aSeatId-uSelected)<.25 || distance(aPos,uEye)<.29)){gl_Position=vec4(3.,3.,3.,1.);return;}
   vNormal=vec3(c*n.x+s*n.z,n.y,-s*n.x+c*n.z);
-  vColor=aColor;
+  vColor=aSeatId>=0. && abs(aSeatId-uSelected)<.25 ? vec3(.99,.63,.25) : aColor;
+  vWorld=world;
   gl_Position=uVP*vec4(world,1.);
 }`;
 const FRAGMENT=`#version 300 es
 precision highp float;
 in vec3 vColor;
 in vec3 vNormal;
+in vec3 vWorld;
+uniform vec3 uEye;
 out vec4 outColor;
 void main(){
-  vec3 sun=normalize(vec3(.38,.82,.44));
-  float diffuse=max(0.,dot(normalize(vNormal),sun));
-  float strength=.69+.31*diffuse;
-  vec3 rgb=pow(vColor,vec3(2.2))*strength;
-  outColor=vec4(pow(rgb,vec3(1./2.2)),1.);
+  vec3 n=normalize(vNormal);
+  vec3 sun=normalize(vec3(.45,.83,.34));
+  float diffuse=max(0.,dot(n,sun));
+  float fill=max(0.,dot(n,normalize(vec3(-.6,.45,-.55))));
+  float strength=.48+.43*diffuse+.11*fill+.07*max(n.y,0.);
+  vec3 base=pow(vColor,vec3(2.2));
+  vec3 rgb=pow(base*strength,vec3(1./2.2));
+  float haze=smoothstep(45.,205.,distance(vWorld,uEye))*.17;
+  outColor=vec4(mix(rgb,vec3(.82,.88,.93),haze),1.);
 }`;
-const cube=(()=>{
+const boxGeometry=()=>{
   const sides=[
     [[0,0,1],[[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]]],
     [[0,0,-1],[[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5]]],
@@ -66,59 +87,183 @@ const cube=(()=>{
     [[0,1,0],[[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5],[-.5,.5,-.5]]],
     [[0,-1,0],[[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5]]]
   ];
-  const a=[];for(const [normal,p] of sides)for(const i of [0,1,2,0,2,3])a.push(...p[i],...normal);return new Float32Array(a);
-})();
+  const data=[];
+  for(const [normal,p] of sides)for(const i of [0,1,2,0,2,3])data.push(...p[i],...normal);
+  return new Float32Array(data);
+};
+function bevelGeometry(){
+  const vertices=[],inset=.445;
+  const triangle=(a,b,c)=>{
+    const ab=b.map((v,i)=>v-a[i]),ac=c.map((v,i)=>v-a[i]);
+    const outward=a.map((v,i)=>v+b[i]+c[i]);
+    const order=dot(cross(ab,ac),outward)>0?[a,b,c]:[a,c,b];
+    for(const point of order)vertices.push(...point,0,1,0);
+  };
+  const quad=(a,b,c,d)=>{triangle(a,b,c);triangle(a,c,d);};
+  for(let axis=0;axis<3;axis++){
+    const u=(axis+1)%3,v=(axis+2)%3;
+    for(const sign of [-1,1]){
+      const point=(a,b)=>{
+        const p=[0,0,0];
+        p[axis]=sign*.5;p[u]=a*inset;p[v]=b*inset;
+        return p;
+      };
+      quad(point(-1,-1),point(1,-1),point(1,1),point(-1,1));
+      for(const edge of [-1,1]){
+        const other=(length)=>{
+          const p=point(edge,length);
+          p[axis]=sign*inset;p[u]=edge*.5;
+          return p;
+        };
+        quad(point(edge,-1),point(edge,1),other(1),other(-1));
+      }
+    }
+  }
+  for(const x of [-1,1])for(const y of [-1,1])for(const z of [-1,1]){
+    triangle([x*.5,y*inset,z*inset],[x*inset,y*.5,z*inset],[x*inset,y*inset,z*.5]);
+  }
+  return new Float32Array(vertices);
+}
+const cube=boxGeometry(),roundedBox=bevelGeometry();
+const instanceAttributes=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
+const instanceStride=44;
 
 export class NativeVenueRenderer {
   constructor(canvas,onPick=()=>{}){
     this.canvas=canvas;this.onPick=onPick;
     const gl=canvas.getContext('webgl2',{antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});
     if(!gl)throw Error('WebGL2 is not available on this device. Use the 2D map instead.');
-    this.gl=gl;this.program=makeProgram(gl,VERTEX,FRAGMENT);this.locations={vp:gl.getUniformLocation(this.program,'uVP'),eye:gl.getUniformLocation(this.program,'uEye'),human:gl.getUniformLocation(this.program,'uHuman')};
-    this.vao=gl.createVertexArray();gl.bindVertexArray(this.vao);
-    this.cubeBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.cubeBuffer);gl.bufferData(gl.ARRAY_BUFFER,cube,gl.STATIC_DRAW);
-    for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);}
-    this.instances=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
-    const entries=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
-    for(const [loc,size,offset] of entries){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,44,offset);gl.vertexAttribDivisor(loc,1);}
-    gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.clearColor(.941,.959,.968,1);
+    this.gl=gl;
+    this.program=makeProgram(gl,VERTEX,FRAGMENT);
+    this.locations=Object.fromEntries(['VP','Eye','Human','Round','Selected']
+      .map(name=>[name,gl.getUniformLocation(this.program,'u'+name)]));
+    this.instances=gl.createBuffer();
+    this.box=this.createMesh(cube);
+    this.roundedBox=this.createMesh(roundedBox);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    gl.clearColor(.905,.932,.955,1);
     this.plan=null;this.mode='overview';this.pan=[0,0,0];this.theta=.68;this.phi=.87;this.distance=140;this.humanYaw=0;this.humanPitch=0;this.humanFov=63;this.viewOptions={posture:'seated',target:'center',zoom:1};
     this.bind();this.resize();this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(canvas);
   }
-  load(plan){
-    this.plan=plan;const gl=this.gl;gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);gl.bufferData(gl.ARRAY_BUFFER,plan.instanceData,gl.STATIC_DRAW);
-    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity,maxY=-Infinity;
-    for(const s of plan.seats){minX=Math.min(minX,s.x);maxX=Math.max(maxX,s.x);minZ=Math.min(minZ,s.z);maxZ=Math.max(maxZ,s.z);maxY=Math.max(maxY,s.y);}
-    const w=plan.surface.width,l=plan.surface.length;
-    minX=Math.min(-w/2,minX);maxX=Math.max(w/2,maxX);minZ=Math.min(-l/2,minZ);maxZ=Math.max(l/2,maxZ);
-    this.center=[(minX+maxX)/2,Math.max(1,Math.min(14,(maxY||8)*.32)),(minZ+maxZ)/2];
-    this.radius=Math.max(maxX-minX,maxZ-minZ)*.77+12;
-    this.distance=Math.max(35,this.radius*1.85);this.phi=.94;this.theta=.67;this.mode='overview';this.render();
+  createMesh(data){
+    const gl=this.gl,vao=gl.createVertexArray(),buffer=gl.createBuffer();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+    gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+    for(let i=0;i<2;i++){
+      gl.enableVertexAttribArray(i);
+      gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);
+    }
+    return {vao,buffer,vertices:data.length/6};
   }
-  resize(){const dpr=Math.min(devicePixelRatio||1,1.5),rect=this.canvas.getBoundingClientRect(),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;}this.render();}
-  view(mode,seat=null){this.mode=mode;
-    if(mode==='human'&&seat){this.seat=seat;const origin=seatViewAnchors(seat,this.viewOptions.posture).eye;const target=viewingTarget(this.plan.surface,this.viewOptions.target,seat);const dx=target.x-origin.x,dz=target.z-origin.z;this.humanYaw=Math.atan2(dx,dz);this.humanPitch=Math.atan2(target.y-origin.y,Math.hypot(dx,dz));this.humanFov=64;}
-    if(mode==='top'){this.distance=this.radius*1.7;}
-    if(mode==='section'&&seat){this.seat=seat;this.pan=[seat.x,seat.y,seat.z];this.distance=24;this.phi=1;this.theta=seat.yaw+Math.PI;}
-    if(mode==='overview'){this.pan=[0,0,0];this.distance=this.radius*1.85;this.theta=.67;this.phi=.94;}
+  bindInstances(mesh,start){
+    const gl=this.gl;
+    gl.bindVertexArray(mesh.vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
+    for(const [loc,size,offset] of instanceAttributes){
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc,size,gl.FLOAT,false,instanceStride,start*instanceStride+offset);
+      gl.vertexAttribDivisor(loc,1);
+    }
+  }
+  load(plan){
+    this.plan=plan;
+    this.seatIndices=new Map(plan.seats.map((seat,i)=>[seat.uid,i]));
+    this.selectedIndex=-1;
+    const gl=this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
+    gl.bufferData(gl.ARRAY_BUFFER,plan.instanceData,gl.STATIC_DRAW);
+    const rounded=plan.roundedCount||0;
+    if(rounded)this.bindInstances(this.roundedBox,0);
+    this.bindInstances(this.box,rounded);
+    const w=plan.surface.width,l=plan.surface.length;
+    let minX=-w/2-2,maxX=w/2+2,minZ=-l/2-2,maxZ=l/2+2,minY=0,maxY=plan.surface.sport==='basketball'?15:9;
+    for(const {x,y,z} of plan.seats){
+      minX=Math.min(minX,x-1);maxX=Math.max(maxX,x+1);
+      minY=Math.min(minY,y-.5);maxY=Math.max(maxY,y+1);
+      minZ=Math.min(minZ,z-1);maxZ=Math.max(maxZ,z+1);
+    }
+    this.center=[(minX+maxX)/2,(minY+maxY)*.37,(minZ+maxZ)/2];
+    this.corners=[minX,maxX].flatMap(x=>[minY,maxY].flatMap(y=>[minZ,maxZ].map(z=>[x,y,z])));
+    if(plan.sectionFootprints){
+      const stride=Math.max(1,Math.floor(plan.seats.length/800));
+      this.corners=plan.seats.filter((_,i)=>i%stride===0).map(s=>[s.x,s.y+.9,s.z]);
+      this.corners.push([-w/2,0,-l/2],[w/2,0,l/2],[0,maxY,0]);
+    }
+    this.radius=Math.max(maxX-minX,maxZ-minZ)*.5;
+    this.view('overview');
+  }
+  fitDistance(){
+    const isTop=this.mode==='top',theta=isTop?0:this.theta,phi=isTop?Math.PI/2:this.phi;
+    const toEye=[Math.sin(theta)*Math.cos(phi),Math.sin(phi),Math.cos(theta)*Math.cos(phi)];
+    const right=[Math.cos(theta),0,-Math.sin(theta)];
+    const up=cross(toEye,right);
+    const vertical=Math.tan(52*Math.PI/360)*.90;
+    const horizontal=vertical*Math.max(.15,this.canvas.width/this.canvas.height);
+    const distances=this.corners.map(corner=>{
+      const p=corner.map((v,i)=>v-this.center[i]);
+      return dot(p,toEye)+Math.max(Math.abs(dot(p,right))/horizontal,Math.abs(dot(p,up))/vertical);
+    });
+    return Math.max(12,...distances);
+  }
+  highlight(seat){
+    const index=this.seatIndices?.get(seat?.uid)??-1;
+    if(index===this.selectedIndex)return;
+    this.selectedIndex=index;
+    this.render();
+  }
+  resize(){const dpr=Math.min(devicePixelRatio||1,1.5),rect=this.canvas.getBoundingClientRect(),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;this.render();}}
+  view(mode,seat=null){
+    this.mode=mode;
+    if(seat)this.selectedIndex=this.seatIndices?.get(seat.uid)??-1;
+    if(mode==='human'&&seat){
+      this.seat=seat;
+      const origin=seatViewAnchors(seat,this.viewOptions.posture).eye;
+      const target=viewingTarget(this.plan.surface,this.viewOptions.target,seat);
+      const dx=target.x-origin.x,dz=target.z-origin.z;
+      this.humanYaw=Math.atan2(dx,dz);
+      this.humanPitch=Math.atan2(target.y-origin.y,Math.hypot(dx,dz));
+      this.humanFov=55;
+    }
+    if(mode==='section'&&seat){
+      this.seat=seat;this.pan=[seat.x,seat.y,seat.z];
+      this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
+    }
+    if(mode==='overview'){this.theta=1.12;this.phi=.79;}
+    if(mode==='overview'||mode==='top')this.zoomFactor=1;
     this.render();
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
   currentCamera(){
-    if(this.mode==='human'&&this.seat){const p=seatViewAnchors(this.seat,this.viewOptions.posture).eye;const eye=[p.x,p.y,p.z];const a=this.humanYaw,b=this.humanPitch;return {eye,target:[eye[0]+Math.cos(b)*Math.sin(a)*50,eye[1]+Math.sin(b)*50,eye[2]+Math.cos(b)*Math.cos(a)*50],up:[0,1,0],fov:this.humanFov/this.viewOptions.zoom};}
+    if(this.mode==='human'&&this.seat){const p=seatViewAnchors(this.seat,this.viewOptions.posture).eye;const eye=[p.x,p.y,p.z];const a=this.humanYaw,b=this.humanPitch;return {eye,target:[eye[0]+Math.cos(b)*Math.sin(a)*50,eye[1]+Math.sin(b)*50,eye[2]+Math.cos(b)*Math.cos(a)*50],up:[0,1,0],fov:clamp(this.humanFov/this.viewOptions.zoom,8,95)};}
     const target=this.mode==='section'?this.pan.map((p,i)=>p+(i===1?1:0)):this.center;
-    if(this.mode==='top')return {eye:[target[0]+.001,target[1]+this.distance,target[2]],target,up:[0,0,-1],fov:54};
-    const cp=Math.cos(this.phi);return {eye:[target[0]+this.distance*Math.sin(this.theta)*cp,target[1]+this.distance*Math.sin(this.phi),target[2]+this.distance*Math.cos(this.theta)*cp],target,up:[0,1,0],fov:52};
+    const distance=this.mode==='section'?this.distance:this.fitDistance()*this.zoomFactor;
+    if(this.mode==='top')return {eye:[target[0],target[1]+distance,target[2]],target,up:[0,0,-1],fov:52};
+    const cp=Math.cos(this.phi);return {eye:[target[0]+distance*Math.sin(this.theta)*cp,target[1]+distance*Math.sin(this.phi),target[2]+distance*Math.cos(this.theta)*cp],target,up:[0,1,0],fov:52};
   }
   render(){if(!this.plan||!this.gl)return;
     const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     const camera=this.currentCamera(),vp=multiply(perspective(camera.fov*Math.PI/180,this.canvas.width/this.canvas.height,.045,4000),lookAt(camera.eye,camera.target,camera.up));this.vp=vp;
-    gl.useProgram(this.program);gl.uniformMatrix4fv(this.locations.vp,false,vp);gl.uniform3fv(this.locations.eye,camera.eye);gl.uniform1f(this.locations.human,this.mode==='human'?1:0);gl.bindVertexArray(this.vao);
-    gl.drawArraysInstanced(gl.TRIANGLES,0,36,this.plan.instanceCount);
+    gl.useProgram(this.program);
+    gl.uniformMatrix4fv(this.locations.VP,false,vp);
+    gl.uniform3fv(this.locations.Eye,camera.eye);
+    gl.uniform1f(this.locations.Human,this.mode==='human'?1:0);
+    gl.uniform1f(this.locations.Selected,this.selectedIndex);
+    const rounded=this.plan.roundedCount||0;
+    gl.uniform1f(this.locations.Round,0);
+    gl.bindVertexArray(this.box.vao);
+    gl.drawArraysInstanced(gl.TRIANGLES,0,this.box.vertices,this.plan.instanceCount-rounded);
+    if(rounded){
+      gl.uniform1f(this.locations.Round,1);
+      gl.bindVertexArray(this.roundedBox.vao);
+      gl.drawArraysInstanced(gl.TRIANGLES,0,this.roundedBox.vertices,rounded);
+    }
   }
   projectPoint(pos){if(!this.vp)return null;const m=this.vp,[x,y,z]=pos;const w=m[3]*x+m[7]*y+m[11]*z+m[15];if(w<=0)return null;
     const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/w,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/w;
-    return [(px+1)*this.canvas.width*.5,(1-py)*this.canvas.height*.5];
+    return [(px+1)*this.canvas.width*.5,(1-py)*this.canvas.height*.5,w];
   }
   bind(){
     let start=null,changed=false;
@@ -126,16 +271,32 @@ export class NativeVenueRenderer {
     this.canvas.addEventListener('pointermove',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.hypot(dx,dy)>4)changed=true;
       if(this.mode==='human'){this.humanYaw=start.yaw-dx*.004;this.humanPitch=clamp(start.pitch+dy*.004,-1.3,1.3);}else{this.theta=start.theta-dx*.006;this.phi=clamp(start.phi-dy*.005,.10,1.49);}this.render();});
     this.canvas.addEventListener('pointerup',e=>{if(start&&!changed&&this.mode!=='human')this.pick(e);start=null;});
-    this.canvas.addEventListener('wheel',e=>{e.preventDefault();if(this.mode==='human')this.humanFov=clamp(this.humanFov*(e.deltaY>0?1.07:.93),25,95);else this.distance=clamp(this.distance*(e.deltaY>0?1.11:.90),4,1200);this.render();},{passive:false});
+    this.canvas.addEventListener('pointercancel',()=>{start=null;});
+    this.canvas.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const factor=e.deltaY>0?1.10:1/1.10;
+      if(this.mode==='human')this.humanFov=clamp(this.humanFov*factor,12,95);
+      else if(this.mode==='section')this.distance=clamp(this.distance*factor,4,250);
+      else this.zoomFactor=clamp(this.zoomFactor*factor,.25,4);
+      this.render();
+    },{passive:false});
   }
   pick(e){if(!this.plan)return;const rect=this.canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*this.canvas.width/rect.width,y=(e.clientY-rect.top)*this.canvas.height/rect.height;
-    let best=-1,dist=13*13*(this.canvas.width/rect.width)**2;
+    let best=-1,depth=Infinity,dist=13*13*(this.canvas.width/rect.width)**2;
     for(let i=0;i<this.plan.seats.length;i++){
       const s=this.plan.seats[i],p=this.projectPoint([s.x,s.y+.5,s.z]);if(!p)continue;
-      const d=(p[0]-x)**2+(p[1]-y)**2;if(d<dist){dist=d;best=i;}
+      const d=(p[0]-x)**2+(p[1]-y)**2;if(d<dist || (d===dist&&p[2]<depth)){dist=d;depth=p[2];best=i;}
     }
     if(best>=0)this.onPick(this.plan.seats[best]);
   }
   capture(){this.render();return this.canvas.toDataURL('image/png');}
-  dispose(){this.observer.disconnect();this.gl.deleteBuffer(this.instances);this.gl.deleteBuffer(this.cubeBuffer);this.gl.deleteVertexArray(this.vao);this.gl.deleteProgram(this.program);}
+  dispose(){
+    this.observer.disconnect();
+    this.gl.deleteBuffer(this.instances);
+    for(const {buffer,vao} of [this.box,this.roundedBox]){
+      this.gl.deleteBuffer(buffer);
+      this.gl.deleteVertexArray(vao);
+    }
+    this.gl.deleteProgram(this.program);
+  }
 }

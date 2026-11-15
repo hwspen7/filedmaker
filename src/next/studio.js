@@ -5,12 +5,14 @@ import { generateSeats, validateProject } from '../model.mjs';
 import { importTicketRoster } from '../seatFirst.mjs';
 import { buildVenuePlan } from './venuePlan.mjs';
 import { seatColor } from '../seatPresentation.mjs';
+import { SCHOTTENSTEIN_CHART_URL } from '../schottensteinSeating.mjs';
 import { NativeVenueRenderer } from './webgl.js';
 const $=id=>document.getElementById(id);
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
+let seatsBySection=new Map();
 const palettePresets={
   slate:['#5e747e','#7b9099','#97aab2','#bacbd1'],
-  navy:['#173e61','#356994','#6197c1','#91b8d4'],
+  navy:['#255583','#3f79a6','#76a7cd','#aacbe2'],
   scarlet:['#9a3344','#ac6170','#8e99a0','#bdc4ca']
 };
 const fmt=n=>Number(n||0).toLocaleString('en-US');
@@ -23,7 +25,7 @@ function error(message){$('warnings').textContent=limited(message);$('warnings')
 function setPreset(name){
   try{
     if(name==='ohio')project=createOhioStadiumProject();
-    else if(name==='schott')project=createSchottensteinCenterProject();
+    else if(name==='schott')project={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
     else project=createSchoolProject('college-gym',{school:'Demonstration school',venue:'Example Gymnasium'});
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));
     selected=null;renderProject();
@@ -31,12 +33,23 @@ function setPreset(name){
 }
 function previewMode(){return plan?.hasRoster?'Imported ticket inventory':'Schematic visual reference';}
 function renderProject(){
-  const start=performance.now();$('loading').hidden=false;
+  const start=performance.now(),previous=selected?.uid;
+  $('loading').hidden=false;
   try{
     model=generateSeats(project);
+    seatsBySection=new Map();
+    for(const seat of model.seats){
+      if(!seatsBySection.has(seat.sectionId))seatsBySection.set(seat.sectionId,new Map());
+      const rows=seatsBySection.get(seat.sectionId);
+      const row=String(seat.row);
+      if(!rows.has(row))rows.set(row,[]);
+      rows.get(row).push(seat);
+    }
     plan=buildVenuePlan(model,{palette:palettePresets[$('palette').value],detail:$('detail').value});
     if(!renderer){try{renderer=new NativeVenueRenderer($('viewport3d'),seat=>selectSeat(seat));}catch(e){error(e.message);mode='top';}}
     if(renderer)renderer.load(plan);
+    $('cameraTarget').value='center';$('phoneView').checked=false;
+    renderer?.setViewOptions({target:'center',zoom:1});
     const name=project.school?.venue||project.title;
     $('title').textContent=name.replace(/ — .*/, '');
     $('subtitle').textContent=`${project.city||'United States'} · ${model.surface.label} · ${plan.hasRoster?'ticket roster loaded':'estimated seating arrangement'}`;
@@ -46,7 +59,13 @@ function renderProject(){
     $('ticketCount').textContent=fmt(plan.hasRoster?plan.official.inventoryCount:0);
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
-      :`Showing ${fmt(model.seats.length)} synthetic locations. These are NOT the published capacity, verified section layout, ticket IDs or live availability.`;
+      :`${fmt(model.seats.length)} illustrative seat positions. Row and seat numbers are for preview.`;
+    if(model.sectionFootprints){
+      const source=document.createElement('a');
+      source.href=SCHOTTENSTEIN_CHART_URL;source.target='_blank';source.rel='noopener';
+      source.textContent='Ohio State basketball seating chart';
+      $('capacityNote').append(' ',source);
+    }
     $('rowsCount').textContent=fmt(plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
     $('kindCount').textContent=plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
     $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':'Illustrative geometry';
@@ -56,12 +75,45 @@ function renderProject(){
       ?`Geometry warning: ${plan.invalidRows} elevation discontinuities and ${plan.positionCollisions} overlapping seat coordinates. Review imported survey data.`
       :plan.hasRoster?'Verify real seat geometry, inventory completeness and allowed ticketing use before publication.':'No verified per-seat dataset. Do not label generated positions as real seats.';
     $('searchHelp').textContent=plan.hasRoster?'Search the imported seat IDs or section, row and seat.':'Search synthetic IDs for preview only. Official row and seat IDs are not known.';
-    selectSeat(null);view(mode==='human'?'overview':mode);
-    $('renderInfo').textContent=`WebGL2 · ${fmt(plan.instanceCount)} meshes · ${Math.round(performance.now()-start)} ms setup`;
+    const restored=plan.seats.find(seat=>seat.uid===previous)??null;
+    setOptions($('sectionPicker'),[...seatsBySection.keys()].sort(natural),'Choose section');
+    selectSeat(restored);
+    view(!renderer?'top':(!restored&&(mode==='human'||mode==='section'))?'overview':mode);
+    const setupTime=Math.round(performance.now()-start);
+    $('renderInfo').textContent=renderer?'WebGL2 · Offline':'2D map only';
+    $('renderInfo').title=`${fmt(plan.instanceCount)} instances · ${setupTime} ms setup`;
   }catch(e){console.error(e);error(e.message);}finally{$('loading').hidden=true;}
+}
+const natural=(a,b)=>a.localeCompare(b,'en',{numeric:true,sensitivity:'base'});
+function setOptions(select,values,placeholder){
+  const options=values.map(value=>new Option(value,value));
+  if(placeholder)options.unshift(new Option(placeholder,''));
+  select.replaceChildren(...options);
+  select.disabled=!values.length;
+}
+function syncSeatPicker(seat){
+  $('sectionPicker').value=seat?.sectionId??'';
+  const rows=seatsBySection.get(seat?.sectionId);
+  const values=rows?[...rows.keys()].sort(natural):[];
+  setOptions($('rowPicker'),values);
+  if(seat)$('rowPicker').value=String(seat.row);
+  const numbers=rows?.get(String(seat?.row))??[];
+  setOptions($('seatPicker'),numbers.map(s=>String(s.number)).sort(natural));
+  if(seat)$('seatPicker').value=String(seat.number);
+}
+function pickSection(id){
+  const rows=seatsBySection.get(id);
+  if(!rows)return;
+  const keys=[...rows.keys()].sort(natural),seats=rows.get(keys[Math.floor(keys.length/2)]);
+  selectSeat(seats[Math.floor(seats.length/2)]);
 }
 function selectSeat(seat){
   selected=seat;
+  syncSeatPicker(seat);
+  for(const id of ['goHuman','previous','next'])$(id).disabled=!seat;
+  document.querySelector('[data-view="human"]').disabled=!seat||!renderer;
+  document.querySelector('[data-view="section"]').disabled=!seat||!renderer;
+  if(mode==='top')drawMap();
   $('seatDetails').replaceChildren();
   const title=document.createElement('strong');title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
   const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
@@ -69,43 +121,162 @@ function selectSeat(seat){
   else $('selectedPreview').textContent='Select a location to inspect a schematic seat view';
   if(mode==='human'&&seat)renderer?.view('human',seat);
   else if(mode==='section'&&seat)renderer?.view('section',seat);
+  else renderer?.highlight(seat);
 }
 function view(which){
-  if(which==='human'&&!selected){error('Choose a seat to enter human-eye mode.');return;}
+  if(which!=='top'&&!renderer)return;
+  if(which==='human'&&!selected){error('Choose a seat to enter seat view.');return;}
   if(which==='section'&&!selected){error('Choose a seat or search an identifier before focusing a section.');return;}
   mode=which;
   document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('current',b.dataset.view===which));
+  $('cameraControls').hidden=!renderer||which==='top';
+  $('cameraTarget').parentElement.hidden=which!=='human';
+  $('phoneView').parentElement.hidden=which!=='human';
+  const basketball=plan.surface.sport==='basketball';
+  for(const option of $('cameraTarget').options)if(option.value!=='center')option.hidden=!basketball;
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
-  $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating / plan',section:'Selected section / close-up',human:'Human-eye approximation'})[which];
-  $('viewHint').textContent=which==='top'?'Click a point to inspect · Schematic layout':which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
+  $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
+  $('viewHint').textContent=which==='top'?(model.sectionFootprints?'Select a numbered section':'Select a seat on the map'):which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
   if(which==='top')drawMap();else {renderer?.view(which,selected);renderer?.resize();}
 }
 function drawMap(){
-  if(!plan)return;const c=$('viewport2d'),dpr=Math.min(devicePixelRatio||1,2),r=c.getBoundingClientRect();c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#edf2f5';ctx.fillRect(0,0,c.width,c.height);
-  let bound=Math.max(plan.surface.width/2+8,plan.surface.length/2+8);
-  for(const s of plan.seats)bound=Math.max(bound,Math.abs(s.x)+5,Math.abs(s.z)+5);
-  const scale=Math.min(c.width,c.height)*.44/bound,cx=c.width/2,cy=c.height/2;
-  const pos=s=>[cx+s.x*scale,cy+s.z*scale];
-  const fw=plan.surface.width*scale,fl=plan.surface.length*scale;
-  ctx.fillStyle=plan.surface.sport==='basketball'?'#b6b8b7':'#35744d';ctx.fillRect(cx-fw/2,cy-fl/2,fw,fl);
-  ctx.strokeStyle='#f8fafa';ctx.lineWidth=1.5*dpr;ctx.strokeRect(cx-fw/2,cy-fl/2,fw,fl);
-  ctx.beginPath();ctx.moveTo(cx-fw/2,cy);ctx.lineTo(cx+fw/2,cy);ctx.stroke();
-  const step=Math.max(1,Math.ceil(plan.seats.length/8500));const radius=plan.seats.length>16000?1*dpr:1.5*dpr;
-  for(let i=0;i<plan.seats.length;i+=step){const s=plan.seats[i],p=pos(s),levels=['#456c85','#5e8caa','#85aabf','#a4beca'];ctx.fillStyle=levels[s.tier%4];ctx.beginPath();ctx.arc(p[0],p[1],radius,0,Math.PI*2);ctx.fill();}
-  if(selected){const p=pos(selected);ctx.fillStyle='#e39942';ctx.strokeStyle='#fff';ctx.lineWidth=2*dpr;ctx.beginPath();ctx.arc(...p,5*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();}
-  c.onclick=e=>{const b=c.getBoundingClientRect(),x=(e.clientX-b.left)*c.width/b.width,y=(e.clientY-b.top)*c.height/b.height;let best=null,min=20*dpr*20*dpr;
-    for(const s of plan.seats){const p=pos(s),d=(p[0]-x)**2+(p[1]-y)**2;if(d<min){best=s;min=d;}}
-    if(best){selectSeat(best);drawMap();}
+  if(!plan)return;
+  const c=$('viewport2d'),dpr=Math.min(devicePixelRatio||1,2),r=c.getBoundingClientRect();
+  if(!r.width||!r.height)return;
+  c.width=Math.round(r.width*dpr);
+  c.height=Math.round(r.height*dpr);
+  const ctx=c.getContext('2d'),cx=c.width/2,cy=c.height/2;
+  const chart=model.sectionFootprints;
+  const horizontal=chart||plan.surface.sport==='basketball';
+  const palette=palettePresets[$('palette').value];
+  const tint=(tier,index)=>palette?.[tier]||seatColor(project,tier,index);
+  let extentX=plan.surface.width/2+8,extentZ=plan.surface.length/2+8;
+  for(const s of plan.seats){
+    extentX=Math.max(extentX,Math.abs(s.x)+3);
+    extentZ=Math.max(extentZ,Math.abs(s.z)+3);
+  }
+  for(const section of chart??[]){
+    for(const p of section.outline){
+      extentX=Math.max(extentX,Math.abs(p.x)+3);
+      extentZ=Math.max(extentZ,Math.abs(p.z)+3);
+    }
+  }
+  const scale=.47*Math.min(c.width/(horizontal?extentZ:extentX),c.height/(horizontal?extentX:extentZ));
+  const pos=s=>horizontal?[cx+s.z*scale,cy+s.x*scale]:[cx+s.x*scale,cy+s.z*scale];
+  ctx.fillStyle='#e9f0f7';
+  ctx.fillRect(0,0,c.width,c.height);
+  const fw=(horizontal?plan.surface.length:plan.surface.width)*scale;
+  const fl=(horizontal?plan.surface.width:plan.surface.length)*scale;
+  ctx.fillStyle=plan.surface.sport==='basketball'?'#d9bb87':'#35744d';
+  ctx.fillRect(cx-fw/2,cy-fl/2,fw,fl);
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=1.25*dpr;
+  ctx.strokeRect(cx-fw/2,cy-fl/2,fw,fl);
+  ctx.beginPath();
+  if(horizontal){ctx.moveTo(cx,cy-fl/2);ctx.lineTo(cx,cy+fl/2);}
+  else {ctx.moveTo(cx-fw/2,cy);ctx.lineTo(cx+fw/2,cy);}
+  ctx.stroke();
+  if(plan.surface.sport==='basketball'){
+    ctx.beginPath();ctx.arc(cx,cy,1.83*scale,0,Math.PI*2);ctx.stroke();
+  }
+  const hitAreas=[];
+  if(chart){
+    for(const {id,tier,outline} of chart){
+      const available=seatsBySection.has(id);
+      const points=outline.map(pos),path=new Path2D();
+      path.moveTo(...points[0]);
+      points.slice(1).forEach(p=>path.lineTo(...p));
+      path.closePath();
+      ctx.fillStyle=id===selected?.sectionId?'#234869':available?tint(tier,0):'#d5e0eb';
+      ctx.fill(path);
+      ctx.strokeStyle='#d5e3ee';
+      ctx.lineWidth=.8*dpr;
+      ctx.stroke(path);
+      const center=points.reduce(([x,y],p)=>[x+p[0]/4,y+p[1]/4],[0,0]);
+      ctx.fillStyle=!available||(tier===2&&id!==selected?.sectionId)?'#163853':'#fff';
+      const fontSize=Math.max(7,Math.min(12,scale*1.65/dpr));
+      ctx.font=`600 ${fontSize*dpr}px system-ui`;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(id,...center);
+      if(available)hitAreas.push({id,path});
+    }
+  }else{
+    const step=Math.max(1,Math.ceil(plan.seats.length/8500));
+    const radius=plan.seats.length>16000?1*dpr:1.5*dpr;
+    ctx.fillStyle=tint(0,0);
+    for(let i=0;i<plan.seats.length;i+=step){
+      const s=plan.seats[i],p=pos(s);
+      ctx.fillStyle=tint(s.tier,s.sectionIndex);
+      ctx.beginPath();ctx.arc(...p,radius,0,Math.PI*2);ctx.fill();
+    }
+  }
+  if(selected){
+    ctx.fillStyle='#ffc26b';ctx.strokeStyle='#fff';ctx.lineWidth=1.4*dpr;
+    ctx.beginPath();ctx.arc(...pos(selected),3.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
+  }
+  c.onclick=e=>{
+    const b=c.getBoundingClientRect(),x=(e.clientX-b.left)*c.width/b.width,y=(e.clientY-b.top)*c.height/b.height;
+    if(chart){
+      const section=hitAreas.find(hit=>ctx.isPointInPath(hit.path,x,y));
+      if(section)pickSection(section.id);
+      return;
+    }
+    let best=null,min=(18*dpr)**2;
+    for(const s of plan.seats){
+      const p=pos(s),d=(p[0]-x)**2+(p[1]-y)**2;
+      if(d<min){best=s;min=d;}
+    }
+    if(best)selectSeat(best);
   };
 }
-function cycleSeat(delta){if(!selected||!plan)return;const i=plan.seats.findIndex(s=>s.uid===selected.uid);if(i>=0)selectSeat(plan.seats[Math.max(0,Math.min(plan.seats.length-1,i+delta))]);if(mode==='top')drawMap();}
-function search(){if(!plan)return;const q=$('search').value.trim().toLowerCase();if(!q)return;
-  const s=plan.seats.find(s=>s.uid.toLowerCase()===q)||plan.seats.find(s=>s.uid.toLowerCase().includes(q)||s.sectionId.toLowerCase()===q);
-  if(s){selectSeat(s);view('section');$('searchHelp').textContent=`Found ${s.uid}. ${plan.hasRoster?'Imported ticket ID':'Synthetic identifier only'}.`;}
-  else $('searchHelp').textContent='No matching seat in the loaded data.';
+function cycleSeat(delta){
+  if(!selected)return;
+  const row=seatsBySection.get(selected.sectionId).get(String(selected.row));
+  const index=row.indexOf(selected);
+  selectSeat(row[Math.max(0,Math.min(row.length-1,index+delta))]);
+}
+function search(){
+  if(!plan)return;
+  const q=$('search').value.trim().toLowerCase();
+  if(!q)return;
+  const section=[...seatsBySection.keys()].find(id=>id.toLowerCase()===q);
+  if(section){pickSection(section);if(renderer)view('section');return;}
+  const labels=q.split(/\s*[/,]\s*|\s+/);
+  const seat=plan.seats.find(s=>s.uid.toLowerCase()===q)
+    || (labels.length===3&&plan.seats.find(s=>
+      [s.sectionId,s.row,s.number].every((part,i)=>String(part).toLowerCase()===labels[i])))
+    || plan.seats.find(s=>s.uid.toLowerCase().includes(q));
+  if(seat){
+    selectSeat(seat);
+    if(renderer)view('human');
+    $('searchHelp').textContent=`Found ${seat.uid}.`;
+  }else $('searchHelp').textContent='No matching seat in the loaded data.';
 }
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>setPreset(b.dataset.preset));
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
+$('sectionPicker').onchange=e=>{
+  if(e.target.value)pickSection(e.target.value);
+  else {
+    if(mode==='human'||mode==='section')view('overview');
+    selectSeat(null);
+  }
+};
+$('rowPicker').onchange=e=>{
+  const seats=seatsBySection.get(selected.sectionId).get(e.target.value);
+  selectSeat(seats.find(s=>String(s.number)===String(selected.number))??seats[0]);
+};
+$('seatPicker').onchange=e=>{
+  const seats=seatsBySection.get(selected.sectionId).get(String(selected.row));
+  selectSeat(seats.find(s=>String(s.number)===e.target.value));
+};
+$('cameraTarget').onchange=e=>renderer?.setViewOptions({target:e.target.value});
+$('phoneView').onchange=e=>renderer?.setViewOptions({zoom:e.target.checked?2.3:1});
+$('resetCamera').onclick=()=>{
+  $('cameraTarget').value='center';$('phoneView').checked=false;
+  renderer?.setViewOptions({target:'center',zoom:1});
+  renderer?.view(mode,selected);
+};
 $('previous').onclick=()=>cycleSeat(-1);$('next').onclick=()=>cycleSeat(1);$('goHuman').onclick=()=>view('human');
 $('search').addEventListener('keydown',e=>{if(e.key==='Enter')search();});
 $('search').addEventListener('search',search);

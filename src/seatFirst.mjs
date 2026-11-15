@@ -5,6 +5,7 @@ import { SURFACES, validateProject, resolveTiers, modelPerimeterPath,
   distanceAtAngle, pointAtDistance } from './model.mjs';
 import { parseCSV, MAX_IMPORT_SEATS } from './survey.mjs';
 import { venueFacts } from './osuFacts.mjs';
+import { estimateSchottensteinRoster, usesSchottensteinChart } from './schottensteinSeating.mjs';
 
 export const BLUE_TIERS = Object.freeze(['#164c80', '#2875ae', '#5597c6', '#88b9d6']);
 export const BLUE_VARIANTS = Object.freeze(['#123f71', '#1d5b92', '#357eaf', '#67a3cb']);
@@ -121,6 +122,7 @@ function sectionAssignment(project, roster) {
 // Grouped rows use their supplied seat identifiers and counts exactly.
 export function estimateRosterCoordinates(input,roster) {
   const project=validateProject(input),surface=SURFACES[project.surface];
+  if (usesSchottensteinChart(project)) return estimateSchottensteinRoster(roster);
   const tiers=resolveTiers(project),assignment=sectionAssignment(project,roster);
   const straightSides=['college-gym','high-basketball','high-football','middle-basketball'].includes(project.school?.profile);
   const orderedLabels=[...new Set(roster.map(s=>s.section))];

@@ -2,6 +2,12 @@
 
 **New default entry point:** `http://127.0.0.1:5174/` is a rebuilt seat-first viewer powered by a single dependency-free WebGL2 renderer. 2D remains available when WebGL2 is blocked. The school tool at `/school/` and viewer at `/viewer/` share the same renderer. The previous advanced modeling UI is retained at `/legacy/` for compatibility and its GLB export.
 
+## Audience preview
+
+The default Schottenstein Center preview follows [Ohio State's men's basketball seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts) for section names and relative locations. Choose a section on the 2D map, use the Section, Row and Seat controls, and open Seat View. The camera can face the court, either basket or the scoreboard, with optional phone framing. The preview uses layered blue seating by default, with a performance setting for simpler chair geometry.
+
+Section outlines are approximated from the chart. The row counts, numbered preview positions, elevations, furniture and sightlines are schematic. A coordinate-free CSV for this reference uses the chart's known section IDs and estimates positions within those sections. For sections outside the chart or for exact positions, supply XYZ in the venue's court-centered coordinate system.
+
 ## What changed
 
 - One shared seat geometry plan for studio, school preview and viewer instead of multiple incompatible seat meshes.

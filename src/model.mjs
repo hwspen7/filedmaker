@@ -2,6 +2,7 @@
 import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
 import { getNBAArena } from './nbaCatalog.mjs';
 import { facingYaw } from './seatPresentation.mjs';
+import { buildSchottensteinSeating, schottensteinFootprints, usesSchottensteinChart } from './schottensteinSeating.mjs';
 export const TAU = Math.PI * 2;
 export const CURRENT_SCHEMA = 5;
 
@@ -466,13 +467,23 @@ export function pointAtDistance(path, distance) {
   };
 }
 
-export function generateSeats(input) {
+export function generateSeats(input, { audienceLayout = true } = {}) {
   const project = validateProject(input);
   const surface = SURFACES[project.surface];
   const tiers = resolveTiers(project);
   const source = importedSeats(project.survey, project);
-  if (source) return { project, surface, tiers, seats: source.seats, groups: [], capacity: source.seats.length,
-    seatOrigin: 'imported', registration: source.registration, elevationCount: source.elevationCount };
+  const chart = audienceLayout && usesSchottensteinChart(project);
+  if (source) {
+    const sectionFootprints = chart && project.ticketing?.coordinates === 'estimated'
+      ? schottensteinFootprints() : undefined;
+    return { project, surface, tiers, seats: source.seats, groups: [], capacity: source.seats.length,
+      seatOrigin: 'imported', registration: source.registration, elevationCount: source.elevationCount, sectionFootprints };
+  }
+  if (chart) {
+    const reference = buildSchottensteinSeating(project.seatPitch);
+    return { project, surface, tiers, ...reference, capacity: reference.seats.length,
+      seatOrigin: 'generated', registration: null, elevationCount: reference.seats.length };
+  }
   const seats = [], groups = [];
   for (const tier of tiers) {
     for (let sectionIndex = 0; sectionIndex < project.sections.length; sectionIndex++) {

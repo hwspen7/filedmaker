@@ -1,4 +1,4 @@
-import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers, resolveSectionTier, eligiblePortal } from './model.mjs';
+import { CURRENT_SCHEMA, SURFACES, TAU, createProject, makeSections, validateProject, generateSeats as generateVenueSeats, sectionStats, deepCopy, createCustomOutline, modelPerimeterPoint, outlineAngle, validateOutline, resolveTiers, resolveSectionTier, eligiblePortal } from './model.mjs';
 import { parseSvgPlan, planPoint, tracePlanOutline } from './plan.mjs';
 import { VIEW_DEFAULTS, validateViewOptions, viewpoint, sightlineNote, nearbySeat, seatDescriptor } from './view.mjs';
 import { parseSeatCSV, fitPlanRegistration, seatRegistration, obstructionReport, demoSurveyRows } from './survey.mjs';
@@ -9,6 +9,8 @@ import { stadiumProvenance } from './stadiumDetails.mjs';
 import { NBA_CATALOG, createNBAArenaProject, nbaArenaReport } from './nbaArenas.mjs';
 import { createSchoolProject } from './schoolPipeline.mjs';
 import { enableSeatFirst, ticketReconciliation, importTicketRoster, ticketMappingCSV, demoTicketRosterCSV } from './seatFirst.mjs';
+
+const generateSeats = input => generateVenueSeats(input, { audienceLayout: false });
 
 const byId = id => document.getElementById(id);
 const $all = selector => [...document.querySelectorAll(selector)];

@@ -9,7 +9,7 @@ export class SeatScene {
   load(model){this.model=model;this.plan=buildVenuePlan(model);this.renderer.load(this.plan);
     this.selectedSeat=model.seats.find(s=>s.tier===0&&s.row===7)||model.seats[0]||null;
     this.renderer.setViewOptions(this.viewOptions);this.setView('orbit');}
-  highlight(seat){this.selectedSeat=seat||null;if(this.mode==='seat'&&seat)this.setView('seat');}
+  highlight(seat){this.selectedSeat=seat||null;this.renderer.highlight(seat);if(this.mode==='seat'&&seat)this.setView('seat');}
   setView(mode){this.mode=mode;
     const mapped={orbit:'overview',plan:'top',section:'section',seat:'human'}[mode]||'overview';
     if((mapped==='human'||mapped==='section')&&!this.selectedSeat)return;

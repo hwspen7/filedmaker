@@ -85,3 +85,41 @@ test('legacy editor remains an explicit optional workflow',()=>{
  const old=read('../legacy/index.html');assert.match(old,/photoCalibrationDialog/);
  assert.match(old,/src\/app\.js/);
 });
+
+test('Ohio State basketball diagram keeps source section numbers and illustrative coordinates distinct', () => {
+  const project = {...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men'};
+  const model = generateSeats(project);
+  const plan = buildVenuePlan(model);
+  assert.equal(model.sectionFootprints.length, 78);
+  assert.equal(new Set(model.sectionFootprints.map(section => section.id)).size, 78);
+  assert.ok(model.seats.every(s => s.uid.startsWith('DEMO-')));
+  assert.ok(model.seats.some(s => s.sectionId === '105' && s.tier === 0 && s.x < 0));
+  assert.ok(model.seats.some(s => s.sectionId === '114' && s.tier === 0 && s.z > 0));
+  assert.ok(model.seats.some(s => s.sectionId === '323' && s.tier === 2 && s.x > 0));
+  assert.ok(model.seats.every(s => Math.sin(s.yaw)*s.x + Math.cos(s.yaw)*s.z < 0));
+  assert.ok(model.seats.every(s =>
+    Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
+  assert.equal(plan.hasRoster, false);
+  assert.equal(plan.positionCollisions, 0);
+  assert.ok(plan.roundedCount > 0);
+  assert.equal(buildVenuePlan(model, {detail:'compact'}).roundedCount, 0);
+  assert.equal(generateSeats(project, {audienceLayout:false}).sectionFootprints, undefined);
+});
+
+test('chart-backed roster locations are independent of CSV order and keep supplied IDs', () => {
+  const project = {...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men'};
+  const header='seat_id,section,row,seat\n';
+  const lines=['A,105,L,1','B,105,L,2','C,114,M,8','D,323,B,9','E,323,A,10'];
+  const load = rows => generateSeats(importTicketRoster(project, header+rows.join('\n')).project);
+  const a=load(lines),b=load([...lines].reverse());
+  assert.equal(a.project.ticketing.coordinates,'estimated');
+  assert.equal(a.capacity,lines.length);
+  for(const seat of a.seats){
+    const match=b.seats.find(s=>s.uid===seat.uid);
+    assert.deepEqual([seat.x,seat.y,seat.z],[match.x,match.y,match.z]);
+  }
+  const one=a.seats.find(s=>s.uid==='A'),two=a.seats.find(s=>s.uid==='B');
+  assert.ok(one.z>two.z);
+  assert.ok(a.seats.some(s=>s.uid==='D'&&s.tier===2&&s.x>0));
+  assert.throws(()=>load(['U,UNKNOWN,1,1']),/Supply XYZ/);
+});

@@ -15,18 +15,20 @@ function offset(s,dx,dy,dz){
 export function buildVenuePlan(model,options={}) {
   const {seats,project,surface}=model;
   const official=ticketReconciliation(project,seats.length);
+  const chartPreview=model.sectionFootprints&&model.seatOrigin==='generated';
   const hasRoster=project.ticketing?.inventoryMode==='file-import' && model.seatOrigin==='imported';
-  const elements=[];
-  const add=(pos,size,yaw,color,id=-1)=>{
+  const elements=[],seatShells=[];
+  const add=(pos,size,yaw,color,id=-1,rounded=false)=>{
     if(!pos.every(Number.isFinite)||!size.every(x=>Number.isFinite(x)&&x>0.0001))return;
-    elements.push(...pos,...size,Number(yaw)||0,...color,id);
+    (rounded?seatShells:elements).push(...pos,...size,Number(yaw)||0,...color,id);
   };
-  const concrete=colorRGB('#c9cfd3');
-  const riseFace=colorRGB('#9daab2');
-  const steel=colorRGB('#788a94');
+  const concrete=colorRGB('#bccad5');
+  const riseFace=colorRGB('#778fa5');
+  const steel=colorRGB('#34465a');
   const seatScale=clamp(Number(project.seatPitch)||.53,.42,.76);
   const rows=new Map();
   let chairCount=0,benchCount=0;
+  const roundSeats=seats.length<=30000 && options.detail!=='compact';
   for(let i=0;i<seats.length;i++){
     const s=seats[i],kind=seatKind(project,s);
     if(kind==='chair')chairCount++;else benchCount++;
@@ -42,13 +44,13 @@ export function buildVenuePlan(model,options={}) {
         add(offset(s,.15,.17,-.02),[.025,.32,.03],s.yaw,steel,i);
       }
     }else{
-      add(offset(s,0,.44,.055),[seatScale*.81,.065,.365],s.yaw,tint,i);
-      add(offset(s,0,.71,-.176),[seatScale*.77,.35,.055],s.yaw,tint,i);
+      const seatWidth=seatScale*.82;
+      add(offset(s,0,.437,.058),[seatWidth,.075,.37],s.yaw,tint,i,roundSeats);
+      add(offset(s,0,.693,-.157),[seatWidth*.95,.365,.076],s.yaw,tint,i,roundSeats);
       if(seats.length<50000){
-        add(offset(s,-.16,.22,-.095),[.027,.40,.038],s.yaw,steel,i);
-        add(offset(s,.16,.22,-.095),[.027,.40,.038],s.yaw,steel,i);
-        // Premium detail optional to keep large university venues fast.
-        if(options.detail==='full'){
+        add(offset(s,-seatWidth*.40,.207,-.103),[.027,.414,.09],s.yaw,steel,i);
+        add(offset(s,seatWidth*.40,.207,-.103),[.027,.414,.09],s.yaw,steel,i);
+        if(options.detail!=='compact'){
           add(offset(s,-seatScale*.48,.60,.00),[.024,.037,.22],s.yaw,steel,i);
           add(offset(s,seatScale*.48,.60,.00),[.024,.037,.22],s.yaw,steel,i);
         }
@@ -64,7 +66,6 @@ export function buildVenuePlan(model,options={}) {
       const n=Number(p.seat.number),m=Number(q.seat.number);
       return Number.isFinite(n)&&Number.isFinite(m)?n-m:0;
     });
-    const s0=a[0].seat;
     let run=0;
     for(let k=0;k<a.length;k++){
       const s=a[k].seat;
@@ -72,24 +73,68 @@ export function buildVenuePlan(model,options={}) {
       const dl=prev?Math.hypot(prev.x-s.x,prev.z-s.z):Infinity;
       const dr=next?Math.hypot(next.x-s.x,next.z-s.z):Infinity;
       if(prev&&dl>seatScale*1.7){aisleBreaks++;run++;}
-      const dy=(prev&&dl<seatScale*1.7)?Math.abs(prev.y-s.y):0;
-      if(dy>.13)invalidRows++;
+      if(prev&&dl<seatScale*1.7&&Math.abs(prev.y-s.y)>.13)invalidRows++;
       if(prev&&dl<.24)positionCollisions++;
-      const span=clamp(Math.min(dl,dr,seatScale*1.02),.35,seatScale*1.02);
-      // Light neutral tread and riser. The top is just below the seat anchor.
-      add(offset(s,0,-.155,0),[span,.28,.80],s.yaw,concrete,-1);
-      // Visible face on the approach side, continuous along a row.
-      add(offset(s,0,-.24,.386),[span,.30,.025],s.yaw,riseFace,-1);
+      const span=clamp(Math.min(dl,dr,seatScale*1.12),.32,seatScale*1.12);
+      const depth=model.sectionFootprints ? (s.tier===1?.89:.84) : .80;
+      const rise=model.sectionFootprints ? [.34,.39,.43][s.tier] : .32;
+      // Supports stay under each row and leave the aisle between contiguous runs open.
+      add(offset(s,0,-rise/2-.01,.035),[span,rise,depth],s.yaw,concrete);
+      add(offset(s,0,-rise*.56,depth/2+.036),[span,rise*.78,.014],s.yaw,riseFace);
+      if(model.sectionFootprints && (k===0||k===a.length-1||dl>seatScale*1.7||dr>seatScale*1.7)){
+        add(offset(s,0,.004,depth*.46),[span,.012,.045],s.yaw,colorRGB('#e1eaf0'));
+      }
     }
     rowRuns+=run+1;
   }
+  if(chartPreview){
+    const fascia=colorRGB('#3c5670'), edge=colorRGB('#a9bdcc');
+    const face = (a,b,top,height,depth,color) => {
+      const span=Math.hypot(b.x-a.x,b.z-a.z);
+      const yaw=Math.atan2(-(b.z-a.z),b.x-a.x);
+      add([(a.x+b.x)/2,top-height/2,(a.z+b.z)/2],[span,height,depth],yaw,color);
+    };
+    // Keep the seating cutaway supported and the main section aisles open.
+    // Tier fronts are schematic, below the tread, outside the viewing rays.
+    for(const {tier,outline:[a,b,d,c],rows} of model.sectionFootprints){
+      const front=[.8,7.4,12.2][tier];
+      const rear=front+(rows-1)*[.34,.39,.43][tier];
+      const height=[.8,2.48,2.95][tier];
+      face(a,b,front-.04,height,.22,fascia);
+      face(a,b,front+.025,.072,.25,edge);
+      face(c,d,rear-.055,height,.20,fascia);
+      face(c,d,rear+.035,.11,.32,edge);
+    }
+  }
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
-    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB(project.venueReference?.id==='schottenstein-center'?'#b3b5b7':'#cda976');
-  const darkField=surface.sport==='basketball'?colorRGB('#474d56'):colorRGB('#254c42');
-  add([0,-.14,0],[surface.width+7,.23,surface.length+7],0,darkField);
-  add([0,.005,0],[surface.width,.07,surface.length],0,field);
-  const white=colorRGB('#e9eeed');
+    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB('#d7b781');
+  const basketball = surface.sport==='basketball';
+  const accent=colorRGB(basketball?'#334e69':'#254c42');
+  const darkField=colorRGB(basketball?'#24354b':'#254c42');
+  const apron=basketball?3.5:7;
+  if(chartPreview){
+    const base=colorRGB('#c6d2dd');
+    for(let i=0;i<36;i++){
+      const x=(i-17.5)*2.65;
+      const halfWidth=Math.min(56.5, 57.5-Math.max(0,Math.abs(x)-13)*.80);
+      add([x,-.36,0],[2.65,.27,halfWidth*2],0,base);
+    }
+  }
+  add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,darkField);
+  add([0,basketball?-.012:.005,0],[surface.width,.07,surface.length],0,field);
+  const white=colorRGB('#f8f7ef');
+  const line = (x1, y1, z1, x2, y2, z2, width, color) => {
+    const dx=x2-x1, dz=z2-z1;
+    add([(x1+x2)/2,(y1+y2)/2,(z1+z2)/2],[width,width,Math.hypot(dx,dz)+width*.4],
+      Math.atan2(dx,dz),color);
+  };
+  const arc = (x,y,z,r,start,end,width,color,segments=32) => {
+    for(let i=0;i<segments;i++){
+      const a=start+(end-start)*i/segments, b=start+(end-start)*(i+1)/segments;
+      line(x+Math.sin(a)*r,y,z+Math.cos(a)*r,x+Math.sin(b)*r,y,z+Math.cos(b)*r,width,color);
+    }
+  };
   const length=surface.length,width=surface.width;
   // Boundary and midpoint lines are crisp, with no stock imagery or text clutter.
   for(const z of [-length/2,length/2,0])add([0,.051,z],[width,.012,.085],0,white);
@@ -103,18 +148,86 @@ export function buildVenuePlan(model,options={}) {
       add([0,3.05,z],[5.72,.09,.10],0,colorRGB('#f3cb66'));
       add([0,1.52,z],[.1,3.05,.1],0,colorRGB('#f3cb66'));
     }
-  } else if(surface.sport==='basketball'){
-    for(const sign of [-1,1]){
-      const z=sign*(length/2-1.5);
-      add([0,3.05,z],[1.8,1.0,.07],0,colorRGB('#dce8ed'));
-      add([0,2.5,z+sign*.1],[.14,4.6,.16],0,colorRGB('#6f7883'));
-      add([0,.075,sign*(length/2-5.8)],[4.9,.01,.07],0,white);
-      for(const x of [-2.45,2.45])add([x,.08,sign*(length/2-2.9)],[.07,.01,5.8],0,white);
+  } else if(basketball){
+    const wood = ['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85'].map(colorRGB);
+    for(let i=0;i<64;i++){
+      const x=-width/2+(i+.5)*width/64;
+      add([x,.0385,0],[width/64,.004,length],0,wood[(i*7+Math.floor(i/5))%wood.length]);
     }
-    // Simple centre-hung screen: clearly a reference marker, not a BIM model.
-    add([0,15.2,0],[6.5,2.8,3.5],0,colorRGB('#303d49'));
-    add([0,15.2,1.78],[6.18,2.46,.08],0,colorRGB('#244e68'));
-    add([0,15.2,-1.78],[6.18,2.46,.08],0,colorRGB('#244e68'));
+    const markingY=.052, paint=colorRGB('#476a8c');
+    arc(0,markingY,0,1.83,0,Math.PI*2,.035,white,40);
+    for(const sign of [-1,1]){
+      const baseline=sign*length/2;
+      const rim=baseline-sign*1.60;
+      const board=baseline-sign*1.22;
+      const foul=baseline-sign*5.79;
+      const laneHalf=1.83;
+      add([0,.042,(baseline+foul)/2],[laneHalf*2,.005,5.79],0,paint);
+      add([0,markingY,foul],[laneHalf*2,.009,.04],0,white);
+      const laneCenter=(baseline+foul)/2;
+      for(const x of [-laneHalf,laneHalf]){
+        add([x,markingY,laneCenter],[.04,.009,5.79],0,white);
+      }
+      arc(0,markingY,foul,1.83,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white);
+      arc(0,markingY,rim,1.22,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white,20);
+      const radius=surface.threePointRadiusM||6.75;
+      const corner=Math.min(radius,width/2-.68);
+      const angle=Math.asin(corner/radius);
+      const joins=rim-sign*Math.sqrt(radius*radius-corner*corner);
+      arc(0,markingY,rim,radius,sign>0?Math.PI-angle:-angle,sign>0?Math.PI+angle:angle,.04,white,44);
+      for(const x of [-corner,corner])line(x,markingY,joins,x,markingY,baseline,.04,white);
+      const post=baseline+sign*1.22;
+      add([0,.28,post],[1.10,.58,.88],0,darkField);
+      add([0,1.58,post],[.20,3.16,.19],0,accent);
+      add([0,3.18,(post+board)/2],[.13,.13,Math.abs(post-board)],0,steel);
+      add([0,3.45,board],[1.83,1.06,.062],0,colorRGB('#a5bfd0'));
+      const boardFace=board-sign*.036;
+      for(const x of [-.87,.87,-.294,.294]){
+        const outer=Math.abs(x)>.5;
+        add([x,outer?3.45:3.27,boardFace],[.027,outer?1.01:.45,.016],0,white);
+      }
+      for(const [y,span] of [[2.95,1.77],[3.95,1.77],[3.05,.60],[3.50,.60]]){
+        add([0,y,boardFace],[span,.026,.02],0,white);
+      }
+      const rimColor=colorRGB('#f16c32'), net=colorRGB('#eeeae0');
+      add([0,3.05,(rim+board)/2],[.09,.03,Math.abs(rim-board)],0,rimColor);
+      arc(0,3.05,rim,.2286,0,Math.PI*2,.024,rimColor,24);
+      arc(0,2.70,rim,.145,0,Math.PI*2,.012,net,16);
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6;
+        const dx=Math.sin(a),dz=Math.cos(a);
+        add([dx*.18,2.875,rim+dz*.18],[.012,.35,.012],0,net);
+      }
+    }
+    const housing=colorRGB('#192b3c'), screen=colorRGB('#286695'), bevel=colorRGB('#587d9e');
+    add([0,13.6,0],[4.65,2.5,6.4],0,housing);
+    add([0,12.30,0],[4.75,.11,6.5],0,bevel);
+    add([0,14.88,0],[4.75,.11,6.5],0,bevel);
+    for(const side of [-1,1]){
+      for(const end of [false,true]){
+        const x=end?0:side*2.343,z=end?side*3.216:0;
+        const yaw=end?0:Math.PI/2,w=end?4.31:6.08;
+        add([x,13.68,z],[w,1.87,.055],yaw,screen);
+        add([x,12.59,z],[w,.19,.067],yaw,bevel);
+        add([x,14.72,z],[w,.11,.072],yaw,accent);
+        // Screen graphics remain generic and work in offline exports.
+        for(const offset of [-.29,.29]){
+          const shift=w*offset;
+          add([x+(end?shift:side*.035),13.73,z+(end?side*.035:shift)],
+            [w*.26,.91,.025],yaw,colorRGB('#4c86ad'));
+        }
+      }
+    }
+    if(chartPreview){
+      // Low courtside objects only, positioned within the published floor zone.
+      for(const sign of [-1,1]){
+        for(const z of [-8.4,8.4]){
+          add([sign*(width/2+1.05),.33,z],[.43,.57,4.3],0,accent);
+          add([sign*(width/2+1.05),.645,z],[.49,.055,4.34],0,steel);
+        }
+      }
+      add([-width/2-1.03,.44,0],[.54,.84,3.1],0,housing);
+    }
   } else {
     for(const sign of [-1,1]){
       const z=sign*(length/2+.25);
@@ -123,5 +236,10 @@ export function buildVenuePlan(model,options={}) {
     }
   }
   const schematic= model.seatOrigin!=='imported' || project.ticketing?.coordinates!=='supplied-unverified';
-  return {instanceData:new Float32Array(elements),instanceCount:elements.length/11,seats,project,surface,official,hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
+  const instanceData=new Float32Array(seatShells.length+elements.length);
+  instanceData.set(seatShells);
+  instanceData.set(elements,seatShells.length);
+  return {instanceData,instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
+    sectionFootprints:chartPreview?model.sectionFootprints:undefined,seats,project,surface,official,
+    hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
 }
