@@ -2,7 +2,7 @@ import {
   SCHOTTENSTEIN_CHART_LABELS, SCHOTTENSTEIN_DIAGRAM_EDGE, SCHOTTENSTEIN_SECTION_CONTOURS,
 } from './schottensteinChartContours.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
-import { refineSchottensteinContour, refineSchottensteinRearDepth,
+import { refineAccessibleRear, refineSchottensteinBank, refineSchottensteinContour,
   schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
 
 // The guide endpoints orient the rows. The traced chart contours clip them.
@@ -136,7 +136,7 @@ const lowerCornerAisles={
 const minimumPitch=.48;
 const tierElevations = [[.56, 6.34], [8.05, 11.56], [15.45, 28.55]];
 // Model datum shared by the enclosure and the suspended interior fixtures.
-export const SCHOTTENSTEIN_ROOF_EAVE = 36.6;
+export const SCHOTTENSTEIN_ROOF_EAVE = 40.6;
 export const SCHOTTENSTEIN_TERRACE_RIM = { front: tierElevations[2][0], rear: tierElevations[2][1] };
 // Manually fitted to the chart's sideline and end stands, excluding local
 // seating notches. The building footprint is independent of seat run ends.
@@ -212,7 +212,11 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
     const depthRows=details?.slots ? details.slots.at(-1)+1
       :details?.labels.length??Math.max(2,Math.round((tracedFar-near)/[.82,.88,.82][tier]));
     const rows=details?.labels.length??depthRows;
-    const far=refineSchottensteinRearDepth(id,near,tracedFar,depthRows,depth=>polygonSpans(projected,depth));
+    const spansAt=depth=>polygonSpans(projected,depth);
+    const adjusted=clubWithPublishedCounts.has(sectionId)?{near,far:tracedFar}
+      :refineSchottensteinBank(id,tier,near,tracedFar,depthRows,spansAt);
+    near=adjusted.near;
+    const far=adjusted.far;
     let treadDepth=(far-near)/depthRows;
     const canSeat=depth=>polygonSpans(projected,depth).some(([lo,hi])=>hi-lo>=minimumPitch);
     let firstCenter=near+treadDepth*.5;
@@ -227,10 +231,11 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
     const centerSpans = polygonSpans(projected, (near + far) * .5);
     const profileAxis = centerSpans.length
       ? (centerSpans[0][1] + centerSpans.at(-1)[0]) * .5 : project(center).z;
+    const accessibleRear=refineAccessibleRear(id,near,treadDepth,spansAt);
     const publishedRowCounts=clubWithPublishedCounts.has(sectionId);
     const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
     return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,
-      treadDepth,profileAxis,details,publishedRowCounts,labelPoint:labels.get(id)};
+      treadDepth,accessibleRear,profileAxis,details,publishedRowCounts,labelPoint:labels.get(id)};
   })
 );
 const byId=new Map(blocks.map(block=>[block.id,block]));
@@ -251,10 +256,11 @@ export function usesSchottensteinChart(project) {
 }
 
 function rowPlane(block, slot) {
-  const depth = block.near + (slot + .5) * block.treadDepth;
+  const rear=slot>=7?block.accessibleRear:null;
+  const depth=rear?rear.end-(20-slot)*rear.depth:block.near+(slot+.5)*block.treadDepth;
   const {nx,nz} = block;
   const point = lateral => ({x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral});
-  return {point, depth};
+  return {point,depth,treadDepth:rear?.depth??block.treadDepth};
 }
 
 function traceEntryRim(rear) {
@@ -315,7 +321,7 @@ const shortTerraceRear = new Map([
 
 function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
-  const {point, depth} = rowPlane(block, slot);
+  const {point,depth,treadDepth}=rowPlane(block,slot);
   const {nx,nz} = block;
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
   let ranges=polygonSpans(block.projected,depth);
@@ -334,7 +340,7 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const spans=ranges.map(([low,high])=>
     ({left:point(high),right:point(low),width:high-low}));
   return {spans,width:spans.reduce((sum,span)=>sum+span.width,0),yaw:Math.atan2(nx,nz),
-    y,slot};
+    y,slot,treadDepth};
 }
 
 function pointAlongSpans(spans,distance) {
@@ -409,14 +415,14 @@ export function buildSchottensteinSeating(pitch) {
       // Keep the blank ends of the chart scan out of the circulation gaps.
       seatingRows.push({
         left:lerp(left,right,inset/width),right:lerp(left,right,1-inset/width),width:count*spacing,
-        y:g.y,yaw:g.yaw,slot:g.slot,tier:block.tier,sectionId:block.id,row:rowLabel,depth:block.treadDepth,
+        y:g.y,yaw:g.yaw,slot:g.slot,tier:block.tier,sectionId:block.id,row:rowLabel,depth:g.treadDepth,
       });
       for(let i=0;i<count;i++){
         const position=lerp(left,right,(inset+(i+.5)*spacing)/width);
         const number=seats.length-from+1;
         seats.push({...position,y:g.y,yaw:g.yaw,tier:block.tier,sectionId:block.id,
           sectionIndex,row:rowLabel,number,uid:`DEMO-${block.id}-${rowLabel}-${number}`,
-          seatingDepth:block.treadDepth,seatWidth:spacing,
+          seatingDepth:g.treadDepth,seatWidth:spacing,
           inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl'});
       }
     }

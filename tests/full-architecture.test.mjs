@@ -41,7 +41,7 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
 
   const galleryHeights=new Set();
   for(let i=1;i<g.galleryGlass.length;i+=6)galleryHeights.add(g.galleryGlass[i]);
-  assert.equal(galleryHeights.size,2,'Gallery glazing stays level across the press side');
+  assert.equal(galleryHeights.size,4,'Both glazing bands stay level across the press side');
   assert.ok(g.radialBeams.length/18>100,'Gallery canopy is supported by modeled radial beams');
   const roofRadii=Array.from({length:g.roofDeck.length/6},(_,i)=>
     Math.hypot(g.roofDeck[i*6],g.roofDeck[i*6+2]));
@@ -108,10 +108,10 @@ test('exterior facade is grounded and stepped seat decks follow their assigned e
   for(let i=1;i<g.decks.length;i+=6){minDeck=Math.min(minDeck,g.decks[i]);maxDeck=Math.max(maxDeck,g.decks[i]);}
   assert.ok(minWall>=-.01 && minWall<.1);
   assert.ok(minDeck>.25 && maxDeck>26);
-  assert.ok(maxWall>36 && maxWall<37,'Facade reaches a uniform structural top');
+  assert.ok(maxWall>40 && maxWall<41,'Facade reaches a uniform structural top');
   let minRoof=Infinity,maxRoof=-Infinity;
   for(let i=1;i<g.roofEdge.length;i+=6){minRoof=Math.min(minRoof,g.roofEdge[i]);maxRoof=Math.max(maxRoof,g.roofEdge[i]);}
-  assert.ok(minRoof>35.8 && maxRoof<37,'Roof is a level supported canopy, not a sawtooth crown');
+  assert.ok(minRoof>39.8 && maxRoof<41,'Roof is a level supported canopy, not a sawtooth crown');
   const deckMinX=Math.min(...Array.from({length:g.decks.length/6},(_,i)=>g.decks[i*6]));
   const facadeMaxX=Math.max(...Array.from({length:g.facade.length/6},(_,i)=>g.facade[i*6]));
   assert.ok(facadeMaxX-deckMinX>30,'The enclosed building has nonzero spatial depth');

@@ -76,6 +76,7 @@ export function buildSchottensteinArchitecture(model){
     const outward={x:-Math.sin(row.yaw),z:-Math.cos(row.yaw)};
     const depth=row.depth;
     const front=depth*.5,back=depth*.5;
+    const tangent=normalize([row.right.x-row.left.x,0,row.right.z-row.left.z]);
     const previous=heightBySlot.get(row.sectionId+':'+(row.slot-1));
     const rise=clamp(previous===undefined?(row.tier===2?.66:.40):row.y-previous,.14,.72)+.04;
     for(let i=0;i<strips;i++){
@@ -93,6 +94,9 @@ export function buildSchottensteinArchitecture(model){
       const downB=p(b,-front,b.y-.15-rise);
       const inward=[-outward.x,0,-outward.z];
       quad(fascias,innerA,innerB,downB,downA,inward);
+      // Close the aisle-facing ends with the same nosing and riser depth.
+      if(i===0)quad(fascias,innerA,outerA,p(a,back,a.y-.15-rise),downA,tangent.map(v=>-v));
+      if(i===strips-1)quad(fascias,innerB,outerB,p(b,back,b.y-.15-rise),downB,tangent);
     }
   }
   // Only the two global level fronts need a continuous trim. Occupied rows
@@ -188,6 +192,7 @@ export function buildSchottensteinArchitecture(model){
   const outerWall=facadeOuter,roofUnderside=SCHOTTENSTEIN_ROOF_EAVE-.70,roofTop=SCHOTTENSTEIN_ROOF_EAVE+.12;
   const galleryFloor=SCHOTTENSTEIN_TERRACE_RIM.rear+.55;
   const sill=galleryFloor+.94,head=sill+3.15;
+  const clerestorySill=roofUnderside-2.15,clerestoryHead=roofUnderside-.82;
   const treadEdge=i=>{
     const seat=chairEdge[i];
     return station(i,radius(seat)+.35-outerR[i],seat.y-.20);
@@ -208,7 +213,10 @@ export function buildSchottensteinArchitecture(model){
           head-.18,head-.18,'in');
       }
     }
-    wallBand(backWall,i,galleryFront,head,head,roofUnderside,roofUnderside,'in');
+    wallBand(backWall,i,galleryFront,head,head,clerestorySill,clerestorySill,'in');
+    wallBand(support?pilasters:galleryGlass,i,support?galleryFront-.05:glassOffset,
+      clerestorySill,clerestorySill,clerestoryHead,clerestoryHead,'in');
+    wallBand(backWall,i,galleryFront,clerestoryHead,clerestoryHead,roofUnderside,roofUnderside,'in');
     wallBand(windowFrames,i,frameOffset,sill-.105,sill-.105,sill+.075,sill+.075,'in');
     wallBand(windowFrames,i,frameOffset,head-.08,head-.08,head+.09,head+.09,'in');
     horizontal(galleryFloorMesh,i,galleryFront,outerWall,galleryFloor,1);

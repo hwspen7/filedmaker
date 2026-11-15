@@ -19,7 +19,7 @@ The new independent geometry lives in `src/next/schottensteinArchitecture.mjs`. 
 
 ## Manual seating refinement
 
-`src/schottensteinRefinement.mjs` keeps the authored preview edits separate from the raw chart. The current set removes narrow trace artifacts in sections 313, 315, 319 and 320, aligns selected wedge sections to the rear edge, and samples the last row before the trace tapers to a narrow tip. The same seating allocator balances the adjusted spans to 19,049 modeled positions. The elevation profile eases into the lower rows and steepens towards the back, with common endpoints per tier. These adjustments retain the section map, accessible landings and press-side gaps.
+`src/schottensteinRefinement.mjs` keeps authored preview edits separate from the raw chart. It corrects narrow trace slits, rebalances clipped front and rear rows on all tiers, and aligns row bearings to the bank edges. The H–U run behind accessible landings uses a tread depth closer to its neighbors. The media banks, accessible gaps and published club inventories retain their documented constraints. The same allocator balances the adjusted spans to 19,049 modeled positions. Side closures follow the stair risers at aisle edges.
 
 ## Source integrity
 

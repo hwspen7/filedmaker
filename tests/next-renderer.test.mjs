@@ -305,7 +305,7 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  assert.ok(trusses.length>10);
  const lowestTruss=Math.min(...trusses.map(box=>box.pos[1]-box.size[1]/2));
  const highestSeat=Math.max(...model.seats.map(seat=>seat.y));
- assert.ok(lowestTruss-highestSeat>4.5, 'Raised roof leaves headroom above the last row');
+ assert.ok(lowestTruss-highestSeat>8.5, 'Raised roof leaves headroom above the last row');
  assert.ok(boxes.some(box=>box.id===-3&&Math.abs(box.size[1]-.9144)<.0001));
  assert.ok(boxes.some(box=>box.id===-1&&box.pos[1]>15&&box.size[1]>3.8&&box.size[2]<.4));
  assert.ok(boxes.some(box=>box.id===-1&&box.pos[0]===0&&box.pos[2]===0
@@ -350,6 +350,22 @@ test('manual terrace refinements remove isolated slits and retain wide rear rows
  assert.equal(spans('323','C').length,0,'The press-side gap remains open');
  assert.ok(rows('U')[0].y-rows('T')[0].y>rows('I')[0].y-rows('H')[0].y,
    'The terrace rises progressively towards the back');
+});
+
+test('manual bowl fitting also fills clipped lower and club banks',()=>{
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const count=(id,row)=>model.seats.filter(seat=>seat.sectionId===id&&seat.row===row).length;
+ for(const [id,last,previous] of [['117','U','T'],['201','J','I'],['210','J','I'],
+   ['228','J','I'],['303','U','T'],['310','U','T'],['327','U','T'],['334','U','T']]){
+   assert.ok(count(id,last)>=Math.floor(count(id,previous)*.85),id+' keeps a continuous rear bank');
+ }
+ const row=(id,label)=>model.seatingRows.find(item=>item.sectionId===id&&item.row===label);
+ const rake=id=>(row(id,'U').y-row(id,'T').y)/row(id,'U').depth;
+ assert.ok(Math.abs(rake('313')-rake('314'))<.10);
+ assert.ok(Math.abs(rake('314')-rake('315'))<.10);
+ assert.equal(count('314','B'),0);
+ assert.equal(count('206','A'),14);
+ assert.equal(count('206','J'),18);
 });
 
 test('Schottenstein overview hides the gray backing while preserving seat-view geometry',()=>{
