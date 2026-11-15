@@ -12,7 +12,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('OSU arena has a full-depth structural gallery, inset windows and no invented exit signs or stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','upperBowl','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams','buildingRoof','entryMasonry','entryGlass','pressWalls','pressGlass','cutawayFacade','externalTrim','galleryFloorMesh']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','upperBowl','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams','buildingRoof','entryMasonry','entryGlass','pressWalls','pressGlass','cutawayFacade','externalTrim','galleryFloorMesh','brickBase','brickPiers','towerFrames','towerCrown','towerRibs','entryBrick','entryCurtain','entryFrames','entryCanopy','entryDoors']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
@@ -34,6 +34,13 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.roofDeck.length/18>200,'Roof has its own deck surface and material');
   assert.ok(g.buildingRoof.length>g.roofDeck.length);
   assert.ok(g.entryMasonry.length>1000);
+  assert.ok(g.brickBase.length>2000,'Brick plinth must be physically modelled');
+  assert.ok(g.brickPiers.length>100,'Entrance-level structural piers must exist');
+  assert.ok(g.entryCurtain.length>300,'Glass vestibule doors must be present');
+  assert.ok(g.entryCanopy.length>1000,'Canopies project from the entrance bays');
+  assert.ok(g.towerCrown.length>1000,'Real open-topped lantern cornices');
+  assert.ok(g.towerFrames.length>0,'Round tower windows have frames');
+  assert.ok(g.externalTrim.length>1000,'Panel seams replace the old uniform gray facade');
   assert.ok(g.pressGlass.length>0);
   const press=plan.features.find(feature=>feature.kind==='press');
   assert.ok(!plan.seats.some(seat=>polygonSpans([press.outline],seat.x)
