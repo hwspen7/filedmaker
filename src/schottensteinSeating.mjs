@@ -1,6 +1,7 @@
 import {
   SCHOTTENSTEIN_CHART_LABELS, SCHOTTENSTEIN_DIAGRAM_EDGE, SCHOTTENSTEIN_SECTION_CONTOURS,
 } from './schottensteinChartContours.mjs';
+import { OSU_FACTS } from './osuFacts.mjs';
 
 // The guide endpoints orient the rows. The traced chart contours clip them.
 export const SCHOTTENSTEIN_CHART_URL =
@@ -83,16 +84,27 @@ const upper = [
 ];
 
 const letterRows = letters => [...letters];
-const lowerSidelineRows=letterRows('ABCDEFGHIJKLMNOPQRSTU');
+const rowsAtoU=letterRows('ABCDEFGHIJKLMNOPQRSTU');
+const accessibleTerrace=new Set([304,307,314,331]);
+const terraceEnds=new Map([[321,17],[322,13],[324,14],[325,14],[326,20]]);
+const clubWithPublishedCounts = new Set(['204','205','206','207','221','222','223','224']);
+// Published row labels from the section pages linked below. The slots keep
+// the documented wheelchair landings and press-side breaks between rows open.
 const rowDetails = new Map([
-  ...['104','107','121','122','123','124'].map(id=>[id,{labels:['AA',...lowerSidelineRows]}]),
-  ...['105','106'].map(id=>[id,{labels:lowerSidelineRows}]),
-  ['114', {labels:[...letterRows('ABCDEFGHIJ').map(c=>c+c),...letterRows('ABCDEFGHIJKLMNOPQRS')]}],
-  ['206', {labels:letterRows('ABCDEFGHIJ')}],
-  ['302', {labels:letterRows('ABCDEFGHIJKLMNOPQRSTU')}],
+  ...['104','107','121','122','123','124'].map(id=>[id,{labels:['AA',...rowsAtoU]}]),
+  ...['105','106','111','117','128','134'].map(id=>[id,{labels:rowsAtoU}]),
+  ...['101','110','127'].map(id=>[id,{labels:rowsAtoU.slice(3,19)}]),
+  ['118',{labels:rowsAtoU.slice(2)}],
+  ['114',{labels:[...rowsAtoU.slice(0,10).map(c=>c+c),...rowsAtoU.slice(0,19)]}],
+  ['131',{labels:[...rowsAtoU.slice(0,8).map(c=>c+c),...rowsAtoU.slice(0,19)]}],
+  ...club.map(([id])=>[String(id),{labels:rowsAtoU.slice(0,10)}]),
+  ...upper.filter(([id])=>id!==323).map(([id])=>[
+    String(id),accessibleTerrace.has(id)
+      ?{labels:['A',...rowsAtoU.slice(7)],slots:[0,...rowsAtoU.slice(7).map((_,i)=>i+7)]}
+      :{labels:rowsAtoU.slice(0,terraceEnds.get(id)??rowsAtoU.length)}
+  ]),
   ['323', {labels:letterRows('ABFGHIJKLMN'), slots:[0,1,5,6,7,8,9,10,11,12,13]}],
 ]);
-const clubWithPublishedCounts = new Set(['204','205','206','207','221','222','223','224']);
 const referenceSite = 'https://www.rateyourseats.com/schottenstein-center/seating/sections/';
 export const SCHOTTENSTEIN_REFERENCE_VIEWS = Object.freeze([
   {section:'105', row:'D', label:'Lower sideline', source:referenceSite+'105'},
@@ -104,13 +116,18 @@ export const SCHOTTENSTEIN_REFERENCE_VIEWS = Object.freeze([
 export const SCHOTTENSTEIN_COURT_SOURCE = 'https://ohiostatebuckeyes.com/news/2025/10/30/mens-basketball-new-season-and-new-look-at-the-schottenstein-center';
 export const SCHOTTENSTEIN_BOARD_SOURCE = 'https://ohiostatebuckeyes.com/news/2026/7/17/mens-basketball-schottenstein-center-to-feature-video-board-enhancements-this-season';
 
-// The chart is a top view. In the right-handed arena, its right-hand end
-// is negative Z, so the spectator camera and the published map agree.
-const toWorld = (z, x) => ({ x: (x - 393.5) * 15.24 / 112, z: (582 - z) * 28.6512 / 222 });
+// Calibrate on the playing area inside the colored apron on the 1024px
+// chart. The right-hand end of the drawing is negative Z.
+const toWorld = (z, x) => ({ x: (x - 394.5) * 15.24 / 103, z: (582 - z) * 28.6512 / 194 });
 const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
 const unpack = pixels => Array.from({length:pixels.length/2},(_,i)=>toWorld(pixels[i*2],pixels[i*2+1]));
 const labels = new Map(SCHOTTENSTEIN_CHART_LABELS.map(([id,x,y])=>[id,toWorld(x,y)]));
 export const schottensteinDiagramEdge=unpack(SCHOTTENSTEIN_DIAGRAM_EDGE);
+const chartRegions=[
+  {kind:'band',label:'Band Area',sectionId:'114',outline:unpack([764,401,808,401,808,432,764,432])},
+  {kind:'press',label:'Press Box',sectionId:'323',outline:unpack([439,697,706,695,733,727,439,727])},
+  {kind:'accessible',label:'Accessible Platform',sectionId:'105',outline:unpack([513,217,577,217,577,229,513,229])},
+];
 
 export function polygonSpans(outlines,depth) {
   const spans=[];
@@ -141,7 +158,8 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
     if(nx*center.x+nz*center.z>0){nx=-nx;nz=-nz;}
     const outlines=SCHOTTENSTEIN_SECTION_CONTOURS[id].map(unpack);
     // Local X runs outward, local Z runs to a spectator's right.
-    const projected=outlines.map(points=>points.map(({x,z})=>({x:-nx*x-nz*z,z:-nz*x+nx*z})));
+    const project=({x,z})=>({x:-nx*x-nz*z,z:-nz*x+nx*z});
+    const projected=outlines.map(points=>points.map(project));
     const depths=projected.flat().map(p=>p.x);
     const near=Math.min(...depths), depth=Math.max(...depths)-near;
     const sectionId=String(id),details=rowDetails.get(sectionId);
@@ -151,7 +169,8 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
     const treadDepth=depth/depthRows;
     const rise=tier===0?(treadDepth<.74?.24:.31):tier===1?.34:Math.min(.45,6.85/(depthRows-1));
     const frontHeight=tier===0?(id===114||id===131?.42:.64):tier===1?8.05:14.65;
-    return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,nx,nz,near,
+    const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
+    return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,
       treadDepth,rise,frontHeight,details,labelPoint:labels.get(id)};
   })
 );
@@ -172,13 +191,20 @@ export function usesSchottensteinChart(project) {
     project.venueReference?.id === 'schottenstein-center' && project.surface === 'ncaa';
 }
 
-function rowGeometry(block,rowIndex) {
+function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const slot=block.details?.slots?.[rowIndex]??rowIndex;
   const depth=block.near+(slot+.5)*block.treadDepth;
   const {nx,nz}=block;
   const point=lateral=>({x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral});
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
-  const spans=polygonSpans(block.projected,depth).map(([low,high])=>
+  let ranges=polygonSpans(block.projected,depth);
+  if(reserve){
+    for(const [start,end] of polygonSpans(block.reserved,depth)){
+      ranges=ranges.flatMap(([low,high])=>end<=low||start>=high?[[low,high]]:
+        [[Math.max(low,end),high],[low,Math.min(high,start)]].filter(([a,b])=>b-a>.01));
+    }
+  }
+  const spans=ranges.map(([low,high])=>
     ({left:point(high),right:point(low),width:high-low}));
   return {spans,width:spans.reduce((sum,span)=>sum+span.width,0),yaw:Math.atan2(nx,nz),
     y:block.frontHeight+slot*block.rise,slot};
@@ -209,57 +235,69 @@ function buildSchottensteinFeatures(rows) {
       x:point.x-Math.sin(row.yaw)*offset,y:row.y,z:point.z-Math.cos(row.yaw)*offset,yaw:row.yaw,
       source:referenceSite+sectionId}];
   });
-  const region=(kind,label,sectionId,pixels)=>{
-    const outline=unpack(pixels);
+  const regions=chartRegions.map(region=>{
+    const {sectionId,outline}=region;
     const point=outline.reduce((center,p)=>({x:center.x+p.x/outline.length,z:center.z+p.z/outline.length}),{x:0,z:0});
     const row=rows.filter(item=>item.sectionId===sectionId).sort((a,b)=>{
       const distance=item=>Math.hypot((item.left.x+item.right.x)/2-point.x,(item.left.z+item.right.z)/2-point.z);
       return distance(a)-distance(b);
     })[0];
-    return {kind,label,sectionId,...point,y:row?.y??0,outline,source:SCHOTTENSTEIN_CHART_URL};
-  };
-  return [...features,
-    region('band','Band Area','114',[764,401,808,401,808,432,764,432]),
-    region('press','Press Box','323',[439,697,706,695,733,727,439,727]),
-    region('accessible','Accessible Platform','105',[513,217,577,217,577,229,513,229]),
-  ];
+    return {...region,...point,y:row?.y??0,source:SCHOTTENSTEIN_CHART_URL};
+  });
+  return [...features,...regions];
+}
+
+// Minimum seat-center spacing used for the reconstruction.
+const minimumPitch=.48;
+const publishedSeatTotal=OSU_FACTS['schottenstein-center'].mensBasketballCapacity.value;
+
+function allocateSeats(spans,count){
+  const choices=spans.flatMap(span=>Array.from({length:Math.floor(span.width/minimumPitch)},
+    (_,i)=>({span,pitch:span.width/(i+1)})));
+  if(choices.length<count)throw new Error('The seating runs cannot fit the published count at the modeled minimum spacing.');
+  choices.sort((a,b)=>b.pitch-a.pitch);
+  for(const {span} of choices.slice(0,count))span.count++;
 }
 
 export function buildSchottensteinSeating(pitch) {
   const seats=[],groups=[],seatingRows=[];
+  const rows=[],unallocated=[];
+  let fixedSeats=0;
   blocks.forEach((block,sectionIndex)=>{
     for(let row=0;row<block.rows;row++){
       const g=rowGeometry(block,row);
       if(!g.spans.length)continue;
       const rowLabel=block.details?.labels?.[row]??row+1;
       const documentedCount=clubWithPublishedCounts.has(block.id)?(row<5?14:18):null;
-      const readableWidth=documentedCount?Math.min(g.width,documentedCount*pitch):g.width;
-      const visibilityPadding=(g.width-readableWidth)/2;
-      const from=seats.length;
-      const append=(position,seatWidth)=>{
+      const seatSpans=rowGeometry(block,row,{reserve:true}).spans.map(span=>({...span,count:0}));
+      if(documentedCount){
+        allocateSeats(seatSpans,documentedCount);
+        fixedSeats+=documentedCount;
+      }else unallocated.push(...seatSpans);
+      rows.push({block,sectionIndex,rowLabel,g,seatSpans});
+      for(const span of g.spans)seatingRows.push({...span,y:g.y,yaw:g.yaw,slot:g.slot,
+        tier:block.tier,sectionId:block.id,row:rowLabel,depth:block.treadDepth,rise:block.rise});
+    }
+  });
+  allocateSeats(unallocated,publishedSeatTotal-fixedSeats);
+  for(const {block,sectionIndex,rowLabel,g,seatSpans} of rows){
+    const from=seats.length;
+    for(const {left,right,width,count} of seatSpans){
+      if(!count)continue;
+      const spacing=Math.min(width/count,Math.max(minimumPitch,pitch));
+      const inset=(width-count*spacing)/2;
+      for(let i=0;i<count;i++){
+        const position=lerp(left,right,(inset+(i+.5)*spacing)/width);
         const number=seats.length-from+1;
         seats.push({...position,y:g.y,yaw:g.yaw,tier:block.tier,sectionId:block.id,
           sectionIndex,row:rowLabel,number,uid:`DEMO-${block.id}-${rowLabel}-${number}`,
-          seatingDepth:block.treadDepth,seatWidth,
+          seatingDepth:block.treadDepth,seatWidth:spacing,
           inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl'});
-      };
-      if(documentedCount){
-        for(let i=0;i<documentedCount;i++){
-          const spacing=readableWidth/documentedCount;
-          append(pointAlongSpans(g.spans,visibilityPadding+(i+.5)*spacing),spacing);
-        }
-      }else{
-        for(const {left,right,width} of g.spans){
-          const count=Math.floor(width/pitch);
-          for(let i=0;i<count;i++)append(lerp(left,right,(i+.5)/count),width/count);
-        }
       }
-      for(const span of g.spans)seatingRows.push({...span,y:g.y,yaw:g.yaw,slot:g.slot,
-        tier:block.tier,sectionId:block.id,row:rowLabel,depth:block.treadDepth,rise:block.rise});
-      const count=seats.length-from;
-      if(count)groups.push({tier:block.tier,sectionIndex,row:rowLabel,from,count});
     }
-  });
+    const count=seats.length-from;
+    if(count)groups.push({tier:block.tier,sectionIndex,row:rowLabel,from,count});
+  }
   return {seats,groups,seatingRows,sectionFootprints:schottensteinFootprints(),features:buildSchottensteinFeatures(seatingRows)};
 }
 

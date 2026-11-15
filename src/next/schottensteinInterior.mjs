@@ -141,23 +141,28 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     const x=Math.cos(angle),z=Math.sin(angle);
     return {x:rx*Math.sign(x)*Math.abs(x)**.68,z:rz*Math.sign(z)*Math.abs(z)**.68};
   };
+  const terracePoints=footprints.filter(section=>section.tier===2).flatMap(section=>section.outlines.flat());
+  const outerX=Math.max(...terracePoints.map(p=>Math.abs(p.x)))+1.5;
+  const outerZ=Math.max(...terracePoints.map(p=>Math.abs(p.z)))+2.5;
   // Recessed suite band, ribbon and upper fascia observed in the arena photos.
   for(let i=0;i<64;i++){
     const a=i*2*Math.PI/64,b=(i+1)*2*Math.PI/64;
-    const p=point(a,30.9,42.4),q=point(b,30.9,42.4);
+    const p=point(a,outerX*.67,outerZ*.72),q=point(b,outerX*.67,outerZ*.72);
     spanBox(add,p,q,12.46,1.9,.48,suite,INWARD_FACING);
     spanBox(add,mix(p,q,.10),mix(p,q,.88),12.51,1.03,.49,glass,INWARD_FACING);
     spanBox(add,p,q,13.47,.9144,.39,led,INWARD_FACING);
     spanBox(add,p,q,13.98,.14,.43,fascia,INWARD_FACING);
-    const outerA=point(a,46.1,58.8),outerB=point(b,46.1,58.8);
+    const outerA=point(a,outerX,outerZ),outerB=point(b,outerX,outerZ);
     spanBox(add,outerA,outerB,22.6,6.7,.95,color('#353139'),HIDDEN_IN_CUTAWAY);
     spanBox(add,outerA,outerB,26.1,.33,.90,red,HIDDEN_IN_CUTAWAY);
   }
   // Interior overhead structure is visible from the spectator camera.
   const ceiling=color('#27262b'), truss=color('#535057'), light=color('#ddd8cf');
-  for(let z=-46;z<=46;z+=8){
-    const half=Math.max(25,44-Math.max(0,Math.abs(z)-34)*.6);
-    add([0,30.5,z],[half*2,.36,8.05],0,ceiling,HIDDEN_IN_CUTAWAY);
+  const roofBays=Math.ceil(outerZ*2/8),bayDepth=outerZ*2/roofBays;
+  for(let i=0;i<roofBays;i++){
+    const z=-outerZ+(i+.5)*bayDepth;
+    const half=Math.max(outerX*.55,outerX-Math.max(0,Math.abs(z)-outerZ*.58)*.6);
+    add([0,30.5,z],[half*2,.36,bayDepth+.05],0,ceiling,HIDDEN_IN_CUTAWAY);
     add([0,29.55,z],[half*2,.34,.37],0,truss,HIDDEN_IN_CUTAWAY);
     add([0,28.7,z],[half*2,.12,.18],0,truss,HIDDEN_IN_CUTAWAY);
     for(let x=-half+5;x<half;x+=6){

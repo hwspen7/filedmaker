@@ -102,6 +102,8 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   assert.equal(plan.hasRoster, false);
   assert.equal(plan.official.officialCapacity,19049);
   assert.equal(plan.official.capacityWithStudents,18809);
+  assert.equal(plan.chairCount,19049);
+  assert.ok(model.seats.every(seat=>seat.seatWidth>=.48));
   assert.equal(plan.positionCollisions, 0);
   assert.ok(plan.roundedCount > 0);
   assert.equal(buildVenuePlan(model, {detail:'compact'}).roundedCount, 0);
@@ -138,6 +140,10 @@ test('phase-one basketball preview models documented club rows and the upper ais
  assert.equal(inRow('106','AA').length,0);
  assert.ok(inRow('106','U').length>0);
  assert.ok(inRow('122','AA').length>0);
+ assert.ok(inRow('305','U').length>0);
+ assert.ok(inRow('304','H').length>0);
+ assert.equal(inRow('304','B').length,0);
+ assert.equal(inRow('322','N').length,0);
  assert.ok(inRow('114','P').length>0);
  const upperCorner=inRow('302','D');
  assert.ok(upperCorner.length>0);
@@ -168,7 +174,7 @@ test('surveyed Ohio State import keeps supplied positions and the native section
  assert.equal(plan.official.officialCapacity,19049);
  assert.equal(plan.official.capacityWithStudents,18809);
  assert.equal(plan.official.inventoryVsOfficial,2-19049);
- assert.ok(generateSeats(project).seats.length>12000);
+ assert.equal(generateSeats(project).seats.length,19049);
 });
 
 test('phase-one native geometry includes a cutaway-aware interior and current board',()=>{
@@ -206,4 +212,9 @@ test('the seating chart clips rendered rows and preserves marked circulation ope
   return !spans.some(([low,high])=>low-1e-6<=seat.z&&seat.z<=high+1e-6);
  });
  assert.equal(outside.length,0,JSON.stringify(outside.slice(0,4)));
+ for(const feature of model.features.filter(item=>item.outline)){
+   const inside=model.seats.filter(seat=>seat.sectionId===feature.sectionId&&
+     polygonSpans([feature.outline],seat.x).some(([low,high])=>seat.z>low&&seat.z<high));
+   assert.equal(inside.length,0,feature.label);
+ }
 });

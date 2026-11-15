@@ -55,7 +55,8 @@ function renderProject(){
     renderer?.setViewOptions({target:'center',zoom:1});
     const name=project.school?.venue||project.title;
     $('title').textContent=name.replace(/ — .*/, '');
-    $('subtitle').textContent=`${project.city||'United States'} · ${model.surface.label} · ${plan.hasRoster?'ticket roster loaded':'estimated seating arrangement'}`;
+    const seating=plan.hasRoster?'ticket roster loaded':model.seatingRows?'capacity-matched reconstruction':'estimated seating arrangement';
+    $('subtitle').textContent=`${project.city||'United States'} · ${model.surface.label} · ${seating}`;
     $('officialCapacity').textContent=plan.official.officialCapacity===null?'Not published':fmt(plan.official.officialCapacity);
     const capacitySource=$('capacitySource');
     capacitySource.textContent='No verified capacity supplied';
@@ -73,7 +74,7 @@ function renderProject(){
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
       :model.seatingRows
-        ?'The preview uses the published section chart and photo references. Seat positions and sightlines are approximate.'
+        ?`The model contains ${fmt(model.seats.length)} seats. The section chart and published rows guide their placement. Individual seat positions and sightlines are approximate.`
         :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
     $('referenceViews').hidden=!model.seatingRows;
     if(model.sectionFootprints){
