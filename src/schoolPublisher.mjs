@@ -112,7 +112,6 @@ export function buildOfflineSchoolViewerHTML(input,rendererSource){
     instanceCount:plan.instanceCount,
     roundedCount:plan.roundedCount,
     arenaInterior:plan.arenaInterior,
-    framingPoints:plan.framingPoints,
     scoreboardHeight:plan.scoreboardHeight,
     packedInstances:base64,
   };
@@ -126,7 +125,7 @@ const data=JSON.parse(document.getElementById('payload').textContent),$=id=>docu
 $('name').textContent=data.name;$('school').textContent=data.school;$('capacity').textContent='Published capacity: '+(data.officialCapacity==null?'not supplied':data.officialCapacity.toLocaleString())+' · '+seats.length.toLocaleString()+' visual positions · '+(data.verifiedTicketIDs?'imported seat IDs':'synthetic seats only');
 $('note').textContent=data.verifiedTicketIDs?'School-supplied seat IDs; XYZ may be estimated':'Illustrative positions only — no official seat inventory';
 const raw=atob(data.packedInstances),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
-const plan={seats,surface:data.surface,instanceCount:data.instanceCount,roundedCount:data.roundedCount,arenaInterior:data.arenaInterior,framingPoints:data.framingPoints,scoreboardHeight:data.scoreboardHeight,instanceData:new Float32Array(bytes.buffer)};
+const plan={seats,surface:data.surface,instanceCount:data.instanceCount,roundedCount:data.roundedCount,arenaInterior:data.arenaInterior,scoreboardHeight:data.scoreboardHeight,instanceData:new Float32Array(bytes.buffer)};
 const map=$('map'),ctx=map.getContext('2d');let chosen=null,renderer=null,mode='two';
 let extent=Math.max(data.surface.width/2+5,data.surface.length/2+5);for(const s of seats)extent=Math.max(extent,Math.abs(s.x)+4,Math.abs(s.z)+4);
 function draw(){const r=map.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);map.width=r.width*dpr;map.height=r.height*dpr;const w=map.width,h=map.height,scale=.44*Math.min(w,h)/extent,cx=w/2,cy=h/2;ctx.fillStyle='#eef3f6';ctx.fillRect(0,0,w,h);ctx.fillStyle=data.surface.sport==='basketball'?'#bdb2a2':'#397f55';ctx.fillRect(cx-data.surface.width*scale/2,cy-data.surface.length*scale/2,data.surface.width*scale,data.surface.length*scale);ctx.strokeStyle='white';ctx.lineWidth=1.6*dpr;ctx.strokeRect(cx-data.surface.width*scale/2,cy-data.surface.length*scale/2,data.surface.width*scale,data.surface.length*scale);

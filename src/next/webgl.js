@@ -191,15 +191,13 @@ export class NativeVenueRenderer {
       minY=Math.min(minY,y-.5);maxY=Math.max(maxY,y+1);
       minZ=Math.min(minZ,z-1);maxZ=Math.max(maxZ,z+1);
     }
-    for(const [x,y,z] of plan.framingPoints??[]){
-      minX=Math.min(minX,x);maxX=Math.max(maxX,x);
-      minY=Math.min(minY,y);maxY=Math.max(maxY,y);
-      minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
-    }
     this.center=[(minX+maxX)/2,(minY+maxY)*.37,(minZ+maxZ)/2];
-    this.corners=plan.framingPoints
-      ? [...plan.framingPoints,[-w/2,0,-l/2],[w/2,0,l/2],[0,maxY,0]]
-      : [minX,maxX].flatMap(x=>[minY,maxY].flatMap(y=>[minZ,maxZ].map(z=>[x,y,z])));
+    this.corners=[minX,maxX].flatMap(x=>[minY,maxY].flatMap(y=>[minZ,maxZ].map(z=>[x,y,z])));
+    if(plan.sectionFootprints){
+      const stride=Math.max(1,Math.floor(plan.seats.length/800));
+      this.corners=plan.seats.filter((_,i)=>i%stride===0).map(s=>[s.x,s.y+.9,s.z]);
+      this.corners.push([-w/2,0,-l/2],[w/2,0,l/2],[0,maxY,0]);
+    }
     this.radius=Math.max(maxX-minX,maxZ-minZ)*.5;
     this.view('overview');
   }
@@ -271,7 +269,6 @@ export class NativeVenueRenderer {
       gl.bindVertexArray(this.roundedBox.vao);
       gl.drawArraysInstanced(gl.TRIANGLES,0,this.roundedBox.vertices,rounded);
     }
-    this.onFrame?.(this);
   }
   projectPoint(pos){if(!this.vp)return null;const m=this.vp,[x,y,z]=pos;const w=m[3]*x+m[7]*y+m[11]*z+m[15];if(w<=0)return null;
     const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/w,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/w;
