@@ -352,3 +352,21 @@ test('bulk seat allocation preserves eligible row runs without adding inventory'
  allocateSeats(spans,2);
  assert.deepEqual(spans.map(s=>s.count),[2,1]);
 });
+
+test('Schottenstein native viewport has no near-white backdrop or beige deck shading',()=>{
+ const css=read('../studio.css'),shader=read('../src/next/webgl.js');
+ assert.match(css,/background:linear-gradient\(155deg,#bfc8c8 0%,#9aa9a9 100%\)/);
+ assert.doesNotMatch(css,/\.viewport\{[^}]*background:#e8eef0/);
+ assert.match(shader,/vec3\(\.55,\.60,\.62\)/);
+ assert.doesNotMatch(shader,/vec3\(\.71,\.686,\.631\)/);
+});
+
+test('Schottenstein elevated deck trims its outside edge to modeled seats',()=>{
+ const source=read('../src/next/schottensteinInterior.mjs');
+ assert.match(source,/occupiedFar/);
+ assert.match(source,/outer\+\.45/);
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const deck=buildVenuePlan(model).deckGeometry;
+ assert.ok(deck.length>200000);
+ assert.ok(deck.every(Number.isFinite));
+});

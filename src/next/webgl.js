@@ -44,10 +44,8 @@ out vec3 vWorld;
 void main(){
   if(uDeck>.5){
     vNormal=aNormal;
-    bool base=aLocal.y<-.5;
-    if(base && uHuman>.5){gl_Position=vec4(3.,3.,3.,1.);return;}
-    vColor=base ? (aNormal.y>.5 ? vec3(.85,.842,.807) : vec3(.62,.616,.567))
-      : mix(vec3(.71,.686,.631),vec3(.46,.43,.39),uHuman);
+    // Structural decks use cool neutral concrete, never the old tan plinth shader.
+    vColor=mix(vec3(.55,.60,.62),vec3(.32,.36,.39),uHuman);
     vWorld=aLocal;
     gl_Position=uVP*vec4(aLocal,1.);
     return;

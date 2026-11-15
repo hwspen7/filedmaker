@@ -63,15 +63,31 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
       const rear = schottensteinDeckPoint(tier, angle, 1);
       return {angle, near: Math.hypot(front.x, front.z), far: Math.hypot(rear.x, rear.z)};
     });
+    const occupiedFar = new Float64Array(segments).fill(-Infinity);
     for (const {x,z,tier:seatTier} of seats) {
       if (seatTier !== tier) continue;
       const index = Math.floor((Math.atan2(z,x) / turn + 1) * segments) % segments;
       const r = Math.hypot(x,z);
-      // Both sides of a mesh cell must extend beyond the chair's footprint.
-      for (let i = -1; i <= 2; i++) {
-        const edge = rim[(index+i+segments)%segments];
-        edge.near = Math.min(edge.near, r - .55);
-        edge.far = Math.max(edge.far, r + .60);
+      // Capture each occupied angular station, retaining space for the seat.
+      for (let delta = -2; delta <= 2; delta++) {
+        const station = (index+delta+segments)%segments;
+        const edge = rim[station];
+        edge.near = Math.min(edge.near,r-.55);
+        edge.far = Math.max(edge.far,r+.60);
+        occupiedFar[station] = Math.max(occupiedFar[station],r);
+      }
+    }
+    // The reference chart cannot justify a wide, empty oval terrace outside
+    // the rear seats. Follow the seat envelope with a small access lip. Nearby
+    // stations bridge legitimate aisles so that the deck edge stays smooth.
+    for(let i=0;i<segments;i++){
+      let outer = -Infinity;
+      for(let delta=-5;delta<=5;delta++){
+        outer=Math.max(outer,occupiedFar[(i+delta+segments)%segments]);
+      }
+      if(Number.isFinite(outer)){
+        const edge=rim[i];
+        edge.far=Math.max(edge.near+.6,Math.min(edge.far,outer+.45));
       }
     }
     const vertex = (x,z) => {
