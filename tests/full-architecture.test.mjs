@@ -63,6 +63,35 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.equal(g.aisles.length+g.stepEdges.length,0,'No fabricated stair geometry');
 });
 
+test('Press Box occupies a broad, tall gallery bay instead of a detached gray roof',()=>{
+  const plan=build(),{pressWalls,pressGlass}=plan.architectureGeometry;
+  const press=plan.features.find(feature=>feature.kind==='press');
+  const vertexData=mesh=>Array.from({length:mesh.length/6},(_,i)=>({
+    x:mesh[i*6],y:mesh[i*6+1],z:mesh[i*6+2],normalY:mesh[i*6+4]
+  }));
+  const windows=vertexData(pressGlass),wall=vertexData(pressWalls);
+  assert.ok(windows.length>120,'Press gallery should be much wider than four small panes');
+  const min=Math.min(...windows.map(p=>p.z)),max=Math.max(...windows.map(p=>p.z));
+  assert.ok(max-min>46,'Press frontage should cover a broad curved gallery bay');
+  const height=Math.max(...windows.map(p=>p.y))-Math.min(...windows.map(p=>p.y));
+  assert.ok(height>4.1,'Press glazing must be taller than the original short box');
+  assert.ok(windows.every(p=>Math.abs(p.normalY)<.001));
+  assert.ok(wall.every(p=>Math.abs(p.normalY)<.001),
+    'Press structure may contain walls, not a floating horizontal gray roof slab');
+  assert.ok(wall.every(p=>p.y>=28.5&&p.y<36));
+  // The source seating exclusion remains unchanged; only the visible Press
+  // Box building volume and annotation are relocated behind the upper row.
+  const edge=fitRearSeatEnvelope(plan.seats,{
+    tier:2,segments:192,clearance:.38,spread:1
+  });
+  assert.ok(windows.every(p=>
+    Math.hypot(p.x,p.z)>edge.radiusAt(Math.atan2(p.z,p.x))+.10),
+    'Press windows must be behind the final occupied row');
+  assert.ok(Math.hypot(press.x,press.z)>52,
+    'Press label should attach to the rear gallery rather than the chair bank');
+  assert.equal(plan.seats.length,19049);
+});
+
 test('the main roof perimeter is convex and independent of the media seating cutout',()=>{
   const {seats,architectureGeometry:g}=build();
   const edge=new Map();
