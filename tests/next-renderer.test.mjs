@@ -9,7 +9,7 @@ import { seatViewAnchors } from '../src/view.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
 import { schottensteinDeckHeight, schottensteinDeckPoint, allocateSeats } from '../src/schottensteinSeating.mjs';
 import { buildSchottensteinDecks } from '../src/next/schottensteinInterior.mjs';
-import { deckVisibleInMode } from '../src/next/webgl.js';
+import { NativeVenueRenderer } from '../src/next/webgl.js';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const decode=plan=>{const a=plan.instanceData,result=[];for(let i=0;i<a.length;i+=11)result.push({pos:[a[i],a[i+1],a[i+2]],size:[a[i+3],a[i+4],a[i+5]],yaw:a[i+6],id:a[i+10]});return result;};
 test('Ohio Stadium always distinguishes official capacity from synthetic model',()=>{
@@ -346,9 +346,9 @@ test('Schottenstein overview hides the gray backing while preserving seat-view g
  assert.equal(buildSchottensteinDecks([],model.sectionFootprints,false).length,0);
  assert.equal(plan.chairCount,19049);
  assert.equal(plan.official.officialCapacity,19049);
- for(const mode of ['overview','top','section']) assert.equal(deckVisibleInMode(plan,mode),false,mode);
- assert.equal(deckVisibleInMode(plan,'human'),true);
- assert.equal(deckVisibleInMode({deckGeometry:new Float32Array(0)},'human'),false);
+ for(const mode of ['overview','top','section']) assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,mode),false,mode);
+ assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,'human'),true);
+ assert.equal(NativeVenueRenderer.deckVisibleInMode({deckGeometry:new Float32Array(0)},'human'),false);
  assert.ok(!decode(plan).some(box=>box.id===-4));
  const webgl=read('../src/next/webgl.js');
  assert.match(webgl,/alpha:true/);
