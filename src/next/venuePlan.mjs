@@ -4,7 +4,7 @@ import { seatColor, seatKind } from '../seatPresentation.mjs';
 import { ticketReconciliation } from '../seatFirst.mjs';
 import { polygonSpans } from '../schottensteinSeating.mjs';
 import { addSchottensteinBoard, addSchottensteinBowl, buildSchottensteinDecks, buildSchottensteinPedestal } from './schottensteinInterior.mjs';
-import { buildSchottensteinArchitecture, buildSchottensteinExitMarkers } from './schottensteinArchitecture.mjs';
+import { buildSchottensteinArchitecture } from './schottensteinArchitecture.mjs';
 import { ArchitectureEngine } from './engines/architecture.mjs';
 import { ValidationEngine } from './engines/validation.mjs';
 
@@ -150,7 +150,6 @@ export function buildVenuePlan(model,options={}) {
   let deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
   const architectureGeometry = chartPreview ? buildSchottensteinArchitecture(model)
     : model.proceduralGeometry ? ArchitectureEngine.build(model.proceduralGeometry) : null;
-  const exitMarkers = chartPreview ? buildSchottensteinExitMarkers(model) : [];
   // The same deck serves the exterior render and the first-person cutaway.
   if(model.proceduralGeometry)deckGeometry=architectureGeometry?.decks;
   const engineAudit=model.proceduralGeometry ? ValidationEngine.validate({
@@ -294,7 +293,7 @@ export function buildVenuePlan(model,options={}) {
     instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
     sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview||Boolean(model.proceduralGeometry),
     engineAudit,proceduralSpec:model.proceduralSpec??null,
-    scoreboardHeight:chartPreview?16.3:13.6,features,exitMarkers,seats,project,surface,official,
+    scoreboardHeight:chartPreview?16.3:13.6,features,seats,project,surface,official,
     courtStyle:courtColors?{...courtColors,apronWidth:apron,laneSize:BASKETBALL_LANE}:null,
     hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
 }
