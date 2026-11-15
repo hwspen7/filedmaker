@@ -1,6 +1,6 @@
 // Real-venue reference profiles. Architectural measurements are NOT a seat survey.
 // Reconstructed values are deliberately separate from documented facts.
-import { createProject, createCustomOutline, validateProject, makeSections } from './model.mjs';
+import { createProject, createCustomOutline, validateProject, makeSections, balancedReferenceSections } from './model.mjs';
 import { enableSeatFirst } from './seatFirst.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
 
@@ -98,6 +98,10 @@ export function createOhioStadiumProject() {
     x: Number((point.x * (point.z < 0 ? 1.025 : .995)).toFixed(3)),
     z: Number((point.z * (point.z < 0 ? 1.025 : 1.015)).toFixed(3)),
   }));
+  // Equal-degree sectors around a squarish bowl shrink corner wedges into
+  // lone seats. Balance visual sectors by front-row arc length instead.
+  const ohioBalanced = balancedReferenceSections(p, 32, p.tiers[0].offset);
+  p.sections = p.sections.map((s, i) => ({...s, start:ohioBalanced[i].start, end:ohioBalanced[i].end}));
   p.sectionProfiles = [];
   for (const section of p.sections) {
     const angle = (section.start + section.end) / 2;
@@ -108,9 +112,9 @@ export function createOhioStadiumProject() {
         frontShift: 0, heightShift: 0, rise: tier.rise, depth: tier.depth});
     }
   }
-  p.aisles = Array.from({length: 14}, (_,i)=>({
-    id:`illustrative-aisle-${i+1}`, angle: Number(((i+.5)*360/14).toFixed(3)), width: 1.45, tier:'all',
-  }));
+  // Do not invent unverified passage locations in a named real venue.
+  // Explicitly measured/user-authored aisles may be imported later.
+  p.aisles = [];
   // Real portal locations and opening dimensions have not been verified.
   // Do not invent conspicuous cutouts in a named real stadium. Schools can
   // add evidence-backed openings from surveyed CAD/SVG or venue photos.
@@ -161,9 +165,10 @@ export function createSchottensteinCenterProject() {
     {id:'T2',label:'Huntington Club / premium level — illustrative', rows:8,depth:.86,rise:.38,offset:0,height:0,gap:4.8,heightGap:3.1},
     {id:'T3',label:'Upper bowl — illustrative', rows:20,depth:.82,rise:.44,offset:0,height:0,gap:0,heightGap:0},
   ];
-  p.aisles = Array.from({length:16}, (_,i)=>({
-    id:`schematic-aisle-${i+1}`,angle:(i+.5)*22.5,width:1.12,tier:'all'
-  }));
+  const schottBalanced = balancedReferenceSections(p, 24, p.tiers[0].offset);
+  p.sections = p.sections.map((s, i) => ({...s, start:schottBalanced[i].start, end:schottBalanced[i].end}));
+  // No fabricated aisle cutouts in the generic reference sample.
+  p.aisles = [];
   // No tunnel is cut unless its real position is verified; automatic black holes
   // were an earlier defect in reference models.
   p.portals=[];

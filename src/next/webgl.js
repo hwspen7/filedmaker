@@ -72,7 +72,7 @@ const cube=(()=>{
 export class NativeVenueRenderer {
   constructor(canvas,onPick=()=>{}){
     this.canvas=canvas;this.onPick=onPick;
-    const gl=canvas.getContext('webgl2',{antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});
+    const gl=canvas.getContext('webgl2',{antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});
     if(!gl)throw Error('WebGL2 is not available on this device. Use the 2D map instead.');
     this.gl=gl;this.program=makeProgram(gl,VERTEX,FRAGMENT);this.locations={vp:gl.getUniformLocation(this.program,'uVP'),eye:gl.getUniformLocation(this.program,'uEye'),human:gl.getUniformLocation(this.program,'uHuman')};
     this.vao=gl.createVertexArray();gl.bindVertexArray(this.vao);
@@ -81,7 +81,7 @@ export class NativeVenueRenderer {
     this.instances=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
     const entries=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
     for(const [loc,size,offset] of entries){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,44,offset);gl.vertexAttribDivisor(loc,1);}
-    gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.clearColor(.941,.959,.968,1);
+    gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.clearColor(0,0,0,0);
     this.plan=null;this.mode='overview';this.pan=[0,0,0];this.theta=.68;this.phi=.87;this.distance=140;this.humanYaw=0;this.humanPitch=0;this.humanFov=63;this.viewOptions={posture:'seated',target:'center',zoom:1};
     this.bind();this.resize();this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(canvas);
   }

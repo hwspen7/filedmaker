@@ -13,7 +13,7 @@ test('light workspace uses legible neutral theme and light 3D canvas', () => {
   assert.match(css, /--panel:\s*#f9f9f9/);
   assert.match(css, /--surface:\s*#ffffff/);
   assert.match(css, /\.primary-btn\s*\{[^}]*background:\s*#191919/s);
-  assert.match(scene, /this\.scene\.background\s*=\s*new THREE\.Color\(0xf5f6f6\)/);
+  assert.match(scene, /this\.scene\.background\s*=\s*new THREE\.Color\(0xe0e6e4\)/);
   assert.match(app, /fill="#f7f8f8"/);
   assert.doesNotMatch(css, /color-scheme:\s*dark/);
 });

@@ -81,7 +81,7 @@ function view(which){
   if(which==='top')drawMap();else {renderer?.view(which,selected);renderer?.resize();}
 }
 function drawMap(){
-  if(!plan)return;const c=$('viewport2d'),dpr=Math.min(devicePixelRatio||1,2),r=c.getBoundingClientRect();c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#edf2f5';ctx.fillRect(0,0,c.width,c.height);
+  if(!plan)return;const c=$('viewport2d'),dpr=Math.min(devicePixelRatio||1,2),r=c.getBoundingClientRect();c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#e0e6e4';ctx.fillRect(0,0,c.width,c.height);
   let bound=Math.max(plan.surface.width/2+8,plan.surface.length/2+8);
   for(const s of plan.seats)bound=Math.max(bound,Math.abs(s.x)+5,Math.abs(s.z)+5);
   const scale=Math.min(c.width,c.height)*.44/bound,cx=c.width/2,cy=c.height/2;

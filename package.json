@@ -1,6 +1,6 @@
 {
   "name": "filedmaker",
-  "version": "10.0.0",
+  "version": "10.0.1",
   "private": true,
   "type": "module",
   "description": "Offline-first school venue seating: unified native WebGL2, 2D map, ticket roster provenance, independent capacity audit",

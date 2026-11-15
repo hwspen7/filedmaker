@@ -474,13 +474,13 @@ export class StadiumScene {
     this.onSection = onSection;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-    this.renderer.setClearColor(0xf5f6f6);
+    this.renderer.setClearColor(0xe0e6e4);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.28;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xf5f6f6);
-    this.scene.fog = new THREE.Fog(0xf5f6f6, 195, 560);
+    this.scene.background = new THREE.Color(0xe0e6e4);
+    this.scene.fog = new THREE.Fog(0xe0e6e4, 195, 560);
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb1babe, 2.0));
     const sun = new THREE.DirectionalLight(0xffffff, 2.25);
     sun.position.set(-90, 140, 75);
@@ -597,11 +597,15 @@ export class StadiumScene {
     }
     addSurveyObstacles(this.root,project.survey);
     const mapSpan = Math.max(this.dataBounds.width, this.dataBounds.depth) + 24;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(project.seatFirst ? mapSpan : 700, project.seatFirst ? mapSpan : 700), mat(0xeff1f1));
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.33;
-    ground.userData.editorOnly = true;
-    this.root.add(ground);
+    // The giant bright sheet behind the seats looked like a white background.
+    // Keep it only in the old architectural mode; seat-first renders the bowl itself.
+    if (!project.seatFirst) {
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), mat(0x78858a));
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.33;
+      ground.userData.editorOnly = true;
+      this.root.add(ground);
+    }
     const grid = new THREE.GridHelper(320, 32, 0xc6cbcc, 0xdde0e0);
     grid.position.y = -0.31;
     grid.material.transparent = true;

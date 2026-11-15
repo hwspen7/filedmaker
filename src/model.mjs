@@ -72,6 +72,26 @@ export function createProject(preset = 'nfl') {
   };
 }
 
+export function isLegacyReferenceAisle(project, aisle) {
+  if (!aisle || aisle.tier !== 'all') return false;
+  const reference = project.venueReference?.id;
+  if (reference === 'ohio-stadium') {
+    const match = /^illustrative-aisle-(\d+)$/.exec(String(aisle.id));
+    const i = Number(match?.[1]);
+    return !!match && i >= 1 && i <= 14 &&
+      Math.abs(Number(aisle.angle) - Number(((i - .5) * 360 / 14).toFixed(3))) < .00001 &&
+      Math.abs(Number(aisle.width) - 1.45) < .00001;
+  }
+  if (reference === 'schottenstein-center') {
+    const match = /^schematic-aisle-(\d+)$/.exec(String(aisle.id));
+    const i = Number(match?.[1]);
+    return !!match && i >= 1 && i <= 16 &&
+      Math.abs(Number(aisle.angle) - (i - .5) * 22.5) < .00001 &&
+      Math.abs(Number(aisle.width) - 1.12) < .00001;
+  }
+  return false;
+}
+
 export function validateProject(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected a project object.');
   if (![1, 2, 3, 4, CURRENT_SCHEMA].includes(input.schemaVersion)) throw new Error(`Unsupported project schema. Expected 1, 2, 3, 4 or ${CURRENT_SCHEMA}.`);
@@ -141,6 +161,9 @@ export function validateProject(input) {
   }
   if (project.aisles === undefined) project.aisles = [];
   if (!Array.isArray(project.aisles) || project.aisles.length > 32) throw new Error('Use at most 32 aisles.');
+  // Migrate only the exact unedited, obsolete example cutouts. An aisle with
+  // any changed angle, width, ID or tier remains the user's own authored data.
+  project.aisles = project.aisles.filter(a => !isLegacyReferenceAisle(project, a));
   const aisleIds = new Set();
   project.aisles.forEach((aisle, index) => {
     if (!aisle || typeof aisle !== 'object') throw new Error('Invalid aisle.');
@@ -464,6 +487,21 @@ export function pointAtDistance(path, distance) {
     z: path.points[low].z + (path.points[low + 1].z - path.points[low].z) * t,
     angle: path.points[low].angle + (path.points[low + 1].angle - path.points[low].angle) * t,
   };
+}
+
+// Schematic references should not cut equal-degree sectors: around squared
+// bowls that produces near-zero-width corner wedges and isolated single seats.
+// Space reference section boundaries by actual front-row perimeter instead.
+// This is a visual balancing aid, NOT a claim about official section locations.
+export function balancedReferenceSections(project, count, margin = 0) {
+  const source = makeSections(count);
+  const path = modelPerimeterPath(project, SURFACES[project.surface], margin, 1024);
+  const angleAt = d => pointAtDistance(path, Math.min(path.length, Math.max(0, d))).angle * 180 / Math.PI;
+  return source.map((section, i) => ({
+    ...section,
+    start: i === 0 ? 0 : angleAt(path.length * i / source.length),
+    end: i === source.length - 1 ? 360 : angleAt(path.length * (i + 1) / source.length)
+  }));
 }
 
 export function generateSeats(input) {

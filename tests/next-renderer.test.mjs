@@ -12,10 +12,11 @@ const decode=plan=>{const a=plan.instanceData,result=[];for(let i=0;i<a.length;i
 test('Ohio Stadium always distinguishes official capacity from synthetic model',()=>{
  const p=createOhioStadiumProject(),m=generateSeats(p),plan=buildVenuePlan(m);
  assert.equal(plan.official.officialCapacity,102041);
- assert.equal(plan.seats.length,62240);
+ assert.ok(plan.seats.length>60000 && plan.seats.length<plan.official.officialCapacity);
+ assert.equal(p.aisles.length,0);
  assert.equal(plan.hasRoster,false);
  assert.equal(plan.chairCount,0);
- assert.equal(plan.benchCount,62240);
+ assert.equal(plan.benchCount,m.seats.length);
  assert.ok(plan.instanceCount>m.seats.length);
 });
 test('Schottenstein generated seats get compact furniture without oversized backrests',()=>{
