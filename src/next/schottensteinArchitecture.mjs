@@ -218,11 +218,11 @@ export function buildSchottensteinArchitecture(model){
       {angle:TAU*.875,role:'secondary'}
     ]
   });
-  facade.push(...exterior.metalPanels);
-  glazing.push(...exterior.baseWindows);
-  externalTrim.push(...exterior.metalSeams);
-  entryMasonry.push(...exterior.towerBrick);
-  entryGlass.push(...exterior.towerWindows);
+  for(const vertex of exterior.metalPanels)facade.push(vertex);
+  for(const vertex of exterior.baseWindows)glazing.push(vertex);
+  for(const vertex of exterior.metalSeams)externalTrim.push(vertex);
+  for(const vertex of exterior.towerBrick)entryMasonry.push(vertex);
+  for(const vertex of exterior.towerWindows)entryGlass.push(vertex);
   const brickBase=[...exterior.brickBase],brickPiers=[...exterior.brickPiers],
     towerFrames=[...exterior.towerFrames],towerCrown=[...exterior.towerCrown],
     towerRibs=[...exterior.towerRibs],entryBrick=[...exterior.entryBrick],
