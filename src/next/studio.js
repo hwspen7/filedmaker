@@ -7,6 +7,7 @@ import { buildVenuePlan } from './venuePlan.mjs';
 import { seatColor } from '../seatPresentation.mjs';
 import { SCHOTTENSTEIN_CHART_URL, SCHOTTENSTEIN_REFERENCE_VIEWS, SCHOTTENSTEIN_COURT_SOURCE, SCHOTTENSTEIN_BOARD_SOURCE } from '../schottensteinSeating.mjs';
 import { NativeVenueRenderer } from './webgl.js';
+import { createProceduralProject, PROCEDURAL_DEMOS } from './engines/factory.mjs';
 const $=id=>document.getElementById(id);
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
 let seatsBySection=new Map();
@@ -27,6 +28,8 @@ function setPreset(name){
   try{
     if(name==='ohio')project=createOhioStadiumProject();
     else if(name==='schott')project={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
+    else if(name==='procedural')project=createProceduralProject(PROCEDURAL_DEMOS.arena);
+    else if(name==='procedural-football')project=createProceduralProject(PROCEDURAL_DEMOS.stadium);
     else project=createSchoolProject('college-gym',{school:'Demonstration school',venue:'Example Gymnasium'});
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));
     selected=null;renderProject();
