@@ -1,7 +1,7 @@
 name: Quality
 on:
   push:
-    branches: [main, feature/schottenstein-audience-preview]
+    branches: [main, feature/schottenstein-audience-preview, feature/schottenstein-full-3d-architecture]
   pull_request:
     branches: [main]
 permissions:
