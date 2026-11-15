@@ -83,6 +83,17 @@ async function main(){
       if(statSync(target).size<12000)throw Error('Screenshot is suspiciously small: '+target);
       console.log(file+': WebGL2 OK; '+state.shown+' estimated seats; PNG '+statSync(target).size+' bytes');
     }
+    await evaluate("document.querySelector('#generateName').value='Custom QA Soccer Stadium';document.querySelector('#generateSurface').value='soccer';document.querySelector('#generateSections').value='22';document.querySelector('#generateLowerRows').value='13';document.querySelector('#generateUpperRows').value='18';document.querySelector('#generateCapacity').value='16500';document.querySelector('#generateVenue').click()");
+    const custom=await poll(async()=>{
+      const state=await evaluate("({name:document.querySelector('#title')?.textContent,loaded:document.querySelector('#loading')?.hidden,seats:document.querySelector('#visualCount')?.textContent,webgl:!!document.querySelector('#viewport3d')?.getContext('webgl2'),warning:document.querySelector('#warnings')?.textContent})");
+      return state?.name==='Custom QA Soccer Stadium' && state.loaded && Number(state.seats.replace(/,/g,''))>0 ? state:null;
+    },60);
+    if(!custom.webgl||/validation failed/i.test(custom.warning))throw Error('Custom venue form did not render correctly: '+JSON.stringify(custom));
+    await delay(1100);
+    const screenshot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const name=join(dir,'custom.png');writeFileSync(name,Buffer.from(screenshot.data,'base64'));
+    if(statSync(name).size<12000)throw Error('Custom screenshot is blank');
+    console.log('custom: WebGL2 OK; '+custom.seats+' estimated seats');
   } finally {
     client?.close();chrome.kill('SIGKILL');server.kill('SIGTERM');
     rmSync(work,{recursive:true,force:true});
