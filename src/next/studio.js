@@ -268,9 +268,7 @@ function updateReferencePhoto(seat){
 }
 function view(which){
   if(which!=='top'&&!renderer)return;
-  const building=document.querySelector('[data-view="building"]');
-  building.hidden=!plan.architectureGeometry?.facade?.length;
-  if(which==='building'&&building.hidden)which='overview';
+  if(which==='building')which='overview'; // Compatibility with older URLs.
   if(which==='human'&&!selected&&model.seatingRows)pickReferenceSeat(SCHOTTENSTEIN_REFERENCE_VIEWS[0]);
   if(which==='human'&&!selected){error('Choose a seat to enter seat view.');return;}
   if(which==='section'&&!selected){error('Choose a seat or search an identifier before focusing a section.');return;}
@@ -282,10 +280,10 @@ function view(which){
   const basketball=plan.surface.sport==='basketball';
   for(const option of $('cameraTarget').options)if(option.value!=='center')option.hidden=!basketball;
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
-  $('viewLabel').textContent=({overview:'Whole venue / overview',building:'Building exterior',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
+  $('viewLabel').textContent=({overview:'Whole arena / building and seating',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
   $('viewHint').textContent=which==='top'
     ?(plan.features.length?'Select a section · Gold dots mark venue features':model.sectionFootprints?'Select a numbered section':'Select a seat on the map')
-    :which==='human'?'Drag to look around · Scroll to change field of view':which==='building'?'Drag to orbit · Scroll to zoom':'Drag to orbit · Scroll to zoom · Click a seat';
+    :which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
   if(which==='top'){
     $('areaLabels').hidden=true;
     drawMap();
