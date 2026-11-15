@@ -301,7 +301,7 @@ export class NativeVenueRenderer {
       this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
     }
     if(mode==='overview'){this.theta=1.12;this.phi=this.plan.arenaInterior ? .50 : .79;}
-    if(mode==='overview'||mode==='top')this.zoomFactor=1;
+    if(mode==='overview'||mode==='top')this.zoomFactor=mode==='overview'&&this.plan.arenaInterior?.92:1;
     this.render();
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
