@@ -11,7 +11,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('full building has seat-aligned decks, a closed wall and numbered exit portals with no invented stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown','signs','exitLights']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown','signs','exitLights','exitGlyphs');
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
@@ -24,6 +24,7 @@ test('full building has seat-aligned decks, a closed wall and numbered exit port
   assert.equal(g.stepEdges.length,0,'No fabricated stair/riser geometry');
   assert.ok(g.signs.length>0,'Portal signage is integrated into the wall');
   assert.ok(g.exitLights.length>0,'Exit portals have a discreet red marker');
+  assert.ok(g.exitGlyphs.length>3000,'Numbered EXIT signs must have real in-scene lettering');
   assert.equal(plan.exitMarkers.length,12);
   assert.equal(new Set(plan.exitMarkers.map(m=>m.id)).size,12);
   assert.ok(plan.exitMarkers.every(m=>!m.verified && Number.isFinite(m.x+m.y+m.z)));
