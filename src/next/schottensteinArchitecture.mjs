@@ -2,7 +2,8 @@
 // All vertex coordinates are metres. Separate from ticket inventories and
 // authoritative imported-XYZ seats.
 import { SCHOTTENSTEIN_ROOF_EAVE, SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
-import { addRoofShell, addRoundVolume } from './structuralMesh.mjs';
+import { addRoofShell } from './structuralMesh.mjs';
+import { ExteriorEngine } from './engines/exterior.mjs';
 
 const TAU=Math.PI*2;
 const SEGMENTS=192;
@@ -197,27 +198,40 @@ export function buildSchottensteinArchitecture(model){
     quad(layer,station(i,near,y),station(j,near,y),
       station(j,far,y),station(i,far,y),[0,normal,0]);
   };
-  // A real perimeter façade, rather than a gray thin shell laid behind the
-  // seats. Vertical columns and inset glazing are separated by four bands.
-  const externalWindowBands=[[3.35,4.55],[10.15,11.55],[18.12,19.72],[26.35,27.68]];
+  // The real arena is clad in horizontal light metal panels above a brick
+  // entrance level, with glazed brick rotundas at the main approaches.
+  // The shared ExteriorEngine generates those building elements from a
+  // venue-specific configuration. Seating and inner circulation stay intact.
   const facadeOuter=5.55;
+  const exterior=ExteriorEngine.build({
+    footprint:angle=>{
+      const r=schottensteinBuildingRadius(angle)+facadeOuter;
+      return {x:r*Math.cos(angle),z:r*Math.sin(angle)};
+    },
+    height:SCHOTTENSTEIN_ROOF_EAVE-.44,
+    segments:SEGMENTS,
+    profile:'metal-and-brick',
+    entrances:[
+      {angle:TAU*.125,role:'primary'},
+      {angle:TAU*.375,role:'secondary'},
+      {angle:TAU*.625,role:'secondary'},
+      {angle:TAU*.875,role:'secondary'}
+    ]
+  });
+  facade.push(...exterior.metalPanels);
+  glazing.push(...exterior.baseWindows);
+  externalTrim.push(...exterior.metalSeams);
+  entryMasonry.push(...exterior.towerBrick);
+  entryGlass.push(...exterior.towerWindows);
+  const brickBase=[...exterior.brickBase],brickPiers=[...exterior.brickPiers],
+    towerFrames=[...exterior.towerFrames],towerCrown=[...exterior.towerCrown],
+    towerRibs=[...exterior.towerRibs],entryBrick=[...exterior.entryBrick],
+    entryCurtain=[...exterior.entryCurtain],entryFrames=[...exterior.entryFrames],
+    entryCanopy=[...exterior.entryCanopy],entryDoors=[...exterior.entryDoors];
+  // The low perimeter still exists for the original interior cutaway view;
+  // it is not a second solid outer wall in the enclosed building view.
   for(let i=0;i<SEGMENTS;i++){
-    const isPier=i%7===0;
     wallBand(cutawayFacade,i,facadeOuter,0,0,2.85,2.85,'out');
-    let bottom=0;
-    for(const [lo,hi] of externalWindowBands){
-      wallBand(facade,i,facadeOuter,bottom,bottom,lo,lo,'out');
-      if(isPier)wallBand(facade,i,facadeOuter,lo,lo,hi,hi,'out');
-      else wallBand(glazing,i,facadeOuter-.095,lo,lo,hi,hi,'out');
-      bottom=hi;
-    }
-    wallBand(facade,i,facadeOuter,bottom,bottom,SCHOTTENSTEIN_ROOF_EAVE-.44,SCHOTTENSTEIN_ROOF_EAVE-.44,'out');
-    if(i%7===0){
-      wallBand(pilasters,i,facadeOuter+.15,.08,.08,SCHOTTENSTEIN_ROOF_EAVE-.52,SCHOTTENSTEIN_ROOF_EAVE-.52,'out');
-    }
-    for(const height of [4.65,11.65,19.82,27.80]){
-      wallBand(externalTrim,i,facadeOuter+.042,height,height,height+.13,height+.13,'out');
-    }
   }
   // The building's roof is carried by the outer wall and deep interior
   // frames. It is an open-centre arena: only an annular gallery canopy, never
@@ -339,17 +353,6 @@ export function buildSchottensteinArchitecture(model){
   }
   addRoofShell(buildingRoof,i=>station(i,galleryFront-.70,roofTop+.015),SEGMENTS,2.4,.42);
 
-  // Raised circular entry volumes echo the arena's documented corner
-  // rotundas; dimensions and glazing layout are estimated.
-  for (const fraction of [.125,.375,.625,.875]) {
-    const i=Math.round(fraction*SEGMENTS);
-    const [x,,z]=station(i,facadeOuter+.65,0);
-    addRoundVolume(entryMasonry,x,z,7.7,-.25,2.15);
-    addRoundVolume(entryGlass,x,z,7.54,2.15,9.75);
-    addRoundVolume(entryMasonry,x,z,7.7,9.75,11.15);
-    addRoundVolume(externalTrim,x,z,7.87,11.15,11.36);
-  }
-
   // Model the mapped press enclosure at its own lower elevation. Its
   // outline reserves the existing seat-free area in the seating model.
   const press=model.features?.find(feature=>feature.kind==='press');
@@ -371,6 +374,6 @@ export function buildSchottensteinArchitecture(model){
   // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
   // staircases are intentionally absent. The map's genuine seat-free
   // circulation gaps remain untouched.
-  return Object.fromEntries(Object.entries({decks,fascias,upperBowl,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass,cutawayFacade,externalTrim,galleryFloorMesh})
+  return Object.fromEntries(Object.entries({decks,fascias,upperBowl,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass,cutawayFacade,externalTrim,galleryFloorMesh,brickBase,brickPiers,towerFrames,towerCrown,towerRibs,entryBrick,entryCurtain,entryFrames,entryCanopy,entryDoors})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
