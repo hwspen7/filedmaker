@@ -143,7 +143,7 @@ async function main(){
           const capture=canvas.setPointerCapture;
           canvas.setPointerCapture=()=>{};
           try{
-            for(const [type,dy] of [['pointerdown',0],['pointermove',-245],['pointerup',-245]]){
+            for(const [type,dy] of [['pointerdown',0],['pointermove',245],['pointerup',245]]){
               canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:1,
                 clientX:left+width/2,clientY:top+height/2+dy,buttons:type==='pointerup'?0:1}));
             }
