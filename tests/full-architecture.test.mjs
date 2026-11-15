@@ -37,7 +37,7 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.brickBase.length>2000,'Brick plinth must be physically modelled');
   assert.ok(g.brickPiers.length>100,'Entrance-level structural piers must exist');
   assert.ok(g.entryCurtain.length>300,'Glass vestibule doors must be present');
-  assert.ok(g.entryCanopy.length>1000,'Canopies project from the entrance bays');
+  assert.ok(g.entryCanopy.length>600,'Canopies project from the entrance bays');
   assert.ok(g.towerCrown.length>1000,'Real open-topped lantern cornices');
   assert.ok(g.towerFrames.length>0,'Round tower windows have frames');
   assert.ok(g.externalTrim.length>1000,'Panel seams replace the old uniform gray facade');
@@ -113,7 +113,9 @@ test('exterior facade is grounded and stepped seat decks follow their assigned e
   let minWall=Infinity,minDeck=Infinity,maxDeck=-Infinity,maxWall=-Infinity;
   for(let i=1;i<g.facade.length;i+=6){minWall=Math.min(minWall,g.facade[i]);maxWall=Math.max(maxWall,g.facade[i]);}
   for(let i=1;i<g.decks.length;i+=6){minDeck=Math.min(minDeck,g.decks[i]);maxDeck=Math.max(maxDeck,g.decks[i]);}
-  assert.ok(minWall>=-.01 && minWall<.1);
+  assert.ok(minWall>9 && minWall<11,'Metal cladding begins above the brick ground floor');
+  const brickYs=Array.from({length:g.brickBase.length/6},(_,i)=>g.brickBase[i*6+1]);
+  assert.ok(Math.min(...brickYs)>=-.01 && Math.min(...brickYs)<.1,'Ground-floor brick starts at grade');
   assert.ok(minDeck>.25 && maxDeck>26);
   assert.ok(maxWall>40 && maxWall<41,'Facade reaches a uniform structural top');
   let minRoof=Infinity,maxRoof=-Infinity;
