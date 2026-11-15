@@ -135,7 +135,24 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
         && (i === 0 || Math.abs(grade - grades[i-1]) < .018)), 'No grade jump at a section seam');
     }
   }
-  assert.equal(plan.invalidRows, 0);
+  const violations=[];
+  for(const section of model.sectionFootprints){
+    const rows=new Map();
+    for(const seat of model.seats.filter(s=>s.sectionId===section.id)){
+      const k=String(seat.row);
+      if(!rows.has(k))rows.set(k,[]);
+      rows.get(k).push(seat);
+    }
+    for(const [row,members] of rows){
+      const sorted=members.sort((a,b)=>Number(a.number)-Number(b.number));
+      for(let i=1;i<sorted.length;i++){
+        const a=sorted[i-1],b=sorted[i],d=Math.hypot(a.x-b.x,a.z-b.z);
+        if(d<(model.project.seatPitch||.53)*1.7&&Math.abs(a.y-b.y)>.13)
+          violations.push({section:section.id,row,first:a.uid,second:b.uid,d,dy:a.y-b.y});
+      }
+    }
+  }
+  assert.equal(plan.invalidRows, 0, JSON.stringify(violations.slice(0,12)));
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);
@@ -260,7 +277,7 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
    ['Band Area','Press Box','Accessible Platform']);
  const boxes=decode(plan);
  assert.ok(boxes.some(box=>box.id===-4&&box.pos[1]<0), 'The arena floor plate is retained for seat views');
- assert.ok(plan.deckGeometry.some((number,i)=>i%6===1&&number===-1), 'The overview has a capped presentation plinth');
+ assert.ok(!plan.deckGeometry.some((number,i)=>i%6===1&&number===-1), 'The decorative plinth must not reappear');
  const courtside=boxes.filter(box=>box.id===-1&&Math.abs(box.size[0]-.456)<1e-5&&Math.abs(box.size[2]-.42)<1e-5);
  assert.ok(courtside.length>100);
  assert.ok(courtside.every(box=>Math.abs(box.pos[0])>model.surface.width/2
