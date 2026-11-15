@@ -9,27 +9,28 @@ const build = () => buildVenuePlan(generateSeats({
   ...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men',
 }));
 
-test('full building has seat-aligned decks, a closed wall and numbered exit portals with no invented stairs',()=>{
+test('OSU arena has a full-depth structural gallery, inset windows and no invented exit signs or stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown','signs','exitLights','exitGlyphs']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
-    if(!['aisles','stepEdges','signs','exitLights'].includes(name))assert.ok(vertices.length>1000,name);
+    if(!['aisles','stepEdges'].includes(name))assert.ok(vertices.length>1000,name);
     assert.ok(vertices.every(Number.isFinite),name);
   }
   assert.ok(g.decks.length/18>8000);
   assert.ok(g.facade.length/18>1500);
   assert.equal(g.aisles.length,0,'No fabricated aisle geometry');
   assert.equal(g.stepEdges.length,0,'No fabricated stair/riser geometry');
-  assert.ok(g.signs.length>0,'Portal signage is integrated into the wall');
-  assert.ok(g.exitLights.length>0,'Exit portals have a discreet red marker');
-  assert.ok(g.exitGlyphs.length>3000,'Numbered EXIT signs must have real in-scene lettering');
-  assert.equal(plan.exitMarkers.length,12);
-  assert.equal(new Set(plan.exitMarkers.map(m=>m.id)).size,12);
-  assert.ok(plan.exitMarkers.every(m=>!m.verified && Number.isFinite(m.x+m.y+m.z)));
-  assert.ok(g.glazing.length/18>600);
-  assert.ok(g.crown.length/18>900,'The upper perimeter is a continuous structural wall');
+  assert.equal(plan.exitMarkers,undefined,'Fabricated exit markers are permanently removed');
+  assert.ok(g.galleryGlass.length/18>200,'Recessed viewing gallery is modeled');
+  assert.ok(g.galleryGlow.length/18>80,'Some gallery windows are softly lit');
+  assert.ok(g.pilasters.length/18>300,'Upper gallery has real structural columns');
+  assert.ok(g.windowFrames.length/18>400,'Window apertures have modeled frames');
+  assert.ok(g.soffit.length/18>300,'Roof underside must span the gallery');
+  assert.ok(g.roofEdge.length/18>300,'The open-air bowl has a framed outer roof edge');
+  assert.ok(g.downlights.length/18>10);
+  assert.equal(g.aisles.length+g.stepEdges.length,0,'No fabricated stair geometry');
 });
 
 test('architectural triangle winding agrees with outward normals',()=>{
@@ -66,10 +67,13 @@ test('exterior facade is grounded and stepped seat decks follow their assigned e
   for(let i=1;i<g.decks.length;i+=6){minDeck=Math.min(minDeck,g.decks[i]);maxDeck=Math.max(maxDeck,g.decks[i]);}
   assert.ok(minWall>=-.01 && minWall<.1);
   assert.ok(minDeck>.25 && maxDeck>26);
-  assert.ok(maxWall>26 && maxWall<31);
-  let minCrown=Infinity,maxCrown=-Infinity;
-  for(let i=1;i<g.crown.length;i+=6){minCrown=Math.min(minCrown,g.crown[i]);maxCrown=Math.max(maxCrown,g.crown[i]);}
-  assert.ok(minCrown>20 && maxCrown>minCrown+1.0);
+  assert.ok(maxWall>34 && maxWall<35,'Facade reaches a uniform structural top');
+  let minRoof=Infinity,maxRoof=-Infinity;
+  for(let i=1;i<g.roofEdge.length;i+=6){minRoof=Math.min(minRoof,g.roofEdge[i]);maxRoof=Math.max(maxRoof,g.roofEdge[i]);}
+  assert.ok(minRoof>33.7 && maxRoof<35.2,'Roof is a level supported canopy, not a sawtooth crown');
+  const deckMinX=Math.min(...Array.from({length:g.decks.length/6},(_,i)=>g.decks[i*6]));
+  const facadeMaxX=Math.max(...Array.from({length:g.facade.length/6},(_,i)=>g.facade[i*6]));
+  assert.ok(facadeMaxX-deckMinX>30,'The enclosed building has nonzero spatial depth');
   const shader=String(NativeVenueRenderer);
   assert.ok(shader.includes('architectureVisibleInMode'));
 });
