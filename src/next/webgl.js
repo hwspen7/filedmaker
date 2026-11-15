@@ -46,17 +46,18 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>11.5)vColor=vec3(.54,.55,.57); // Individual stair nosings
-    else if(uDeck>10.5)vColor=vec3(.88,.87,.85); // Section walkway surface
-    else if(uDeck>9.5)vColor=vec3(.78,.76,.72); // Architectural rim and slender piers
-    else if(uDeck>8.5)vColor=vec3(.22,.26,.29); // Recessed glazing
-    else if(uDeck>7.5)vColor=vec3(.49,.50,.51); // Exterior cladding
-    else if(uDeck>6.5)vColor=vec3(.70,.69,.67); // Circulation decks
-    else if(uDeck>5.5)vColor=vec3(.56,.55,.55); // Tier edge fascias
-    else if(uDeck>4.5)vColor=vec3(.74,.73,.71); // Sloped seating substrate
-    else if(uDeck>2.5)vColor=vec3(.66,.32,.39);
-    else if(uDeck>1.5)vColor=aNormal.y>.5?vec3(.41,.43,.46):vec3(.28,.30,.34);
-    else vColor=mix(vec3(.69,.70,.71),vec3(.41,.43,.46),uHuman);
+    if(uDeck>12.5)vColor=vec3(.91,.88,.82); // Raised ivory signature parapet
+    else if(uDeck>11.5)vColor=vec3(.67,.63,.57); // Individual stair risers
+    else if(uDeck>10.5)vColor=vec3(.89,.86,.81); // Warm limestone treads
+    else if(uDeck>9.5)vColor=vec3(.72,.64,.54); // Muted champagne fascia trim
+    else if(uDeck>8.5)vColor=vec3(.22,.25,.27); // Recessed graphite glazing
+    else if(uDeck>7.5)vColor=vec3(.52,.52,.50); // Quiet exterior cladding
+    else if(uDeck>6.5)vColor=vec3(.75,.73,.69); // Continuous tier concourses
+    else if(uDeck>5.5)vColor=vec3(.65,.63,.60); // Stepped row fascias
+    else if(uDeck>4.5)vColor=vec3(.80,.78,.74); // Row-aligned stone seat decks
+    else if(uDeck>2.5)vColor=vec3(.65,.46,.41);
+    else if(uDeck>1.5)vColor=aNormal.y>.5?vec3(.44,.45,.45):vec3(.28,.30,.31);
+    else vColor=mix(vec3(.76,.75,.73),vec3(.43,.43,.44),uHuman);
     vWorld=aLocal;
     gl_Position=uVP*vec4(aLocal,1.);
     return;
@@ -101,8 +102,8 @@ void main(){
   float strength=.48+.43*diffuse+.11*fill+.07*max(n.y,0.);
   vec3 base=pow(vColor,vec3(2.2));
   vec3 rgb=pow(base*strength,vec3(1./2.2));
-  float haze=smoothstep(45.,205.,distance(vWorld,uEye))*.17;
-  outColor=vec4(mix(rgb,vec3(.82,.88,.93),haze),1.);
+  float haze=smoothstep(50.,245.,distance(vWorld,uEye))*.11;
+  outColor=vec4(mix(rgb,vec3(.87,.86,.84),haze),1.);
 }`;
 const boxGeometry=()=>{
   const sides=[
@@ -334,7 +335,7 @@ export class NativeVenueRenderer {
       }
     }
     if(NativeVenueRenderer.architectureVisibleInMode(this.plan,this.mode)){
-      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12]]){
+      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['crown',13]]){
         const mesh=this.architecture?.[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
