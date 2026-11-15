@@ -57,7 +57,7 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[];
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],crown=[];
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
@@ -150,6 +150,49 @@ export function buildSchottensteinArchitecture(model){
     };
     ringStrip(trim,from,to,'up');
   }
+  // Architectural signature: a smooth, raised perimeter parapet. The crown
+  // is referenced to the real upper deck rather than an independent oval
+  // and therefore follows its short press-side edge and changing elevations.
+  const upperRim=(angle,offset,up)=>{
+    const p=ringPoint(2,angle,1);
+    return {x:p.x+Math.cos(angle)*offset,z:p.z+Math.sin(angle)*offset,y:p.y+up};
+  };
+  ringStrip(crown,a=>upperRim(a,-.08,.49),a=>upperRim(a,1.00,.49),'up');
+  ringStrip(crown,a=>upperRim(a,-.08,.93),a=>upperRim(a,1.00,.93),'up');
+  ringStrip(crown,a=>upperRim(a,1.00,.49),a=>upperRim(a,1.00,.93),'out');
+  ringStrip(trim,a=>upperRim(a,1.015,.46),a=>upperRim(a,1.015,.39),'out');
+
+  // A recessed press gallery is a recognizable upper-stand silhouette.
+  // Its position follows the mapped press region. Details are schematic and
+  // do not claim OSU construction dimensions or verified seating.
+  const press=model.features?.find(feature=>feature.kind==='press');
+  if(press && Number.isFinite(press.x) && Number.isFinite(press.z)){
+    const angle=Math.atan2(press.z,press.x),out=[Math.cos(angle),Math.sin(angle)];
+    const tangent=[-out[1],out[0]],p=upperRim(angle,1.85,.0);
+    const base=p.y+.62,top=base+2.40;
+    const at=(along,depth,height)=>[p.x+tangent[0]*along+out[0]*depth,
+      height,p.z+tangent[1]*along+out[1]*depth];
+    const faceIn=[-out[0],0,-out[1]],faceOut=[out[0],0,out[1]];
+    const half=6.4,back=2.65,front=-1.15;
+    quad(crown,at(-half,front,top),at(half,front,top),at(half,back,top),at(-half,back,top),[0,1,0]);
+    quad(crown,at(-half,front,base),at(half,front,base),at(half,back,base),at(-half,back,base),[0,1,0]);
+    quad(glazing,at(-half+.45,front-.025,base+.52),at(half-.45,front-.025,base+.52),
+      at(half-.45,front-.025,top-.30),at(-half+.45,front-.025,top-.30),faceIn);
+    quad(facade,at(-half,front,base),at(half,front,base),
+      at(half,front,base+.52),at(-half,front,base+.52),faceIn);
+    quad(facade,at(-half,back,base),at(half,back,base),at(half,back,top),at(-half,back,top),faceOut);
+    for(const side of [-1,1]){
+      const sideNormal=[tangent[0]*side,0,tangent[1]*side];
+      quad(facade,at(side*half,front,base),at(side*half,back,base),
+        at(side*half,back,top),at(side*half,front,top),sideNormal);
+    }
+    for(const pos of [-half,0,half]){
+      const n=faceIn;
+      quad(trim,at(pos-.045,front-.055,base+.51),at(pos+.045,front-.055,base+.51),
+        at(pos+.045,front-.055,top-.26),at(pos-.045,front-.055,top-.26),n);
+    }
+  }
+
   // Fit each staircase to a vacant corridor between traced sections.
   // A row contributes one level tread and one visible riser (not a sloped
   // white ribbon). No step is accepted over a selectable chair.
@@ -229,6 +272,6 @@ export function buildSchottensteinArchitecture(model){
       }
     }
   }
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges})
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,crown})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
