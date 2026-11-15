@@ -277,7 +277,7 @@ select { color-scheme: light; }
 
 .legacy-templates{margin-top:12px}.legacy-templates summary{cursor:pointer;font-size:11px;color:#8a8a8a;padding:6px}.legacy-templates .template-grid{margin-top:8px}
 
-/* v9 seat-first workspace accents; preserve neutral ChatGPT-style editing layout. */
+/* v9 seat-first workspace accents for the neutral editor theme. */
 .school-entry{border-color:#c7dbea}
 .venue-facts{border-color:#cbdfee}
 .template-option.active,.section-item.active{border-color:#83acd3}
