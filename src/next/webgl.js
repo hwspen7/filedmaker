@@ -41,7 +41,9 @@ uniform float uSelected;
 out vec3 vColor;
 out vec3 vNormal;
 out vec3 vWorld;
+flat out float vMaterial;
 void main(){
+  vMaterial=uDeck;
   if(uDeck>.5){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
@@ -109,6 +111,7 @@ void main(){
   }
   // Suppress occupied chair and immediate camera-intersecting furniture.
   if(uHuman>.5 && aSeatId>=0. && (abs(aSeatId-uSelected)<.25 || distance(aPos,uEye)<.29)){gl_Position=vec4(3.,3.,3.,1.);return;}
+  vMaterial=0.;
   vNormal=vec3(c*n.x+s*n.z,n.y,-s*n.x+c*n.z);
   vColor=aSeatId>=0. && abs(aSeatId-uSelected)<.25 ? vec3(.99,.63,.25) : aColor;
   vWorld=world;
@@ -119,6 +122,7 @@ precision highp float;
 in vec3 vColor;
 in vec3 vNormal;
 in vec3 vWorld;
+flat in float vMaterial;
 uniform vec3 uEye;
 out vec4 outColor;
 void main(){
@@ -129,6 +133,32 @@ void main(){
   float strength=.48+.43*diffuse+.11*fill+.07*max(n.y,0.);
   vec3 base=pow(vColor,vec3(2.2));
   vec3 rgb=pow(base*strength,vec3(1./2.2));
+  bool brick=abs(vMaterial-25.)<.2 || abs(vMaterial-31.)<.2
+    || abs(vMaterial-32.)<.2 || abs(vMaterial-36.)<.2;
+  if(brick){
+    // Small-scale procedural running bond. This enriches the real 3D brick
+    // surface without photo textures or changes to structural geometry.
+    float row=floor(vWorld.y/.29);
+    float mortarY=fract(vWorld.y/.29);
+    float course=fract(atan(vWorld.z,vWorld.x)*105.+mod(row,2.)*.5);
+    float horizontal=1.-smoothstep(.018,.065+fwidth(mortarY),min(mortarY,1.-mortarY));
+    float vertical=1.-smoothstep(.016,.047+fwidth(course),min(course,1.-course));
+    rgb*=1.-.20*clamp(horizontal+vertical,0.,1.);
+    rgb*=.975+.025*sin(dot(vWorld,vec3(2.7,1.3,2.1)));
+  }
+  bool glass=abs(vMaterial-9.)<.2 || abs(vMaterial-26.)<.2
+    || abs(vMaterial-37.)<.2 || abs(vMaterial-40.)<.2;
+  if(glass){
+    vec3 view=normalize(uEye-vWorld);
+    float reflection=pow(max(dot(reflect(-sun,n),view),0.),30.);
+    float fresnel=pow(1.-max(dot(n,view),0.),3.);
+    rgb+=vec3(.12,.15,.16)*reflection + vec3(.06,.08,.09)*fresnel;
+  }
+  if(abs(vMaterial-8.)<.2){
+    // Broad upper-siding highlights respond to surface direction.
+    rgb+=vec3(.035)*pow(max(dot(reflect(-sun,n),normalize(uEye-vWorld)),0.),15.);
+  }
+  rgb=clamp(rgb,0.,1.);
   float haze=smoothstep(50.,245.,distance(vWorld,uEye))*.11;
   outColor=vec4(mix(rgb,vec3(.87,.86,.84),haze),1.);
 }`;
