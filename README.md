@@ -17,6 +17,8 @@ Each run writes an editable project JSON and a validation/provenance report. The
 
 [Six-engine API, schema, limitations and validation protocol](docs/SIX_ENGINE_VENUE_PIPELINE.md).
 
+[Reference-guided Schottenstein exterior and reusable 3D facade configuration](docs/EXTERIOR_ENGINE.md). The exterior uses real brick, metal and glass architectural forms rather than a homogeneous gray shell, but remains a visual reconstruction rather than a surveyed BIM model.
+
 **Important:** This is a parametric generation and manual-reference calibration tool, not automatic one-photo reconstruction or survey-grade stadium digitization. Target capacity is a modeling goal, not a published ticket count, and all generated seat IDs are explicitly synthetic.
 
 ## Audience preview
