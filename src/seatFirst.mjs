@@ -5,7 +5,7 @@ import { SURFACES, validateProject, resolveTiers, modelPerimeterPath,
   distanceAtAngle, pointAtDistance } from './model.mjs';
 import { parseCSV, MAX_IMPORT_SEATS } from './survey.mjs';
 import { venueFacts } from './osuFacts.mjs';
-import { estimateSchottensteinRoster, usesSchottensteinChart } from './schottensteinSeating.mjs';
+import { estimateSchottensteinRoster, schottensteinSeatTier, usesSchottensteinChart } from './schottensteinSeating.mjs';
 
 export const BLUE_TIERS = Object.freeze(['#164c80', '#2875ae', '#5597c6', '#88b9d6']);
 export const BLUE_VARIANTS = Object.freeze(['#123f71', '#1d5b92', '#357eaf', '#67a3cb']);
@@ -170,9 +170,19 @@ export function estimateRosterCoordinates(input,roster) {
   }
   return {seats:out,unmatchedSections:assignment.unmatched,coordinateMethod:'estimated'};
 }
-export function importTicketRoster(input,csv,source='School-supplied ticket inventory CSV') {
+export function importTicketRoster(input,csv,source='School-supplied ticket inventory CSV',{requireCoordinates=false}={}) {
   const project=enableSeatFirst(input);
   const parsed=parseTicketRosterCSV(csv);
+  const schottenstein=usesSchottensteinChart(project);
+  const needsXYZ=requireCoordinates||(schottenstein&&parsed.hasCoordinates);
+  if(needsXYZ&&(!parsed.hasCoordinates||parsed.seats.some(seat=>seat.y===null))){
+    throw new Error('This import requires x_m, y_m and z_m for every seat.');
+  }
+  if(schottenstein&&parsed.hasCoordinates){
+    const points=new Set(parsed.seats.map(seat=>JSON.stringify([seat.x,seat.y,seat.z])));
+    if(points.size!==parsed.seats.length)throw new Error('Each imported Schottenstein Center seat needs a distinct XYZ position.');
+    for(const seat of parsed.seats)seat.tier=schottensteinSeatTier(seat.section)??seat.tier;
+  }
   const inferred=parsed.hasCoordinates?null:estimateRosterCoordinates(project,parsed.seats);
   const seats=inferred?.seats??parsed.seats;
   // validateProject only mutates a cloned project. All-or-nothing import.

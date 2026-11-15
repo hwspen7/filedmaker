@@ -47,6 +47,10 @@ function renderProject(){
     plan=buildVenuePlan(model,{palette:palettePresets[$('palette').value],detail:$('detail').value});
     if(!renderer){try{renderer=new NativeVenueRenderer($('viewport3d'),seat=>selectSeat(seat));}catch(e){error(e.message);mode='top';}}
     if(renderer)renderer.load(plan);
+    $('rosterRequirements').textContent=model.sectionFootprints
+      ?'CSV with section, row, seat, x_m, y_m and z_m. Use seat centers at tread height in the court-centered frame.'
+      :'CSV with section, row, seat and optional measured x/y/z. Original identifiers are preserved.';
+    $('rosterExample').hidden=Boolean(model.sectionFootprints);
     $('cameraTarget').value='center';$('phoneView').checked=false;
     renderer?.setViewOptions({target:'center',zoom:1});
     const name=project.school?.venue||project.title;
@@ -220,13 +224,14 @@ function drawMap(){
       ctx.fillText(id,...center);
       if(available)hitAreas.push({id,path,center});
     }
-  }else{
+  }
+  if(!chart||plan.hasRoster){
     const step=Math.max(1,Math.ceil(plan.seats.length/8500));
     const radius=plan.seats.length>16000?1*dpr:1.5*dpr;
     ctx.fillStyle=tint(0,0);
     for(let i=0;i<plan.seats.length;i+=step){
       const s=plan.seats[i],p=pos(s);
-      ctx.fillStyle=tint(s.tier,s.sectionIndex);
+      ctx.fillStyle=chart?'#182b40':tint(s.tier,s.sectionIndex);
       ctx.beginPath();ctx.arc(...p,radius,0,Math.PI*2);ctx.fill();
     }
   }
@@ -236,18 +241,17 @@ function drawMap(){
   }
   c.onclick=e=>{
     const b=c.getBoundingClientRect(),x=(e.clientX-b.left)*c.width/b.width,y=(e.clientY-b.top)*c.height/b.height;
-    if(chart){
-      const section=hitAreas.find(hit=>ctx.isPointInPath(hit.path,x,y))
-        ?? hitAreas.find(({center})=>Math.hypot(center[0]-x,center[1]-y)<10*dpr);
-      if(section)pickSection(section.id);
-      return;
+    if(!chart||plan.hasRoster){
+      let best=null,min=((chart?5:18)*dpr)**2;
+      for(const s of plan.seats){
+        const p=pos(s),d=(p[0]-x)**2+(p[1]-y)**2;
+        if(d<min){best=s;min=d;}
+      }
+      if(best){selectSeat(best);return;}
     }
-    let best=null,min=(18*dpr)**2;
-    for(const s of plan.seats){
-      const p=pos(s),d=(p[0]-x)**2+(p[1]-y)**2;
-      if(d<min){best=s;min=d;}
-    }
-    if(best)selectSeat(best);
+    const section=hitAreas.find(hit=>ctx.isPointInPath(hit.path,x,y))
+      ?? hitAreas.find(({center})=>Math.hypot(center[0]-x,center[1]-y)<10*dpr);
+    if(section)pickSection(section.id);
   };
 }
 function cycleSeat(delta){
@@ -329,7 +333,12 @@ $('search').addEventListener('search',search);
 $('palette').onchange=renderProject;$('detail').onchange=renderProject;
 $('csv').onchange=async e=>{
   const file=e.target.files?.[0];if(!file)return;
-  try{const text=await file.text();const result=importTicketRoster(project,text,file.name);project=result.project;selected=null;renderProject();$('searchHelp').textContent=`Imported ${fmt(result.report.inventoryCount)} seat IDs from ${file.name}.`;}
+  try{
+    const text=await file.text();
+    const result=importTicketRoster(project,text,file.name,{requireCoordinates:Boolean(model.sectionFootprints)});
+    project=result.project;selected=null;renderProject();
+    $('searchHelp').textContent=`Imported ${fmt(result.report.inventoryCount)} seat IDs from ${file.name}.`;
+  }
   catch(ex){error('CSV rejected: '+ex.message);}finally{e.target.value='';}
 };
 $('openProject').onchange=async e=>{

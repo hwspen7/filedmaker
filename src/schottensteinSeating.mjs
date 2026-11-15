@@ -155,6 +155,11 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
 );
 const byId=new Map(blocks.map(block=>[block.id,block]));
 
+export function schottensteinSeatTier(section) {
+  const block=byId.get(section);
+  return block?`T${block.tier+1}`:null;
+}
+
 export function schottensteinFootprints() {
   return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint})=>
     ({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint}));

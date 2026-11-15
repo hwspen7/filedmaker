@@ -143,6 +143,27 @@ test('phase-one basketball preview models documented club rows and the upper ais
  assert.equal(new Set(model.seats.map(s=>s.uid)).size,model.seats.length);
 });
 
+test('surveyed Ohio State import keeps supplied positions and the native section map',()=>{
+ const project={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
+ const header='seat_id,section,row,seat,x_m,y_m,z_m\n';
+ const load=csv=>importTicketRoster(project,csv,'Survey fixture',{requireCoordinates:true});
+ assert.throws(()=>load('section,row,seat\n105,D,1'),/requires x_m, y_m and z_m/);
+ assert.throws(()=>load(header+'A,105,D,1,-13,,5'),/requires x_m, y_m and z_m/);
+ assert.throws(()=>load(header+'A,105,D,1,-13,1,5\nB,105,D,2,-13,1,5'),/distinct XYZ/);
+ const {project:imported}=load(header+'A,105,D,1,-13,1,5\nB,323,M,2,34,16,-7');
+ const model=generateSeats(imported),plan=buildVenuePlan(model);
+ assert.equal(model.sectionFootprints.length,78);
+ assert.equal(plan.arenaInterior,true);
+ assert.equal(plan.hasRoster,true);
+ assert.deepEqual(plan.seats.map(({uid,tier,x,y,z})=>[uid,tier,x,y,z]),[
+   ['A',0,-13,1,5],['B',2,34,16,-7],
+ ]);
+ assert.equal(plan.chairCount,2);
+ assert.equal(plan.official.officialCapacity,19500);
+ assert.equal(plan.official.inventoryVsOfficial,2-19500);
+ assert.equal(generateSeats(project).seats.length,12698);
+});
+
 test('phase-one native geometry includes a cutaway-aware interior and current board',()=>{
  const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
  const plan=buildVenuePlan(model);

@@ -474,8 +474,7 @@ export function generateSeats(input, { audienceLayout = true } = {}) {
   const source = importedSeats(project.survey, project);
   const chart = audienceLayout && usesSchottensteinChart(project);
   if (source) {
-    const sectionFootprints = chart && project.ticketing?.coordinates === 'estimated'
-      ? schottensteinFootprints() : undefined;
+    const sectionFootprints = chart ? schottensteinFootprints() : undefined;
     return { project, surface, tiers, seats: source.seats, groups: [], capacity: source.seats.length,
       seatOrigin: 'imported', registration: source.registration, elevationCount: source.elevationCount, sectionFootprints };
   }

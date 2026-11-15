@@ -16,6 +16,8 @@ The generic floor uses NCAA court dimensions and standard court markings. The sc
 
 Subsequent phases extend the same reference-and-geometry workflow to NCAA basketball arenas, then NCAA football stadiums, then lower-cost profiles for universities and secondary schools.
 
+For a surveyed Ohio State men's basketball import, use a CSV with `section,row,seat,x_m,y_m,z_m` and optional `seat_id`. Supply seat centers at tread height, in metres, with the playing surface centered at the origin. Y is elevation, X runs across the court and Z runs lengthwise. The right end of the published chart is negative Z. Each seat needs a distinct XYZ point. The imported inventory replaces the demo chairs in the open project and retains the traced section map. Published capacity remains a separate comparison. A partial survey displays the seats it covers. The [official public Virtual Venue](https://ohiostatebb.io-media.com/web/index.html) provides view references. The [Athletics Ticket Office](https://ohiostatebuckeyes.com/sports/2024/1/16/contact-us-ticket-office) is the point of contact for an event configuration's complete seat manifest and measured seat plan.
+
 ## What changed
 
 - One shared seat geometry plan for studio, school preview and viewer instead of multiple incompatible seat meshes.
