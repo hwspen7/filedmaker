@@ -11,7 +11,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('full building has seat-aligned decks, a closed wall and numbered exit portals with no invented stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown','signs','exitLights','exitGlyphs');
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','crown','signs','exitLights','exitGlyphs']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
