@@ -123,6 +123,16 @@ const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t 
 const unpack = pixels => Array.from({length:pixels.length/2},(_,i)=>toWorld(pixels[i*2],pixels[i*2+1]));
 const labels = new Map(SCHOTTENSTEIN_CHART_LABELS.map(([id,x,y])=>[id,toWorld(x,y)]));
 export const schottensteinDiagramEdge=unpack(SCHOTTENSTEIN_DIAGRAM_EDGE);
+// The end-corner sections taper across two aisles. Use their inward aisle
+// bearings from the chart because the end chords are not parallel to the rows.
+const lowerCornerAisles={
+  111:[[850,348,757,348],[824,262,771,308]],
+  117:[[850,439,757,439],[824,526,771,480]],
+  128:[[319,439,408,439],[342,523,398,476]],
+  134:[[319,349,408,349],[342,263,398,310]],
+};
+// A common depth-based rake keeps adjacent sections aligned at their aisles.
+const tierRake=[.35,.47,.46];
 const chartRegions=[
   {kind:'band',label:'Band Area',sectionId:'114',outline:unpack([764,401,808,401,808,432,764,432])},
   {kind:'press',label:'Press Box',sectionId:'323',outline:unpack([439,697,706,695,733,727,439,727])},
@@ -156,6 +166,15 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
     const center=lerp(frontLeft,frontRight,.5);
     let nx=-dz/magnitude,nz=dx/magnitude;
     if(nx*center.x+nz*center.z>0){nx=-nx;nz=-nz;}
+    if(lowerCornerAisles[id]){
+      const inward=lowerCornerAisles[id].reduce((sum,axis)=>{
+        const [a,b]=unpack(axis);
+        const length=Math.hypot(b.x-a.x,b.z-a.z);
+        return {x:sum.x+(b.x-a.x)/length,z:sum.z+(b.z-a.z)/length};
+      },{x:0,z:0});
+      const length=Math.hypot(inward.x,inward.z);
+      nx=inward.x/length;nz=inward.z/length;
+    }
     const outlines=SCHOTTENSTEIN_SECTION_CONTOURS[id].map(unpack);
     // Local X runs outward, local Z runs to a spectator's right.
     const project=({x,z})=>({x:-nx*x-nz*z,z:-nz*x+nx*z});
@@ -167,7 +186,7 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
       : details?.labels.length ?? (clubWithPublishedCounts.has(sectionId)?10:Math.max(2,Math.round(depth/[.82,.88,.82][tier])));
     const rows=details?.labels.length??depthRows;
     const treadDepth=depth/depthRows;
-    const rise=tier===0?(treadDepth<.74?.24:.31):tier===1?.34:Math.min(.45,6.85/(depthRows-1));
+    const rise=treadDepth*tierRake[tier];
     const frontHeight=tier===0?(id===114||id===131?.42:.64):tier===1?8.05:14.65;
     const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
     return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,
@@ -182,8 +201,8 @@ export function schottensteinSeatTier(section) {
 }
 
 export function schottensteinFootprints() {
-  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint})=>
-    ({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint}));
+  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth})=>
+    ({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth}));
 }
 
 export function usesSchottensteinChart(project) {

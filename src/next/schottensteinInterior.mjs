@@ -2,6 +2,11 @@
 // Metres are modeled estimates except for regulation court and published ribbon height.
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
+const rowHeightAt=(profile,point)=>{
+  const depth=-profile.nx*point.x-profile.nz*point.z;
+  const row=Math.max(0,Math.min(profile.depthRows-1,(depth-profile.near)/profile.treadDepth-.5));
+  return profile.frontHeight+row*profile.rise;
+};
 const HIDDEN_IN_CUTAWAY = -2;
 const INWARD_FACING = -3;
 
@@ -98,8 +103,10 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     }
   }
 
-  const aisleEdges=footprints.flatMap(({corners:[a,b,c,d],tier,depthRows,rise,frontHeight})=>
-    [{front:a,back:c,tier,depthRows,rise,frontHeight},{front:b,back:d,tier,depthRows,rise,frontHeight}]);
+  const aisleEdges=footprints.flatMap(profile=>{
+    const [a,b,c,d]=profile.corners;
+    return [{front:a,back:c,profile},{front:b,back:d,profile}];
+  });
   const matched=new Set();
   for(let i=0;i<aisleEdges.length;i++){
     const a=aisleEdges[i];
@@ -107,22 +114,22 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     let best=-1,bestCost=Infinity;
     for(let j=i+1;j<aisleEdges.length;j++){
       const b=aisleEdges[j];
-      if(matched.has(j)||a.tier!==b.tier)continue;
+      if(matched.has(j)||a.profile.tier!==b.profile.tier)continue;
       const front=distance(a.front,b.front),back=distance(a.back,b.back);
-      if(front<.45||front>2.95||back<.45||back>3.25||Math.abs(a.frontHeight-b.frontHeight)>.08)continue;
+      if(front<.45||front>2.95||back<.45||back>3.25||Math.abs(a.profile.frontHeight-b.profile.frontHeight)>.08)continue;
       if(front+back<bestCost){best=j;bestCost=front+back;}
     }
     if(best<0)continue;
     const b=aisleEdges[best];
     matched.add(i);matched.add(best);
-    const steps=Math.min(a.depthRows,b.depthRows);
+    const steps=Math.min(a.profile.depthRows,b.profile.depthRows);
     const stepDepth=(distance(a.front,a.back)+distance(b.front,b.back))/(2*steps);
     for(let j=0;j<steps;j++){
       const t=(j+.5)/steps;
       const p=mix(a.front,a.back,t),q=mix(b.front,b.back,t);
       const width=distance(p,q);
       if(width<.42||width>3.15)continue;
-      const height=a.frontHeight+j*Math.min(a.rise,b.rise);
+      const height=(rowHeightAt(a.profile,p)+rowHeightAt(b.profile,q))*.5;
       spanBox(add,mix(p,q,.08),mix(p,q,.92),height-.095,.19,stepDepth*.97,tread);
       const m=mix(p,q,.5);
       if(j%3===0)add([m.x,height+.36,m.z],[.038,.72,.038],0,rail);

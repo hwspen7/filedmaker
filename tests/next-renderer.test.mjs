@@ -97,6 +97,12 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   assert.ok(model.seats.some(s => s.sectionId === '114' && s.tier === 0 && s.z < 0));
   assert.ok(model.seats.some(s => s.sectionId === '323' && s.tier === 2 && s.x > 0));
   assert.ok(model.seats.every(s => Math.sin(s.yaw)*s.x + Math.cos(s.yaw)*s.z < 0));
+  for(const id of ['111','117','128','134']){
+    const {yaw}=model.seats.find(s=>s.sectionId===id);
+    assert.ok(Math.abs(Math.cos(yaw))>2*Math.abs(Math.sin(yaw)),`Section ${id} faces the near end of the court`);
+  }
+  const terrace=model.sectionFootprints.filter(section=>section.tier===2);
+  assert.ok(terrace.every(section=>Math.abs(section.rise/section.treadDepth-.46)<1e-8));
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);
@@ -150,8 +156,8 @@ test('phase-one basketball preview models documented club rows and the upper ais
  assert.ok(upperCorner.every(s=>s.z>0&&s.x<0));
  assert.equal(inRow('323','C').length,0);
  assert.equal(inRow('323','E').length,0);
- const a=inRow('323','B')[0],b=inRow('323','F')[0];
- assert.ok(a&&b&&b.y-a.y>1.5);
+ const a=inRow('323','B')[0],b=inRow('323','F')[0],c=inRow('323','G')[0];
+ assert.ok(a&&b&&c&&b.y-a.y>3.9*(c.y-b.y));
  assert.equal(new Set(model.seats.map(s=>s.uid)).size,model.seats.length);
 });
 
