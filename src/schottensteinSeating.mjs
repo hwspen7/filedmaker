@@ -354,7 +354,13 @@ function buildSchottensteinFeatures(rows) {
 
 const publishedSeatTotal=OSU_FACTS['schottenstein-center'].mensBasketballCapacity.value;
 
-function allocateSeats(spans,count){
+export function allocateSeats(spans,count){
+  // Reserve one location in every eligible chart-backed run before sharing
+  // the remaining capacity. Actual accessible/aisle voids are clipped earlier.
+  const unseeded=spans.filter(span=>span.count===0&&span.width>=minimumPitch);
+  if(count>=unseeded.length){
+    for(const span of unseeded){span.count++;count--;}
+  }
   const choices=spans.flatMap(span=>Array.from({length:Math.floor(span.width/minimumPitch)-span.count},
     (_,i)=>({span,pitch:span.width/(span.count+i+1)})));
   if(choices.length<count)throw new Error('The seating runs cannot fit the published count at the modeled minimum spacing.');
@@ -389,7 +395,11 @@ export function buildSchottensteinSeating(pitch) {
     const from=seats.length;
     for(const {left,right,width,count} of seatSpans){
       if(!count)continue;
-      const spacing=Math.min(width/count,Math.max(minimumPitch,pitch));
+      // Fill a row run evenly when its real-scale pitch remains plausible.
+      // Fixed-width centering produced seat-sized empty margins at the ends.
+      const fullPitch=width/count;
+      const spacing=fullPitch<=Math.max(.72,pitch*1.30)
+        ?fullPitch:Math.min(fullPitch,Math.max(minimumPitch,pitch));
       const inset=(width-count*spacing)/2;
       // Keep the blank ends of the chart scan out of the circulation gaps.
       seatingRows.push({

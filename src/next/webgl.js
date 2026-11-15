@@ -150,7 +150,7 @@ const instanceStride=44;
 export class NativeVenueRenderer {
   constructor(canvas,onPick=()=>{}){
     this.canvas=canvas;this.onPick=onPick;
-    const gl=canvas.getContext('webgl2',{antialias:true,alpha:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});
+    const gl=canvas.getContext('webgl2',{antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});
     if(!gl)throw Error('WebGL2 is not available on this device. Use the 2D map instead.');
     this.gl=gl;
     this.program=makeProgram(gl,VERTEX,FRAGMENT);
@@ -162,7 +162,7 @@ export class NativeVenueRenderer {
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
-    gl.clearColor(.905,.932,.955,1);
+    gl.clearColor(0,0,0,0);
     this.plan=null;this.mode='overview';this.pan=[0,0,0];this.theta=.68;this.phi=.87;this.distance=140;this.humanYaw=0;this.humanPitch=0;this.humanFov=63;this.viewOptions={posture:'seated',target:'center',zoom:1};
     this.bind();this.resize();this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(canvas);
   }
@@ -273,9 +273,10 @@ export class NativeVenueRenderer {
   }
   render(){if(!this.plan||!this.gl)return;
     const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);
+    // Let the neutral CSS viewport show through instead of drawing a solid background.
+    // Use a dim backdrop only for the enclosed human-seat view.
     if(this.plan.arenaInterior&&this.mode==='human')gl.clearColor(.19,.18,.205,1);
-    else if(this.plan.arenaInterior)gl.clearColor(.919,.926,.898,1);
-    else gl.clearColor(.905,.932,.955,1);
+    else gl.clearColor(0,0,0,0);
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     const camera=this.currentCamera(),vp=multiply(perspective(camera.fov*Math.PI/180,this.canvas.width/this.canvas.height,.045,4000),lookAt(camera.eye,camera.target,camera.up));this.vp=vp;
     gl.useProgram(this.program);

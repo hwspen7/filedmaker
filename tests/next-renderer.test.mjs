@@ -7,7 +7,8 @@ import { importTicketRoster } from '../src/seatFirst.mjs';
 import { generateSeats } from '../src/model.mjs';
 import { seatViewAnchors } from '../src/view.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
-import { schottensteinDeckHeight, schottensteinDeckPoint } from '../src/schottensteinSeating.mjs';
+import { schottensteinDeckHeight, schottensteinDeckPoint, allocateSeats } from '../src/schottensteinSeating.mjs';
+import { buildSchottensteinDecks } from '../src/next/schottensteinInterior.mjs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const decode=plan=>{const a=plan.instanceData,result=[];for(let i=0;i<a.length;i+=11)result.push({pos:[a[i],a[i+1],a[i+2]],size:[a[i+3],a[i+4],a[i+5]],yaw:a[i+6],id:a[i+10]});return result;};
 test('Ohio Stadium always distinguishes official capacity from synthetic model',()=>{
@@ -316,4 +317,21 @@ test('the seating chart clips rendered rows and preserves marked circulation ope
      polygonSpans([feature.outline],seat.x).some(([low,high])=>seat.z>low&&seat.z<high));
    assert.equal(inside.length,0,feature.label);
  }
+});
+
+test('Schottenstein overview draws no invented oval plinth',()=>{
+ const p={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
+ const model=generateSeats(p),plan=buildVenuePlan(model);
+ assert.ok(plan.deckGeometry.length>200000);
+ for(let i=1;i<plan.deckGeometry.length;i+=6)
+   assert.ok(plan.deckGeometry[i]>1,'Only elevated seating decks belong to the native mesh');
+ assert.equal(buildSchottensteinDecks([],model.sectionFootprints,false).length,0);
+ const webgl=read('../src/next/webgl.js');
+ assert.match(webgl,/alpha:true/);
+ assert.match(webgl,/clearColor\(0,0,0,0\)/);
+});
+test('bulk seat allocation preserves eligible row runs without adding inventory',()=>{
+ const spans=[{width:4,count:1},{width:.75,count:0}];
+ allocateSeats(spans,2);
+ assert.deepEqual(spans.map(s=>s.count),[2,1]);
 });

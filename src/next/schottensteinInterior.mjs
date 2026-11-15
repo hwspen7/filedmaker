@@ -108,24 +108,7 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
       }
     }
   }
-  // A thin presentation base, sized to the bowl rather than the floor diagram.
-  const outlines = footprints.filter(section => section.tier === 2).flatMap(section => section.outlines.flat());
-  const rx = Math.max(...outlines.map(point => Math.abs(point.x))) + 6;
-  const rz = Math.max(...outlines.map(point => Math.abs(point.z))) + 7;
-  const edge = (i, height, normal) => {
-    const angle = i * turn / segments;
-    const c = Math.cos(angle), s = Math.sin(angle);
-    return [rx*c,height,rz*s,...normal];
-  };
-  for (let i = 0; i < segments; i++) {
-    const angle = (i+.5) * turn / segments;
-    const normal = [Math.cos(angle)/rx,0,Math.sin(angle)/rz];
-    const top = -.54, bottom = -1.0;
-    const a = edge(i,top,normal), b = edge(i+1,top,normal);
-    const c = edge(i+1,bottom,normal), d = edge(i,bottom,normal);
-    data.push(...a,...b,...c,...a,...c,...d);
-    data.push(0,top,0,0,1,0,...edge(i+1,top,[0,1,0]),...edge(i,top,[0,1,0]));
-  }
+  // Only the elevated bowl decks remain; the added oval base was decorative.
   return new Float32Array(data);
 }
 

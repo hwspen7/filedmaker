@@ -304,7 +304,7 @@ function drawMap(){
   }
   const scale=.47*Math.min(c.width/(horizontal?extentZ:extentX),c.height/(horizontal?extentX:extentZ));
   const pos=s=>horizontal?[cx+(chart?-s.z:s.z)*scale,cy+s.x*scale]:[cx+s.x*scale,cy+s.z*scale];
-  ctx.fillStyle='#e9f0f7';
+  ctx.fillStyle='#dce1de';
   ctx.fillRect(0,0,c.width,c.height);
   const fw=(horizontal?plan.surface.length:plan.surface.width)*scale;
   const fl=(horizontal?plan.surface.width:plan.surface.length)*scale;
