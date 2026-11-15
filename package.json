@@ -1,13 +1,13 @@
 {
   "name": "filedmaker",
-  "version": "9.0.0",
+  "version": "9.1.0",
   "private": true,
   "type": "module",
   "description": "Seat-first NCAA/K-12 venue generator with ticket-roster import, capacity reconciliation and layered blue seating",
   "scripts": {
     "start": "node scripts/server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check school/studio.js && node --check src/seatFirst.mjs && node --check src/markerKit.js && node --check src/markerPlan.mjs && node --check src/schoolPipeline.mjs && node --check src/schoolPublisher.mjs && node --check src/nbaCatalog.mjs && node --check src/nbaArenas.mjs && node --check src/nbaGeometry.mjs && node --check src/nbaArchitecture.js && node --check src/geometryIntegrity.mjs && node --check src/detailKit.mjs && node --check src/osuFacts.mjs && node --check src/schottensteinKit.mjs && node --check src/venues.mjs && node --check src/stadiumDetails.mjs && node --check src/architecture.js && node --check src/survey.mjs && node --check src/photo.mjs && node --check src/plan.mjs && node --check src/model.mjs && node --check src/scene.js && node --check src/app.js && node --check scripts/server.mjs",
+    "check": "node --check school/studio.js && node --check src/seatFirst.mjs && node --check src/seatingSupport.mjs && node --check src/markerKit.js && node --check src/markerPlan.mjs && node --check src/schoolPipeline.mjs && node --check src/schoolPublisher.mjs && node --check src/nbaCatalog.mjs && node --check src/nbaArenas.mjs && node --check src/nbaGeometry.mjs && node --check src/nbaArchitecture.js && node --check src/geometryIntegrity.mjs && node --check src/detailKit.mjs && node --check src/osuFacts.mjs && node --check src/schottensteinKit.mjs && node --check src/venues.mjs && node --check src/stadiumDetails.mjs && node --check src/architecture.js && node --check src/survey.mjs && node --check src/photo.mjs && node --check src/plan.mjs && node --check src/model.mjs && node --check src/scene.js && node --check src/app.js && node --check scripts/server.mjs",
     "verify": "npm run check && npm test"
   },
   "engines": {

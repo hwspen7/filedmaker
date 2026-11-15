@@ -61,10 +61,23 @@ const camera=new THREE.PerspectiveCamera(53,1,.06,1500);camera.position.set(maxX
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);controls.update();
 const floor=new THREE.Mesh(new THREE.BoxGeometry(cw,.15,cl),new THREE.MeshStandardMaterial({color:data.surface.sport==='basketball'?0xd0ab79:0x4e9272}));world.add(floor);
 const geometry=new THREE.BoxGeometry(.42,.12,.36),back=new THREE.BoxGeometry(.42,.56,.08);const colors=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.8});
-const seatMesh=new THREE.InstancedMesh(geometry,colors,data.seats.length),backMesh=new THREE.InstancedMesh(back,colors,data.seats.length);let obj=new THREE.Object3D();
+const seatMesh=new THREE.InstancedMesh(geometry,colors,data.seats.length),backMesh=new THREE.InstancedMesh(back,colors,data.seats.length);
+// Even a self-contained school preview needs structural treads, otherwise
+// seat cushions look like disconnected colored stripes in empty space.
+const support=new THREE.InstancedMesh(new THREE.BoxGeometry(.53,.29,.84),new THREE.MeshStandardMaterial({color:0xc6d1d9,roughness:.94}),data.seats.length);
+const metal=new THREE.MeshStandardMaterial({color:0x8496a5,roughness:.56,metalness:.2});
+const leg=new THREE.InstancedMesh(new THREE.BoxGeometry(.025,.48,.035),metal,data.seats.length);
+const leg2=new THREE.InstancedMesh(new THREE.BoxGeometry(.025,.48,.035),metal,data.seats.length);
+let obj=new THREE.Object3D();
 for(let i=0;i<data.seats.length;i++){const s=data.seats[i];obj.position.set(s.x,s.y+.36,s.z);obj.rotation.set(0,s.yaw,0);obj.scale.set(1,1,1);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);if(data.tierColors)seatMesh.setColorAt(i,new THREE.Color(data.tierColors[Math.min(3,Math.max(0,s.tier))]));
-obj.position.set(s.x-Math.sin(s.yaw)*.17,s.y+.62,s.z-Math.cos(s.yaw)*.17);obj.updateMatrix();backMesh.setMatrixAt(i,obj.matrix);if(data.tierColors)backMesh.setColorAt(i,new THREE.Color(data.tierColors[Math.min(3,Math.max(0,s.tier))]));}
-world.add(seatMesh,backMesh);const dim=new THREE.Vector2();let running=true;
+obj.position.set(s.x-Math.sin(s.yaw)*.17,s.y+.62,s.z-Math.cos(s.yaw)*.17);obj.updateMatrix();backMesh.setMatrixAt(i,obj.matrix);
+if(data.tierColors)backMesh.setColorAt(i,new THREE.Color(data.tierColors[Math.min(3,Math.max(0,s.tier))]));
+obj.position.set(s.x,s.y-.20,s.z);obj.updateMatrix();support.setMatrixAt(i,obj.matrix);
+obj.position.set(s.x-Math.cos(s.yaw)*.16,s.y+.13,s.z+Math.sin(s.yaw)*.16);obj.updateMatrix();leg.setMatrixAt(i,obj.matrix);
+obj.position.set(s.x+Math.cos(s.yaw)*.16,s.y+.13,s.z-Math.sin(s.yaw)*.16);obj.updateMatrix();leg2.setMatrixAt(i,obj.matrix);
+}
+
+world.add(support,leg,leg2,seatMesh,backMesh);const dim=new THREE.Vector2();let running=true;
 function frame(){if(!running)return;requestAnimationFrame(frame);const w=root.clientWidth||300,h=root.clientHeight||300;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();if(mode!=='eye')controls.update();renderer.render(world,camera);}frame();
 const clear=()=>{if(scene?.hiddenIndex!==undefined&&scene.hiddenIndex>=0){const i=scene.hiddenIndex;const s=data.seats[i];obj.scale.set(1,1,1);obj.rotation.set(0,s.yaw,0);obj.position.set(s.x,s.y+.36,s.z);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);obj.position.set(s.x-Math.sin(s.yaw)*.17,s.y+.62,s.z-Math.cos(s.yaw)*.17);obj.updateMatrix();backMesh.setMatrixAt(i,obj.matrix);seatMesh.instanceMatrix.needsUpdate=true;backMesh.instanceMatrix.needsUpdate=true;scene.hiddenIndex=-1;}};
 scene={hiddenIndex:-1,orbit(){clear();controls.enabled=true;camera.fov=53;camera.position.set(maxX*1.6,Math.max(20,maxZ*.75),maxZ*1.45);controls.target.set(0,0,0);camera.updateProjectionMatrix();controls.update();},seatView(s){clear();controls.enabled=false;const i=byId.get(s.id);if(i!==undefined){obj.scale.set(0,0,0);obj.updateMatrix();seatMesh.setMatrixAt(i,obj.matrix);backMesh.setMatrixAt(i,obj.matrix);seatMesh.instanceMatrix.needsUpdate=true;backMesh.instanceMatrix.needsUpdate=true;scene.hiddenIndex=i;obj.scale.set(1,1,1);}

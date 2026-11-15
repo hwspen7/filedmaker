@@ -153,6 +153,7 @@ export function seatRegistration(survey) {
 export function importedSeats(survey, project) {
   if (survey.mode !== 'imported') return null;
   const registration=seatRegistration(survey), tierLookup = new Map(project.tiers.map((t,i)=>[t.id.toUpperCase(),i]));
+  const yIsEstimated=project.ticketing?.coordinates==='estimated';
   const seats=survey.seats.map(s=>{
     const p=applyRegistration(registration,s.x,s.z);
     const angle=((Math.atan2(p.z,p.x)*180/Math.PI)+360)%360;
@@ -160,9 +161,9 @@ export function importedSeats(survey, project) {
     const tier=tierLookup.get(s.tier.toUpperCase())??0;
     const y=(s.y??0)*unitFactor(survey.yUnit)+survey.heightOffset;
     return {uid:s.id,sectionId:s.section,sectionIndex:index,tier,row:s.row,number:s.number,
-      x:p.x,y,z:p.z,yaw:Math.atan2(-p.x,-p.z),dataOrigin:'imported',elevationKnown:s.y!==null};
+      x:p.x,y,z:p.z,yaw:Math.atan2(-p.x,-p.z),dataOrigin:'imported',elevationKnown:s.y!==null&&!yIsEstimated};
   });
-  return {seats,registration,elevationCount:survey.seats.filter(s=>s.y!==null).length};
+  return {seats,registration,elevationCount:yIsEstimated?0:survey.seats.filter(s=>s.y!==null).length};
 }
 
 // Exact line-of-sight against user-modeled oriented rectangular obstructions.

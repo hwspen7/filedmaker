@@ -320,3 +320,12 @@ This update is a production pipeline foundation, **not** 30 finished measured ar
 This scoped release repairs the common white rectangular cutouts seen in old stadium mockups. Unverified Ohio Stadium entrance openings were removed from the default real-venue reference, and unchanged legacy openings are migrated away without deleting user edits. Authored openings now require sufficient row rise, generate fitted corridor linings and closed tread edge skirts, and report unusable requests instead of carving phantom holes. High-detail seats use softer, thinner instanced backrests and seat cushions. Human view now models independent seat/hip/eye/look anchors and bounds neighbor collision correction without moving the model's original seat coordinates.
 
 See [Geometry Integrity — Phase 1](docs/GEOMETRY_INTEGRITY_PHASE1.md) for precise acceptance criteria, limitations and verification. The geometry is still **schematic**, and a successful unit-test run is not proof of accurate real-world seat views or complete watertight mesh topology.
+
+
+## v9.1 Seat-row visual integrity correction
+
+The v9.0 imported-ticket viewer drew only thin, two-triangle strips beneath the seats while skipping the normal stadium terraces. As a result, many seats appeared to float as parallel blue lines against a white background. The v9.1 renderer replaces those strips with non-surveyed **full-depth, capped row supports**: tread tops, risers, rear faces, and side caps, including breaks at actual roster gaps. The scene also renders simple neutral stair treads at known procedural section/aisle gaps.
+
+The seat mesh now has visible support legs and backrests in the seat-first viewer even at standard detail quality. The default seats remain stylized, not representations of an institution's actual seat furniture. No imported ticket identifiers, coordinates, or official capacities are changed.
+
+Verification: `npm run verify`. Real WebGL appearance, lighting, and performance need a browser screenshot check before labeling the graphics as visually accepted.
