@@ -45,7 +45,7 @@ Only visible architectural features guide the approximation. The four rotunda pl
 - `GeometryEngine`: controls the normalized outer perimeter for an arbitrary arena.
 - `ArchitectureEngine`: combines the seating terraces, circulation geometry and optional external facade streams.
 - `ExteriorEngine`: makes architectural materials, entrance towers, canopies, frames and perforated glazing surfaces from the perimeter and profile.
-- `NativeVenueRenderer`: selects material treatment for independent mesh layers. The existing `building` view exposes the full exterior. The `overview` and seat view continue using their cutaway policies.
+- `NativeVenueRenderer`: selects material treatments for independent mesh layers. **3D Overview now combines the full exterior, perimeter canopy, entrance rotundas, court and all seats in one view.** The separate Building tab is removed, and the central opaque roof is not generated. Section and seat views retain their focused viewing policies.
 - `ValidationEngine`: audits every 3D triangle, normals and all generated seat IDs.
 
 This deliberately does **not** fabricate a stadium exit inventory. No EXIT labels or numbered portals are generated. The user's 19,049-seat Schottenstein men’s basketball baseline remains unchanged. The official capacity should not be used as proof of exact seat coordinates.
