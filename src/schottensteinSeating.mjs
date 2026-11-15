@@ -371,6 +371,16 @@ function buildSchottensteinFeatures(rows) {
       const distance=item=>Math.hypot((item.left.x+item.right.x)/2-point.x,(item.left.z+item.right.z)/2-point.z);
       return distance(a)-distance(b);
     })[0];
+    if(region.kind==='press'){
+      // The preserved source outline still reserves genuine press-side seat
+      // voids. Its visible label belongs on the recessed gallery facade, not
+      // over section 323 or above a floating gray roof slab.
+      const angle=Math.atan2(point.z,point.x);
+      const radius=schottensteinBuildingRadius(angle)+.57;
+      return {...region,x:radius*Math.cos(angle),z:radius*Math.sin(angle),
+        y:SCHOTTENSTEIN_TERRACE_RIM.rear+2.50,
+        source:SCHOTTENSTEIN_CHART_URL};
+    }
     return {...region,...point,y:row?.y??0,source:SCHOTTENSTEIN_CHART_URL};
   });
 }
