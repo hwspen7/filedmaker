@@ -15,7 +15,7 @@ This branch implements a **working, deterministic, data-driven venue preview**. 
 | Reference | `src/next/engines/reference.mjs` | Source pack and manual landmark pairs → validated provenance and metric 2D similarity transform |
 | Validation | `src/next/engines/validation.mjs` | Seats + mesh layers + declared capacity → finite checks, collision audit, triangle winding, warnings and metrics |
 
-The public API lives in `src/next/engines/factory.mjs`.
+The public API lives in `src/next/engines/factory.mjs`. The Architecture Engine now also composes the optional shared `ExteriorEngine` submodule for configurable brick/metal facades, circular entry towers and three-dimensional entrance canopies. See [Exterior Engine](EXTERIOR_ENGINE.md).
 
 `createProceduralProject(spec)` returns a normal FiledMaker project carrying a validated `proceduralVenue` input. `generateSeats()` uses the generic seating engine for that project. `buildVenuePlan()` creates the generic architecture, spectator deck and audit, which the existing `NativeVenueRenderer` displays in 3D. Existing Schottenstein, Ohio Stadium, school and imported-seat branches remain separate. The generic system does not overwrite imported coordinates. Both presets include a rear concourse with structural depth, an exterior wall and columns. The indoor template adds a complete roof for **Building** view. The outdoor template leaves the field uncovered. **3D overview** exposes the seating in both cases.
 
