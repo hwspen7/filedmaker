@@ -153,6 +153,22 @@ async function main(){
         const roofFrame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
         if(roofFrame.data===frame.data)throw Error('The upper-row roof check did not change the frame');
         writeFileSync(join(dir,'osu-upper-roof.png'),Buffer.from(roofFrame.data,'base64'));
+        for(const id of ['314','320']){
+          await evaluate(`(()=>{
+            const section=document.querySelector('#sectionPicker');
+            section.value='${id}';
+            section.dispatchEvent(new Event('change',{bubbles:true}));
+            const row=document.querySelector('#rowPicker');
+            row.value='U';
+            row.dispatchEvent(new Event('change',{bubbles:true}));
+            document.querySelector('[data-view=section]').click();
+          })()`);
+          const focused=await evaluate(`document.querySelector('#seatDetails').textContent.includes('${id} · Row U')`);
+          if(!focused)throw Error('Could not focus the refined rear row in '+id);
+          await delay(450);
+          const frame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+          writeFileSync(join(dir,'osu-refined-'+id+'.png'),Buffer.from(frame.data,'base64'));
+        }
         console.log('osu-seat: human-eye WebGL2 screenshot verified');
         await evaluate("document.querySelector('[data-view=overview]').click()");
       }

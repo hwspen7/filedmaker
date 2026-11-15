@@ -17,6 +17,10 @@ The renderer combines the following independent layers:
 
 The new independent geometry lives in `src/next/schottensteinArchitecture.mjs`. `src/next/venuePlan.mjs` includes it in Schottenstein chart previews, and `src/next/webgl.js` renders each layer through native WebGL2 as separate meshes. This path is not applied to generic schools, Ohio Stadium, or imported layouts without reconstructed seating rows.
 
+## Manual seating refinement
+
+`src/schottensteinRefinement.mjs` keeps the authored preview edits separate from the raw chart. The current set removes narrow trace artifacts in sections 313, 315, 319 and 320, aligns selected wedge sections to the rear edge, and samples the last row before the trace tapers to a narrow tip. The same seating allocator balances the adjusted spans to 19,049 modeled positions. The elevation profile eases into the lower rows and steepens towards the back, with common endpoints per tier. These adjustments retain the section map, accessible landings and press-side gaps.
+
 ## Source integrity
 
 The model uses schematic section contours and the existing Schottenstein Center basketball configuration. The **19,049-seat demo count** is retained and independently checked. Matching a published capacity does not verify each seat's location, row numbering, sightline, wheelchair inventory or ticket availability. The reference basketball and press/band/accessible gaps are preserved. Imported ticket identifiers and XYZ data remain separate.

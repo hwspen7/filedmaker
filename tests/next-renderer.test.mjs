@@ -337,6 +337,21 @@ test('the seating chart clips rendered rows and preserves marked circulation ope
  }
 });
 
+test('manual terrace refinements remove isolated slits and retain wide rear rows',()=>{
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const spans=(id,label)=>model.seatingRows.filter(row=>row.sectionId===id&&row.row===label);
+ for(const id of ['313','315','320'])assert.equal(spans(id,'O').length,1);
+ for(const id of ['312','313','315','316','318','319','320']){
+   const [secondLast]=spans(id,'T'),[last]=spans(id,'U');
+   assert.ok(last.width>=secondLast.width*.88,id+' keeps a broad final tread');
+ }
+ const rows=label=>spans('314',label);
+ assert.equal(rows('B').length,0,'The mapped accessible gap remains open');
+ assert.equal(spans('323','C').length,0,'The press-side gap remains open');
+ assert.ok(rows('U')[0].y-rows('T')[0].y>rows('I')[0].y-rows('H')[0].y,
+   'The terrace rises progressively towards the back');
+});
+
 test('Schottenstein overview hides the gray backing while preserving seat-view geometry',()=>{
  const p={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
  const model=generateSeats(p),plan=buildVenuePlan(model);

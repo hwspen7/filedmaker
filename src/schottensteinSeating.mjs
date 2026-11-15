@@ -2,6 +2,8 @@ import {
   SCHOTTENSTEIN_CHART_LABELS, SCHOTTENSTEIN_DIAGRAM_EDGE, SCHOTTENSTEIN_SECTION_CONTOURS,
 } from './schottensteinChartContours.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
+import { refineSchottensteinContour, refineSchottensteinRearDepth,
+  schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
 
 // The guide endpoints orient the rows. The traced chart contours clip them.
 export const SCHOTTENSTEIN_CHART_URL =
@@ -178,8 +180,9 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
   level.map(([id,...p])=>{
     const corners=unpack(p);
     const [frontLeft,frontRight,backLeft,backRight]=corners;
-    const dx=frontRight.x-frontLeft.x+backRight.x-backLeft.x;
-    const dz=frontRight.z-frontLeft.z+backRight.z-backLeft.z;
+    const {x:dx,z:dz}=schottensteinRowHeading(id,
+      {x:frontRight.x-frontLeft.x,z:frontRight.z-frontLeft.z},
+      {x:backRight.x-backLeft.x,z:backRight.z-backLeft.z});
     const magnitude=Math.hypot(dx,dz);
     const center=lerp(frontLeft,frontRight,.5);
     let nx=-dz/magnitude,nz=dx/magnitude;
@@ -198,17 +201,18 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
       const turn = Math.PI / 15;
       [nx,nz] = [nx*Math.cos(turn)-nz*Math.sin(turn), nx*Math.sin(turn)+nz*Math.cos(turn)];
     }
-    const outlines=SCHOTTENSTEIN_SECTION_CONTOURS[id].map(unpack);
+    const outlines=refineSchottensteinContour(id,SCHOTTENSTEIN_SECTION_CONTOURS[id]).map(unpack);
     // Local X runs outward, local Z runs to a spectator's right.
     const project=({x,z})=>({x:-nx*x-nz*z,z:-nz*x+nx*z});
     const projected=outlines.map(points=>points.map(project));
     const depths=projected.flat().map(p=>p.x);
-    const far=Math.max(...depths);
+    const tracedFar=Math.max(...depths);
     let near=Math.min(...depths);
     const sectionId=String(id),details=rowDetails.get(sectionId);
     const depthRows=details?.slots ? details.slots.at(-1)+1
-      :details?.labels.length??Math.max(2,Math.round((far-near)/[.82,.88,.82][tier]));
+      :details?.labels.length??Math.max(2,Math.round((tracedFar-near)/[.82,.88,.82][tier]));
     const rows=details?.labels.length??depthRows;
+    const far=refineSchottensteinRearDepth(id,near,tracedFar,depthRows,depth=>polygonSpans(projected,depth));
     let treadDepth=(far-near)/depthRows;
     const canSeat=depth=>polygonSpans(projected,depth).some(([lo,hi])=>hi-lo>=minimumPitch);
     let firstCenter=near+treadDepth*.5;
@@ -274,10 +278,7 @@ function rimRadius(edge, angle) {
 
 function deckHeight(tier, fraction) {
   const [base, top] = tierElevations[tier];
-  // Give the terrace a near-uniform rake through its rear rows.
-  // All sectors sample the same curve, including the shorter press side.
-  const progress = tier === 2 ? fraction + .04 * fraction * (1 - fraction) : fraction;
-  return base + (top - base) * progress;
+  return base+(top-base)*schottensteinRake(tier,fraction);
 }
 
 export function schottensteinDeckHeight(tier, point) {
