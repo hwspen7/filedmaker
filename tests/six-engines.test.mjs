@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createProject,generateSeats } from '../src/model.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
+import { NativeVenueRenderer } from '../src/next/webgl.js';
 import {
   GeometryEngine,SeatingEngine,ArchitectureEngine,OptimizationEngine,ReferenceEngine,ValidationEngine,ExteriorEngine,
   PROCEDURAL_DEMOS,createProceduralProject,generateVenuePackage
@@ -46,8 +47,9 @@ test('architecture engine reuses the same geometry for an indoor arena and outdo
     assert.ok(layers.facade.length>1000);
     assert.ok(layers.aisles.length>0);
     assert.ok(layers.soffit.length>0 && layers.pilasters.length>0);
-    assert.equal(layers.buildingRoof.length>0,demo.template==='indoor-arena');
+    assert.equal(layers.buildingRoof.length,0,'No opaque roof over the court');
     assert.equal(layers.roofDeck.length>0,demo.template==='indoor-arena');
+    assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode({arenaInterior:true,architectureGeometry:layers},'overview','facade'),true);
     assert.ok(layers.decks.every(Number.isFinite));
     assert.equal(layers.entryMasonry.length>0,Boolean(demo.exterior?.entrances?.length));
     assert.ok(layers.brickBase.length>0===Boolean(demo.exterior));
