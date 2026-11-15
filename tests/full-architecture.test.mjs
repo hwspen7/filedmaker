@@ -166,7 +166,7 @@ test('Schottenstein upper stand has a closed, continuously shaded structural bow
 test('333 and 334 upper seats end close to the fitted rear parapet',()=>{
   const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
   const plan=buildVenuePlan(model);
-  const edge=fitRearSeatEnvelope(model.seats,{tier:2,segments:192,clearance:.43,spread:2});
+  const edge=fitRearSeatEnvelope(model.seats,{tier:2,segments:192,clearance:.38,spread:1});
   const last=new Map();
   for(const row of model.seatingRows){
     if(!['333','334'].includes(row.sectionId))continue;
@@ -179,8 +179,8 @@ test('333 and 334 upper seats end close to the fitted rear parapet',()=>{
   for(const seat of model.seats){
     if(!rears.has(seat.sectionId+':'+seat.row))continue;
     const clearance=edge.radiusAt(Math.atan2(seat.z,seat.x))-Math.hypot(seat.x,seat.z);
-    assert.ok(clearance>=.30&&clearance<2.4,
-      seat.uid+' must end within 2.4m of the integrated rear rim: '+clearance);
+    assert.ok(clearance>=.30&&clearance<1.15,
+      seat.uid+' must end within 1.15m of the integrated rear rim: '+clearance);
     checked++;
   }
   assert.ok(checked>16,'Both rear seat banks must be inspected');
