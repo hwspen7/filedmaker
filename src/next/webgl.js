@@ -51,7 +51,7 @@ void main(){
     else if(uDeck>10.5)vColor=vec3(.89,.86,.81); // Warm limestone treads
     else if(uDeck>9.5)vColor=vec3(.72,.64,.54); // Muted champagne fascia trim
     else if(uDeck>8.5)vColor=vec3(.22,.25,.27); // Recessed graphite glazing
-    else if(uDeck>7.5)vColor=vec3(.52,.52,.50); // Quiet exterior cladding
+    else if(uDeck>7.5)vColor=vec3(.69,.68,.65); // Light warm-stone exterior cladding
     else if(uDeck>6.5)vColor=vec3(.75,.73,.69); // Continuous tier concourses
     else if(uDeck>5.5)vColor=vec3(.65,.63,.60); // Stepped row fascias
     else if(uDeck>4.5)vColor=vec3(.80,.78,.74); // Row-aligned stone seat decks
