@@ -7,6 +7,7 @@ import { importTicketRoster } from '../src/seatFirst.mjs';
 import { generateSeats } from '../src/model.mjs';
 import { seatViewAnchors } from '../src/view.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
+import { schottensteinDeckHeight, schottensteinDeckPoint } from '../src/schottensteinSeating.mjs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const decode=plan=>{const a=plan.instanceData,result=[];for(let i=0;i<a.length;i+=11)result.push({pos:[a[i],a[i+1],a[i+2]],size:[a[i+3],a[i+4],a[i+5]],yaw:a[i+6],id:a[i+10]});return result;};
 test('Ohio Stadium always distinguishes official capacity from synthetic model',()=>{
@@ -112,20 +113,26 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
     const heights = [...bySlot.values()];
     assert.ok(heights.every((height, i) => i === 0 || height > heights[i - 1]), `Section ${section.id}`);
   }
-  const regular = ['301','302','303','305','306','308','319','320'].map(sectionRows);
-  assert.ok(regular.every(rows => Math.abs(rows[0].y - 15.45) < .0001
-    && Math.abs(rows.at(-1).y - 26.5) < .0001));
-  for (const rows of regular) {
-    for (const [label, height] of [['B',16.1],['G',19.45],['L',22.65],['R',25.2]]) {
-      assert.ok(rows.some(row => row.row === label && Math.abs(row.y - height) < .0001));
-    }
-    assert.ok(rows.find(row => row.row === 'H').y > 19.8);
-  }
+  const regular = ['301','302','303','305','306','308','319','320','334'].map(sectionRows);
+  assert.ok(regular.every(rows => rows[0].y > 14.9 && rows[0].y < 16
+    && rows.at(-1).y > 25.9 && rows.at(-1).y < 27));
   const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
-  assert.ok(pressSide.every(rows => rows.at(-1).y > 21 && rows.at(-1).y < 26));
-  assert.ok(sectionRows('304')[0].y < regular[3][0].y);
-  assert.equal(sectionRows('304').find(row => row.row === 'H').y,
-    sectionRows('305').find(row => row.row === 'H').y);
+  assert.ok(pressSide.every(rows => rows.at(-1).y < 24));
+  for (const seat of model.seats.filter(seat => seat.tier > 0)) {
+    assert.equal(seat.y, schottensteinDeckHeight(seat.tier, seat), 'Seats share the deck curve');
+  }
+  for (const tier of [1, 2]) {
+    const grades = Array.from({length: 513}, (_, i) => {
+      const angle = i * Math.PI / 256;
+      const a = schottensteinDeckPoint(tier, angle, .22);
+      const b = schottensteinDeckPoint(tier, angle, .23);
+      return (schottensteinDeckHeight(tier,b) - schottensteinDeckHeight(tier,a))
+        / Math.hypot(a.x-b.x,a.z-b.z);
+    });
+    assert.ok(grades.every((grade, i) => grade > .44 && grade < .95
+      && (i === 0 || Math.abs(grade - grades[i-1]) < .018)), 'No grade jump at a section seam');
+  }
+  assert.equal(plan.invalidRows, 0);
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);
@@ -217,6 +224,15 @@ test('surveyed Ohio State import keeps supplied positions and the native section
 test('phase-one native geometry includes a cutaway-aware interior and current board',()=>{
  const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
  const plan=buildVenuePlan(model);
+ assert.ok(plan.deckGeometry?.length > 200_000);
+ assert.ok(plan.deckGeometry.every(Number.isFinite));
+ for (let i = 0; i < plan.deckGeometry.length; i += 18) {
+   const [ax,ay,az,nx,ny,nz,bx,by,bz,,,,cx,cy,cz] = plan.deckGeometry.subarray(i,i+18);
+   const x = (by-ay)*(cz-az) - (bz-az)*(cy-ay);
+   const y = (bz-az)*(cx-ax) - (bx-ax)*(cz-az);
+   const z = (bx-ax)*(cy-ay) - (by-ay)*(cx-ax);
+   assert.ok(x*nx + y*ny + z*nz > 0, 'Deck triangle faces the rendered side');
+ }
  assert.equal(plan.arenaInterior,true);
  assert.equal(plan.scoreboardHeight,16.3);
  assert.deepEqual(plan.features.map(feature=>feature.label),

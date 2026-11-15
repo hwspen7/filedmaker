@@ -1,5 +1,5 @@
-// Dependency-free WebGL2 venue renderer: one instanced mesh for chairs,
-// bleachers, treads, court, goalposts and scoreboards. No CDN required.
+// Dependency-free WebGL2 venue renderer with instanced furnishings and optional
+// structural deck meshes. No CDN required.
 // Embedded eye/view helpers also permit standalone, zero-dependency school exports.
 const seatViewAnchors=(seat,posture='seated')=>{const yaw=Number.isFinite(seat.yaw)?seat.yaw:Math.atan2(-seat.x,-seat.z);const f=posture==='leaning'?.38:posture==='standing'?.20:.23;return {eye:{x:seat.x+Math.sin(yaw)*f,y:seat.y+({seated:1.17,leaning:1.23,standing:1.60}[posture]||1.17),z:seat.z+Math.cos(yaw)*f}};};
 function viewingTarget(surface,target='center',seat=null,scoreboardHeight=13.6){const x=surface.width/2,z=surface.length/2;
@@ -36,11 +36,19 @@ uniform mat4 uVP;
 uniform vec3 uEye;
 uniform float uHuman;
 uniform float uRound;
+uniform float uDeck;
 uniform float uSelected;
 out vec3 vColor;
 out vec3 vNormal;
 out vec3 vWorld;
 void main(){
+  if(uDeck>.5){
+    vNormal=aNormal;
+    vColor=vec3(.375,.36,.393);
+    vWorld=aLocal;
+    gl_Position=uVP*vec4(aLocal,1.);
+    return;
+  }
   vec3 p=aLocal*aSize;
   vec3 n=aNormal;
   if(uRound>.5){
@@ -141,7 +149,7 @@ export class NativeVenueRenderer {
     if(!gl)throw Error('WebGL2 is not available on this device. Use the 2D map instead.');
     this.gl=gl;
     this.program=makeProgram(gl,VERTEX,FRAGMENT);
-    this.locations=Object.fromEntries(['VP','Eye','Human','Round','Selected']
+    this.locations=Object.fromEntries(['VP','Eye','Human','Round','Selected','Deck']
       .map(name=>[name,gl.getUniformLocation(this.program,'u'+name)]));
     this.instances=gl.createBuffer();
     this.box=this.createMesh(cube);
@@ -175,10 +183,15 @@ export class NativeVenueRenderer {
     }
   }
   load(plan){
+    const gl = this.gl;
+    if (this.deck) {
+      gl.deleteBuffer(this.deck.buffer);
+      gl.deleteVertexArray(this.deck.vao);
+    }
+    this.deck = plan.deckGeometry?.length ? this.createMesh(plan.deckGeometry) : null;
     this.plan=plan;
     this.seatIndices=new Map(plan.seats.map((seat,i)=>[seat.uid,i]));
     this.selectedIndex=-1;
-    const gl=this.gl;
     gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
     gl.bufferData(gl.ARRAY_BUFFER,plan.instanceData,gl.STATIC_DRAW);
     const rounded=plan.roundedCount||0;
@@ -261,6 +274,12 @@ export class NativeVenueRenderer {
     gl.uniform1f(this.locations.Human,this.mode==='human'?1:0);
     gl.uniform1f(this.locations.Selected,this.selectedIndex);
     const rounded=this.plan.roundedCount||0;
+    if(this.deck){
+      gl.uniform1f(this.locations.Deck,1);
+      gl.bindVertexArray(this.deck.vao);
+      gl.drawArrays(gl.TRIANGLES,0,this.deck.vertices);
+    }
+    gl.uniform1f(this.locations.Deck,0);
     gl.uniform1f(this.locations.Round,0);
     gl.bindVertexArray(this.box.vao);
     gl.drawArraysInstanced(gl.TRIANGLES,0,this.box.vertices,this.plan.instanceCount-rounded);
@@ -303,7 +322,7 @@ export class NativeVenueRenderer {
   dispose(){
     this.observer.disconnect();
     this.gl.deleteBuffer(this.instances);
-    for(const {buffer,vao} of [this.box,this.roundedBox]){
+    for(const {buffer,vao} of [this.box,this.roundedBox,this.deck].filter(Boolean)){
       this.gl.deleteBuffer(buffer);
       this.gl.deleteVertexArray(vao);
     }

@@ -1,9 +1,8 @@
 // Native visual geometry for the Schottenstein Center basketball configuration.
 // Metres are modeled estimates except for regulation court and published ribbon height.
-import { SCHOTTENSTEIN_TERRACE_RIM } from '../schottensteinSeating.mjs';
+import { SCHOTTENSTEIN_TERRACE_RIM, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
-const deckBottom=[-.28,6.75,12.99];
 const HIDDEN_IN_CUTAWAY = -2;
 const INWARD_FACING = -3;
 
@@ -27,14 +26,68 @@ function addChartRegions(add,color,features,spanAt) {
   }
 }
 
+// Use one continuous mesh per elevated deck, including the surface across
+// section boundaries. The outer edge closes around the press-side cutout.
+export function buildSchottensteinDecks(seats) {
+  const segments = 256, bands = 20, turn = 2 * Math.PI;
+  const data = [];
+  for (const tier of [1, 2]) {
+    const rim = Array.from({length: segments}, (_, i) => {
+      const angle = i * turn / segments;
+      const front = schottensteinDeckPoint(tier, angle, 0);
+      const rear = schottensteinDeckPoint(tier, angle, 1);
+      return {angle, near: Math.hypot(front.x, front.z), far: Math.hypot(rear.x, rear.z)};
+    });
+    for (const {x,z,tier:seatTier} of seats) {
+      if (seatTier !== tier) continue;
+      const index = Math.floor((Math.atan2(z,x) / turn + 1) * segments) % segments;
+      const r = Math.hypot(x,z);
+      // Both sides of a mesh cell must extend beyond the chair's footprint.
+      for (let i = -1; i <= 2; i++) {
+        const edge = rim[(index+i+segments)%segments];
+        edge.near = Math.min(edge.near, r - .55);
+        edge.far = Math.max(edge.far, r + .60);
+      }
+    }
+    const vertex = (x,z) => {
+      const height = (x,z) => schottensteinDeckHeight(tier,{x,z}) - .12;
+      const y = height(x,z), d = .10;
+      const dx = (height(x+d,z) - height(x-d,z)) / (2*d);
+      const dz = (height(x,z+d) - height(x,z-d)) / (2*d);
+      const length = Math.hypot(dx,1,dz);
+      return [x,y,z,-dx/length,1/length,-dz/length];
+    };
+    const grid = rim.map(({angle,near,far}) => Array.from({length: bands + 1}, (_, j) => {
+      const r = near + (far-near) * j / bands;
+      return vertex(r*Math.cos(angle),r*Math.sin(angle));
+    }));
+    const quad = (a,b,c,d) => data.push(...a,...b,...c,...a,...c,...d);
+    for (let i = 0; i < segments; i++) {
+      const a = grid[i], b = grid[(i+1)%segments];
+      for (let j = 0; j < bands; j++) quad(a[j],b[j],b[j+1],a[j+1]);
+      const angle = (i + .5) * turn / segments;
+      for (const [j,sign] of [[0,-1],[bands,1]]) {
+        const normal = [sign*Math.cos(angle),0,sign*Math.sin(angle)];
+        const edge = (p,drop) => [p[0],p[1]-drop,p[2],...normal];
+        const x = edge(a[j],0), y = edge(b[j],0);
+        const c = edge(b[j],.39), d = edge(a[j],.39);
+        if (sign<0) quad(y,x,d,c);
+        else quad(x,y,c,d);
+      }
+    }
+  }
+  return new Float32Array(data);
+}
+
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
   const tread=color('#79767d'), fascia=color('#393237');
   const suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
-  // The bowl renders only the slabs under the seat-bearing row runs.
-  // Leave circulation gaps open where the chart shows a break.
+  // The entry level has distinct seating banks close to the court.
+  // The elevated tiers use the continuous decks instead of row slabs.
   for(const {left,right,y,depth,tier} of rows){
-    const slab=Math.min(y-deckBottom[tier],.82);
+    if(tier!==0)continue;
+    const slab=Math.min(y+.28,.82);
     spanBox(add,left,right,y-slab*.5,slab,depth,tread);
   }
 
@@ -54,7 +107,7 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   // Recessed suite band, ribbon and upper fascia observed in the arena photos.
   for(let i=0;i<64;i++){
     const a=i*2*Math.PI/64,b=(i+1)*2*Math.PI/64;
-    const p=point(a,outerX*.67,outerZ*.72),q=point(b,outerX*.67,outerZ*.72);
+    const p=schottensteinDeckPoint(2,a,0),q=schottensteinDeckPoint(2,b,0);
     spanBox(add,p,q,ribbonTop-1.59,1.9,.48,suite,INWARD_FACING);
     const face=pos=>{
       const radius=Math.hypot(pos.x,pos.z);

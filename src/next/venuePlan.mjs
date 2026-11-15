@@ -3,7 +3,7 @@
 import { seatColor, seatKind } from '../seatPresentation.mjs';
 import { ticketReconciliation } from '../seatFirst.mjs';
 import { polygonSpans, schottensteinDiagramEdge } from '../schottensteinSeating.mjs';
-import { addSchottensteinBoard, addSchottensteinBowl } from './schottensteinInterior.mjs';
+import { addSchottensteinBoard, addSchottensteinBowl, buildSchottensteinDecks } from './schottensteinInterior.mjs';
 
 const SCHOTTENSTEIN_COURT_COLORS = {
   wood:'#c7c7c3',
@@ -144,6 +144,7 @@ export function buildVenuePlan(model,options={}) {
   }
   const features=model.features??[];
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
+  const deckGeometry = model.seatingRows ? buildSchottensteinDecks(seats) : undefined;
   const courtColors=chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
@@ -285,7 +286,7 @@ export function buildVenuePlan(model,options={}) {
   const instanceData=new Float32Array(seatShells.length+elements.length);
   instanceData.set(seatShells);
   instanceData.set(elements,seatShells.length);
-  return {instanceData,instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
+  return {instanceData,deckGeometry,instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
     sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview,
     scoreboardHeight:chartPreview?16.3:13.6,features,seats,project,surface,official,
     courtStyle:courtColors?{...courtColors,apronWidth:apron,laneSize:BASKETBALL_LANE}:null,
