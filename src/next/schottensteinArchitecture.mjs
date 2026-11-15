@@ -56,49 +56,9 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 }
 
 
-/**
- * Schematic exit portals in gaps between the upper-bowl chart sections.
- * Labels are illustrative, NOT confirmed Ohio State exit designations.
- * They do not alter any seats or verified circulation features.
- */
-export function buildSchottensteinExitMarkers(model){
-  const blocks=(model?.sectionFootprints??[]).filter(block=>block.tier===2);
-  if(!blocks.length)return [];
-  const centers=blocks.map(block=>{
-    const pts=block.outlines.flat();
-    const x=pts.reduce((sum,p)=>sum+p.x,0)/pts.length;
-    const z=pts.reduce((sum,p)=>sum+p.z,0)/pts.length;
-    return (Math.atan2(z,x)+TAU)%TAU;
-  }).sort((a,b)=>a-b);
-  const gaps=centers.map((c,i)=>{
-    const next=i+1<centers.length?centers[i+1]:centers[0]+TAU;
-    return (c+(next-c)/2)%TAU;
-  });
-  const chosen=new Set(),output=[];
-  const distance=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
-  for(let i=0;i<12&&i<gaps.length;i++){
-    const ideal=(i+.5)*TAU/12;
-    let best=-1,score=Infinity;
-    for(let j=0;j<gaps.length;j++){
-      if(chosen.has(j))continue;
-      const d=distance(gaps[j],ideal);
-      if(d<score){best=j;score=d;}
-    }
-    if(best<0)continue;
-    chosen.add(best);
-    const angle=gaps[best],anchor=ringPoint(2,angle,1,.32);
-    const number=String(output.length+1).padStart(2,'0');
-    output.push({id:'EX-'+number,number,
-      label:'EXIT '+number,angle,
-      x:anchor.x,y:anchor.y+2.10,z:anchor.z,
-      verified:false});
-  }
-  return output;
-}
-
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],crown=[],signs=[],exitLights=[],exitGlyphs=[];
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[];
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
@@ -148,37 +108,76 @@ export function buildSchottensteinArchitecture(model){
     const to=a=>({...from(a),y:level+.24});
     ringStrip(fascias,from,to,'out');
   }
-  // Articulated exterior cladding with three window courses, narrow columns
-  // and top crown. The outside wall is beyond the rear-seat clearance.
-  const outer=a=>ringPoint(2,a,1,.50);
-  const facadeHeight=a=>clamp(outer(a).y-.62,20.2,29.3);
+
+  // Structural building volume: a seat-level concourse is enclosed by an
+  // independent rear ring 5–6 m deep. This replaces the old zero-depth wall.
+  const ROOF_Y=34.8;
+  const rawR=Array.from({length:SEGMENTS},(_,i)=>
+    radius(schottensteinDeckPoint(2,i*TAU/SEGMENTS,1)));
+  const rimY=Array.from({length:SEGMENTS},(_,i)=>{
+    const p=schottensteinDeckPoint(2,i*TAU/SEGMENTS,1);
+    return schottensteinDeckHeight(2,p);
+  });
+  // Smooth the envelope without ever allowing the wall to run into the seats.
+  // This removes the severe crown scalloping on the shorter press side.
+  const envelope=rawR.map((_,i)=>{
+    let r=0;
+    for(let k=-4;k<=4;k++)r=Math.max(r,rawR[(i+k+SEGMENTS)%SEGMENTS]);
+    return r;
+  });
+  const outerR=envelope.map((_,i)=>{
+    let sum=0,weight=0;
+    for(let k=-4;k<=4;k++){
+      const w=5-Math.abs(k);
+      sum+=w*envelope[(i+k+SEGMENTS)%SEGMENTS];
+      weight+=w;
+    }
+    return Math.max(rawR[i]+1.04,sum/weight+.58);
+  });
+  const station=(index,offset,y)=>{
+    const i=(index+SEGMENTS)%SEGMENTS,a=i*TAU/SEGMENTS;
+    const r=outerR[i]+offset;
+    return [r*Math.cos(a),y,r*Math.sin(a)];
+  };
+  const normalAt=i=>{
+    const a=(i+.5)*TAU/SEGMENTS;
+    return [Math.cos(a),0,Math.sin(a)];
+  };
+  const wallBand=(layer,i,offset,bottomA,bottomB,topA,topB,facing)=>{
+    const j=(i+1)%SEGMENTS,n=normalAt(i).map(v=>facing==='in'?-v:v);
+    if(topA<=bottomA||topB<=bottomB)return;
+    quad(layer,station(i,offset,bottomA),station(j,offset,bottomB),
+      station(j,offset,topB),station(i,offset,topA),n);
+  };
+  const horizontal=(layer,i,near,far,y,normal)=>{
+    const j=(i+1)%SEGMENTS;
+    quad(layer,station(i,near,y),station(j,near,y),
+      station(j,far,y),station(i,far,y),[0,normal,0]);
+  };
+  // A real perimeter façade, rather than a gray thin shell laid behind the
+  // seats. Vertical columns and inset glazing are separated by four bands.
+  const externalWindowBands=[[3.35,4.55],[10.15,11.55],[18.12,19.72],[26.35,27.68]];
+  const facadeOuter=5.55;
   for(let i=0;i<SEGMENTS;i++){
-    const a=i*TAU/SEGMENTS,b=(i+1)*TAU/SEGMENTS;
-    const p=outer(a),q=outer(b),n=normalOut({x:(p.x+q.x)/2,z:(p.z+q.z)/2});
-    const topA=facadeHeight(a),topB=facadeHeight(b);
-    for(const [lo,hi] of [[0,2.30],[3.40,9.10],[11.30,17.10],[19.00,20.20]]){
-      const ya=clamp(hi,lo,topA),yb=clamp(hi,lo,topB);
-      if(ya<=lo||yb<=lo)continue;
-      quad(facade,vec(p,lo),vec(q,lo),vec(q,yb),vec(p,ya),n);
+    const isPier=i%7===0;
+    let bottom=0;
+    for(const [lo,hi] of externalWindowBands){
+      wallBand(facade,i,facadeOuter,bottom,bottom,lo,lo,'out');
+      if(isPier)wallBand(facade,i,facadeOuter,lo,lo,hi,hi,'out');
+      else wallBand(glazing,i,facadeOuter-.095,lo,lo,hi,hi,'out');
+      bottom=hi;
     }
-    for(const [lo,hi] of [[2.36,3.32],[9.18,11.22],[17.18,18.92]]){
-      if(topA<hi||topB<hi)continue;
-      if(i%11===0||i%11===1){
-        quad(facade,vec(p,lo),vec(q,lo),vec(q,hi),vec(p,hi),n);
-      }else{
-        const inset=.055;
-        const project=r=>({x:r.x+n[0]*inset,z:r.z+n[2]*inset});
-        quad(glazing,vec(project(p),lo),vec(project(q),lo),vec(project(q),hi),vec(project(p),hi),n);
-      }
+    wallBand(facade,i,facadeOuter,bottom,bottom,ROOF_Y-.44,ROOF_Y-.44,'out');
+    if(i%7===0){
+      wallBand(pilasters,i,facadeOuter+.15,.08,.08,ROOF_Y-.52,ROOF_Y-.52,'out');
     }
-    if(Math.min(topA,topB)>20.22)
-      quad(facade,vec(p,20.18),vec(q,20.18),vec(q,topB),vec(p,topA),n);
-    if(i%8===0){
-      const pp={x:p.x+n[0]*.10,z:p.z+n[2]*.10};
-      const qq={x:q.x+n[0]*.10,z:q.z+n[2]*.10};
-      quad(trim,vec(pp,.12),vec(qq,.12),vec(qq,Math.min(topB,topA)),vec(pp,Math.min(topB,topA)),n);
+    for(const height of [4.65,11.65,19.82,27.80]){
+      wallBand(trim,i,facadeOuter+.042,height,height,height+.13,height+.13,'out');
     }
   }
+  // The building's roof is carried by the outer wall and deep interior
+  // frames. It is an open-centre arena: only an annular gallery canopy, never
+  // an opaque roof across the court or an orphan white stripe.
   // Fine cornices tie the facade to the three seating elevations.
   for(const [tier,fraction,yoffset] of [[0,1,.05],[1,1,.05],[2,1,.05]]){
     const from=a=>{
@@ -192,98 +191,100 @@ export function buildSchottensteinArchitecture(model){
     ringStrip(trim,from,to,'up');
   }
 
-  // The upper bowl terminates in a solid, two-sided arena wall. Its bottom
-  // follows the traced upper tier and joins the exterior cladding. A narrow
-  // coping closes the wall: there is NO free-standing white crown ribbon.
-  const exits=buildSchottensteinExitMarkers(model);
-  const innerOffset=.38,outerOffset=.94;
-  const wallPoint=(angle,offset,height)=>{
-    const base=ringPoint(2,angle,1,offset);
-    return [base.x,base.y+height,base.z];
-  };
-  const inward=angle=>[-Math.cos(angle),0,-Math.sin(angle)];
-  const outward=angle=>[Math.cos(angle),0,Math.sin(angle)];
-  const angularDistance=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
-  const paintWall=(out,a,b,ra,rb,lo,hi,normal)=>{
-    quad(out,wallPoint(a,ra,lo),wallPoint(b,rb,lo),
-      wallPoint(b,rb,hi),wallPoint(a,ra,hi),normal);
-  };
+
+  // Multi-depth gallery: walkable rear circulation deck, recessed interior
+  // glazing, substantial columns, a ceiling soffit and enclosing roof beam.
+  // The upper silhouette is level even where the short press-side seating ends.
+  const galleryFront=1.00,glassOffset=1.11,frameOffset=.995;
+  const outerWall=facadeOuter,roofUnderside=ROOF_Y-.70,roofTop=ROOF_Y+.12;
   for(let i=0;i<SEGMENTS;i++){
-    const a=i*TAU/SEGMENTS,b=(i+1)*TAU/SEGMENTS,m=(a+b)/2;
-    const inside=inward(m),outside=outward(m);
-    const portal=exits.some(exitMarker=>Math.abs(angularDistance(m,exitMarker.angle))<.024);
-    // Inner, outer and capped faces form real wall volume; the openings are
-    // recessed into the inner face, never laid across occupied seat rows.
-    if(!portal){
-      paintWall(crown,a,b,innerOffset,innerOffset,-.48,3.34,inside);
-      if(i%18>=4&&i%18<=13){
-        paintWall(glazing,a,b,innerOffset-.024,innerOffset-.024,2.62,3.12,inside);
-      }
+    const j=(i+1)%SEGMENTS,baseA=rimY[i],baseB=rimY[j];
+    const sillA=baseA+1.24,sillB=baseB+1.24;
+    const headA=Math.min(baseA+3.70,ROOF_Y-1.40);
+    const headB=Math.min(baseB+3.70,ROOF_Y-1.40);
+    // Properly enclosed lower parapet, not a vertically extended coping.
+    wallBand(backWall,i,galleryFront,baseA-.30,baseB-.30,sillA,sillB,'in');
+    // Glazing is recessed behind the stone parapet. At structural bays it is
+    // replaced by full-height columns, with actual voids between the members.
+    const support=i%6===0;
+    if(support){
+      wallBand(pilasters,i,galleryFront-.05,sillA,sillB,headA,headB,'in');
     }else{
-      paintWall(crown,a,b,innerOffset,innerOffset,1.82,3.34,inside);
-      paintWall(glazing,a,b,innerOffset+.068,innerOffset+.068,-.43,1.82,inside);
-      paintWall(signs,a,b,innerOffset-.045,innerOffset-.045,1.88,2.46,inside);
-      // A small red lamp identifies the opening without claiming an
-      // architectural or code-compliant exit installation.
-      const c=m,delta=Math.min(.006,(b-a)*.20);
-      paintWall(exitLights,c-delta,c+delta,innerOffset-.061,innerOffset-.061,1.77,1.88,inward(c));
-    }
-    paintWall(crown,a,b,outerOffset,outerOffset,-.50,3.34,outside);
-    quad(crown,wallPoint(a,innerOffset,3.34),wallPoint(b,innerOffset,3.34),
-      wallPoint(b,outerOffset,3.34),wallPoint(a,outerOffset,3.34),[0,1,0]);
-    // Thin charcoal coping / cornice rather than a tall white parapet.
-    quad(trim,wallPoint(a,innerOffset-.045,3.37),wallPoint(b,innerOffset-.045,3.37),
-      wallPoint(b,outerOffset+.055,3.37),wallPoint(a,outerOffset+.055,3.37),[0,1,0]);
-    if(i%12===0){
-      paintWall(trim,a,b,innerOffset-.031,innerOffset-.031,-.48,3.32,inside);
-    }
-  }
-  // Intentionally no generated stair treads or radial stair ribbons.
-  // The actual empty aisles remain visible between the mapped seat banks.
-  // Geometry-backed lettering belongs to the wall, not to a floating UI badge.
-  // The 5x7 strokes are two-sided through correct triangle winding and remain
-  // legible from spectator positions even when HTML area labels are hidden.
-  const font={
-    E:['11111','10000','10000','11110','10000','10000','11111'],
-    X:['10001','01010','00100','00100','00100','01010','10001'],
-    I:['11111','00100','00100','00100','00100','00100','11111'],
-    T:['11111','00100','00100','00100','00100','00100','00100'],
-    '0':['01110','10001','10011','10101','11001','10001','01110'],
-    '1':['00100','01100','00100','00100','00100','00100','01110'],
-    '2':['01110','10001','00001','00010','00100','01000','11111'],
-    '3':['11110','00001','00001','01110','00001','00001','11110'],
-    '4':['00010','00110','01010','10010','11111','00010','00010'],
-    '5':['11111','10000','10000','11110','00001','00001','11110'],
-    '6':['01110','10000','10000','11110','10001','10001','01110'],
-    '7':['11111','00001','00010','00100','01000','01000','01000'],
-    '8':['01110','10001','10001','01110','10001','10001','01110'],
-    '9':['01110','10001','10001','01111','00001','00001','01110']
-  };
-  for(const marker of exits){
-    const angle=marker.angle,normal=inward(angle);
-    const tangent=[Math.sin(angle),-Math.cos(angle)];
-    const wall=ringPoint(2,angle,1,innerOffset-.078);
-    const pixel=.029,advance=pixel*6;
-    const line=(label,top)=>{
-      const span=label.length*advance-pixel;
-      for(let index=0;index<label.length;index++){
-        const glyph=font[label[index]];
-        if(!glyph)continue;
-        for(let r=0;r<7;r++)for(let c=0;c<5;c++){
-          if(glyph[r][c]!=='1')continue;
-          const left=index*advance+c*pixel-span/2, right=left+pixel*.89;
-          const upper=top-r*pixel,lower=upper-pixel*.92;
-          const onWall=(x,y)=>[
-            wall.x+tangent[0]*x,y,wall.z+tangent[1]*x
-          ];
-          quad(exitGlyphs,onWall(left,lower),onWall(right,lower),
-            onWall(right,upper),onWall(left,upper),normal);
-        }
+      wallBand(galleryGlass,i,glassOffset, sillA,sillB,headA,headB,'in');
+      if(i%6===2||i%6===3){
+        wallBand(galleryGlow,i,glassOffset-.022,sillA+.22,sillB+.22,
+          headA-.18,headB-.18,'in');
       }
-    };
-    line('EXIT',wall.y+2.43);
-    line(marker.number,wall.y+2.15);
+    }
+    // Press-side reduction in upper seats creates a legitimate high rear
+    // concourse; a second clerestory band gives it architectural rhythm.
+    const highBay=Math.max(baseA,baseB)<26.5;
+    const upperSill=ROOF_Y-3.38,upperHead=ROOF_Y-1.45;
+    if(highBay){
+      wallBand(backWall,i,galleryFront,headA,headB,
+        Math.max(headA,upperSill),Math.max(headB,upperSill),'in');
+      if(support)wallBand(pilasters,i,galleryFront-.05,upperSill,upperSill,
+        upperHead,upperHead,'in');
+      else wallBand(galleryGlass,i,glassOffset,upperSill,upperSill,
+        upperHead,upperHead,'in');
+      wallBand(backWall,i,galleryFront,upperHead,upperHead,roofUnderside,roofUnderside,'in');
+    }else{
+      wallBand(backWall,i,galleryFront,headA,headB,roofUnderside,roofUnderside,'in');
+    }
+    // Structural glazing frames (sill, header and mullions) sit IN FRONT
+    // of the glass, giving the facade shadowable thickness.
+    wallBand(windowFrames,i,frameOffset,sillA-.105,sillB-.105,sillA+.075,sillB+.075,'in');
+    wallBand(windowFrames,i,frameOffset,headA-.08,headB-.08,headA+.09,headB+.09,'in');
+    if(highBay){
+      wallBand(windowFrames,i,frameOffset,upperSill-.095,upperSill-.095,
+        upperSill+.08,upperSill+.08,'in');
+      wallBand(windowFrames,i,frameOffset,upperHead-.08,upperHead-.08,
+        upperHead+.09,upperHead+.09,'in');
+    }
+    // Real radial depth: a large concourse behind the upper seating, with
+    // rooms and window bays separated by pilasters and covered by the soffit.
+    const concourseY=Math.min(baseA,baseB)+.26;
+    horizontal(concourse,i,galleryFront+.16,outerWall-.12,concourseY,1);
+    // Continuous deep roof canopy, with a visible charcoal underside,
+    // graphite edge beam and a light upper weather cap.
+    horizontal(soffit,i,galleryFront-.70,outerWall+.32,roofUnderside,-1);
+    horizontal(roofEdge,i,galleryFront-.70,outerWall+.32,roofTop,1);
+    wallBand(roofEdge,i,galleryFront-.70,roofUnderside,roofUnderside,
+      roofTop,roofTop,'in');
+    wallBand(roofEdge,i,outerWall+.32,roofUnderside,roofUnderside,
+      roofTop,roofTop,'out');
+    if(i%6===0){
+      // Column faces project into the gallery and link the lower parapet
+      // to the roof beam; even at the press end this forms real volume.
+      const a=i*TAU/SEGMENTS,off=.0045,near=galleryFront-.16,far=galleryFront+.48;
+      const local=angle=>outerR[i]*1;
+      const axis=(angle,offset,y)=>[(outerR[i]+offset)*Math.cos(angle),y,
+        (outerR[i]+offset)*Math.sin(angle)];
+      const p=a-off,q=a+off;
+      const bottom=baseA-.28,top=roofUnderside;
+      quad(pilasters,axis(p,near,bottom),axis(q,near,bottom),
+        axis(q,near,top),axis(p,near,top),[-Math.cos(a),0,-Math.sin(a)]);
+      quad(pilasters,axis(p,far,bottom),axis(q,far,bottom),
+        axis(q,far,top),axis(p,far,top),[Math.cos(a),0,Math.sin(a)]);
+      quad(pilasters,axis(p,near,top),axis(q,near,top),
+        axis(q,far,top),axis(p,far,top),[0,1,0]);
+      quad(pilasters,axis(p,far,bottom),axis(q,far,bottom),
+        axis(q,near,bottom),axis(p,near,bottom),[0,-1,0]);
+    }
+    // Downlights are small real ceiling fittings, not pseudo text overlays.
+    if(i%6===3){
+      const mid=(i+.5)*TAU/SEGMENTS,rr=(outerR[i]+outerR[j])/2+galleryFront+.05;
+      const x=rr*Math.cos(mid),z=rr*Math.sin(mid);
+      const size=.15;
+      quad(downlights,[x-size,roofUnderside-.018,z-size],
+        [x+size,roofUnderside-.018,z-size],
+        [x+size,roofUnderside-.018,z+size],
+        [x-size,roofUnderside-.018,z+size],[0,-1,0]);
+    }
   }
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,crown,signs,exitLights,exitGlyphs})
+  // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
+  // staircases are intentionally absent. The map's genuine seat-free
+  // circulation gaps remain untouched.
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
