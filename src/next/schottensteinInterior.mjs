@@ -3,6 +3,7 @@
 import { SCHOTTENSTEIN_TERRACE_RIM, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
+const roofHeight = SCHOTTENSTEIN_TERRACE_RIM.rear + 4.85;
 const HIDDEN_IN_CUTAWAY = -2;
 const INWARD_FACING = -3;
 
@@ -16,7 +17,7 @@ function addChartRegions(add,color,features,spanAt) {
     const limits=feature.outline.map(p=>p.x);
     const near=Math.min(...limits),far=Math.max(...limits);
     const segments=Math.ceil((far-near)/.40), depth=(far-near)/segments;
-    const tint=color(feature.kind==='press'?'#54525a':feature.kind==='band'?'#60636b':'#9498a2');
+    const tint=color(feature.kind==='press'?'#3e3535':feature.kind==='band'?'#413837':'#554944');
     for(let i=0;i<segments;i++){
       const x=near+(i+.5)*depth;
       for(const [lo,hi] of spanAt([feature.outline],x)){
@@ -80,7 +81,7 @@ export function buildSchottensteinDecks(seats) {
 }
 
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
-  const tread=color('#79767d'), fascia=color('#393237');
+  const tread=color('#45403d'), fascia=color('#393237');
   const suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
   // The entry level has distinct seating banks close to the court.
@@ -126,12 +127,12 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   for(let i=0;i<roofBays;i++){
     const z=-outerZ+(i+.5)*bayDepth;
     const half=Math.max(outerX*.55,outerX-Math.max(0,Math.abs(z)-outerZ*.58)*.6);
-    add([0,30.5,z],[half*2,.36,bayDepth+.05],0,ceiling,HIDDEN_IN_CUTAWAY);
-    add([0,29.55,z],[half*2,.34,.37],0,truss,HIDDEN_IN_CUTAWAY);
-    add([0,28.7,z],[half*2,.12,.18],0,truss,HIDDEN_IN_CUTAWAY);
+    add([0,roofHeight,z],[half*2,.36,bayDepth+.05],0,ceiling,HIDDEN_IN_CUTAWAY);
+    add([0,roofHeight-.95,z],[half*2,.34,.37],0,truss,HIDDEN_IN_CUTAWAY);
+    add([0,roofHeight-1.8,z],[half*2,.12,.18],0,truss,HIDDEN_IN_CUTAWAY);
     for(let x=-half+5;x<half;x+=6){
-      add([x,29.1,z],[.16,.90,.17],0,truss,HIDDEN_IN_CUTAWAY);
-      if(Math.abs(x)<26&&Math.abs(z)<31)add([x,28.6,z],[1.22,.078,.21],0,light,HIDDEN_IN_CUTAWAY);
+      add([x,roofHeight-1.4,z],[.16,.90,.17],0,truss,HIDDEN_IN_CUTAWAY);
+      if(Math.abs(x)<26&&Math.abs(z)<31)add([x,roofHeight-1.9,z],[1.22,.078,.21],0,light,HIDDEN_IN_CUTAWAY);
     }
   }
 }
@@ -159,8 +160,9 @@ export function addSchottensteinBoard(add,color) {
     }
   }
   add([0,14.03,0],[5.3,.37,5.3],0,housing);
+  const hangerBottom = 18.15, hangerTop = roofHeight - .95;
   for(const x of [-1.19,1.19])for(const z of [-1.19,1.19]){
     add([x,13.83,z],[2.19,.035,2.19],0,color('#bc4250'));
-    add([x*1.65,22.6,z*1.65],[.042,8.9,.042],0,housing);
+    add([x*1.65,(hangerBottom+hangerTop)/2,z*1.65],[.042,hangerTop-hangerBottom,.042],0,housing);
   }
 }

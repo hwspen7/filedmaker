@@ -132,7 +132,7 @@ const lowerCornerAisles={
   134:[[319,349,408,349],[342,263,398,310]],
 };
 const minimumPitch=.48;
-const tierElevations = [[.56, 6.34], [8.05, 11.56], [15.45, 26.5]];
+const tierElevations = [[.56, 6.34], [8.05, 11.56], [15.45, 28.55]];
 export const SCHOTTENSTEIN_TERRACE_RIM = { front: tierElevations[2][0], rear: tierElevations[2][1] };
 const turn = 2 * Math.PI;
 const azimuth = ({x,z}) => (Math.atan2(z,x) + turn) % turn;
@@ -285,9 +285,9 @@ function rimRadius(edge, angle) {
 
 function deckHeight(tier, fraction) {
   const [base, top] = tierElevations[tier];
-  // Ease the terrace rake towards the back using the range from the aerial
-  // reference. The curve is shared around the entire bowl, including cuts.
-  const progress = tier === 2 ? fraction + .24 * fraction * (1 - fraction) : fraction;
+  // Give the terrace a near-uniform rake through its rear rows.
+  // All sectors sample the same curve, including the shorter press side.
+  const progress = tier === 2 ? fraction + .04 * fraction * (1 - fraction) : fraction;
   return base + (top - base) * progress;
 }
 

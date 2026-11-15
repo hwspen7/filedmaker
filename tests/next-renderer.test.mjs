@@ -115,22 +115,24 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   }
   const regular = ['301','302','303','305','306','308','319','320','334'].map(sectionRows);
   assert.ok(regular.every(rows => rows[0].y > 14.9 && rows[0].y < 16
-    && rows.at(-1).y > 25.9 && rows.at(-1).y < 27));
+    && rows.at(-1).y > 27.9 && rows.at(-1).y < 29.1));
   const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
   assert.ok(pressSide.every(rows => rows.at(-1).y < 24));
   for (const seat of model.seats.filter(seat => seat.tier > 0)) {
     assert.equal(seat.y, schottensteinDeckHeight(seat.tier, seat), 'Seats share the deck curve');
   }
   for (const tier of [1, 2]) {
-    const grades = Array.from({length: 513}, (_, i) => {
-      const angle = i * Math.PI / 256;
-      const a = schottensteinDeckPoint(tier, angle, .22);
-      const b = schottensteinDeckPoint(tier, angle, .23);
-      return (schottensteinDeckHeight(tier,b) - schottensteinDeckHeight(tier,a))
-        / Math.hypot(a.x-b.x,a.z-b.z);
-    });
-    assert.ok(grades.every((grade, i) => grade > .44 && grade < .95
-      && (i === 0 || Math.abs(grade - grades[i-1]) < .018)), 'No grade jump at a section seam');
+    for (const depth of [.22, .82]) {
+      const grades = Array.from({length: 513}, (_, i) => {
+        const angle = i * Math.PI / 256;
+        const a = schottensteinDeckPoint(tier, angle, depth);
+        const b = schottensteinDeckPoint(tier, angle, depth + .01);
+        return (schottensteinDeckHeight(tier,b) - schottensteinDeckHeight(tier,a))
+          / Math.hypot(a.x-b.x,a.z-b.z);
+      });
+      assert.ok(grades.every((grade, i) => grade > (tier === 2 ? .53 : .44) && grade < .95
+        && (i === 0 || Math.abs(grade - grades[i-1]) < .018)), 'No grade jump at a section seam');
+    }
   }
   assert.equal(plan.invalidRows, 0);
   assert.ok(model.seats.every(s =>
@@ -260,8 +262,11 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  }
  assert.ok([...widthByRow.values()].every(width => Math.abs(width) < 1e-8),
    'Row supports end at the occupied seat span');
- const ceiling=boxes.filter(box=>box.id===-2);
- assert.ok(ceiling.some(box=>box.pos[1]>29));
+ const trusses=boxes.filter(box=>box.id===-2&&box.size[0]>40&&box.size[2]<1);
+ assert.ok(trusses.length>10);
+ const lowestTruss=Math.min(...trusses.map(box=>box.pos[1]-box.size[1]/2));
+ const highestSeat=Math.max(...model.seats.map(seat=>seat.y));
+ assert.ok(lowestTruss-highestSeat>2.2, 'Roof trusses clear standing eye level at the rear');
  assert.ok(boxes.some(box=>box.id===-3&&Math.abs(box.size[1]-.9144)<.0001));
  assert.ok(boxes.some(box=>box.id===-1&&box.pos[1]>15&&box.size[1]>3.8&&box.size[2]<.4));
  assert.ok(boxes.some(box=>box.id===-1&&box.pos[0]===0&&box.pos[2]===0

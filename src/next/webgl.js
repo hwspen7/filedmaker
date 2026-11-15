@@ -44,7 +44,7 @@ out vec3 vWorld;
 void main(){
   if(uDeck>.5){
     vNormal=aNormal;
-    vColor=vec3(.375,.36,.393);
+    vColor=vec3(.257,.233,.221);
     vWorld=aLocal;
     gl_Position=uVP*vec4(aLocal,1.);
     return;

@@ -154,7 +154,7 @@ export function buildVenuePlan(model,options={}) {
   const darkField=colorRGB(basketball?'#24354b':'#254c42');
   const apron=basketball?3.5:7;
   if(chartPreview){
-    const base=colorRGB('#656169');
+    const base=colorRGB('#443d3b');
     const limits=schottensteinDiagramEdge.map(point=>point.x);
     const near=Math.min(...limits),far=Math.max(...limits);
     const strips=Math.ceil((far-near)/.35), stripWidth=(far-near)/strips;
