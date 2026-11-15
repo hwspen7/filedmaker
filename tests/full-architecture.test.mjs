@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createSchottensteinCenterProject, createOhioStadiumProject } from '../src/venues.mjs';
 import { generateSeats } from '../src/model.mjs';
 import { polygonSpans } from '../src/schottensteinSeating.mjs';
+import { fitRearSeatEnvelope } from '../src/next/engines/geometry.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
 import { NativeVenueRenderer } from '../src/next/webgl.js';
 
@@ -159,5 +160,43 @@ test('Schottenstein upper stand has a closed, continuously shaded structural bow
    }
  }
  assert.ok([...edges.values()].every(count=>count===2),'No open section seams or disconnected caps');
- assert.ok(peak>28&&pressPeak<24.1,'The bowl rolls down behind the existing press seats');
+ assert.ok(peak>29&&pressPeak<26&&peak-pressPeak>3,'The rear parapet rises behind the last chairs while the press stand stays lower');
+});
+
+test('333 and 334 upper seats end close to the fitted rear parapet',()=>{
+  const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+  const plan=buildVenuePlan(model);
+  const edge=fitRearSeatEnvelope(model.seats,{tier:2,segments:192,clearance:.43,spread:2});
+  const last=new Map();
+  for(const row of model.seatingRows){
+    if(!['333','334'].includes(row.sectionId))continue;
+    last.set(row.sectionId,Math.max(last.get(row.sectionId)??-1,row.slot));
+  }
+  let checked=0;
+  const rears=new Set(model.seatingRows.filter(r=>
+    r.tier===2&&r.slot===last.get(r.sectionId)&&last.has(r.sectionId))
+    .map(r=>r.sectionId+':'+r.row));
+  for(const seat of model.seats){
+    if(!rears.has(seat.sectionId+':'+seat.row))continue;
+    const clearance=edge.radiusAt(Math.atan2(seat.z,seat.x))-Math.hypot(seat.x,seat.z);
+    assert.ok(clearance>=.30&&clearance<2.4,
+      seat.uid+' must end within 2.4m of the integrated rear rim: '+clearance);
+    checked++;
+  }
+  assert.ok(checked>16,'Both rear seat banks must be inspected');
+  assert.equal(plan.seats.length,19049,'Seating inventory must not change');
+  assert.ok(plan.architectureGeometry.upperBowl.length>10000);
+});
+
+test('334 rotates progressively between sections 333 and 301, with flat treads',()=>{
+  const plan=build();
+  const yaw=id=>plan.seats.find(s=>s.sectionId===id).yaw;
+  assert.ok(yaw('333')>yaw('334')&&yaw('334')>yaw('301'),
+    '333 -> 334 -> 301 must follow a continuous corner turn');
+  const mesh=plan.architectureGeometry.decks;
+  for(let i=0;i<mesh.length;i+=18){
+    const heights=[mesh[i+1],mesh[i+7],mesh[i+13]];
+    assert.ok(Math.max(...heights)-Math.min(...heights)<1e-4,
+      'The tread must remain level across each section');
+  }
 });
