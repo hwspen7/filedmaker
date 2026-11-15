@@ -230,13 +230,30 @@ export class NativeVenueRenderer {
       minY=Math.min(minY,y-.5);maxY=Math.max(maxY,y+1);
       minZ=Math.min(minZ,z-1);maxZ=Math.max(maxZ,z+1);
     }
-    this.center=[(minX+maxX)/2,(minY+maxY)*.37,(minZ+maxZ)/2];
+    // Include actual visible architecture and pedestal extrema when fitting
+    // the camera. Seat-only bounds clipped the lower facade in overview.
+    const structureCorners=[];
+    for(const mesh of [...Object.values(plan.architectureGeometry||{}),
+      plan.pedestalGeometry,plan.pedestalTrimGeometry].filter(x=>x?.length)){
+      const vertexCount=mesh.length/6;
+      const stride=Math.max(1,Math.floor(vertexCount/550));
+      for(let i=0;i<vertexCount;i+=stride){
+        const j=i*6,x=mesh[j],y=mesh[j+1],z=mesh[j+2];
+        if(!Number.isFinite(x+y+z))continue;
+        minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+        minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+        minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
+        structureCorners.push([x,y,z]);
+      }
+    }
+    this.center=[(minX+maxX)/2,(minY+maxY)*.31,(minZ+maxZ)/2];
     this.corners=[minX,maxX].flatMap(x=>[minY,maxY].flatMap(y=>[minZ,maxZ].map(z=>[x,y,z])));
     if(plan.sectionFootprints){
       const stride=Math.max(1,Math.floor(plan.seats.length/800));
       this.corners=plan.seats.filter((_,i)=>i%stride===0).map(s=>[s.x,s.y+.9,s.z]);
       this.corners.push([-w/2,0,-l/2],[w/2,0,l/2],[0,maxY,0]);
     }
+    this.corners.push(...structureCorners);
     const deck=plan.deckGeometry;
     for(let i=(deck?.length??0)-6;i>=0&&deck[i+1]<-.5;i-=18){
       this.corners.push([deck[i],deck[i+1],deck[i+2]]);
