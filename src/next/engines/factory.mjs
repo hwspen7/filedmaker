@@ -7,10 +7,12 @@ import { ArchitectureEngine } from './architecture.mjs';
 import { OptimizationEngine } from './optimization.mjs';
 import { ReferenceEngine } from './reference.mjs';
 import { ValidationEngine } from './validation.mjs';
-export { GeometryEngine,SeatingEngine,ArchitectureEngine,OptimizationEngine,ReferenceEngine,ValidationEngine };
+import { ExteriorEngine } from './exterior.mjs';
+export { GeometryEngine,SeatingEngine,ArchitectureEngine,OptimizationEngine,ReferenceEngine,ValidationEngine,ExteriorEngine };
 export const PROCEDURAL_DEMOS=Object.freeze({
   arena:{
     id:'demo-arena',name:'Example Indoor Arena',surface:'ncaa',
+    exterior:{profile:'metal-and-brick',entrances:[{angle:Math.PI/4,role:'primary'},{angle:5*Math.PI/4,role:'secondary'}]},
     template:'indoor-arena',sections:20,clearance:4,roundness:4.25,
     seatPitch:.54,aisleWidth:1.2,targetCapacity:10500,capacityTolerance:.04,
     tiers:[{rows:19,depth:.83,rise:.31,gap:3.1,elevationGap:2.3},
