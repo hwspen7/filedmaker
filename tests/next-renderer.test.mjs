@@ -346,7 +346,17 @@ test('Schottenstein overview hides the gray backing while preserving seat-view g
  assert.equal(buildSchottensteinDecks([],model.sectionFootprints,false).length,0);
  assert.equal(plan.chairCount,19049);
  assert.equal(plan.official.officialCapacity,19049);
- for(const mode of ['overview','top','section']) assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,mode),false,mode);
+ assert.equal(new Set(plan.seats.map(seat=>seat.uid)).size,19049);
+ assert.ok(plan.pedestalGeometry.length > 8000, 'Thin display base has its own geometry');
+ assert.ok(plan.pedestalTrimGeometry.length > 5000);
+ assert.ok(plan.pedestalGeometry.every(Number.isFinite));
+ assert.ok(plan.pedestalTrimGeometry.every(Number.isFinite));
+ for(let i=1;i<plan.pedestalGeometry.length;i+=6) assert.ok(plan.pedestalGeometry[i]<-.30,'Base stays below the court');
+ for(const mode of ['overview','top','section']) {
+   assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,mode),false,mode);
+   assert.equal(NativeVenueRenderer.pedestalVisibleInMode(plan,mode),true,mode);
+ }
+ assert.equal(NativeVenueRenderer.pedestalVisibleInMode(plan,'human'),false);
  assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,'human'),true);
  assert.equal(NativeVenueRenderer.deckVisibleInMode({deckGeometry:new Float32Array(0)},'human'),false);
  assert.ok(!decode(plan).some(box=>box.id===-4));
@@ -362,10 +372,11 @@ test('bulk seat allocation preserves eligible row runs without adding inventory'
 
 test('Schottenstein native viewport has no near-white backdrop or beige deck shading',()=>{
  const css=read('../studio.css'),shader=read('../src/next/webgl.js');
- assert.match(css,/background:linear-gradient\(155deg,#bfc8c8 0%,#9aa9a9 100%\)/);
+ assert.match(css,/background:radial-gradient\(ellipse at 48% 38%,#faf8f5 0%,#e5e8e8 62%,#d1d7da 100%\)/);
  assert.doesNotMatch(css,/\.viewport\{[^}]*background:#e8eef0/);
- assert.match(shader,/vec3\(\.55,\.60,\.62\)/);
- assert.doesNotMatch(shader,/vec3\(\.71,\.686,\.631\)/);
+ assert.doesNotMatch(shader,/vec3\(\.55,\.60,\.62\)/);
+ assert.match(shader,/uDeck>2\.5/);
+ assert.match(shader,/uDeck>1\.5/);
 });
 
 test('Schottenstein elevated deck trims its outside edge to modeled seats',()=>{
