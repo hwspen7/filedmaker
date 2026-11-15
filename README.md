@@ -14,7 +14,7 @@ The first venue is Ohio State men’s basketball at the Schottenstein Center. Fi
 
 The generic floor uses NCAA dimensions and standard markings. The 2D map and 3D terraces share polygons traced from the published chart. Section access markers use the documented access rows for 105, 114, 206, 302 and 323. The map and model identify the band area, accessible platform and press box. The upper guard gate is based on a section 302 view. Access openings, their dimensions and barrier geometry are approximate.
 
-The OSU configuration displays 19,500 as its published basketball capacity. Individual seats require a venue-provided CSV with section, row, seat and one complete, unique XYZ point per seat in the court-centered frame. Imported records are displayed as supplied and checked against published capacity. With no complete input, the preview provides only section and photo-reference views. The chart does not establish exact seat or sightline geometry.
+The OSU configuration displays 19,500 as its published basketball capacity. Individual seats require a venue-provided CSV with section, row, seat and one complete, unique XYZ point per seat in the court-centered frame. Imported records are displayed as supplied and checked against published capacity. Open **Seat view** to enter the eye-level camera. Without a location selected, it starts at the Section 105, Row D photo reference. Choose a different section on the map or use the photo-reference buttons in the inspector. Section and photo-reference cameras are approximate.
 
 Subsequent phases extend the same reference-and-geometry workflow to NCAA basketball arenas, then NCAA football stadiums, then lower-cost profiles for universities and secondary schools.
 

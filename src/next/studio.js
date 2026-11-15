@@ -8,6 +8,7 @@ import { seatColor } from '../seatPresentation.mjs';
 import { SCHOTTENSTEIN_CHART_URL, SCHOTTENSTEIN_REFERENCE_VIEWS, SCHOTTENSTEIN_COURT_SOURCE, SCHOTTENSTEIN_BOARD_SOURCE, schottensteinSectionView } from '../schottensteinSeating.mjs';
 import { NativeVenueRenderer } from './webgl.js';
 const $=id=>document.getElementById(id);
+const seatViewTab=document.querySelector('[data-view="human"]');
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
 let seatsBySection=new Map(),featureLabels=[];
 const palettePresets={
@@ -76,7 +77,6 @@ function renderProject(){
       ?'CSV requires section, row, seat, x_m, y_m and z_m. Coordinates use the court-centered venue frame.'
       :'CSV with section, row, seat and optional measured x/y/z. Original identifiers are preserved.';
     $('rowSeatPickers').hidden=sectionOnly;
-    document.querySelector('[data-view="human"]').textContent=sectionOnly?'Section view':'Seat view';
     $('search').placeholder=sectionOnly?'Section number':'Section / Row / Seat';
     $('cameraTarget').value='center';$('phoneView').checked=false;
     renderer?.setViewOptions({target:'center',zoom:1});
@@ -165,11 +165,24 @@ function pickSection(id){
 function selectSeat(seat){
   selected=seat;
   syncSeatPicker(seat);
-  $('goHuman').disabled=!seat;
+  seatViewTab.disabled=!renderer||!(seat||model.seatingRows);
+  $('goHuman').disabled=seatViewTab.disabled;
+  $('goHuman').textContent=!seat&&model.seatingRows?'Open reference view':'View from this location';
   for(const id of ['previous','next'])$(id).disabled=!seat||seat.reference;
-  document.querySelector('[data-view="human"]').disabled=!seat||!renderer;
   document.querySelector('[data-view="section"]').disabled=!seat||!renderer;
+  if(mode==='human')$('viewLabel').textContent=humanViewLabel();
   if(mode==='top')drawMap();
+  const photo=seat?.reference&&SCHOTTENSTEIN_REFERENCE_VIEWS.find(reference=>
+    reference.section===seat.sectionId&&reference.row===seat.row);
+  $('referenceSource').textContent='Choose a reference position to compare with a published photo.';
+  if(photo){
+    const link=document.createElement('a');
+    link.href=photo.source;
+    link.target='_blank';
+    link.rel='noopener';
+    link.textContent=`Section ${photo.section} · Row ${photo.row} photo ↗`;
+    $('referenceSource').replaceChildren(link);
+  }
   $('seatDetails').replaceChildren();
   const title=document.createElement('strong');
   if(seat?.reference){
@@ -182,16 +195,23 @@ function selectSeat(seat){
     else renderer?.highlight(null);
     return;
   }
-  title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
-  const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):model.seatOrigin==='chart'?'Choose a section on the map or open a published photo reference.':'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
+  title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:model.seatingRows?'No location selected':'No seat selected';$('seatDetails').append(title);
+  const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):model.seatOrigin==='chart'?'Choose a section or open Seat view for a photo reference.':'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
   if(seat){$('selectedPreview').textContent=plan.hasRoster?`Ticket reference ${seat.uid}`:`Illustrative position · ${seat.sectionId} / row ${seat.row}`;}
   else $('selectedPreview').textContent='Select a location to inspect a schematic seat view';
   if(mode==='human'&&seat)renderer?.view('human',seat);
   else if(mode==='section'&&seat)renderer?.view('section',seat);
   else renderer?.highlight(seat);
 }
+function humanViewLabel(){
+  return selected?.reference?'Approximate section view':'View from selected seat';
+}
 function view(which){
   if(which!=='top'&&!renderer)return;
+  if(which==='human'&&!selected&&model.seatingRows){
+    const [reference]=SCHOTTENSTEIN_REFERENCE_VIEWS;
+    selectSeat(schottensteinSectionView(model.seatingRows,reference.section,reference.row));
+  }
   if(which==='human'&&!selected){error('Choose a seat to enter seat view.');return;}
   if(which==='section'&&!selected){error('Choose a seat or search an identifier before focusing a section.');return;}
   mode=which;
@@ -202,8 +222,8 @@ function view(which){
   const basketball=plan.surface.sport==='basketball';
   for(const option of $('cameraTarget').options)if(option.value!=='center')option.hidden=!basketball;
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
-  $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:selected?.reference?'Approximate section view':'View from selected seat'})[which];
-  $('viewHint').textContent=which==='top'?(model.sectionFootprints?'Select a numbered section':'Select a seat on the map'):which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
+  $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:humanViewLabel()})[which];
+  $('viewHint').textContent=which==='top'?(model.sectionFootprints?'Select a numbered section':'Select a seat on the map'):which==='human'?'Drag to look around · Scroll to change field of view':model.seatOrigin==='chart'?'Drag to orbit · Scroll to zoom · Open Seat view':'Drag to orbit · Scroll to zoom · Click a seat';
   $('arenaFeatureLabels').hidden=which==='top';
   if(which==='top')drawMap();else {renderer?.view(which,selected);renderer?.resize();}
 }
@@ -362,12 +382,6 @@ for(const reference of SCHOTTENSTEIN_REFERENCE_VIEWS){
     if(!point)return;
     selectSeat(point);
     if(renderer)view('human');else view('top');
-    const link=document.createElement('a');
-    link.href=reference.source;
-    link.target='_blank';
-    link.rel='noopener';
-    link.textContent=`Section ${reference.section} · Row ${reference.row} photo ↗`;
-    $('referenceSource').replaceChildren(link);
   };
   $('referenceButtons').append(button);
 }
