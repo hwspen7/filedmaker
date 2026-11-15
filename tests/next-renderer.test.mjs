@@ -372,9 +372,11 @@ test('bulk seat allocation preserves eligible row runs without adding inventory'
 
 test('Schottenstein native viewport has no near-white backdrop or beige deck shading',()=>{
  const css=read('../studio.css'),shader=read('../src/next/webgl.js');
- assert.match(css,/background:radial-gradient\(ellipse at 48% 38%,#faf8f5 0%,#e5e8e8 62%,#d1d7da 100%\)/);
+ assert.match(css,/background:radial-gradient\(ellipse at 50% 34%,#faf8f5 0%,#f0eae3 58%,#dfd8d0 100%\)/);
  assert.doesNotMatch(css,/\.viewport\{[^}]*background:#e8eef0/);
  assert.doesNotMatch(shader,/vec3\(\.55,\.60,\.62\)/);
+ assert.match(shader,/uDeck>12\.5/);
+ assert.match(shader,/\['crown',13\]/);
  assert.match(shader,/uDeck>2\.5/);
  assert.match(shader,/uDeck>1\.5/);
 });
