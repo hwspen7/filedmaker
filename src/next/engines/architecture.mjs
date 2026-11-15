@@ -90,7 +90,7 @@ export const ArchitectureEngine={
         quad(layers.aisles,a,b,c,d,up);
         const delta=.02;
         quad(layers.stepEdges,[d[0],d[1]+delta,d[2]],[c[0],c[1]+delta,c[2]],
-          [c[0],c[1]+delta+.015,c[2]],[d[0],d[1]+delta+.015,d[2]],up);
+          [c[0],c[1]+delta+.015,c[2]],[d[0],d[1]+delta+.015,d[2]],[Math.cos(angle),0,Math.sin(angle)]);
       }
     }
     return Object.fromEntries(Object.entries(layers).map(([key,data])=>[key,new Float32Array(data)]));
