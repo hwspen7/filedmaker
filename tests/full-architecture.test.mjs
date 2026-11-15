@@ -32,7 +32,8 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.roofEdge.length/18>300,'The open-air bowl has a framed outer roof edge');
   assert.ok(g.downlights.length/18>10);
   assert.ok(g.roofDeck.length/18>200,'Roof has its own deck surface and material');
-  assert.ok(g.buildingRoof.length>g.roofDeck.length);
+  assert.equal(g.buildingRoof.length,0,'Opaque central roof must not be generated');
+  assert.ok(g.roofDeck.length>0,'Perimeter roof overhang remains');
   assert.ok(g.entryMasonry.length>1000);
   assert.ok(g.brickBase.length>2000,'Brick plinth must be physically modelled');
   assert.ok(g.brickPiers.length>100,'Entrance-level structural piers must exist');
@@ -103,6 +104,13 @@ test('full building is limited to the estimated OSU basketball configuration',()
     assert.equal(NativeVenueRenderer.architectureVisibleInMode(plan,mode),true);
     assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,mode),false);
   }
+  for(const name of ['facade','glazing','brickBase','entryMasonry','entryCanopy','upperBowl','decks']){
+    assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(plan,'overview',name),true,name);
+  }
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(plan,'overview','buildingRoof'),false);
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(plan,'overview','cutawayFacade'),false);
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(plan,'section','cutawayFacade'),true);
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(plan,'section','facade'),false);
   assert.equal(NativeVenueRenderer.architectureVisibleInMode(plan,'human'),false);
   assert.equal(NativeVenueRenderer.deckVisibleInMode(plan,'human'),false);
   assert.equal(buildVenuePlan(generateSeats(createOhioStadiumProject())).architectureGeometry,null);
