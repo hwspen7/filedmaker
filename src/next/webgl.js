@@ -44,8 +44,11 @@ out vec3 vWorld;
 void main(){
   if(uDeck>.5){
     vNormal=aNormal;
-    // Structural decks use cool neutral concrete, never the old tan plinth shader.
-    vColor=mix(vec3(.55,.60,.62),vec3(.32,.36,.39),uHuman);
+    // Separate presentation pedestal from first-person deck geometry.
+    // It remains a thin stand under the bowl, never a gray backing shell.
+    if(uDeck>2.5)vColor=vec3(.66,.32,.39);
+    else if(uDeck>1.5)vColor=aNormal.y>.5?vec3(.41,.43,.46):vec3(.28,.30,.34);
+    else vColor=mix(vec3(.69,.70,.71),vec3(.41,.43,.46),uHuman);
     vWorld=aLocal;
     gl_Position=uVP*vec4(aLocal,1.);
     return;
@@ -149,6 +152,9 @@ export class NativeVenueRenderer {
   static deckVisibleInMode(plan, mode) {
     return mode === 'human' && Boolean(plan?.arenaInterior && plan?.deckGeometry?.length);
   }
+  static pedestalVisibleInMode(plan, mode) {
+    return mode !== 'human' && Boolean(plan?.arenaInterior && plan?.pedestalGeometry?.length);
+  }
   constructor(canvas,onPick=()=>{}){
     this.canvas=canvas;this.onPick=onPick;
     const gl=canvas.getContext('webgl2',{antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});
@@ -190,11 +196,13 @@ export class NativeVenueRenderer {
   }
   load(plan){
     const gl = this.gl;
-    if (this.deck) {
-      gl.deleteBuffer(this.deck.buffer);
-      gl.deleteVertexArray(this.deck.vao);
+    for (const mesh of [this.deck,this.pedestal,this.pedestalTrim].filter(Boolean)) {
+      gl.deleteBuffer(mesh.buffer);
+      gl.deleteVertexArray(mesh.vao);
     }
     this.deck = plan.deckGeometry?.length ? this.createMesh(plan.deckGeometry) : null;
+    this.pedestal = plan.pedestalGeometry?.length ? this.createMesh(plan.pedestalGeometry) : null;
+    this.pedestalTrim = plan.pedestalTrimGeometry?.length ? this.createMesh(plan.pedestalTrimGeometry) : null;
     this.plan=plan;
     this.seatIndices=new Map(plan.seats.map((seat,i)=>[seat.uid,i]));
     this.selectedIndex=-1;
@@ -286,6 +294,16 @@ export class NativeVenueRenderer {
     gl.uniform1f(this.locations.Human,this.mode==='human'?1:0);
     gl.uniform1f(this.locations.Selected,this.selectedIndex);
     const rounded=this.plan.roundedCount||0;
+    if(this.pedestal && NativeVenueRenderer.pedestalVisibleInMode(this.plan,this.mode)){
+      gl.uniform1f(this.locations.Deck,2);
+      gl.bindVertexArray(this.pedestal.vao);
+      gl.drawArrays(gl.TRIANGLES,0,this.pedestal.vertices);
+      if(this.pedestalTrim){
+        gl.uniform1f(this.locations.Deck,3);
+        gl.bindVertexArray(this.pedestalTrim.vao);
+        gl.drawArrays(gl.TRIANGLES,0,this.pedestalTrim.vertices);
+      }
+    }
     if(this.deck && NativeVenueRenderer.deckVisibleInMode(this.plan,this.mode)){
       gl.uniform1f(this.locations.Deck,1);
       gl.bindVertexArray(this.deck.vao);
@@ -334,7 +352,7 @@ export class NativeVenueRenderer {
   dispose(){
     this.observer.disconnect();
     this.gl.deleteBuffer(this.instances);
-    for(const {buffer,vao} of [this.box,this.roundedBox,this.deck].filter(Boolean)){
+    for(const {buffer,vao} of [this.box,this.roundedBox,this.deck,this.pedestal,this.pedestalTrim].filter(Boolean)){
       this.gl.deleteBuffer(buffer);
       this.gl.deleteVertexArray(vao);
     }
