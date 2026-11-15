@@ -9,7 +9,7 @@
 <div class="venue-list"><button class="venue-option active" data-preset="schott"><span class="venue-symbol">◈</span><span><strong>Schottenstein Center</strong><small>Basketball · NCAA</small></span></button><button class="venue-option" data-preset="ohio"><span class="venue-symbol">▤</span><span><strong>Ohio Stadium</strong><small>Football · NCAA</small></span></button><button class="venue-option" data-preset="gym"><span class="venue-symbol">▥</span><span><strong>School gym demo</strong><small>Demonstration · NFHS</small></span></button></div>
 <div class="section-head"><span>REAL TICKET DATA</span><small>Optional</small></div>
 <div class="import-panel"><div class="small-title">Import seat inventory</div><p>CSV with section, row, seat and optional measured x/y/z. Original identifiers are preserved.</p><label class="btn import-btn">Select CSV file<input type="file" id="csv" accept=".csv,text/csv" hidden></label><p class="muted">No roster means no verified selectable seats.</p><a href="./examples/fictional-ticket-roster.csv" download>Example CSV format</a></div>
-<div class="section-head"><span>DISPLAY</span><small>Context only</small></div><div class="control-stack"><label>Seat color scheme<select id="palette"><option value="navy">Layered blue</option><option value="venue">Venue reference</option><option value="slate">Neutral slate</option><option value="scarlet">Scarlet accents</option></select></label><label>Display detail<select id="detail"><option value="standard">Detailed seating</option><option value="compact">Performance</option></select></label></div>
+<div class="section-head"><span>DISPLAY</span><small>Context only</small></div><div class="control-stack"><label>Seat color scheme<select id="palette"><option value="venue">Venue colors</option><option value="navy">Layered blue</option><option value="slate">Neutral slate</option><option value="scarlet">Scarlet accents</option></select></label><label>Display detail<select id="detail"><option value="standard">Detailed seating</option><option value="compact">Performance</option></select></label></div>
 <div class="system-note"><strong>Data integrity</strong><p>Venue names, capacity and sports surface are sourced separately. Generated positions remain illustrative unless a school supplies a seat roster and validates its geometry.</p></div>
 </div></aside>
 <main class="main"><div class="viewport-top"><div><div id="title" class="venue-title">Schottenstein Center</div><div id="subtitle" class="venue-subtitle">Ohio State University · NCAA Basketball</div></div><div id="modelStatus" class="status"><span class="pulse"></span> Schematic preview</div></div>
@@ -18,7 +18,7 @@
 <div id="cameraControls" class="camera-controls" hidden><label>Look at <select id="cameraTarget"><option value="center">Playing surface</option><option value="near-rim">Near basket</option><option value="far-rim">Far basket</option><option value="scoreboard">Scoreboard</option></select></label><label><input type="checkbox" id="phoneView"> Phone framing</label><button type="button" id="resetCamera">Reset view</button></div><div class="viewport-foot"><span><i class="dot darkdot"></i> Programmatic geometry</span><span><i class="dot bluedot"></i> School-supplied coordinates</span><span>Not a live ticket inventory</span></div>
 </main>
 <aside class="inspector"><div class="section-head"><span>VENUE DATA</span><small id="reviewFlag">REFERENCE</small></div><div class="metric"><small>Published capacity</small><strong id="officialCapacity">—</strong><p id="capacitySource">Official venue information</p></div>
-<div class="two-metrics"><div><small>Visual seat positions</small><strong id="visualCount">—</strong></div><div><small>Imported ticket IDs</small><strong id="ticketCount">0</strong></div></div>
+<div class="two-metrics"><div><small>Modeled positions</small><strong id="visualCount">—</strong></div><div><small>Imported ticket IDs</small><strong id="ticketCount">0</strong></div></div>
 <div id="capacityNote" class="notice">The visible seating geometry is illustrative and is not an official seat count.</div>
 <div class="section-head"><span>SEAT INSPECTOR</span><small>VIEW</small></div><div class="seat-picker">
 <label class="input-label">Section<select id="sectionPicker" aria-label="Section"></select></label>
@@ -27,6 +27,12 @@
 <label class="input-label">Find a section, row or seat ID<input type="search" id="search" placeholder="Section / Row / Seat" autocomplete="off"></label><div class="search-help" id="searchHelp">Choose a venue or import a school's exact roster.</div>
 <div id="seatDetails" class="selected-card"><strong>No seat selected</strong><p>Click a seat in the model or search a seat ID. Modelled positions do not imply a real ticket location.</p></div>
 <div class="seat-actions"><button id="previous" class="btn secondary">← Previous</button><button id="next" class="btn secondary">Next →</button></div><button id="goHuman" class="btn dark fill">View from this location</button>
+<section id="referenceViews" class="reference-views" aria-labelledby="referenceTitle" hidden>
+<h2 id="referenceTitle">Compare with arena photos</h2>
+<div id="referenceButtons" class="reference-buttons"></div>
+<p id="referenceSource" class="reference-source">Choose a position to compare against a published seat view.</p>
+<div id="arenaSources" class="reference-source"></div>
+</section>
 <div class="section-head"><span>GEOMETRY CHECK</span><small id="geometryQuality">AUTO</small></div><div class="quality-grid"><div><strong id="rowsCount">—</strong><small>Row runs</small></div><div><strong id="gapCount">—</strong><small>Aisle breaks</small></div><div><strong id="kindCount">—</strong><small>Seat style</small></div></div><div id="warnings" class="warning-box">Preview generated from estimated positions. Confirm the real seat layout before deployment.</div>
 <div class="inspector-bottom"><a href="./viewer/">Existing viewer</a><span>Seat geometry / data QA</span></div>
 </aside></div></div><script type="module" src="./src/next/studio.js"></script></body></html>

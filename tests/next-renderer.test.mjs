@@ -68,7 +68,7 @@ test('webgl shader handles camera-relative removal of current seat parts',()=>{
 test('new default homepage includes source and mismatch disclosure and requires no CDN',()=>{
  const html=read('../index.html');
  assert.match(html,/Published capacity/);
- assert.match(html,/Visual seat positions/);
+ assert.match(html,/Modeled positions/);
  assert.match(html,/Imported ticket IDs/);
  assert.match(html,/Not a live ticket inventory/);
  assert.doesNotMatch(html,/cdn\.jsdelivr/);
@@ -94,7 +94,7 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   assert.equal(new Set(model.sectionFootprints.map(section => section.id)).size, 78);
   assert.ok(model.seats.every(s => s.uid.startsWith('DEMO-')));
   assert.ok(model.seats.some(s => s.sectionId === '105' && s.tier === 0 && s.x < 0));
-  assert.ok(model.seats.some(s => s.sectionId === '114' && s.tier === 0 && s.z > 0));
+  assert.ok(model.seats.some(s => s.sectionId === '114' && s.tier === 0 && s.z < 0));
   assert.ok(model.seats.some(s => s.sectionId === '323' && s.tier === 2 && s.x > 0));
   assert.ok(model.seats.every(s => Math.sin(s.yaw)*s.x + Math.cos(s.yaw)*s.z < 0));
   assert.ok(model.seats.every(s =>
@@ -122,4 +122,37 @@ test('chart-backed roster locations are independent of CSV order and keep suppli
   assert.ok(one.z>two.z);
   assert.ok(a.seats.some(s=>s.uid==='D'&&s.tier===2&&s.x>0));
   assert.throws(()=>load(['U,UNKNOWN,1,1']),/Supply XYZ/);
+});
+
+test('phase-one basketball preview models documented club rows and the upper aisle gap',()=>{
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const inRow=(section,row)=>model.seats.filter(s=>s.sectionId===section&&s.row===row);
+ assert.equal(inRow('206','A').length,14);
+ assert.equal(inRow('206','E').length,14);
+ assert.equal(inRow('206','F').length,18);
+ assert.equal(inRow('206','J').length,18);
+ assert.ok(inRow('105','D').length>0);
+ assert.ok(inRow('114','P').length>0);
+ const upperCorner=inRow('302','D');
+ assert.ok(upperCorner.length>0);
+ assert.ok(upperCorner.every(s=>s.z>0&&s.x<0));
+ assert.equal(inRow('323','C').length,0);
+ assert.equal(inRow('323','E').length,0);
+ const a=inRow('323','B')[0],b=inRow('323','F')[0];
+ assert.ok(a&&b&&b.y-a.y>1.5);
+ assert.equal(new Set(model.seats.map(s=>s.uid)).size,model.seats.length);
+});
+
+test('phase-one native geometry includes a cutaway-aware interior and current board',()=>{
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const plan=buildVenuePlan(model);
+ assert.equal(plan.arenaInterior,true);
+ assert.equal(plan.scoreboardHeight,16.3);
+ const boxes=decode(plan);
+ const ceiling=boxes.filter(box=>box.id===-2);
+ assert.ok(ceiling.some(box=>box.pos[1]>29));
+ assert.ok(boxes.some(box=>box.id===-3&&Math.abs(box.size[1]-.9144)<.0001));
+ assert.ok(boxes.some(box=>box.id===-1&&box.pos[1]>15&&box.size[1]>3.8&&box.size[2]<.4));
+ assert.ok(plan.instanceData.every(Number.isFinite));
+ assert.equal(buildVenuePlan(generateSeats(createOhioStadiumProject())).arenaInterior,false);
 });

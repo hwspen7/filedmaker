@@ -2,12 +2,12 @@
 // bleachers, treads, court, goalposts and scoreboards. No CDN required.
 // Embedded eye/view helpers also permit standalone, zero-dependency school exports.
 const seatViewAnchors=(seat,posture='seated')=>{const yaw=Number.isFinite(seat.yaw)?seat.yaw:Math.atan2(-seat.x,-seat.z);const f=posture==='leaning'?.38:posture==='standing'?.20:.23;return {eye:{x:seat.x+Math.sin(yaw)*f,y:seat.y+({seated:1.17,leaning:1.23,standing:1.60}[posture]||1.17),z:seat.z+Math.cos(yaw)*f}};};
-function viewingTarget(surface,target='center',seat=null){const x=surface.width/2,z=surface.length/2;
+function viewingTarget(surface,target='center',seat=null,scoreboardHeight=13.6){const x=surface.width/2,z=surface.length/2;
   if(target==='near-rim'||target==='far-rim'){
     const sign=(seat?.z<0?-1:1)*(target==='far-rim'?-1:1);
     return {x:0,y:3.05,z:sign*(z-1.6)};
   }
-  if(target==='scoreboard')return{x:0,y:13.6,z:0};
+  if(target==='scoreboard')return{x:0,y:scoreboardHeight,z:0};
   if(target==='near'||target==='far'){const sign=(seat?.z<0?-1:1)*(target==='far'?-1:1);return{x:0,y:surface.sport==='basketball'?3:1.2,z:z*.65*sign};}
   if(target==='left')return{x:-x*.72,y:1.25,z:0};if(target==='right')return{x:x*.72,y:1.25,z:0};return{x:0,y:surface.sport==='basketball'?2.4:1.35,z:0};
 }
@@ -53,6 +53,12 @@ void main(){
   float c=cos(aYaw),s=sin(aYaw);
   vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);
   vec3 world=aPos+r;
+  // Overhead elements stay visible from the seat and hidden in the cutaway.
+  if(aSeatId == -2. && uHuman < .5){gl_Position=vec4(3.,3.,3.,1.);return;}
+  // Nested seating decks expose the interior face of their ribbon and suites.
+  if(aSeatId == -3. && uHuman > .5 && dot(uEye.xz-aPos.xz,aPos.xz)>0.){
+    gl_Position=vec4(3.,3.,3.,1.);return;
+  }
   // Suppress occupied chair and immediate camera-intersecting furniture.
   if(uHuman>.5 && aSeatId>=0. && (abs(aSeatId-uSelected)<.25 || distance(aPos,uEye)<.29)){gl_Position=vec4(3.,3.,3.,1.);return;}
   vNormal=vec3(c*n.x+s*n.z,n.y,-s*n.x+c*n.z);
@@ -221,7 +227,7 @@ export class NativeVenueRenderer {
     if(mode==='human'&&seat){
       this.seat=seat;
       const origin=seatViewAnchors(seat,this.viewOptions.posture).eye;
-      const target=viewingTarget(this.plan.surface,this.viewOptions.target,seat);
+      const target=viewingTarget(this.plan.surface,this.viewOptions.target,seat,this.plan.scoreboardHeight);
       const dx=target.x-origin.x,dz=target.z-origin.z;
       this.humanYaw=Math.atan2(dx,dz);
       this.humanPitch=Math.atan2(target.y-origin.y,Math.hypot(dx,dz));
@@ -244,7 +250,10 @@ export class NativeVenueRenderer {
     const cp=Math.cos(this.phi);return {eye:[target[0]+distance*Math.sin(this.theta)*cp,target[1]+distance*Math.sin(this.phi),target[2]+distance*Math.cos(this.theta)*cp],target,up:[0,1,0],fov:52};
   }
   render(){if(!this.plan||!this.gl)return;
-    const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);
+    if(this.plan.arenaInterior&&this.mode==='human')gl.clearColor(.19,.18,.205,1);
+    else gl.clearColor(.905,.932,.955,1);
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     const camera=this.currentCamera(),vp=multiply(perspective(camera.fov*Math.PI/180,this.canvas.width/this.canvas.height,.045,4000),lookAt(camera.eye,camera.target,camera.up));this.vp=vp;
     gl.useProgram(this.program);
     gl.uniformMatrix4fv(this.locations.VP,false,vp);

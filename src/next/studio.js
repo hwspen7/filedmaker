@@ -5,7 +5,7 @@ import { generateSeats, validateProject } from '../model.mjs';
 import { importTicketRoster } from '../seatFirst.mjs';
 import { buildVenuePlan } from './venuePlan.mjs';
 import { seatColor } from '../seatPresentation.mjs';
-import { SCHOTTENSTEIN_CHART_URL } from '../schottensteinSeating.mjs';
+import { SCHOTTENSTEIN_CHART_URL, SCHOTTENSTEIN_REFERENCE_VIEWS, SCHOTTENSTEIN_COURT_SOURCE, SCHOTTENSTEIN_BOARD_SOURCE } from '../schottensteinSeating.mjs';
 import { NativeVenueRenderer } from './webgl.js';
 const $=id=>document.getElementById(id);
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
@@ -31,7 +31,6 @@ function setPreset(name){
     selected=null;renderProject();
   }catch(e){error(e.message)}
 }
-function previewMode(){return plan?.hasRoster?'Imported ticket inventory':'Schematic visual reference';}
 function renderProject(){
   const start=performance.now(),previous=selected?.uid;
   $('loading').hidden=false;
@@ -59,7 +58,8 @@ function renderProject(){
     $('ticketCount').textContent=fmt(plan.hasRoster?plan.official.inventoryCount:0);
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
-      :`${fmt(model.seats.length)} illustrative seat positions. Row and seat numbers are for preview.`;
+       :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
+    $('referenceViews').hidden=!model.seatingRows;
     if(model.sectionFootprints){
       const source=document.createElement('a');
       source.href=SCHOTTENSTEIN_CHART_URL;source.target='_blank';source.rel='noopener';
@@ -68,13 +68,13 @@ function renderProject(){
     }
     $('rowsCount').textContent=fmt(plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
     $('kindCount').textContent=plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
-    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':'Illustrative geometry';
+    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
     $('modelStatus').innerHTML='<span class="pulse"></span> '+(plan.hasRoster?'Roster / geometry unverified':'Schematic preview');
     $('reviewFlag').textContent=plan.hasRoster?'ROSTER':'REFERENCE';
     $('warnings').style.color='';$('warnings').textContent=(plan.invalidRows||plan.positionCollisions)
       ?`Geometry warning: ${plan.invalidRows} elevation discontinuities and ${plan.positionCollisions} overlapping seat coordinates. Review imported survey data.`
       :plan.hasRoster?'Verify real seat geometry, inventory completeness and allowed ticketing use before publication.':'No verified per-seat dataset. Do not label generated positions as real seats.';
-    $('searchHelp').textContent=plan.hasRoster?'Search the imported seat IDs or section, row and seat.':'Search synthetic IDs for preview only. Official row and seat IDs are not known.';
+    $('searchHelp').textContent=plan.hasRoster?'Search the imported seat IDs or section, row and seat.':'Search preview locations by section, row and seat. Published row labels are shown where documented.';
     const restored=plan.seats.find(seat=>seat.uid===previous)??null;
     setOptions($('sectionPicker'),[...seatsBySection.keys()].sort(natural),'Choose section');
     selectSeat(restored);
@@ -94,7 +94,8 @@ function setOptions(select,values,placeholder){
 function syncSeatPicker(seat){
   $('sectionPicker').value=seat?.sectionId??'';
   const rows=seatsBySection.get(seat?.sectionId);
-  const values=rows?[...rows.keys()].sort(natural):[];
+  const values=rows?[...rows.keys()]:[];
+  if(!model?.seatingRows)values.sort(natural);
   setOptions($('rowPicker'),values);
   if(seat)$('rowPicker').value=String(seat.row);
   const numbers=rows?.get(String(seat?.row))??[];
@@ -104,7 +105,9 @@ function syncSeatPicker(seat){
 function pickSection(id){
   const rows=seatsBySection.get(id);
   if(!rows)return;
-  const keys=[...rows.keys()].sort(natural),seats=rows.get(keys[Math.floor(keys.length/2)]);
+  const keys=[...rows.keys()];
+  if(!model?.seatingRows)keys.sort(natural);
+  const seats=rows.get(keys[Math.floor(keys.length/2)]);
   selectSeat(seats[Math.floor(seats.length/2)]);
 }
 function selectSeat(seat){
@@ -149,7 +152,7 @@ function drawMap(){
   const chart=model.sectionFootprints;
   const horizontal=chart||plan.surface.sport==='basketball';
   const palette=palettePresets[$('palette').value];
-  const tint=(tier,index)=>palette?.[tier]||seatColor(project,tier,index);
+  const tint=(tier,index)=>palette?.[tier]||(model.seatingRows?['#783045','#9a5164','#be8594'][tier]:seatColor(project,tier,index));
   let extentX=plan.surface.width/2+8,extentZ=plan.surface.length/2+8;
   for(const s of plan.seats){
     extentX=Math.max(extentX,Math.abs(s.x)+3);
@@ -162,7 +165,7 @@ function drawMap(){
     }
   }
   const scale=.47*Math.min(c.width/(horizontal?extentZ:extentX),c.height/(horizontal?extentX:extentZ));
-  const pos=s=>horizontal?[cx+s.z*scale,cy+s.x*scale]:[cx+s.x*scale,cy+s.z*scale];
+  const pos=s=>horizontal?[cx+(chart?-s.z:s.z)*scale,cy+s.x*scale]:[cx+s.x*scale,cy+s.z*scale];
   ctx.fillStyle='#e9f0f7';
   ctx.fillRect(0,0,c.width,c.height);
   const fw=(horizontal?plan.surface.length:plan.surface.width)*scale;
@@ -252,6 +255,32 @@ function search(){
     if(renderer)view('human');
     $('searchHelp').textContent=`Found ${seat.uid}.`;
   }else $('searchHelp').textContent='No matching seat in the loaded data.';
+}
+for(const [label,url] of [['Court',SCHOTTENSTEIN_COURT_SOURCE],['Video displays',SCHOTTENSTEIN_BOARD_SOURCE]]){
+  const source=document.createElement('a');
+  source.href=url;
+  source.textContent=label+' ↗';
+  source.target='_blank';
+  source.rel='noopener';
+  $('arenaSources').append(source);
+}
+for(const reference of SCHOTTENSTEIN_REFERENCE_VIEWS){
+  const button=document.createElement('button');
+  button.type='button';
+  button.textContent=reference.label;
+  button.onclick=()=>{
+    const seats=seatsBySection.get(reference.section)?.get(reference.row);
+    if(!seats?.length)return;
+    selectSeat(seats[Math.floor(seats.length/2)]);
+    if(renderer)view('human');else view('top');
+    const link=document.createElement('a');
+    link.href=reference.source;
+    link.target='_blank';
+    link.rel='noopener';
+    link.textContent=`Section ${reference.section} · Row ${reference.row} photo ↗`;
+    $('referenceSource').replaceChildren(link);
+  };
+  $('referenceButtons').append(button);
 }
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>setPreset(b.dataset.preset));
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));

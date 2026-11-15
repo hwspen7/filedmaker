@@ -80,7 +80,29 @@ const upper = [
   [334,290,249,283,220,188,209,228,151],
 ];
 
-const toWorld = (z, x) => ({ x: (x - 393.5) * 15.24 / 112, z: (z - 582) * 28.6512 / 222 });
+const letterRows = letters => [...letters];
+const rowDetails = new Map([
+  ['105', {labels:letterRows('ABCDEFGHIJKLMNOPQRSTU')}],
+  ['114', {labels:[...letterRows('ABCDEFGHIJ').map(c=>c+c),...letterRows('ABCDEFGHIJKLMNOPQRS')]}],
+  ['206', {labels:letterRows('ABCDEFGHIJ')}],
+  ['302', {labels:letterRows('ABCDEFGHIJKLMNOPQRSTU')}],
+  ['323', {labels:letterRows('ABFGHIJKLMN'), slots:[0,1,5,6,7,8,9,10,11,12,13]}],
+]);
+const clubWithPublishedCounts = new Set(['204','205','206','207','221','222','223','224']);
+const referenceSite = 'https://www.rateyourseats.com/schottenstein-center/seating/sections/';
+export const SCHOTTENSTEIN_REFERENCE_VIEWS = Object.freeze([
+  {section:'105', row:'D', label:'Lower sideline', source:referenceSite+'105'},
+  {section:'114', row:'P', label:'Behind the basket', source:referenceSite+'114'},
+  {section:'206', row:'H', label:'Club sideline', source:referenceSite+'206'},
+  {section:'323', row:'M', label:'Upper sideline', source:referenceSite+'323'},
+  {section:'302', row:'D', label:'Upper corner', source:'https://seatgeek.com/venues/value-city-arena-at-schottenstein-center/seating-chart'},
+]);
+export const SCHOTTENSTEIN_COURT_SOURCE = 'https://ohiostatebuckeyes.com/news/2025/10/30/mens-basketball-new-season-and-new-look-at-the-schottenstein-center';
+export const SCHOTTENSTEIN_BOARD_SOURCE = 'https://ohiostatebuckeyes.com/news/2026/7/17/mens-basketball-schottenstein-center-to-feature-video-board-enhancements-this-season';
+
+// The chart is a top view. In the right-handed arena, its right-hand end
+// is negative Z, so the spectator camera and the published map agree.
+const toWorld = (z, x) => ({ x: (x - 393.5) * 15.24 / 112, z: (582 - z) * 28.6512 / 222 });
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
 const blocks = [lower, club, upper].flatMap((level, tier) =>
@@ -88,15 +110,21 @@ const blocks = [lower, club, upper].flatMap((level, tier) =>
     const corners = [0, 2, 4, 6].map(i => toWorld(p[i], p[i + 1]));
     const [frontLeft, frontRight, backLeft, backRight] = corners;
     const depth = (distance(frontLeft, backLeft) + distance(frontRight, backRight)) / 2;
-    const rows = Math.max(2, Math.round(depth / [.82, .88, .82][tier]));
-    return { id: String(id), tier, rows, corners };
+    const sectionId = String(id), details = rowDetails.get(sectionId);
+    const depthRows = details?.slots ? details.slots.at(-1)+1
+      : details?.labels.length ?? (clubWithPublishedCounts.has(sectionId)?10:Math.max(2,Math.round(depth / [.82,.88,.82][tier])));
+    const rows = details?.labels.length ?? depthRows;
+    const treadDepth = depth / depthRows;
+    const rise = tier === 0 ? (treadDepth<.74?.24:.31) : tier === 1 ? .34 : .45;
+    const frontHeight = tier === 0 ? (id === 114 || id === 131 ? .42 : .64) : tier === 1 ? 8.05 : 14.65;
+    return { id:sectionId, tier, rows, depthRows, corners, treadDepth, rise, frontHeight, details };
   })
 );
 const byId = new Map(blocks.map(block => [block.id, block]));
 
 export function schottensteinFootprints() {
-  return blocks.map(({ id, tier, rows, corners: [a, b, c, d] }) =>
-    ({ id, tier, rows, outline: [a, b, d, c] }));
+  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,corners:[a,b,c,d]}) =>
+    ({id,tier,rows,depthRows,rise,frontHeight,outline:[a,b,d,c]}));
 }
 
 export function usesSchottensteinChart(project) {
@@ -106,7 +134,8 @@ export function usesSchottensteinChart(project) {
 
 function rowGeometry(block, rowIndex) {
   const [a, b, c, d] = block.corners;
-  const t = (rowIndex + .5) / block.rows;
+  const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
+  const t = (slot + .5) / block.depthRows;
   let left = lerp(a, c, t), right = lerp(b, d, t);
   const width = distance(left, right);
   const mid = lerp(left, right, .5);
@@ -115,25 +144,35 @@ function rowGeometry(block, rowIndex) {
   const yaw = Math.atan2(nx, nz);
   // The published chart notes that seat 1 is on a seated person's right.
   if ((right.x - left.x) * -nz + (right.z - left.z) * nx > 0) [left, right] = [right, left];
-  return { left, right, width, yaw, y: [.8, 7.4, 12.2][block.tier] + rowIndex * [.34, .39, .43][block.tier] };
+  return {left,right,width,yaw,y:block.frontHeight+slot*block.rise,slot};
 }
 
 export function buildSchottensteinSeating(pitch) {
-  const seats = [], groups = [];
+  const seats = [], groups = [], seatingRows = [];
   blocks.forEach((block, sectionIndex) => {
     for (let row = 0; row < block.rows; row++) {
       const g = rowGeometry(block, row);
-      const count = Math.floor(g.width / pitch);
+      const rowLabel = block.details?.labels?.[row] ?? row+1;
+      const documentedCount = clubWithPublishedCounts.has(block.id) ? (row<5?14:18) : null;
+      // Center the narrower documented club rows inside the wider deck.
+      const span = documentedCount ? Math.min(g.width, documentedCount*pitch) : g.width;
+      const count = documentedCount ?? Math.floor(span / pitch);
       const from = seats.length;
+      const edge = (g.width-span)/2/g.width;
       for (let i = 0; i < count; i++) {
-        seats.push({ ...lerp(g.left, g.right, (i + .5) / count), y: g.y, yaw: g.yaw,
-          tier: block.tier, sectionId: block.id, sectionIndex, row: row + 1, number: i + 1,
-          uid: `DEMO-${block.id}-${row + 1}-${i + 1}` });
+        seats.push({ ...lerp(g.left,g.right,edge+(i+.5)/count*(1-2*edge)), y:g.y, yaw:g.yaw,
+          tier:block.tier, sectionId:block.id, sectionIndex, row:rowLabel, number:i+1,
+          uid:`DEMO-${block.id}-${rowLabel}-${i+1}`,
+          seatingDepth:block.treadDepth, seatWidth:span/count,
+          inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl' });
       }
-      if (count) groups.push({ tier: block.tier, sectionIndex, row: row + 1, from, count });
+      seatingRows.push({ ...g, tier:block.tier, sectionId:block.id, row:rowLabel,
+        depth:block.treadDepth,rise:block.rise });
+      if (count) groups.push({tier:block.tier,sectionIndex,row:rowLabel,from,count});
     }
   });
-  return { seats, groups, sectionFootprints: schottensteinFootprints() };
+  return {seats,groups,seatingRows,sectionFootprints:schottensteinFootprints()};
+
 }
 
 export function estimateSchottensteinRoster(roster) {
@@ -152,7 +191,8 @@ export function estimateSchottensteinRoster(roster) {
     const labels = [...rows.keys()].sort(compare);
     labels.forEach((label, index) => {
       // The chart has no row inventory. Relative order is used for visual approximation.
-      const row = Math.min(block.rows - 1, index * block.rows / labels.length);
+      const documentedRow = block.details?.labels.indexOf(label.toUpperCase()) ?? -1;
+      const row = documentedRow>=0 ? documentedRow : Math.min(block.rows-1,index*block.rows/labels.length);
       const g = rowGeometry(block, row);
       const members = rows.get(label).sort((a, b) => compare(a.number, b.number));
       if (members.length * .32 > g.width) throw new Error(`Section ${block.id}, row ${label} exceeds this estimated footprint. Supply XYZ for this roster.`);

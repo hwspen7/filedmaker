@@ -4,9 +4,18 @@
 
 ## Audience preview
 
-The default Schottenstein Center preview follows [Ohio State's men's basketball seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts) for section names and relative locations. Choose a section on the 2D map, use the Section, Row and Seat controls, and open Seat View. The camera can face the court, either basket or the scoreboard, with optional phone framing. The preview uses layered blue seating by default, with a performance setting for simpler chair geometry.
+The first venue is Ohio State men’s basketball at the Schottenstein Center. FiledMaker renders the arena, section map, camera and seating geometry in its own offline WebGL2 viewer. The seat inspector includes five reference positions for comparing the model to published seat-view photos.
 
-Section outlines are approximated from the chart. The row counts, numbered preview positions, elevations, furniture and sightlines are schematic. A coordinate-free CSV for this reference uses the chart's known section IDs and estimates positions within those sections. For sections outside the chart or for exact positions, supply XYZ in the venue's court-centered coordinate system.
+| Reference | Model feature |
+| --- | --- |
+| [Ohio State men’s basketball seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts) | Section identifiers, relative footprints and open gaps |
+| [Ohio State court update](https://ohiostatebuckeyes.com/news/2025/10/30/mens-basketball-new-season-and-new-look-at-the-schottenstein-center) | Gray hardwood, scarlet apron and key, Block O court variant |
+| [Ohio State video board update](https://ohiostatebuckeyes.com/news/2026/7/17/mens-basketball-schottenstein-center-to-feature-video-board-enhancements-this-season) | Four convex faces, underside displays and 36-inch ribbon display |
+| [105](https://www.rateyourseats.com/schottenstein-center/seating/sections/105), [114](https://www.rateyourseats.com/schottenstein-center/seating/sections/114), [206](https://www.rateyourseats.com/schottenstein-center/seating/sections/206), [323](https://www.rateyourseats.com/schottenstein-center/seating/sections/323), [302](https://seatgeek.com/venues/value-city-arena-at-schottenstein-center/seating-chart) | Reference rows, club row counts, the gap behind 323 B, and interior sightline comparisons |
+
+The floor uses the NCAA court dimensions. The section outlines, dimensions of the scoreboard, row depths, elevations, and per-seat positions are modeled estimates. Published row details apply only where documented. The demo seat IDs are illustrative. A venue roster with XYZ can supply exact coordinates for the positions it covers.
+
+Subsequent phases extend the same reference-and-geometry workflow to NCAA basketball arenas, then NCAA football stadiums, then lower-cost profiles for universities and secondary schools.
 
 ## What changed
 

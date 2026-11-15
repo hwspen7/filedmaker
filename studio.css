@@ -26,3 +26,12 @@
   .status-pill small{display:none}
   .viewport-foot{padding:12px;gap:6px 12px}
 }
+
+.reference-views{margin:0 0 24px;padding:12px;border:1px solid #e5ebee;border-radius:10px;background:#fafbfc}
+.reference-views[hidden]{display:none}
+.reference-views h2{margin:0 0 8px;font-size:12px;color:#3d4653}
+.reference-buttons{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.reference-buttons button{border:1px solid #dddfe5;background:#fff;border-radius:6px;color:#583646;padding:7px 4px;font:600 10px/1.2 Inter,system-ui,sans-serif}
+.reference-buttons button:hover{background:#f6edf0}
+.reference-source{margin:8px 0 0;color:#62707c;font-size:11px}
+#arenaSources{display:flex;gap:10px;flex-wrap:wrap}
