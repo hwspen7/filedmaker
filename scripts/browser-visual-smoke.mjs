@@ -85,12 +85,10 @@ async function main(){
       if(file==='osu'){
         // Capture a separate architectural elevation to inspect the depth of
         // the rear gallery and external façade, not merely the overhead plan.
-        await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:730,y:375});
-        await client.send('Input.dispatchMouseEvent',{type:'mousePressed',x:730,y:375,button:'left',clickCount:1});
-        await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:730,y:408,button:'left',buttons:1});
-        await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:730,y:408,button:'left',clickCount:1});
+        await evaluate("(()=>{const c=document.querySelector('#viewport3d');const r=c.getBoundingClientRect();const x=r.left+r.width*.5,y=r.top+r.height*.5;const capture=c.setPointerCapture;c.setPointerCapture=()=>{};try{for(const [kind,dy] of [['pointerdown',0],['pointermove',34],['pointerup',34]])c.dispatchEvent(new PointerEvent(kind,{bubbles:true,pointerId:1,clientX:x,clientY:y+dy,buttons:kind==='pointerup'?0:1}));}finally{c.setPointerCapture=capture;}return true})()");
         await delay(650);
         const facadeImage=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        if(facadeImage.data===result.data)throw Error('Architecture camera test produced an identical frame');
         const facadePath=join(dir,'osu-facade.png');
         writeFileSync(facadePath,Buffer.from(facadeImage.data,'base64'));
         if(statSync(facadePath).size<12000)throw Error('OSU façade screenshot missing');
