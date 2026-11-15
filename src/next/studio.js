@@ -142,7 +142,7 @@ function renderProject(){
     renderer?.setViewOptions({target:'center',zoom:1});
     const name=project.school?.venue||project.title;
     $('title').textContent=name.replace(/ — .*/, '');
-    const seating=plan.hasRoster?'ticket roster loaded':model.seatingRows?'capacity-matched reconstruction':'estimated seating arrangement';
+    const seating=plan.hasRoster?'ticket roster loaded':model.proceduralGeometry?'six-engine procedural demonstration':model.seatingRows?'capacity-matched reconstruction':'estimated seating arrangement';
     $('subtitle').textContent=`${project.city||'United States'} · ${model.surface.label} · ${seating}`;
     $('officialCapacity').textContent=plan.official.officialCapacity===null?'Not published':fmt(plan.official.officialCapacity);
     const capacitySource=$('capacitySource');
@@ -160,10 +160,12 @@ function renderProject(){
     $('ticketCount').textContent=fmt(plan.hasRoster?plan.official.inventoryCount:0);
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
-      :model.seatingRows
-        ?`The model contains ${fmt(model.seats.length)} seats. The section chart and published rows guide their placement. Individual seat positions and sightlines are approximate.`
+      :model.proceduralGeometry
+        ?`This is a synthetic venue, not a real stadium. ${fmt(model.seats.length)} estimated seats. Target ${fmt(model.proceduralSpec.targetCapacity??0)} is illustrative and not a published capacity.`
+        :model.seatingRows
+          ?`The model contains ${fmt(model.seats.length)} seats. The section chart and published rows guide their placement. Individual seat positions and sightlines are approximate.`
         :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
-    $('referenceViews').hidden=!model.seatingRows;
+    $('referenceViews').hidden=!model.sectionFootprints;
     if(model.sectionFootprints){
       const source=document.createElement('a');
       source.href=SCHOTTENSTEIN_CHART_URL;source.target='_blank';source.rel='noopener';
@@ -172,10 +174,13 @@ function renderProject(){
     }
     $('rowsCount').textContent=fmt(plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
     $('kindCount').textContent=plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
-    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
+    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':model.proceduralGeometry?'Procedural 3D preview':model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
     $('modelStatus').innerHTML='<span class="pulse"></span> '+(plan.hasRoster?'Roster / geometry unverified':'Schematic preview');
     $('reviewFlag').textContent=plan.hasRoster?'ROSTER':'REFERENCE';
-    $('warnings').style.color='';$('warnings').textContent=(plan.invalidRows||plan.positionCollisions)
+    $('warnings').style.color='';$('warnings').textContent=plan.engineAudit&&!plan.engineAudit.passed
+      ?'Six-engine geometry validation failed: '+plan.engineAudit.errors.join(', ')
+      :plan.engineAudit?.warnings.length?plan.engineAudit.warnings.join(' ') 
+      :(plan.invalidRows||plan.positionCollisions)
       ?`Geometry warning: ${plan.invalidRows} elevation discontinuities and ${plan.positionCollisions} overlapping seat coordinates. Review imported survey data.`
       :plan.hasRoster?'Verify real seat geometry, inventory completeness and allowed ticketing use before publication.':'No verified per-seat dataset. Do not label generated positions as real seats.';
     $('searchHelp').textContent=plan.hasRoster?'Search the imported seat IDs or section, row and seat.':'Search preview locations by section, row and seat. Published row labels are shown where documented.';
