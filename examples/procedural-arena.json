@@ -1,0 +1,39 @@
+{
+  "id": "example-arena",
+  "name": "Example Indoor Arena",
+  "surface": "ncaa",
+  "template": "indoor-arena",
+  "sections": 20,
+  "clearance": 4,
+  "roundness": 4.25,
+  "seatPitch": 0.54,
+  "aisleWidth": 1.2,
+  "targetCapacity": 10500,
+  "capacityTolerance": 0.04,
+  "tiers": [
+    {
+      "rows": 19,
+      "depth": 0.83,
+      "rise": 0.31,
+      "gap": 3.1,
+      "elevationGap": 2.3
+    },
+    {
+      "rows": 22,
+      "depth": 0.83,
+      "rise": 0.4,
+      "gap": 0,
+      "elevationGap": 0
+    }
+  ],
+  "voids": [
+    {
+      "section": 3,
+      "tier": 0,
+      "firstRow": 1,
+      "lastRow": 3,
+      "reason": "Accessible platform (illustrative)"
+    }
+  ],
+  "sources": []
+}
