@@ -143,13 +143,12 @@ const cube=boxGeometry(),roundedBox=bevelGeometry();
 const instanceAttributes=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
 const instanceStride=44;
 
-// The seating decks remain useful for first-person sightlines, but their
-// continuous concrete sheet must not cover the open bowl in overview or maps.
-export function deckVisibleInMode(plan, mode) {
-  return mode === 'human' && Boolean(plan?.arenaInterior && plan?.deckGeometry?.length);
-}
-
 export class NativeVenueRenderer {
+  // Keep the real seat-view deck, not the gray overview backing sheet.
+  // The renderer is also bundled as a classic script for offline exports.
+  static deckVisibleInMode(plan, mode) {
+    return mode === 'human' && Boolean(plan?.arenaInterior && plan?.deckGeometry?.length);
+  }
   constructor(canvas,onPick=()=>{}){
     this.canvas=canvas;this.onPick=onPick;
     const gl=canvas.getContext('webgl2',{antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});
@@ -287,7 +286,7 @@ export class NativeVenueRenderer {
     gl.uniform1f(this.locations.Human,this.mode==='human'?1:0);
     gl.uniform1f(this.locations.Selected,this.selectedIndex);
     const rounded=this.plan.roundedCount||0;
-    if(this.deck && deckVisibleInMode(this.plan,this.mode)){
+    if(this.deck && NativeVenueRenderer.deckVisibleInMode(this.plan,this.mode)){
       gl.uniform1f(this.locations.Deck,1);
       gl.bindVertexArray(this.deck.vao);
       gl.drawArrays(gl.TRIANGLES,0,this.deck.vertices);
