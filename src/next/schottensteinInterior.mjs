@@ -24,29 +24,35 @@ export function addSchottensteinBowl(add,color,footprints,rows) {
     const noseB={x:b.x+forward.x*depth/2,z:b.z+forward.z*depth/2};
     spanBox(add,noseA,noseB,y-.028,.052,.048,edge);
   }
-  for(const {outline:[a,b,d,c],tier,frontHeight,depthRows,rise,id} of footprints){
-    const backY=frontHeight+(depthRows-1)*rise;
-    const panelHeight=tier===0?Math.min(frontHeight,.8):tier===1?1.06:2.0;
-    spanBox(add,a,b,frontHeight-panelHeight/2,panelHeight,.23,fascia);
-    spanBox(add,c,d,backY-.36,.5,.27,fascia);
-    if(tier>0){
-      spanBox(add,a,b,frontHeight+.49,.045,.052,rail);
-      for(let q=0;q<=1;q+=.25){
-        const p=mix(a,b,q);
-        add([p.x,frontHeight+.23,p.z],[.045,.53,.045],0,rail);
+  const profileBySection=new Map(footprints.map(profile=>[profile.id,profile]));
+  for(const row of rows){
+    const profile=profileBySection.get(row.sectionId);
+    const front=row.slot===0, rear=row.slot===profile.depthRows-1;
+    if(front){
+      const h=row.tier===0?Math.min(row.y,.8):row.tier===1?1.06:2;
+      spanBox(add,row.left,row.right,row.y-h/2,h,.23,fascia);
+      if(row.tier>0){
+        spanBox(add,row.left,row.right,row.y+.49,.045,.052,rail);
+        for(let q=0;q<=1;q+=.25){
+          const p=mix(row.left,row.right,q);
+          add([p.x,row.y+.23,p.z],[.045,.53,.045],0,rail);
+        }
       }
     }
-    // Section 323's published gap behind row B is a circulation/press-side break.
-    if(id==='323'){
-      for(let depth=2;depth<5;depth++){
-        const t=(depth+.5)/depthRows, x=mix(a,c,t), z=mix(b,d,t);
-        const panelDepth=(distance(a,c)+distance(b,d))/2/depthRows;
-        spanBox(add,x,z,frontHeight+rise*.95,.27,panelDepth*1.03,tread);
-      }
+    if(rear)spanBox(add,row.left,row.right,row.y-.36,.5,.27,fascia);
+  }
+  const pressSide=profileBySection.get('323');
+  if(pressSide){
+    const {corners:[a,b,c,d],frontHeight,depthRows,rise}=pressSide;
+    // Section 323's published gap behind row B remains a circulation break.
+    for(let depth=2;depth<5;depth++){
+      const t=(depth+.5)/depthRows, x=mix(a,c,t), z=mix(b,d,t);
+      const panelDepth=(distance(a,c)+distance(b,d))/2/depthRows;
+      spanBox(add,x,z,frontHeight+rise*.95,.27,panelDepth*1.03,tread);
     }
   }
 
-  const aisleEdges=footprints.flatMap(({outline:[a,b,d,c],tier,depthRows,rise,frontHeight})=>
+  const aisleEdges=footprints.flatMap(({corners:[a,b,c,d],tier,depthRows,rise,frontHeight})=>
     [{front:a,back:c,tier,depthRows,rise,frontHeight},{front:b,back:d,tier,depthRows,rise,frontHeight}]);
   const matched=new Set();
   for(let i=0;i<aisleEdges.length;i++){

@@ -2,6 +2,7 @@
 // The plan is renderer-independent and never invents official ticket inventory.
 import { seatColor, seatKind } from '../seatPresentation.mjs';
 import { ticketReconciliation } from '../seatFirst.mjs';
+import { polygonSpans, schottensteinDiagramEdge } from '../schottensteinSeating.mjs';
 import { addBlockOMark, addSchottensteinBoard, addSchottensteinBowl } from './schottensteinInterior.mjs';
 
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
@@ -102,11 +103,14 @@ export function buildVenuePlan(model,options={}) {
   const apron=basketball?3.5:7;
   if(chartPreview){
     const base=colorRGB('#656169');
-    const stripWidth=.44;
-    for(let i=0;i<208;i++){
-      const x=(i-103.5)*stripWidth;
-      const halfWidth=56.6*Math.pow(1-(x/46.1)**4,.25);
-      add([x,-.36,0],[stripWidth+.002,.27,halfWidth*2],0,base);
+    const limits=schottensteinDiagramEdge.map(point=>point.x);
+    const near=Math.min(...limits),far=Math.max(...limits);
+    const strips=Math.ceil((far-near)/.35), stripWidth=(far-near)/strips;
+    for(let i=0;i<strips;i++){
+      const x=near+(i+.5)*stripWidth;
+      for(const [lo,hi] of polygonSpans([schottensteinDiagramEdge],x)){
+        add([x,-.36,(lo+hi)/2],[stripWidth+.002,.27,hi-lo],0,base);
+      }
     }
   }
   add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,darkField);

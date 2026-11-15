@@ -1,6 +1,8 @@
-// Approximate seating footprints traced from Ohio State's men's basketball diagram.
-// Pairs list the front edge and then the back edge, in matching endpoint order.
-// The diagram establishes section labels and relative location, not dimensions.
+import {
+  SCHOTTENSTEIN_CHART_LABELS, SCHOTTENSTEIN_DIAGRAM_EDGE, SCHOTTENSTEIN_SECTION_CONTOURS,
+} from './schottensteinChartContours.mjs';
+
+// The guide endpoints orient the rows. The traced chart contours clip them.
 export const SCHOTTENSTEIN_CHART_URL =
   'https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/ohiostatebuckeyes.com/documents/2023/7/12/Mens-basketball-2023-diagram.jpeg?timestamp=20230823042629';
 
@@ -103,28 +105,59 @@ export const SCHOTTENSTEIN_BOARD_SOURCE = 'https://ohiostatebuckeyes.com/news/20
 // The chart is a top view. In the right-handed arena, its right-hand end
 // is negative Z, so the spectator camera and the published map agree.
 const toWorld = (z, x) => ({ x: (x - 393.5) * 15.24 / 112, z: (582 - z) * 28.6512 / 222 });
-const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
-const blocks = [lower, club, upper].flatMap((level, tier) =>
-  level.map(([id, ...p]) => {
-    const corners = [0, 2, 4, 6].map(i => toWorld(p[i], p[i + 1]));
-    const [frontLeft, frontRight, backLeft, backRight] = corners;
-    const depth = (distance(frontLeft, backLeft) + distance(frontRight, backRight)) / 2;
-    const sectionId = String(id), details = rowDetails.get(sectionId);
-    const depthRows = details?.slots ? details.slots.at(-1)+1
-      : details?.labels.length ?? (clubWithPublishedCounts.has(sectionId)?10:Math.max(2,Math.round(depth / [.82,.88,.82][tier])));
-    const rows = details?.labels.length ?? depthRows;
-    const treadDepth = depth / depthRows;
-    const rise = tier === 0 ? (treadDepth<.74?.24:.31) : tier === 1 ? .34 : .45;
-    const frontHeight = tier === 0 ? (id === 114 || id === 131 ? .42 : .64) : tier === 1 ? 8.05 : 14.65;
-    return { id:sectionId, tier, rows, depthRows, corners, treadDepth, rise, frontHeight, details };
+const unpack = pixels => Array.from({length:pixels.length/2},(_,i)=>toWorld(pixels[i*2],pixels[i*2+1]));
+const labels = new Map(SCHOTTENSTEIN_CHART_LABELS.map(([id,x,y])=>[id,toWorld(x,y)]));
+export const schottensteinDiagramEdge=unpack(SCHOTTENSTEIN_DIAGRAM_EDGE);
+
+export function polygonSpans(outlines,depth) {
+  const spans=[];
+  for(const points of outlines){
+    const crossings=[];
+    for(let i=0;i<points.length;i++){
+      const a=points[i],b=points[(i+1)%points.length];
+      if((a.x>depth)===(b.x>depth))continue;
+      crossings.push(a.z+(b.z-a.z)*(depth-a.x)/(b.x-a.x));
+    }
+    crossings.sort((a,b)=>a-b);
+    for(let i=0;i+1<crossings.length;i+=2){
+      if(crossings[i+1]-crossings[i]>.01)spans.push([crossings[i],crossings[i+1]]);
+    }
+  }
+  return spans.sort((a,b)=>b[1]-a[1]);
+}
+
+const blocks = [lower,club,upper].flatMap((level,tier)=>
+  level.map(([id,...p])=>{
+    const corners=unpack(p);
+    const [frontLeft,frontRight,backLeft,backRight]=corners;
+    const dx=frontRight.x-frontLeft.x+backRight.x-backLeft.x;
+    const dz=frontRight.z-frontLeft.z+backRight.z-backLeft.z;
+    const magnitude=Math.hypot(dx,dz);
+    const center=lerp(frontLeft,frontRight,.5);
+    let nx=-dz/magnitude,nz=dx/magnitude;
+    if(nx*center.x+nz*center.z>0){nx=-nx;nz=-nz;}
+    const outlines=SCHOTTENSTEIN_SECTION_CONTOURS[id].map(unpack);
+    // Local X runs outward, local Z runs to a spectator's right.
+    const projected=outlines.map(points=>points.map(({x,z})=>({x:-nx*x-nz*z,z:-nz*x+nx*z})));
+    const depths=projected.flat().map(p=>p.x);
+    const near=Math.min(...depths), depth=Math.max(...depths)-near;
+    const sectionId=String(id),details=rowDetails.get(sectionId);
+    const depthRows=details?.slots ? details.slots.at(-1)+1
+      : details?.labels.length ?? (clubWithPublishedCounts.has(sectionId)?10:Math.max(2,Math.round(depth/[.82,.88,.82][tier])));
+    const rows=details?.labels.length??depthRows;
+    const treadDepth=depth/depthRows;
+    const rise=tier===0?(treadDepth<.74?.24:.31):tier===1?.34:Math.min(.45,6.85/(depthRows-1));
+    const frontHeight=tier===0?(id===114||id===131?.42:.64):tier===1?8.05:14.65;
+    return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,nx,nz,near,
+      treadDepth,rise,frontHeight,details,labelPoint:labels.get(id)};
   })
 );
-const byId = new Map(blocks.map(block => [block.id, block]));
+const byId=new Map(blocks.map(block=>[block.id,block]));
 
 export function schottensteinFootprints() {
-  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,corners:[a,b,c,d]}) =>
-    ({id,tier,rows,depthRows,rise,frontHeight,outline:[a,b,d,c]}));
+  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint})=>
+    ({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint}));
 }
 
 export function usesSchottensteinChart(project) {
@@ -132,47 +165,62 @@ export function usesSchottensteinChart(project) {
     project.venueReference?.id === 'schottenstein-center' && project.surface === 'ncaa';
 }
 
-function rowGeometry(block, rowIndex) {
-  const [a, b, c, d] = block.corners;
-  const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
-  const t = (slot + .5) / block.depthRows;
-  let left = lerp(a, c, t), right = lerp(b, d, t);
-  const width = distance(left, right);
-  const mid = lerp(left, right, .5);
-  let nx = -(right.z - left.z) / width, nz = (right.x - left.x) / width;
-  if (nx * mid.x + nz * mid.z > 0) { nx = -nx; nz = -nz; }
-  const yaw = Math.atan2(nx, nz);
-  // The published chart notes that seat 1 is on a seated person's right.
-  if ((right.x - left.x) * -nz + (right.z - left.z) * nx > 0) [left, right] = [right, left];
-  return {left,right,width,yaw,y:block.frontHeight+slot*block.rise,slot};
+function rowGeometry(block,rowIndex) {
+  const slot=block.details?.slots?.[rowIndex]??rowIndex;
+  const depth=block.near+(slot+.5)*block.treadDepth;
+  const {nx,nz}=block;
+  const point=lateral=>({x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral});
+  // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
+  const spans=polygonSpans(block.projected,depth).map(([low,high])=>
+    ({left:point(high),right:point(low),width:high-low}));
+  return {spans,width:spans.reduce((sum,span)=>sum+span.width,0),yaw:Math.atan2(nx,nz),
+    y:block.frontHeight+slot*block.rise,slot};
+}
+
+function pointAlongSpans(spans,distance) {
+  for(const span of spans){
+    if(distance<=span.width)return lerp(span.left,span.right,distance/span.width);
+    distance-=span.width;
+  }
+  return spans.at(-1).right;
 }
 
 export function buildSchottensteinSeating(pitch) {
-  const seats = [], groups = [], seatingRows = [];
-  blocks.forEach((block, sectionIndex) => {
-    for (let row = 0; row < block.rows; row++) {
-      const g = rowGeometry(block, row);
-      const rowLabel = block.details?.labels?.[row] ?? row+1;
-      const documentedCount = clubWithPublishedCounts.has(block.id) ? (row<5?14:18) : null;
-      // Center the narrower documented club rows inside the wider deck.
-      const span = documentedCount ? Math.min(g.width, documentedCount*pitch) : g.width;
-      const count = documentedCount ?? Math.floor(span / pitch);
-      const from = seats.length;
-      const edge = (g.width-span)/2/g.width;
-      for (let i = 0; i < count; i++) {
-        seats.push({ ...lerp(g.left,g.right,edge+(i+.5)/count*(1-2*edge)), y:g.y, yaw:g.yaw,
-          tier:block.tier, sectionId:block.id, sectionIndex, row:rowLabel, number:i+1,
-          uid:`DEMO-${block.id}-${rowLabel}-${i+1}`,
-          seatingDepth:block.treadDepth, seatWidth:span/count,
-          inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl' });
+  const seats=[],groups=[],seatingRows=[];
+  blocks.forEach((block,sectionIndex)=>{
+    for(let row=0;row<block.rows;row++){
+      const g=rowGeometry(block,row);
+      if(!g.spans.length)continue;
+      const rowLabel=block.details?.labels?.[row]??row+1;
+      const documentedCount=clubWithPublishedCounts.has(block.id)?(row<5?14:18):null;
+      const readableWidth=documentedCount?Math.min(g.width,documentedCount*pitch):g.width;
+      const visibilityPadding=(g.width-readableWidth)/2;
+      const from=seats.length;
+      const append=(position,seatWidth)=>{
+        const number=seats.length-from+1;
+        seats.push({...position,y:g.y,yaw:g.yaw,tier:block.tier,sectionId:block.id,
+          sectionIndex,row:rowLabel,number,uid:`DEMO-${block.id}-${rowLabel}-${number}`,
+          seatingDepth:block.treadDepth,seatWidth,
+          inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl'});
+      };
+      if(documentedCount){
+        for(let i=0;i<documentedCount;i++){
+          const spacing=readableWidth/documentedCount;
+          append(pointAlongSpans(g.spans,visibilityPadding+(i+.5)*spacing),spacing);
+        }
+      }else{
+        for(const {left,right,width} of g.spans){
+          const count=Math.floor(width/pitch);
+          for(let i=0;i<count;i++)append(lerp(left,right,(i+.5)/count),width/count);
+        }
       }
-      seatingRows.push({ ...g, tier:block.tier, sectionId:block.id, row:rowLabel,
-        depth:block.treadDepth,rise:block.rise });
-      if (count) groups.push({tier:block.tier,sectionIndex,row:rowLabel,from,count});
+      for(const span of g.spans)seatingRows.push({...span,y:g.y,yaw:g.yaw,slot:g.slot,
+        tier:block.tier,sectionId:block.id,row:rowLabel,depth:block.treadDepth,rise:block.rise});
+      const count=seats.length-from;
+      if(count)groups.push({tier:block.tier,sectionIndex,row:rowLabel,from,count});
     }
   });
   return {seats,groups,seatingRows,sectionFootprints:schottensteinFootprints()};
-
 }
 
 export function estimateSchottensteinRoster(roster) {
@@ -197,7 +245,7 @@ export function estimateSchottensteinRoster(roster) {
       const members = rows.get(label).sort((a, b) => compare(a.number, b.number));
       if (members.length * .32 > g.width) throw new Error(`Section ${block.id}, row ${label} exceeds this estimated footprint. Supply XYZ for this roster.`);
       members.forEach((seat, i) => {
-        seats.push({ ...seat, ...lerp(g.left, g.right, (i + .5) / members.length),
+        seats.push({ ...seat, ...pointAlongSpans(g.spans,(i+.5)*g.width/members.length),
           y: g.y, tier: `T${block.tier + 1}` });
       });
     });

@@ -35,3 +35,6 @@
 .reference-buttons button:hover{background:#f6edf0}
 .reference-source{margin:8px 0 0;color:#62707c;font-size:11px}
 #arenaSources{display:flex;gap:10px;flex-wrap:wrap}
+
+.two-metrics>div[hidden]{display:none}
+.two-metrics>div[hidden]+div{grid-column:1/-1}

@@ -53,12 +53,24 @@ function renderProject(){
     $('title').textContent=name.replace(/ — .*/, '');
     $('subtitle').textContent=`${project.city||'United States'} · ${model.surface.label} · ${plan.hasRoster?'ticket roster loaded':'estimated seating arrangement'}`;
     $('officialCapacity').textContent=plan.official.officialCapacity===null?'Not published':fmt(plan.official.officialCapacity);
-    $('capacitySource').textContent=plan.official.officialCapacity!==null?'Published venue capacity, not a seat-inventory claim':'No verified capacity supplied';
+    const capacitySource=$('capacitySource');
+    capacitySource.textContent='No verified capacity supplied';
+    if(plan.official.officialCapacity!==null){
+      const link=document.createElement('a');
+      link.href=plan.official.officialSource;
+      link.target='_blank';
+      link.rel='noopener';
+      link.textContent='Published capacity source ↗';
+      capacitySource.replaceChildren(link);
+    }
     $('visualCount').textContent=fmt(model.seats.length);
+    $('visualCount').parentElement.hidden=Boolean(model.seatingRows);
     $('ticketCount').textContent=fmt(plan.hasRoster?plan.official.inventoryCount:0);
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
-       :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
+      :model.seatingRows
+        ?'Full ticket roster unavailable. Published capacity is listed above. Preview seat coordinates are estimated.'
+        :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
     $('referenceViews').hidden=!model.seatingRows;
     if(model.sectionFootprints){
       const source=document.createElement('a');
@@ -159,7 +171,7 @@ function drawMap(){
     extentZ=Math.max(extentZ,Math.abs(s.z)+3);
   }
   for(const section of chart??[]){
-    for(const p of section.outline){
+    for(const p of section.outlines.flat()){
       extentX=Math.max(extentX,Math.abs(p.x)+3);
       extentZ=Math.max(extentZ,Math.abs(p.z)+3);
     }
@@ -184,25 +196,29 @@ function drawMap(){
   }
   const hitAreas=[];
   if(chart){
-    for(const {id,tier,outline} of chart){
+    for(const {id,tier,outlines,labelPoint} of chart){
       const available=seatsBySection.has(id);
-      const points=outline.map(pos),path=new Path2D();
-      path.moveTo(...points[0]);
-      points.slice(1).forEach(p=>path.lineTo(...p));
-      path.closePath();
+      const path=new Path2D();
+      for(const outline of outlines){
+        const points=outline.map(pos);
+        path.moveTo(...points[0]);
+        points.slice(1).forEach(p=>path.lineTo(...p));
+        path.closePath();
+      }
       ctx.fillStyle=id===selected?.sectionId?'#234869':available?tint(tier,0):'#d5e0eb';
       ctx.fill(path);
       ctx.strokeStyle='#d5e3ee';
       ctx.lineWidth=.8*dpr;
       ctx.stroke(path);
-      const center=points.reduce(([x,y],p)=>[x+p[0]/4,y+p[1]/4],[0,0]);
-      ctx.fillStyle=!available||(tier===2&&id!==selected?.sectionId)?'#163853':'#fff';
+      const center=pos(labelPoint);
+      const lightLabelBackground=tier===2||!ctx.isPointInPath(path,...center);
+      ctx.fillStyle=!available||lightLabelBackground&&id!==selected?.sectionId?'#163853':'#fff';
       const fontSize=Math.max(7,Math.min(12,scale*1.65/dpr));
       ctx.font=`600 ${fontSize*dpr}px system-ui`;
       ctx.textAlign='center';
       ctx.textBaseline='middle';
       ctx.fillText(id,...center);
-      if(available)hitAreas.push({id,path});
+      if(available)hitAreas.push({id,path,center});
     }
   }else{
     const step=Math.max(1,Math.ceil(plan.seats.length/8500));
@@ -221,7 +237,8 @@ function drawMap(){
   c.onclick=e=>{
     const b=c.getBoundingClientRect(),x=(e.clientX-b.left)*c.width/b.width,y=(e.clientY-b.top)*c.height/b.height;
     if(chart){
-      const section=hitAreas.find(hit=>ctx.isPointInPath(hit.path,x,y));
+      const section=hitAreas.find(hit=>ctx.isPointInPath(hit.path,x,y))
+        ?? hitAreas.find(({center})=>Math.hypot(center[0]-x,center[1]-y)<10*dpr);
       if(section)pickSection(section.id);
       return;
     }

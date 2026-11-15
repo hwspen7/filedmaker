@@ -8,12 +8,12 @@ The first venue is Ohio State men’s basketball at the Schottenstein Center. Fi
 
 | Reference | Model feature |
 | --- | --- |
-| [Ohio State men’s basketball seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts) | Section identifiers, relative footprints and open gaps |
+| [Ohio State men’s basketball seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts) | 78 traced section contours, including concave notches, separated corner blocks and the press-box cutout |
 | [Ohio State court update](https://ohiostatebuckeyes.com/news/2025/10/30/mens-basketball-new-season-and-new-look-at-the-schottenstein-center) | Gray hardwood, scarlet apron and key, Block O court variant |
 | [Ohio State video board update](https://ohiostatebuckeyes.com/news/2026/7/17/mens-basketball-schottenstein-center-to-feature-video-board-enhancements-this-season) | Four convex faces, underside displays and 36-inch ribbon display |
 | [105](https://www.rateyourseats.com/schottenstein-center/seating/sections/105), [114](https://www.rateyourseats.com/schottenstein-center/seating/sections/114), [206](https://www.rateyourseats.com/schottenstein-center/seating/sections/206), [323](https://www.rateyourseats.com/schottenstein-center/seating/sections/323), [302](https://seatgeek.com/venues/value-city-arena-at-schottenstein-center/seating-chart) | Reference rows, club row counts, the gap behind 323 B, and interior sightline comparisons |
 
-The floor uses the NCAA court dimensions. The section outlines, dimensions of the scoreboard, row depths, elevations, and per-seat positions are modeled estimates. Published row details apply only where documented. The demo seat IDs are illustrative. A venue roster with XYZ can supply exact coordinates for the positions it covers.
+The floor uses the NCAA court dimensions. The 2D map and 3D seating rows share polygons traced from the published chart. The diagram provides relative boundaries, while the scoreboard dimensions, row depths, elevations, and per-seat positions remain visual estimates. Published capacity is separate from ticket inventory and is not used to fill the scene with seats. Published row details apply only where documented. The demo seat IDs are illustrative. A venue roster with XYZ can supply exact coordinates for the positions it covers.
 
 Subsequent phases extend the same reference-and-geometry workflow to NCAA basketball arenas, then NCAA football stadiums, then lower-cost profiles for universities and secondary schools.
 

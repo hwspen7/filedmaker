@@ -156,3 +156,19 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  assert.ok(plan.instanceData.every(Number.isFinite));
  assert.equal(buildVenuePlan(generateSeats(createOhioStadiumProject())).arenaInterior,false);
 });
+
+test('the seating chart clips rendered rows and preserves marked circulation openings',async()=>{
+ const {polygonSpans,schottensteinDiagramEdge}=await import('../src/schottensteinSeating.mjs');
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const footprints=new Map(model.sectionFootprints.map(block=>[block.id,block]));
+ assert.equal(footprints.size,78);
+ assert.equal(footprints.get('101').outlines.length,2);
+ assert.equal(footprints.get('110').outlines.length,2);
+ assert.ok(footprints.get('114').outlines[0].length>4);
+ assert.ok(schottensteinDiagramEdge.length>8);
+ const outside=model.seats.filter(seat=>{
+  const spans=polygonSpans(footprints.get(seat.sectionId).outlines,seat.x);
+  return !spans.some(([low,high])=>low-1e-6<=seat.z&&seat.z<=high+1e-6);
+ });
+ assert.equal(outside.length,0,JSON.stringify(outside.slice(0,4)));
+});
