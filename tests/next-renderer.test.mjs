@@ -86,61 +86,61 @@ test('legacy editor remains an explicit optional workflow',()=>{
  assert.match(old,/src\/app\.js/);
 });
 
-test('Ohio State basketball diagram keeps source section numbers and illustrative coordinates distinct', () => {
-  const project = {...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men'};
-  const model = generateSeats(project);
-  const plan = buildVenuePlan(model);
-  assert.equal(model.sectionFootprints.length, 78);
-  assert.equal(new Set(model.sectionFootprints.map(section => section.id)).size, 78);
-  assert.ok(model.seats.every(s => s.uid.startsWith('DEMO-')));
-  assert.ok(model.seats.some(s => s.sectionId === '105' && s.tier === 0 && s.x < 0));
-  assert.ok(model.seats.some(s => s.sectionId === '114' && s.tier === 0 && s.z < 0));
-  assert.ok(model.seats.some(s => s.sectionId === '323' && s.tier === 2 && s.x > 0));
-  assert.ok(model.seats.every(s => Math.sin(s.yaw)*s.x + Math.cos(s.yaw)*s.z < 0));
-  assert.ok(model.seats.every(s =>
-    Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
-  assert.equal(plan.hasRoster, false);
-  assert.equal(plan.positionCollisions, 0);
-  assert.ok(plan.roundedCount > 0);
-  assert.equal(buildVenuePlan(model, {detail:'compact'}).roundedCount, 0);
-  assert.equal(generateSeats(project, {audienceLayout:false}).sectionFootprints, undefined);
+test('Ohio State chart profile never generates individual seats from a capacity or diagram',()=>{
+ const project={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
+ const model=generateSeats(project),plan=buildVenuePlan(model);
+ assert.equal(model.sectionFootprints.length,78);
+ assert.equal(new Set(model.sectionFootprints.map(section=>section.id)).size,78);
+ assert.equal(model.seatOrigin,'chart');
+ assert.equal(model.capacity,0);
+ assert.equal(model.seats.length,0);
+ assert.equal(plan.official.officialCapacity,19500);
+ assert.equal(plan.official.inventoryCount,null);
+ assert.equal(plan.chairCount,0);
+ assert.equal(plan.hasRoster,false);
+ assert.ok(plan.framingPoints.length>100);
+ assert.equal(generateSeats(project,{audienceLayout:false}).sectionFootprints,undefined);
 });
 
-test('chart-backed roster locations are independent of CSV order and keep supplied IDs', () => {
-  const project = {...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men'};
-  const header='seat_id,section,row,seat\n';
-  const lines=['A,105,L,1','B,105,L,2','C,114,M,8','D,323,B,9','E,323,A,10'];
-  const load = rows => generateSeats(importTicketRoster(project, header+rows.join('\n')).project);
-  const a=load(lines),b=load([...lines].reverse());
-  assert.equal(a.project.ticketing.coordinates,'estimated');
-  assert.equal(a.capacity,lines.length);
-  for(const seat of a.seats){
-    const match=b.seats.find(s=>s.uid===seat.uid);
-    assert.deepEqual([seat.x,seat.y,seat.z],[match.x,match.y,match.z]);
-  }
-  const one=a.seats.find(s=>s.uid==='A'),two=a.seats.find(s=>s.uid==='B');
-  assert.ok(one.z>two.z);
-  assert.ok(a.seats.some(s=>s.uid==='D'&&s.tier===2&&s.x>0));
-  assert.throws(()=>load(['U,UNKNOWN,1,1']),/Supply XYZ/);
+test('Ohio State requires measured XYZ and renders only distinct supplied seats',()=>{
+ const project={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
+ assert.throws(()=>importTicketRoster(project,'section,row,seat\n105,L,1'),/complete x_m/);
+ const header='seat_id,section,row,seat,x_m,y_m,z_m\n';
+ assert.throws(()=>importTicketRoster(project,header+'A,105,L,1,-14,,8'),/complete x_m/);
+ assert.throws(()=>importTicketRoster(project,header+'A,105,L,1,-14,2,8\nB,105,L,2,-14,2,8'),/unique, complete/);
+ const result=importTicketRoster(project,header+'A,105,L,1,-14,2,8\nB,323,A,2,34,15,7');
+ const model=generateSeats(result.project),plan=buildVenuePlan(model);
+ assert.equal(model.seats.length,2);
+ assert.deepEqual(model.seats.map(s=>[s.uid,s.x,s.y,s.z,s.tier]),[
+   ['A',-14,2,8,0],['B',34,15,7,2],
+ ]);
+ assert.equal(plan.chairCount,2);
+ assert.equal(plan.official.officialCapacity,19500);
+ assert.equal(plan.official.inventoryCount,2);
+ assert.equal(plan.official.status,'COUNT_MISMATCH');
+ assert.equal(plan.arenaInterior,true);
+ const cached=structuredClone(result.project);
+ cached.ticketing.coordinates='estimated';
+ assert.equal(generateSeats(cached).seats.length,0);
 });
 
-test('phase-one basketball preview models documented club rows and the upper aisle gap',()=>{
+test('Ohio State keeps documented access rows and chart features in the native model',async()=>{
+ const {schottensteinSectionView}=await import('../src/schottensteinSeating.mjs');
  const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
- const inRow=(section,row)=>model.seats.filter(s=>s.sectionId===section&&s.row===row);
- assert.equal(inRow('206','A').length,14);
- assert.equal(inRow('206','E').length,14);
- assert.equal(inRow('206','F').length,18);
- assert.equal(inRow('206','J').length,18);
- assert.ok(inRow('105','D').length>0);
- assert.ok(inRow('114','P').length>0);
- const upperCorner=inRow('302','D');
- assert.ok(upperCorner.length>0);
- assert.ok(upperCorner.every(s=>s.z>0&&s.x<0));
- assert.equal(inRow('323','C').length,0);
- assert.equal(inRow('323','E').length,0);
- const a=inRow('323','B')[0],b=inRow('323','F')[0];
+ assert.deepEqual(model.features.filter(f=>f.kind==='entrance').map(f=>[f.sectionId,f.row]),[
+  ['105','U'],['114','S'],['206','A'],['302','A'],['323','A'],
+ ]);
+ assert.deepEqual(model.features.filter(f=>f.kind!=='entrance').map(f=>f.label),
+  ['Band Area','Press Box','Accessible Platform']);
+ const upper=schottensteinSectionView(model.seatingRows,'302','D');
+ assert.equal(upper.reference,true);
+ assert.equal(upper.number,undefined);
+ assert.equal(upper.uid,undefined);
+ assert.ok(upper.z>0&&upper.x<0);
+ assert.equal(schottensteinSectionView(model.seatingRows,'323','C'),null);
+ const a=schottensteinSectionView(model.seatingRows,'323','B');
+ const b=schottensteinSectionView(model.seatingRows,'323','F');
  assert.ok(a&&b&&b.y-a.y>1.5);
- assert.equal(new Set(model.seats.map(s=>s.uid)).size,model.seats.length);
 });
 
 test('phase-one native geometry includes a cutaway-aware interior and current board',()=>{
@@ -170,9 +170,9 @@ test('the seating chart clips rendered rows and preserves marked circulation ope
  assert.equal(footprints.get('110').outlines.length,2);
  assert.ok(footprints.get('114').outlines[0].length>4);
  assert.ok(schottensteinDiagramEdge.length>8);
- const outside=model.seats.filter(seat=>{
-  const spans=polygonSpans(footprints.get(seat.sectionId).outlines,seat.x);
-  return !spans.some(([low,high])=>low-1e-6<=seat.z&&seat.z<=high+1e-6);
+ const outside=model.seatingRows.filter(row=>{
+  const x=(row.left.x+row.right.x)/2,z=(row.left.z+row.right.z)/2;
+  return !polygonSpans(footprints.get(row.sectionId).outlines,x).some(([low,high])=>low-1e-6<=z&&z<=high+1e-6);
  });
  assert.equal(outside.length,0,JSON.stringify(outside.slice(0,4)));
 });

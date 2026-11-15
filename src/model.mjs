@@ -2,7 +2,7 @@
 import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
 import { getNBAArena } from './nbaCatalog.mjs';
 import { facingYaw } from './seatPresentation.mjs';
-import { buildSchottensteinSeating, schottensteinFootprints, usesSchottensteinChart } from './schottensteinSeating.mjs';
+import { buildSchottensteinLayout, hasCompleteSchottensteinCoordinates, usesSchottensteinChart } from './schottensteinSeating.mjs';
 export const TAU = Math.PI * 2;
 export const CURRENT_SCHEMA = 5;
 
@@ -473,17 +473,18 @@ export function generateSeats(input, { audienceLayout = true } = {}) {
   const tiers = resolveTiers(project);
   const source = importedSeats(project.survey, project);
   const chart = audienceLayout && usesSchottensteinChart(project);
-  if (source) {
-    const sectionFootprints = chart && project.ticketing?.coordinates === 'estimated'
-      ? schottensteinFootprints() : undefined;
-    return { project, surface, tiers, seats: source.seats, groups: [], capacity: source.seats.length,
-      seatOrigin: 'imported', registration: source.registration, elevationCount: source.elevationCount, sectionFootprints };
-  }
   if (chart) {
-    const reference = buildSchottensteinSeating(project.seatPitch);
-    return { project, surface, tiers, ...reference, capacity: reference.seats.length,
-      seatOrigin: 'generated', registration: null, elevationCount: reference.seats.length };
+    const reference=buildSchottensteinLayout();
+    const complete=source && project.ticketing?.coordinates==='supplied-unverified'
+      && source.elevationCount===source.seats.length
+      && hasCompleteSchottensteinCoordinates(source.seats);
+    const seats=complete?source.seats:[];
+    return {project,surface,tiers,...reference,seats,groups:[],capacity:seats.length,
+      seatOrigin:complete?'imported':'chart',registration:complete?source.registration:null,
+      elevationCount:seats.length};
   }
+  if (source) return {project,surface,tiers,seats:source.seats,groups:[],capacity:source.seats.length,
+    seatOrigin:'imported',registration:source.registration,elevationCount:source.elevationCount};
   const seats = [], groups = [];
   for (const tier of tiers) {
     for (let sectionIndex = 0; sectionIndex < project.sections.length; sectionIndex++) {

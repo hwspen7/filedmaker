@@ -5,11 +5,11 @@ import { generateSeats, validateProject } from '../model.mjs';
 import { importTicketRoster } from '../seatFirst.mjs';
 import { buildVenuePlan } from './venuePlan.mjs';
 import { seatColor } from '../seatPresentation.mjs';
-import { SCHOTTENSTEIN_CHART_URL, SCHOTTENSTEIN_REFERENCE_VIEWS, SCHOTTENSTEIN_COURT_SOURCE, SCHOTTENSTEIN_BOARD_SOURCE } from '../schottensteinSeating.mjs';
+import { SCHOTTENSTEIN_CHART_URL, SCHOTTENSTEIN_REFERENCE_VIEWS, SCHOTTENSTEIN_COURT_SOURCE, SCHOTTENSTEIN_BOARD_SOURCE, schottensteinSectionView } from '../schottensteinSeating.mjs';
 import { NativeVenueRenderer } from './webgl.js';
 const $=id=>document.getElementById(id);
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
-let seatsBySection=new Map();
+let seatsBySection=new Map(),featureLabels=[];
 const palettePresets={
   slate:['#5e747e','#7b9099','#97aab2','#bacbd1'],
   navy:['#255583','#3f79a6','#76a7cd','#aacbe2'],
@@ -31,8 +31,30 @@ function setPreset(name){
     selected=null;renderProject();
   }catch(e){error(e.message)}
 }
+function drawFeatureLabels(scene){
+  const canvas=scene.canvas;
+  const view=canvas.getBoundingClientRect();
+  for(const [feature,label] of featureLabels){
+    const inScope=mode!=='top'&&(mode==='overview'||feature.sectionId===selected?.sectionId);
+    const point=inScope?scene.projectPoint([feature.x,feature.y+(feature.kind==='entrance'?2.23:.45),feature.z]):null;
+    label.hidden=!point||point[0]<0||point[0]>canvas.width||point[1]<0||point[1]>canvas.height;
+    if(!label.hidden){
+      label.style.left=`${point[0]/canvas.width*view.width}px`;
+      label.style.top=`${point[1]/canvas.height*view.height}px`;
+    }
+  }
+}
+function resetFeatureLabels(features){
+  featureLabels=features.map(feature=>{
+    const label=document.createElement('span');
+    label.className='arena-feature-label';
+    label.textContent=feature.kind==='entrance'?`Access ${feature.sectionId}`:feature.label;
+    return [feature,label];
+  });
+  $('arenaFeatureLabels').replaceChildren(...featureLabels.map(([,label])=>label));
+}
 function renderProject(){
-  const start=performance.now(),previous=selected?.uid;
+  const start=performance.now(),previous=selected;
   $('loading').hidden=false;
   try{
     model=generateSeats(project);
@@ -46,7 +68,16 @@ function renderProject(){
     }
     plan=buildVenuePlan(model,{palette:palettePresets[$('palette').value],detail:$('detail').value});
     if(!renderer){try{renderer=new NativeVenueRenderer($('viewport3d'),seat=>selectSeat(seat));}catch(e){error(e.message);mode='top';}}
-    if(renderer)renderer.load(plan);
+    resetFeatureLabels(plan.features);
+    if(renderer){renderer.onFrame=drawFeatureLabels;renderer.load(plan);}
+    const sectionOnly=model.seatOrigin==='chart';
+    $('featureLegend').hidden=!model.seatingRows;
+    $('rosterRequirements').textContent=model.seatingRows
+      ?'CSV requires section, row, seat, x_m, y_m and z_m. Coordinates use the court-centered venue frame.'
+      :'CSV with section, row, seat and optional measured x/y/z. Original identifiers are preserved.';
+    $('rowSeatPickers').hidden=sectionOnly;
+    document.querySelector('[data-view="human"]').textContent=sectionOnly?'Section view':'Seat view';
+    $('search').placeholder=sectionOnly?'Section number':'Section / Row / Seat';
     $('cameraTarget').value='center';$('phoneView').checked=false;
     renderer?.setViewOptions({target:'center',zoom:1});
     const name=project.school?.venue||project.title;
@@ -69,7 +100,7 @@ function renderProject(){
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
       :model.seatingRows
-        ?'Full ticket roster unavailable. Published capacity is listed above. Preview seat coordinates are estimated.'
+        ?'No complete coordinates supplied. Individual seats are unavailable. Published capacity is listed above.'
         :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
     $('referenceViews').hidden=!model.seatingRows;
     if(model.sectionFootprints){
@@ -78,17 +109,23 @@ function renderProject(){
       source.textContent='Ohio State basketball seating chart';
       $('capacityNote').append(' ',source);
     }
-    $('rowsCount').textContent=fmt(plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
-    $('kindCount').textContent=plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
+    $('rowsCount').textContent=fmt(sectionOnly?model.seatingRows.length:plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
+    $('kindCount').textContent=sectionOnly?'None':plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
     $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
     $('modelStatus').innerHTML='<span class="pulse"></span> '+(plan.hasRoster?'Roster / geometry unverified':'Schematic preview');
     $('reviewFlag').textContent=plan.hasRoster?'ROSTER':'REFERENCE';
     $('warnings').style.color='';$('warnings').textContent=(plan.invalidRows||plan.positionCollisions)
       ?`Geometry warning: ${plan.invalidRows} elevation discontinuities and ${plan.positionCollisions} overlapping seat coordinates. Review imported survey data.`
-      :plan.hasRoster?'Verify real seat geometry, inventory completeness and allowed ticketing use before publication.':'No verified per-seat dataset. Do not label generated positions as real seats.';
-    $('searchHelp').textContent=plan.hasRoster?'Search the imported seat IDs or section, row and seat.':'Search preview locations by section, row and seat. Published row labels are shown where documented.';
-    const restored=plan.seats.find(seat=>seat.uid===previous)??null;
-    setOptions($('sectionPicker'),[...seatsBySection.keys()].sort(natural),'Choose section');
+      :plan.hasRoster?'Verify real seat geometry, inventory completeness and allowed ticketing use before publication.'
+      :sectionOnly?'Section views are available. Individual seat lookup requires measured coordinates.':'No verified per-seat dataset. Do not label generated positions as real seats.';
+    $('searchHelp').textContent=plan.hasRoster?'Search imported seat IDs or section, row and seat.'
+      :sectionOnly?'Search the section. Measured coordinates are required for individual seats.'
+      :'Search preview locations by section, row and seat.';
+    const restored=previous?.reference&&model.seatingRows
+      ?schottensteinSectionView(model.seatingRows,previous.sectionId,previous.row)
+      :plan.seats.find(seat=>seat.uid===previous?.uid)??null;
+    const sections=new Set([...seatsBySection.keys(),...(model.sectionFootprints??[]).map(section=>section.id)]);
+    setOptions($('sectionPicker'),[...sections].sort(natural),'Choose section');
     selectSeat(restored);
     view(!renderer?'top':(!restored&&(mode==='human'||mode==='section'))?'overview':mode);
     const setupTime=Math.round(performance.now()-start);
@@ -109,14 +146,17 @@ function syncSeatPicker(seat){
   const values=rows?[...rows.keys()]:[];
   if(!model?.seatingRows)values.sort(natural);
   setOptions($('rowPicker'),values);
-  if(seat)$('rowPicker').value=String(seat.row);
+  if(seat&&!seat.reference)$('rowPicker').value=String(seat.row);
   const numbers=rows?.get(String(seat?.row))??[];
   setOptions($('seatPicker'),numbers.map(s=>String(s.number)).sort(natural));
-  if(seat)$('seatPicker').value=String(seat.number);
+  if(seat&&!seat.reference)$('seatPicker').value=String(seat.number);
 }
 function pickSection(id){
   const rows=seatsBySection.get(id);
-  if(!rows)return;
+  if(!rows){
+    if(model.seatingRows)selectSeat(schottensteinSectionView(model.seatingRows,id));
+    return;
+  }
   const keys=[...rows.keys()];
   if(!model?.seatingRows)keys.sort(natural);
   const seats=rows.get(keys[Math.floor(keys.length/2)]);
@@ -125,13 +165,25 @@ function pickSection(id){
 function selectSeat(seat){
   selected=seat;
   syncSeatPicker(seat);
-  for(const id of ['goHuman','previous','next'])$(id).disabled=!seat;
+  $('goHuman').disabled=!seat;
+  for(const id of ['previous','next'])$(id).disabled=!seat||seat.reference;
   document.querySelector('[data-view="human"]').disabled=!seat||!renderer;
   document.querySelector('[data-view="section"]').disabled=!seat||!renderer;
   if(mode==='top')drawMap();
   $('seatDetails').replaceChildren();
-  const title=document.createElement('strong');title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
-  const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
+  const title=document.createElement('strong');
+  if(seat?.reference){
+    title.textContent=`Section ${seat.sectionId}${seat.row?` · Row ${seat.row} reference`:''}`;
+    const info=document.createElement('p');
+    info.textContent='Section-level camera. Individual seat coordinates are required for a specific seat view.';
+    $('seatDetails').append(title,info);
+    $('selectedPreview').textContent=`Section ${seat.sectionId} · Approximate view`;
+    if(mode==='human'||mode==='section')renderer?.view(mode,seat);
+    else renderer?.highlight(null);
+    return;
+  }
+  title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
+  const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):model.seatOrigin==='chart'?'Choose a section on the map or open a published photo reference.':'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
   if(seat){$('selectedPreview').textContent=plan.hasRoster?`Ticket reference ${seat.uid}`:`Illustrative position · ${seat.sectionId} / row ${seat.row}`;}
   else $('selectedPreview').textContent='Select a location to inspect a schematic seat view';
   if(mode==='human'&&seat)renderer?.view('human',seat);
@@ -150,8 +202,9 @@ function view(which){
   const basketball=plan.surface.sport==='basketball';
   for(const option of $('cameraTarget').options)if(option.value!=='center')option.hidden=!basketball;
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
-  $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
+  $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:selected?.reference?'Approximate section view':'View from selected seat'})[which];
   $('viewHint').textContent=which==='top'?(model.sectionFootprints?'Select a numbered section':'Select a seat on the map'):which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
+  $('arenaFeatureLabels').hidden=which==='top';
   if(which==='top')drawMap();else {renderer?.view(which,selected);renderer?.resize();}
 }
 function drawMap(){
@@ -197,7 +250,7 @@ function drawMap(){
   const hitAreas=[];
   if(chart){
     for(const {id,tier,outlines,labelPoint} of chart){
-      const available=seatsBySection.has(id);
+      const available=Boolean(model.seatingRows)||seatsBySection.has(id);
       const path=new Path2D();
       for(const outline of outlines){
         const points=outline.map(pos);
@@ -230,6 +283,25 @@ function drawMap(){
       ctx.beginPath();ctx.arc(...p,radius,0,Math.PI*2);ctx.fill();
     }
   }
+  for(const feature of plan.features){
+    if(feature.outline){
+      const outline=feature.outline.map(pos);
+      ctx.beginPath();
+      ctx.moveTo(...outline[0]);
+      for(const point of outline.slice(1))ctx.lineTo(...point);
+      ctx.closePath();
+      ctx.fillStyle='#c2cbd3';
+      ctx.fill();
+    }
+    const [x,y]=pos(feature);
+    ctx.fillStyle='#172e43';
+    ctx.font=`600 ${8.5*dpr}px system-ui`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.strokeStyle='#eef3f7';ctx.lineWidth=2.2*dpr;
+    const label=feature.kind==='entrance'?`↗ ${feature.sectionId}`:feature.label;
+    ctx.strokeText(label,x,y);
+    ctx.fillText(label,x,y);
+  }
   if(selected){
     ctx.fillStyle='#ffc26b';ctx.strokeStyle='#fff';ctx.lineWidth=1.4*dpr;
     ctx.beginPath();ctx.arc(...pos(selected),3.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
@@ -251,7 +323,7 @@ function drawMap(){
   };
 }
 function cycleSeat(delta){
-  if(!selected)return;
+  if(!selected||selected.reference)return;
   const row=seatsBySection.get(selected.sectionId).get(String(selected.row));
   const index=row.indexOf(selected);
   selectSeat(row[Math.max(0,Math.min(row.length-1,index+delta))]);
@@ -260,7 +332,7 @@ function search(){
   if(!plan)return;
   const q=$('search').value.trim().toLowerCase();
   if(!q)return;
-  const section=[...seatsBySection.keys()].find(id=>id.toLowerCase()===q);
+  const section=[...$('sectionPicker').options].find(option=>option.value.toLowerCase()===q)?.value;
   if(section){pickSection(section);if(renderer)view('section');return;}
   const labels=q.split(/\s*[/,]\s*|\s+/);
   const seat=plan.seats.find(s=>s.uid.toLowerCase()===q)
@@ -286,9 +358,9 @@ for(const reference of SCHOTTENSTEIN_REFERENCE_VIEWS){
   button.type='button';
   button.textContent=reference.label;
   button.onclick=()=>{
-    const seats=seatsBySection.get(reference.section)?.get(reference.row);
-    if(!seats?.length)return;
-    selectSeat(seats[Math.floor(seats.length/2)]);
+    const point=schottensteinSectionView(model.seatingRows,reference.section,reference.row);
+    if(!point)return;
+    selectSeat(point);
     if(renderer)view('human');else view('top');
     const link=document.createElement('a');
     link.href=reference.source;
@@ -309,11 +381,13 @@ $('sectionPicker').onchange=e=>{
   }
 };
 $('rowPicker').onchange=e=>{
-  const seats=seatsBySection.get(selected.sectionId).get(e.target.value);
+  const seats=seatsBySection.get(selected?.sectionId)?.get(e.target.value);
+  if(!seats?.length)return;
   selectSeat(seats.find(s=>String(s.number)===String(selected.number))??seats[0]);
 };
 $('seatPicker').onchange=e=>{
-  const seats=seatsBySection.get(selected.sectionId).get(String(selected.row));
+  const seats=seatsBySection.get(selected?.sectionId)?.get(String(selected?.row));
+  if(!seats?.length)return;
   selectSeat(seats.find(s=>String(s.number)===e.target.value));
 };
 $('cameraTarget').onchange=e=>renderer?.setViewOptions({target:e.target.value});
@@ -334,7 +408,7 @@ $('csv').onchange=async e=>{
 };
 $('openProject').onchange=async e=>{
  const file=e.target.files?.[0];if(!file)return;
- try{const decoded=JSON.parse(await file.text());project=validateProject(decoded.project||decoded);selected=null;document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));renderProject();}catch(ex){error('Invalid project: '+ex.message);}finally{e.target.value='';}
+ try{const decoded=JSON.parse(await file.text());project=validateProject(decoded.project||decoded);if(project.venueReference?.id==='schottenstein-center')project.audienceLayout='schottenstein-men';selected=null;document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));renderProject();}catch(ex){error('Invalid project: '+ex.message);}finally{e.target.value='';}
 };
 $('exportProject').onclick=()=>{if(project)download('filedmaker-project.json',JSON.stringify(project,null,2));};
 $('capture').onclick=()=>{

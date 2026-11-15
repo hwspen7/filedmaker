@@ -177,78 +177,74 @@ function rowGeometry(block,rowIndex) {
     y:block.frontHeight+slot*block.rise,slot};
 }
 
-function pointAlongSpans(spans,distance) {
-  for(const span of spans){
-    if(distance<=span.width)return lerp(span.left,span.right,distance/span.width);
-    distance-=span.width;
-  }
-  return spans.at(-1).right;
+const entryRows = [
+  ['105','U'], ['114','S'], ['206','A'], ['302','A'], ['323','A'],
+];
+
+export function schottensteinSectionView(rows,sectionId,requestedRow) {
+  const section=rows.filter(row=>row.sectionId===sectionId);
+  const slot=section[Math.floor(section.length/2)]?.slot;
+  const candidates=requestedRow===undefined?section.filter(row=>row.slot===slot)
+    :section.filter(row=>String(row.row)===String(requestedRow));
+  const row=candidates.reduce((longest,item)=>!longest||item.width>longest.width?item:longest,null);
+  if(!row)return null;
+  return {...lerp(row.left,row.right,.5),y:row.y,yaw:row.yaw,sectionId,row:requestedRow,reference:true};
 }
 
-export function buildSchottensteinSeating(pitch) {
-  const seats=[],groups=[],seatingRows=[];
-  blocks.forEach((block,sectionIndex)=>{
-    for(let row=0;row<block.rows;row++){
-      const g=rowGeometry(block,row);
-      if(!g.spans.length)continue;
-      const rowLabel=block.details?.labels?.[row]??row+1;
-      const documentedCount=clubWithPublishedCounts.has(block.id)?(row<5?14:18):null;
-      const readableWidth=documentedCount?Math.min(g.width,documentedCount*pitch):g.width;
-      const visibilityPadding=(g.width-readableWidth)/2;
-      const from=seats.length;
-      const append=(position,seatWidth)=>{
-        const number=seats.length-from+1;
-        seats.push({...position,y:g.y,yaw:g.yaw,tier:block.tier,sectionId:block.id,
-          sectionIndex,row:rowLabel,number,uid:`DEMO-${block.id}-${rowLabel}-${number}`,
-          seatingDepth:block.treadDepth,seatWidth,
-          inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl'});
-      };
-      if(documentedCount){
-        for(let i=0;i<documentedCount;i++){
-          const spacing=readableWidth/documentedCount;
-          append(pointAlongSpans(g.spans,visibilityPadding+(i+.5)*spacing),spacing);
-        }
-      }else{
-        for(const {left,right,width} of g.spans){
-          const count=Math.floor(width/pitch);
-          for(let i=0;i<count;i++)append(lerp(left,right,(i+.5)/count),width/count);
-        }
-      }
-      for(const span of g.spans)seatingRows.push({...span,y:g.y,yaw:g.yaw,slot:g.slot,
-        tier:block.tier,sectionId:block.id,row:rowLabel,depth:block.treadDepth,rise:block.rise});
-      const count=seats.length-from;
-      if(count)groups.push({tier:block.tier,sectionIndex,row:rowLabel,from,count});
-    }
+function buildSchottensteinFeatures(rows) {
+  const features=entryRows.flatMap(([sectionId,label])=>{
+    const sectionRows=rows.filter(row=>row.sectionId===sectionId&&String(row.row)===label);
+    const row=sectionRows.reduce((largest,item)=>!largest||item.width>largest.width?item:largest,null);
+    if(!row)return [];
+    const point=lerp(row.left,row.right,.10);
+    const opening=label==='A'?-.45:.85;
+    return [{kind:'entrance',label:`Section ${sectionId} access`,sectionId,row:label,
+      x:point.x-Math.sin(row.yaw)*opening,y:row.y,z:point.z-Math.cos(row.yaw)*opening,yaw:row.yaw,
+      source:referenceSite+sectionId}];
   });
-  return {seats,groups,seatingRows,sectionFootprints:schottensteinFootprints()};
+  const region=(kind,label,sectionId,pixels)=>{
+    const outline=unpack(pixels);
+    const point=outline.reduce((a,b)=>({x:a.x+b.x/outline.length,z:a.z+b.z/outline.length}),{x:0,z:0});
+    const section=rows.filter(row=>row.sectionId===sectionId);
+    const row=section.reduce((nearest,item)=>{
+      const p=lerp(item.left,item.right,.5), d=Math.hypot(p.x-point.x,p.z-point.z);
+      return d<(nearest?.d??Infinity)?{d,y:item.y}:nearest;
+    },null);
+    return {kind,label,sectionId,...point,y:row?.y??0,outline,source:SCHOTTENSTEIN_CHART_URL};
+  };
+  return [
+    ...features,
+    region('band','Band Area','114',[764,401,808,401,808,432,764,432]),
+    region('press','Press Box','323',[439,697,706,695,733,727,439,727]),
+    region('accessible','Accessible Platform','105',[513,217,577,217,577,229,513,229]),
+  ];
 }
 
-export function estimateSchottensteinRoster(roster) {
-  const sections = new Map();
-  for (const seat of roster) {
-    const block = byId.get(seat.section);
-    if (!block) throw new Error(`Section ${seat.section} is outside the published basketball chart used here. Supply XYZ for this roster.`);
-    if (!sections.has(block)) sections.set(block, new Map());
-    const rows = sections.get(block);
-    if (!rows.has(seat.row)) rows.set(seat.row, []);
-    rows.get(seat.row).push(seat);
+export function buildSchottensteinLayout() {
+  const seatingRows=[];
+  for(const block of blocks){
+    for(let i=0;i<block.rows;i++){
+      const g=rowGeometry(block,i);
+      const row=block.details?.labels?.[i]??i+1;
+      for(const span of g.spans)seatingRows.push({...span,y:g.y,yaw:g.yaw,slot:g.slot,
+        tier:block.tier,sectionId:block.id,row,depth:block.treadDepth,rise:block.rise});
+    }
   }
-  const seats = [];
-  const compare = (a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
-  for (const [block, rows] of sections) {
-    const labels = [...rows.keys()].sort(compare);
-    labels.forEach((label, index) => {
-      // The chart has no row inventory. Relative order is used for visual approximation.
-      const documentedRow = block.details?.labels.indexOf(label.toUpperCase()) ?? -1;
-      const row = documentedRow>=0 ? documentedRow : Math.min(block.rows-1,index*block.rows/labels.length);
-      const g = rowGeometry(block, row);
-      const members = rows.get(label).sort((a, b) => compare(a.number, b.number));
-      if (members.length * .32 > g.width) throw new Error(`Section ${block.id}, row ${label} exceeds this estimated footprint. Supply XYZ for this roster.`);
-      members.forEach((seat, i) => {
-        seats.push({ ...seat, ...pointAlongSpans(g.spans,(i+.5)*g.width/members.length),
-          y: g.y, tier: `T${block.tier + 1}` });
-      });
-    });
+  return {seatingRows,sectionFootprints:schottensteinFootprints(),features:buildSchottensteinFeatures(seatingRows)};
+}
+
+export function schottensteinSeatTier(section,fallback) {
+  const block=byId.get(section);
+  return block?`T${block.tier+1}`:fallback;
+}
+
+export function hasCompleteSchottensteinCoordinates(seats) {
+  const positions=new Set();
+  for(const seat of seats){
+    if(![seat.x,seat.y,seat.z].every(Number.isFinite))return false;
+    const key=JSON.stringify([seat.x,seat.y,seat.z]);
+    if(positions.has(key))return false;
+    positions.add(key);
   }
-  return { seats, unmatchedSections: [], coordinateMethod: 'estimated' };
+  return seats.length>0;
 }

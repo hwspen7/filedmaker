@@ -5,7 +5,7 @@ import { SURFACES, validateProject, resolveTiers, modelPerimeterPath,
   distanceAtAngle, pointAtDistance } from './model.mjs';
 import { parseCSV, MAX_IMPORT_SEATS } from './survey.mjs';
 import { venueFacts } from './osuFacts.mjs';
-import { estimateSchottensteinRoster, usesSchottensteinChart } from './schottensteinSeating.mjs';
+import { hasCompleteSchottensteinCoordinates, schottensteinSeatTier, usesSchottensteinChart } from './schottensteinSeating.mjs';
 
 export const BLUE_TIERS = Object.freeze(['#164c80', '#2875ae', '#5597c6', '#88b9d6']);
 export const BLUE_VARIANTS = Object.freeze(['#123f71', '#1d5b92', '#357eaf', '#67a3cb']);
@@ -122,7 +122,7 @@ function sectionAssignment(project, roster) {
 // Grouped rows use their supplied seat identifiers and counts exactly.
 export function estimateRosterCoordinates(input,roster) {
   const project=validateProject(input),surface=SURFACES[project.surface];
-  if (usesSchottensteinChart(project)) return estimateSchottensteinRoster(roster);
+  if (usesSchottensteinChart(project)) throw new Error('The Ohio State basketball roster requires complete measured XYZ coordinates.');
   const tiers=resolveTiers(project),assignment=sectionAssignment(project,roster);
   const straightSides=['college-gym','high-basketball','high-football','middle-basketball'].includes(project.school?.profile);
   const orderedLabels=[...new Set(roster.map(s=>s.section))];
@@ -173,8 +173,13 @@ export function estimateRosterCoordinates(input,roster) {
 export function importTicketRoster(input,csv,source='School-supplied ticket inventory CSV') {
   const project=enableSeatFirst(input);
   const parsed=parseTicketRosterCSV(csv);
+  const strict=usesSchottensteinChart(project);
+  if(strict&&(!parsed.hasCoordinates||!hasCompleteSchottensteinCoordinates(parsed.seats))){
+    throw new Error('Ohio State basketball requires unique, complete x_m, y_m and z_m coordinates for every supplied seat.');
+  }
   const inferred=parsed.hasCoordinates?null:estimateRosterCoordinates(project,parsed.seats);
-  const seats=inferred?.seats??parsed.seats;
+  const points=inferred?.seats??parsed.seats;
+  const seats=strict?points.map(seat=>({...seat,tier:schottensteinSeatTier(seat.section,seat.tier)})):points;
   // validateProject only mutates a cloned project. All-or-nothing import.
   project.survey={...project.survey,mode:'imported',inputUnit:'m',yUnit:'m',heightOffset:0,
     anchors:[],seats,source:short(source,160)};

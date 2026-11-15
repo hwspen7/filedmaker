@@ -10,7 +10,51 @@ function spanBox(add,a,b,y,height,depth,color,id=-1) {
     Math.atan2(a.z-b.z,b.x-a.x),color,id);
 }
 
-export function addSchottensteinBowl(add,color,footprints,rows) {
+function addSectionAccess(add,feature,color) {
+  const {x,y,z,yaw}=feature;
+  const place=(dx,dy,dz)=>[x+Math.cos(yaw)*dx+Math.sin(yaw)*dz,y+dy,
+    z-Math.sin(yaw)*dx+Math.cos(yaw)*dz];
+  const wall=color('#54525a'), corridor=color('#25242b'), stair=color('#96949a');
+  const side=color('#333139');
+  add(place(0,-.10,0),[1.84,.20,2.30],yaw,stair);
+  add(place(0,1.04,-1.10),[1.34,2.00,.12],yaw,corridor);
+  for(const dx of [-.77,.77]){
+    add(place(dx,1.02,-.49),[.17,2.08,1.23],yaw,wall);
+    add(place(dx,.50,.52),[.045,.99,.045],yaw,side);
+    add(place(dx,.98,.07),[.048,.044,1.0],yaw,side);
+  }
+  add(place(0,2.10,-.49),[1.72,.18,1.24],yaw,wall);
+}
+
+function addChartRegions(add,color,features,spanAt) {
+  for(const feature of features){
+    if(feature.kind==='entrance'){addSectionAccess(add,feature,color);continue;}
+    const limits=feature.outline.map(p=>p.x);
+    const near=Math.min(...limits),far=Math.max(...limits);
+    const segments=Math.ceil((far-near)/.40), depth=(far-near)/segments;
+    const tint=color(feature.kind==='press'?'#54525a':feature.kind==='band'?'#60636b':'#9498a2');
+    for(let i=0;i<segments;i++){
+      const x=near+(i+.5)*depth;
+      for(const [lo,hi] of spanAt([feature.outline],x)){
+        add([x,feature.y-.081,(lo+hi)/2],[depth+.003,.16,hi-lo],0,tint);
+      }
+    }
+  }
+}
+
+function addUpperGate(add,rows,color) {
+  const row=rows.find(r=>r.sectionId==='302'&&r.row==='A'&&r.width>1.65);
+  if(!row)return;
+  // Black guard gate observed in the section 302 reference photo.
+  const a=mix(row.left,row.right,.32),b=mix(row.left,row.right,.63),metal=color('#211e24');
+  for(const dy of [.14,.52,.97])spanBox(add,a,b,row.y+dy,.043,.058,metal);
+  for(let i=0;i<=10;i++){
+    const p=mix(a,b,i/10);
+    add([p.x,row.y+.5,p.z],[.022,.97,.027],row.yaw,metal);
+  }
+}
+
+export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
   const tread=color('#a0a0a4'), fascia=color('#393237'), edge=color('#bcb9b8');
   const rail=color('#211f23'), suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
@@ -87,6 +131,9 @@ export function addSchottensteinBowl(add,color,footprints,rows) {
       }
     }
   }
+
+  addChartRegions(add,color,features,spanAt);
+  addUpperGate(add,rows,color);
 
   const point=(angle,rx,rz)=>{
     const x=Math.cos(angle),z=Math.sin(angle);

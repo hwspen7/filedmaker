@@ -17,7 +17,7 @@ function offset(s,dx,dy,dz){
 export function buildVenuePlan(model,options={}) {
   const {seats,project,surface}=model;
   const official=ticketReconciliation(project,seats.length);
-  const chartPreview=model.sectionFootprints&&model.seatOrigin==='generated';
+  const chartPreview=Boolean(model.seatingRows);
   const hasRoster=project.ticketing?.inventoryMode==='file-import' && model.seatOrigin==='imported';
   const elements=[],seatShells=[];
   const add=(pos,size,yaw,color,id=-1,rounded=false)=>{
@@ -93,7 +93,7 @@ export function buildVenuePlan(model,options={}) {
     }
     rowRuns+=run+1;
   }
-  if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows);
+  if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows,model.features,polygonSpans);
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
     surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB('#d7b781');
@@ -237,7 +237,9 @@ export function buildVenuePlan(model,options={}) {
   instanceData.set(seatShells);
   instanceData.set(elements,seatShells.length);
   return {instanceData,instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
-    sectionFootprints:chartPreview?model.sectionFootprints:undefined,arenaInterior:Boolean(chartPreview),
-    scoreboardHeight:chartPreview?16.3:13.6,seats,project,surface,official,
+    sectionFootprints:chartPreview?model.sectionFootprints:undefined,arenaInterior:chartPreview,
+    framingPoints:chartPreview?model.seatingRows.filter((_,i)=>i%3===0).flatMap(row=>
+      [row.left,row.right].map(point=>[point.x,row.y+.9,point.z])):undefined,
+    scoreboardHeight:chartPreview?16.3:13.6,features:model.features??[],seats,project,surface,official,
     hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
 }
