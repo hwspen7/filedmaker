@@ -2,7 +2,6 @@
 // All vertex coordinates are metres. Separate from ticket inventories and
 // authoritative imported-XYZ seats.
 import { SCHOTTENSTEIN_ROOF_EAVE, SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
-import { addRoofShell } from './structuralMesh.mjs';
 import { ExteriorEngine } from './engines/exterior.mjs';
 
 const TAU=Math.PI*2;
@@ -351,7 +350,8 @@ export function buildSchottensteinArchitecture(model){
         [x-size,roofUnderside-.018,z+size],[0,-1,0]);
     }
   }
-  addRoofShell(buildingRoof,i=>station(i,galleryFront-.70,roofTop+.015),SEGMENTS,2.4,.42);
+  // Deliberately open roof: the arena wall, eaves and gallery canopy remain,
+  // while the central opaque lid is absent in every rendering and export.
 
   // Model the mapped press enclosure at its own lower elevation. Its
   // outline reserves the existing seat-free area in the seating model.
