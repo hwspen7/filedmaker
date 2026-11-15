@@ -92,6 +92,29 @@ test('Press Box occupies a broad, tall gallery bay instead of a detached gray ro
   assert.equal(plan.seats.length,19049);
 });
 
+test('Press Box lower gallery is structurally connected to the short rear seating banks',()=>{
+  const plan=build(),g=plan.architectureGeometry;
+  const press=plan.features.find(f=>f.kind==='press');
+  const center=Math.atan2(press.z,press.x);
+  const angularDiff=a=>Math.abs(Math.atan2(Math.sin(a-center),Math.cos(a-center)));
+  const vertices=mesh=>Array.from({length:mesh.length/6},(_,i)=>({
+    x:mesh[i*6],y:mesh[i*6+1],z:mesh[i*6+2]
+  }));
+  const local=p=>angularDiff(Math.atan2(p.z,p.x))<.52;
+  const seatY=plan.seats.filter(s=>s.tier===2&&local(s));
+  const minimumSeatY=Math.min(...seatY.map(s=>s.y));
+  const infill=vertices(g.backWall).filter(p=>local(p)&&p.y<28.5);
+  assert.ok(infill.length>100,'Continuous under-gallery masonry is missing');
+  assert.ok(Math.min(...infill.map(p=>p.y))<=minimumSeatY+2,
+    'Press masonry must extend down towards the occupied chair height');
+  const lowDeck=vertices(g.galleryFloorMesh).filter(p=>local(p)&&p.y<28);
+  assert.ok(lowDeck.length>60,
+    'Rear terrace must connect the last seat row to the lower press wall');
+  const other=vertices(g.galleryFloorMesh).filter(p=>!local(p));
+  assert.ok(other.length>200,'Other arena sectors remain intact');
+  assert.equal(plan.seats.length,19049,'Press infill must not change seat count');
+});
+
 test('the main roof perimeter is convex and independent of the media seating cutout',()=>{
   const {seats,architectureGeometry:g}=build();
   const edge=new Map();
