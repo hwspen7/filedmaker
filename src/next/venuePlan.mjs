@@ -147,9 +147,11 @@ export function buildVenuePlan(model,options={}) {
   }
   const features=model.features??[];
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
-  const deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
+  let deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
   const architectureGeometry = chartPreview ? buildSchottensteinArchitecture(model)
     : model.proceduralGeometry ? ArchitectureEngine.build(model.proceduralGeometry) : null;
+  // The same deck serves the exterior render and the first-person cutaway.
+  if(model.proceduralGeometry)deckGeometry=architectureGeometry?.decks;
   const engineAudit=model.proceduralGeometry ? ValidationEngine.validate({
     seats,architectureGeometry,spec:model.proceduralSpec,optimization:model.optimization
   }) : null;
