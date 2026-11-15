@@ -304,9 +304,21 @@ function drawMap(){
   ctx.fillRect(0,0,c.width,c.height);
   const fw=(horizontal?plan.surface.length:plan.surface.width)*scale;
   const fl=(horizontal?plan.surface.width:plan.surface.length)*scale;
-  ctx.fillStyle=plan.surface.sport==='basketball'?'#d9bb87':'#35744d';
+  const court=plan.courtStyle;
+  if(court){
+    const border=court.apronWidth*scale*.5;
+    ctx.fillStyle=court.apron;
+    ctx.fillRect(cx-fw/2-border,cy-fl/2-border,fw+2*border,fl+2*border);
+  }
+  ctx.fillStyle=court?.wood??(plan.surface.sport==='basketball'?'#d9bb87':'#35744d');
   ctx.fillRect(cx-fw/2,cy-fl/2,fw,fl);
-  ctx.strokeStyle='#fff';
+  if(court){
+    const laneLength=court.laneSize.length*scale,laneWidth=court.laneSize.width*scale;
+    ctx.fillStyle=court.lane;
+    ctx.fillRect(cx-fw/2,cy-laneWidth/2,laneLength,laneWidth);
+    ctx.fillRect(cx+fw/2-laneLength,cy-laneWidth/2,laneLength,laneWidth);
+  }
+  ctx.strokeStyle=court?.lines??'#fff';
   ctx.lineWidth=1.25*dpr;
   ctx.strokeRect(cx-fw/2,cy-fl/2,fw,fl);
   ctx.beginPath();

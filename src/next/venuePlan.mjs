@@ -5,6 +5,15 @@ import { ticketReconciliation } from '../seatFirst.mjs';
 import { polygonSpans, schottensteinDiagramEdge } from '../schottensteinSeating.mjs';
 import { addSchottensteinBoard, addSchottensteinBowl } from './schottensteinInterior.mjs';
 
+const SCHOTTENSTEIN_COURT_COLORS = {
+  wood:'#c7c7c3',
+  boards:['#c2c2bd','#cacac5','#c5c5c0','#cdccc7','#c0c1be'],
+  apron:'#bc1c33',
+  lane:'#b91d34',
+  lines:'#f8f7ef',
+};
+const BASKETBALL_LANE={width:3.66,length:5.79};
+
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const colorRGB=(hex)=>{
   const x=String(hex||'#788d9a').replace('#','');
@@ -95,9 +104,10 @@ export function buildVenuePlan(model,options={}) {
   }
   const features=model.features??[];
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
+  const courtColors=chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
-    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB('#d7b781');
+    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB(courtColors?.wood??'#d7b781');
   const basketball = surface.sport==='basketball';
   const accent=colorRGB(chartPreview?'#992437':basketball?'#334e69':'#254c42');
   const darkField=colorRGB(basketball?'#24354b':'#254c42');
@@ -114,9 +124,9 @@ export function buildVenuePlan(model,options={}) {
       }
     }
   }
-  add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,darkField);
+  add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,courtColors?colorRGB(courtColors.apron):darkField);
   add([0,basketball?-.012:.005,0],[surface.width,.07,surface.length],0,field);
-  const white=colorRGB('#f8f7ef');
+  const white=colorRGB(courtColors?.lines??'#f8f7ef');
   const line = (x1, y1, z1, x2, y2, z2, width, color) => {
     const dx=x2-x1, dz=z2-z1;
     add([(x1+x2)/2,(y1+y2)/2,(z1+z2)/2],[width,width,Math.hypot(dx,dz)+width*.4],
@@ -142,24 +152,24 @@ export function buildVenuePlan(model,options={}) {
       add([0,1.52,z],[.1,3.05,.1],0,colorRGB('#f3cb66'));
     }
   } else if(basketball){
-    const wood = ['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85'].map(colorRGB);
+    const wood = (courtColors?.boards??['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85']).map(colorRGB);
     for(let i=0;i<64;i++){
       const x=-width/2+(i+.5)*width/64;
       add([x,.0385,0],[width/64,.004,length],0,wood[(i*7+Math.floor(i/5))%wood.length]);
     }
-    const markingY=.052, paint=colorRGB('#476a8c');
+    const markingY=.052, paint=colorRGB(courtColors?.lane??'#476a8c');
     arc(0,markingY,0,1.83,0,Math.PI*2,.035,white,40);
     for(const sign of [-1,1]){
       const baseline=sign*length/2;
       const rim=baseline-sign*1.60;
       const board=baseline-sign*1.22;
-      const foul=baseline-sign*5.79;
-      const laneHalf=1.83;
-      add([0,.042,(baseline+foul)/2],[laneHalf*2,.005,5.79],0,paint);
+      const foul=baseline-sign*BASKETBALL_LANE.length;
+      const laneHalf=BASKETBALL_LANE.width*.5;
+      add([0,.042,(baseline+foul)/2],[BASKETBALL_LANE.width,.005,BASKETBALL_LANE.length],0,paint);
       add([0,markingY,foul],[laneHalf*2,.009,.04],0,white);
       const laneCenter=(baseline+foul)/2;
       for(const x of [-laneHalf,laneHalf]){
-        add([x,markingY,laneCenter],[.04,.009,5.79],0,white);
+        add([x,markingY,laneCenter],[.04,.009,BASKETBALL_LANE.length],0,white);
       }
       arc(0,markingY,foul,1.83,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white);
       arc(0,markingY,rim,1.22,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white,20);
@@ -240,5 +250,6 @@ export function buildVenuePlan(model,options={}) {
   return {instanceData,instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
     sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview,
     scoreboardHeight:chartPreview?16.3:13.6,features,seats,project,surface,official,
+    courtStyle:courtColors?{...courtColors,apronWidth:apron,laneSize:BASKETBALL_LANE}:null,
     hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
 }
