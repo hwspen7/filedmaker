@@ -398,8 +398,19 @@ export function buildSchottensteinSeating(pitch) {
       // Fill a row run evenly when its real-scale pitch remains plausible.
       // Fixed-width centering produced seat-sized empty margins at the ends.
       const fullPitch=width/count;
-      const spacing=fullPitch<=Math.max(.72,pitch*1.30)
-        ?fullPitch:Math.min(fullPitch,Math.max(minimumPitch,pitch));
+      const cappedPitch=Math.min(fullPitch,Math.max(minimumPitch,pitch));
+      let spacing=fullPitch<=Math.max(.72,pitch*1.30)?fullPitch:cappedPitch;
+      // An edge-to-edge row can become laterally tilted in curved corners.
+      // Retain the normal seat pitch when expanded placement would make two
+      // neighbouring positions jump more than the supported tread tolerance.
+      if(spacing>cappedPitch&&count>1){
+        const centers=Array.from({length:count},(_,i)=>
+          lerp(left,right,(i+.5)/count));
+        const tilt=centers.some((center,i)=>i>0
+          &&Math.hypot(center.x-centers[i-1].x,center.z-centers[i-1].z)<pitch*1.7
+          &&Math.abs(g.heightAt(center)-g.heightAt(centers[i-1]))>.125);
+        if(tilt)spacing=cappedPitch;
+      }
       const inset=(width-count*spacing)/2;
       // Keep the blank ends of the chart scan out of the circulation gaps.
       seatingRows.push({
