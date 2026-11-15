@@ -83,8 +83,10 @@ const upper = [
 ];
 
 const letterRows = letters => [...letters];
+const lowerSidelineRows=letterRows('ABCDEFGHIJKLMNOPQRSTU');
 const rowDetails = new Map([
-  ['105', {labels:letterRows('ABCDEFGHIJKLMNOPQRSTU')}],
+  ...['104','107','121','122','123','124'].map(id=>[id,{labels:['AA',...lowerSidelineRows]}]),
+  ...['105','106'].map(id=>[id,{labels:lowerSidelineRows}]),
   ['114', {labels:[...letterRows('ABCDEFGHIJ').map(c=>c+c),...letterRows('ABCDEFGHIJKLMNOPQRS')]}],
   ['206', {labels:letterRows('ABCDEFGHIJ')}],
   ['302', {labels:letterRows('ABCDEFGHIJKLMNOPQRSTU')}],
@@ -190,6 +192,39 @@ function pointAlongSpans(spans,distance) {
   return spans.at(-1).right;
 }
 
+const accessRows=[
+  ['104','U'],['105','U'],['106','U'],['107','U'],
+  ['114','S'],['121','U'],['122','U'],['123','U'],['124','U'],
+  ['206','A'],['302','A'],['323','A'],
+];
+
+function buildSchottensteinFeatures(rows) {
+  const features=accessRows.flatMap(([sectionId,label])=>{
+    const row=rows.filter(item=>item.sectionId===sectionId&&item.row===label)
+      .sort((a,b)=>b.width-a.width)[0];
+    if(!row)return [];
+    const point=lerp(row.left,row.right,.15);
+    const offset=label==='A'?-1.52:1.56;
+    return [{kind:'entrance',label:`Access ${sectionId}`,sectionId,row:label,
+      x:point.x-Math.sin(row.yaw)*offset,y:row.y,z:point.z-Math.cos(row.yaw)*offset,yaw:row.yaw,
+      source:referenceSite+sectionId}];
+  });
+  const region=(kind,label,sectionId,pixels)=>{
+    const outline=unpack(pixels);
+    const point=outline.reduce((center,p)=>({x:center.x+p.x/outline.length,z:center.z+p.z/outline.length}),{x:0,z:0});
+    const row=rows.filter(item=>item.sectionId===sectionId).sort((a,b)=>{
+      const distance=item=>Math.hypot((item.left.x+item.right.x)/2-point.x,(item.left.z+item.right.z)/2-point.z);
+      return distance(a)-distance(b);
+    })[0];
+    return {kind,label,sectionId,...point,y:row?.y??0,outline,source:SCHOTTENSTEIN_CHART_URL};
+  };
+  return [...features,
+    region('band','Band Area','114',[764,401,808,401,808,432,764,432]),
+    region('press','Press Box','323',[439,697,706,695,733,727,439,727]),
+    region('accessible','Accessible Platform','105',[513,217,577,217,577,229,513,229]),
+  ];
+}
+
 export function buildSchottensteinSeating(pitch) {
   const seats=[],groups=[],seatingRows=[];
   blocks.forEach((block,sectionIndex)=>{
@@ -225,7 +260,7 @@ export function buildSchottensteinSeating(pitch) {
       if(count)groups.push({tier:block.tier,sectionIndex,row:rowLabel,from,count});
     }
   });
-  return {seats,groups,seatingRows,sectionFootprints:schottensteinFootprints()};
+  return {seats,groups,seatingRows,sectionFootprints:schottensteinFootprints(),features:buildSchottensteinFeatures(seatingRows)};
 }
 
 export function estimateSchottensteinRoster(roster) {

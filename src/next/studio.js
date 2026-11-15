@@ -68,12 +68,11 @@ function renderProject(){
       capacitySource.replaceChildren(link);
     }
     $('visualCount').textContent=fmt(model.seats.length);
-    $('visualCount').parentElement.hidden=Boolean(model.seatingRows);
     $('ticketCount').textContent=fmt(plan.hasRoster?plan.official.inventoryCount:0);
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
       :model.seatingRows
-        ?'Full ticket roster unavailable. Published capacity is listed above. Preview seat coordinates are estimated.'
+        ?'The preview uses the published section chart and photo references. Seat positions and sightlines are approximate.'
         :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
     $('referenceViews').hidden=!model.seatingRows;
     if(model.sectionFootprints){
@@ -126,24 +125,53 @@ function pickSection(id){
   const seats=rows.get(keys[Math.floor(keys.length/2)]);
   selectSeat(seats[Math.floor(seats.length/2)]);
 }
+function pickReferenceSeat(reference){
+  const seats=seatsBySection.get(reference.section)?.get(reference.row);
+  if(seats?.length)selectSeat(seats[Math.floor(seats.length/2)]);
+}
 function selectSeat(seat){
   selected=seat;
   syncSeatPicker(seat);
   for(const id of ['goHuman','previous','next'])$(id).disabled=!seat;
-  document.querySelector('[data-view="human"]').disabled=!seat||!renderer;
+  document.querySelector('[data-view="human"]').disabled=!(seat||model.seatingRows)||!renderer;
   document.querySelector('[data-view="section"]').disabled=!seat||!renderer;
   if(mode==='top')drawMap();
   $('seatDetails').replaceChildren();
   const title=document.createElement('strong');title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
   const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
+  const access=plan.features.find(feature=>feature.kind==='entrance'&&feature.sectionId===seat?.sectionId);
+  if(access){
+    const link=document.createElement('a');
+    link.href=access.source;
+    link.target='_blank';
+    link.rel='noopener';
+    link.textContent=`Section access at Row ${access.row} ↗`;
+    $('seatDetails').append(link);
+  }
+  updateReferencePhoto(seat);
   if(seat){$('selectedPreview').textContent=plan.hasRoster?`Ticket reference ${seat.uid}`:`Illustrative position · ${seat.sectionId} / row ${seat.row}`;}
   else $('selectedPreview').textContent='Select a location to inspect a schematic seat view';
   if(mode==='human'&&seat)renderer?.view('human',seat);
   else if(mode==='section'&&seat)renderer?.view('section',seat);
   else renderer?.highlight(seat);
 }
+function updateReferencePhoto(seat){
+  const reference=SCHOTTENSTEIN_REFERENCE_VIEWS.find(item=>item.section===seat?.sectionId);
+  const target=$('referenceSource');
+  if(!model.seatingRows||!reference){
+    target.textContent='Choose a reference position to compare with a published photo.';
+    return;
+  }
+  const link=document.createElement('a');
+  link.href=reference.source;
+  link.target='_blank';
+  link.rel='noopener';
+  link.textContent=`Section ${reference.section} · Row ${reference.row} photo reference ↗`;
+  target.replaceChildren(link);
+}
 function view(which){
   if(which!=='top'&&!renderer)return;
+  if(which==='human'&&!selected&&model.seatingRows)pickReferenceSeat(SCHOTTENSTEIN_REFERENCE_VIEWS[0]);
   if(which==='human'&&!selected){error('Choose a seat to enter seat view.');return;}
   if(which==='section'&&!selected){error('Choose a seat or search an identifier before focusing a section.');return;}
   mode=which;
@@ -155,7 +183,9 @@ function view(which){
   for(const option of $('cameraTarget').options)if(option.value!=='center')option.hidden=!basketball;
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
   $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
-  $('viewHint').textContent=which==='top'?(model.sectionFootprints?'Select a numbered section':'Select a seat on the map'):which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
+  $('viewHint').textContent=which==='top'
+    ?(plan.features.length?'Select a section · Gold dots mark venue features':model.sectionFootprints?'Select a numbered section':'Select a seat on the map')
+    :which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
   if(which==='top')drawMap();else {renderer?.view(which,selected);renderer?.resize();}
 }
 function drawMap(){
@@ -235,6 +265,11 @@ function drawMap(){
       ctx.beginPath();ctx.arc(...p,radius,0,Math.PI*2);ctx.fill();
     }
   }
+  for(const feature of plan.features){
+    const point=pos(feature);
+    ctx.fillStyle='#e6b986';ctx.strokeStyle='#283847';ctx.lineWidth=dpr;
+    ctx.beginPath();ctx.arc(...point,2.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
+  }
   if(selected){
     ctx.fillStyle='#ffc26b';ctx.strokeStyle='#fff';ctx.lineWidth=1.4*dpr;
     ctx.beginPath();ctx.arc(...pos(selected),3.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
@@ -290,16 +325,8 @@ for(const reference of SCHOTTENSTEIN_REFERENCE_VIEWS){
   button.type='button';
   button.textContent=reference.label;
   button.onclick=()=>{
-    const seats=seatsBySection.get(reference.section)?.get(reference.row);
-    if(!seats?.length)return;
-    selectSeat(seats[Math.floor(seats.length/2)]);
+    pickReferenceSeat(reference);
     if(renderer)view('human');else view('top');
-    const link=document.createElement('a');
-    link.href=reference.source;
-    link.target='_blank';
-    link.rel='noopener';
-    link.textContent=`Section ${reference.section} · Row ${reference.row} photo ↗`;
-    $('referenceSource').replaceChildren(link);
   };
   $('referenceButtons').append(button);
 }

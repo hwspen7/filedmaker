@@ -93,7 +93,8 @@ export function buildVenuePlan(model,options={}) {
     }
     rowRuns+=run+1;
   }
-  if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[]);
+  const features=model.features??[];
+  if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
     surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB('#d7b781');
@@ -238,6 +239,6 @@ export function buildVenuePlan(model,options={}) {
   instanceData.set(elements,seatShells.length);
   return {instanceData,instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
     sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview,
-    scoreboardHeight:chartPreview?16.3:13.6,seats,project,surface,official,
+    scoreboardHeight:chartPreview?16.3:13.6,features,seats,project,surface,official,
     hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
 }
