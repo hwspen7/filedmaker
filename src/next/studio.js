@@ -63,9 +63,13 @@ function prepareAreaLabels(){
   for(const feature of plan.features){
     if(feature.outline)labels.push({text:feature.label,width:feature.kind==='accessible'?117:72,height:20,point:[feature.x,feature.y+1.12,feature.z]});
   }
+  for(const exit of plan.exitMarkers??[]){
+    labels.push({text:'EXIT\n'+exit.number,width:43,height:29,point:[exit.x,exit.y,exit.z],exit:true});
+  }
   areaLabels=labels.map(label=>{
     const node=document.createElement(label.section?'button':'span');
-    node.className=label.section?'area-label':'area-label zone';
+    node.className=label.exit?'area-label exit':label.section?'area-label':'area-label zone';
+    if(label.exit)node.title='Illustrative exit; number is not an official designation';
     node.textContent=label.text;
     node.style.setProperty('--badge-width',`${label.width}px`);
     node.style.setProperty('--badge-height',`${label.height}px`);
@@ -103,7 +107,7 @@ function positionAreaLabels(scene){
     if(box.left<0||box.top<0||box.right>bounds.width||box.bottom>bounds.height)continue;
     projected.push({...label,x,y,box,active,depth:p[2]});
   }
-  projected.sort((a,b)=>Number(b.active)-Number(a.active)||Number(Boolean(a.section))-Number(Boolean(b.section))||a.depth-b.depth);
+  projected.sort((a,b)=>Number(b.active)-Number(a.active)||Number(Boolean(b.exit))-Number(Boolean(a.exit))||Number(Boolean(a.section))-Number(Boolean(b.section))||a.depth-b.depth);
   for(const label of projected){
     const {box,node,x,y,active}=label;
     if(occupied.some(r=>box.left<r.right&&box.right>r.left&&box.top<r.bottom&&box.bottom>r.top))continue;
@@ -171,6 +175,7 @@ function renderProject(){
       source.href=SCHOTTENSTEIN_CHART_URL;source.target='_blank';source.rel='noopener';
       source.textContent='Ohio State basketball seating chart';
       $('capacityNote').append(' ',source);
+      if(plan.exitMarkers?.length)$('capacityNote').append(' Exit locations and numbers are illustrative, not verified.');
     }
     $('rowsCount').textContent=fmt(plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
     $('kindCount').textContent=plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
