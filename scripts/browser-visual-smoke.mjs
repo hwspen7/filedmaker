@@ -155,7 +155,7 @@ async function main(){
         const roofFrame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
         if(roofFrame.data===frame.data)throw Error('The upper-row roof check did not change the frame');
         writeFileSync(join(dir,'osu-upper-roof.png'),Buffer.from(roofFrame.data,'base64'));
-        for(const [id,rowLabel] of [['314','A2'],['323','B2'],['321','Q'],['327','A']]){
+        for(const [id,rowLabel] of [['314','A2'],['323','B2'],['321','Q'],['327','A'],['333','U'],['334','U']]){
           await evaluate(`(()=>{
             const section=document.querySelector('#sectionPicker');
             section.value='${id}';
