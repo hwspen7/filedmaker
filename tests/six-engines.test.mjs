@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createProject,generateSeats } from '../src/model.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
 import {
-  GeometryEngine,SeatingEngine,ArchitectureEngine,OptimizationEngine,ReferenceEngine,ValidationEngine,
+  GeometryEngine,SeatingEngine,ArchitectureEngine,OptimizationEngine,ReferenceEngine,ValidationEngine,ExteriorEngine,
   PROCEDURAL_DEMOS,createProceduralProject,generateVenuePackage
 } from '../src/next/engines/factory.mjs';
 
@@ -41,7 +41,7 @@ test('seating engine is deterministic, respects voids and never invents verified
 test('architecture engine reuses the same geometry for an indoor arena and outdoor stadium',()=>{
   for(const demo of [PROCEDURAL_DEMOS.arena,PROCEDURAL_DEMOS.stadium]){
     const geo=GeometryEngine.create(demo),layers=ArchitectureEngine.build(geo,{segments:64,bands:5});
-    assert.deepEqual(Object.keys(layers),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','pilasters','soffit','roofDeck','buildingRoof']);
+    assert.deepEqual(Object.keys(layers),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','pilasters','soffit','roofDeck','buildingRoof','brickBase','brickPiers','entryMasonry','entryGlass','towerFrames','towerCrown','towerRibs','entryBrick','entryCurtain','entryFrames','entryCanopy','entryDoors','externalTrim']);
     assert.ok(layers.decks.length>4000);
     assert.ok(layers.facade.length>1000);
     assert.ok(layers.aisles.length>0);
@@ -49,10 +49,38 @@ test('architecture engine reuses the same geometry for an indoor arena and outdo
     assert.equal(layers.buildingRoof.length>0,demo.template==='indoor-arena');
     assert.equal(layers.roofDeck.length>0,demo.template==='indoor-arena');
     assert.ok(layers.decks.every(Number.isFinite));
+    assert.equal(layers.entryMasonry.length>0,Boolean(demo.exterior?.entrances?.length));
+    assert.ok(layers.brickBase.length>0===Boolean(demo.exterior));
+    assert.ok(layers.facade.every(Number.isFinite));
     const audit=ValidationEngine.validate({seats:SeatingEngine.generate(geo).seats,architectureGeometry:layers,spec:geo.spec});
     assert.deepEqual(audit.errors,[],audit.errors.join('\n'));
   }
   assert.equal(ArchitectureEngine.build(PROCEDURAL_DEMOS.stadium).glazing.length,0);
+});
+
+test('shared exterior engine builds validated 3D masonry and glass for distinct perimeter sizes',()=>{
+  for(const width of [32,68]){
+    const result=ExteriorEngine.build({
+      footprint:a=>({x:width*Math.cos(a),z:width*1.22*Math.sin(a)}),
+      height:30,segments:96,
+      entrances:[{angle:Math.PI/4,role:'primary'},{angle:5*Math.PI/4,role:'secondary'}]
+    });
+    for(const [layer,mesh] of Object.entries(result)){
+      assert.ok(mesh instanceof Float32Array,layer);
+      assert.equal(mesh.length%18,0,layer);
+      assert.ok(mesh.every(Number.isFinite),layer);
+    }
+    for(const name of ['metalPanels','metalSeams','brickBase','brickPiers',
+      'towerBrick','towerWindows','towerCrown','towerRibs','entryBrick',
+      'entryCurtain','entryCanopy','entryFrames']){
+      assert.ok(result[name].length>0,name);
+    }
+    const audit=ValidationEngine.validate({seats:[{uid:'test',x:0,y:0,z:0,yaw:0}],
+      architectureGeometry:result});
+    assert.deepEqual(audit.errors,[],audit.errors.join('\n'));
+  }
+  assert.throws(()=>ExteriorEngine.build({footprint:a=>({x:20*Math.cos(a),z:20*Math.sin(a)}),height:2}));
+  assert.throws(()=>GeometryEngine.normalize({...PROCEDURAL_DEMOS.arena,exterior:{profile:'unknown'}}));
 });
 
 test('optimization engine reports an impossible target instead of falsifying inventory',()=>{
