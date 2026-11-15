@@ -46,7 +46,9 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>20.5)vColor=vec3(.96,.84,.67); // Recessed warm architectural lights
+    if(uDeck>22.5)vColor=vec3(.30,.31,.32); // Radial roof beams with actual depth
+    else if(uDeck>21.5)vColor=vec3(.65,.64,.62); // Muted roof decking
+    else if(uDeck>20.5)vColor=vec3(.96,.84,.67); // Recessed warm architectural lights
     else if(uDeck>19.5)vColor=vec3(.30,.31,.32); // Structural roof soffit
     else if(uDeck>18.5)vColor=vec3(.47,.43,.40); // Deep fascia and beam edges
     else if(uDeck>17.5)vColor=vec3(.65,.61,.55); // Three-dimensional columns
@@ -343,7 +345,7 @@ export class NativeVenueRenderer {
       }
     }
     if(NativeVenueRenderer.architectureVisibleInMode(this.plan,this.mode)){
-      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['backWall',13],['galleryGlass',15],['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21]]){
+      for(const [name,index] of [['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],['trim',10],['aisles',11],['stepEdges',12],['backWall',13],['galleryGlass',15],['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21],['roofDeck',22],['radialBeams',23]]){
         const mesh=this.architecture?.[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
@@ -355,7 +357,7 @@ export class NativeVenueRenderer {
       // Keep the real inner gallery, framing and ceiling in first-person views;
       // external façade and the foundation remain cut away.
       for(const [name,index] of [['backWall',13],['galleryGlass',15],['galleryGlow',16],
-        ['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21]]){
+        ['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],['downlights',21],['roofDeck',22],['radialBeams',23]]){
         const mesh=this.architecture[name];
         if(!mesh)continue;
         gl.uniform1f(this.locations.Deck,index);
