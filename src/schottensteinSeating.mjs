@@ -132,8 +132,35 @@ const lowerCornerAisles={
   134:[[319,349,408,349],[342,263,398,310]],
 };
 const minimumPitch=.48;
-// Shared deck elevations and nominal rises in the reconstructed bowl.
-const tierDecks=[{front:.56,rise:.25,maxRake:.48},{front:8.05,rise:.34,maxRake:.54},{front:14.65,rise:.3425,maxRake:.59}];
+// Approximate elevations shared by the chart's inner and outer deck lines.
+const tierDecks=[{front:.56,rear:5.96},{front:8.05,rear:11.10},{front:14.65,rear:21.50}];
+const fullTurn=Math.PI*2;
+const azimuth=({x,z})=>(Math.atan2(z,x)+fullTurn)%fullTurn;
+const deckLines=[lower,club,upper].map(level=>[0,2].map(edge=>
+  level.flatMap(([, ...pixels])=>{
+    const corners=unpack(pixels);
+    return Array.from({length:5},(_,i)=>{
+      const p=lerp(corners[edge],corners[edge+1],i/4);
+      return {angle:azimuth(p),radius:Math.hypot(p.x,p.z)};
+    });
+  }).sort((a,b)=>a.angle-b.angle)
+));
+function rimRadius(line,angle){
+  const index=line.findIndex(point=>point.angle>=angle);
+  const next=index<0?0:index;
+  const a=line[(next+line.length-1)%line.length],b=line[next];
+  const span=(b.angle-a.angle+fullTurn)%fullTurn;
+  const offset=(angle-a.angle+fullTurn)%fullTurn;
+  return span>1e-9?a.radius+(b.radius-a.radius)*offset/span:b.radius;
+}
+export function schottensteinDeckHeight(tier,point){
+  const angle=azimuth(point);
+  const [front,rear]=deckLines[tier].map(line=>rimRadius(line,angle));
+  const depth=Math.hypot(point.x,point.z)-front;
+  const progress=Math.max(0,Math.min(1,depth/Math.max(3,rear-front)));
+  const deck=tierDecks[tier];
+  return deck.front+(deck.rear-deck.front)*progress;
+}
 const chartRegions=[
   {kind:'band',label:'Band Area',sectionId:'114',outline:unpack([764,401,808,401,808,432,764,432])},
   {kind:'press',label:'Press Box',sectionId:'323',outline:unpack([439,697,706,695,733,727,439,727])},
@@ -196,13 +223,23 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
       treadDepth=(far-firstCenter)/(depthRows-.5);
       near=firstCenter-treadDepth*.5;
     }
+    const rowCenter=slot=>{
+      const depth=near+(slot+.5)*treadDepth;
+      const widest=polygonSpans(projected,depth).reduce((best,range)=>
+        !best||range[1]-range[0]>best[1]-best[0]?range:best,null);
+      const lateral=widest?(widest[0]+widest[1])*.5:0;
+      return {x:-nx*depth-nz*lateral,z:-nz*depth+nx*lateral};
+    };
     const deck=tierDecks[tier];
-    const rise=Math.min(deck.rise,treadDepth*deck.maxRake);
-    const frontHeight=deck.front;
+    const rimHeight=deck.front;
+    const frontHeight=Math.min(deck.front+.42,schottensteinDeckHeight(tier,rowCenter(0)));
+    const last=schottensteinDeckHeight(tier,rowCenter(depthRows-1));
+    const maxRake=[.50,.55,.59][tier];
+    const rise=Math.max(treadDepth*.20,Math.min(treadDepth*maxRake,(last-frontHeight)/(depthRows-1)));
     const publishedRowCounts=clubWithPublishedCounts.has(sectionId);
     const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
     return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,
-      treadDepth,rise,frontHeight,details,publishedRowCounts,labelPoint:labels.get(id)};
+      treadDepth,rise,frontHeight,rimHeight,details,publishedRowCounts,labelPoint:labels.get(id)};
   })
 );
 const byId=new Map(blocks.map(block=>[block.id,block]));
@@ -213,8 +250,8 @@ export function schottensteinSeatTier(section) {
 }
 
 export function schottensteinFootprints() {
-  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts})=>
-    ({id,tier,rows,depthRows,rise,frontHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts}));
+  return blocks.map(({id,tier,rows,depthRows,rise,frontHeight,rimHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts})=>
+    ({id,tier,rows,depthRows,rise,frontHeight,rimHeight,corners,outlines,labelPoint,nx,nz,near,treadDepth,publishedRowCounts}));
 }
 
 export function usesSchottensteinChart(project) {

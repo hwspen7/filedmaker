@@ -23,6 +23,46 @@ function offset(s,dx,dy,dz){
   const a=s.yaw||0;
   return [s.x+Math.cos(a)*dx+Math.sin(a)*dz,s.y+dy,s.z-Math.sin(a)*dx+Math.cos(a)*dz];
 }
+function addCourtsideChairs(add,width,length,roundSeats,seats){
+  const frame=colorRGB('#242327'), upholstery=colorRGB('#333136');
+  const pitch=.54;
+  const floorSeats=seats.filter(seat=>Math.abs(seat.y)<.85);
+  const chair=(x,z,yaw)=>{
+    if(floorSeats.some(seat=>Math.hypot(seat.x-x,seat.z-z)<.50))return;
+    const location={x,y:0,z,yaw};
+    add(offset(location,0,.435,.025),[.456,.054,.42],yaw,upholstery,-1,roundSeats);
+    add(offset(location,0,.676,-.188),[.445,.31,.047],yaw,upholstery,-1,roundSeats);
+    for(const side of [-.185,.185]){
+      for(const leg of [-.165,.17])add(offset(location,side,.215,leg),[.025,.43,.026],yaw,frame);
+      add(offset(location,side,.564,-.184),[.027,.27,.029],yaw,frame);
+    }
+  };
+  const row=(min,max,place)=>{
+    const count=Math.floor((max-min)/pitch);
+    for(let i=0;i<count;i++)place((min+max+(2*i+1-count)*pitch)/2);
+  };
+  const base=length/2+2.23,side=width/2+1.06;
+  for(const end of [-1,1]){
+    // Split the baseline seats at the basket support.
+    for(const sign of [-1,1]){
+      row(1.46,width/2-.20,x=>chair(x*sign,base*end,end===1?Math.PI:0));
+    }
+  }
+  // Spectator side opposite the teams and scorer's table.
+  for(const end of [-1,1]){
+    row(.79,length/2-.66,z=>chair(side,end*z,-Math.PI/2));
+  }
+  // Team chairs on either side of the scorer's table.
+  for(const end of [-1,1]){
+    row(3.20,length/2-1.92,z=>chair(-side,end*z,Math.PI/2));
+  }
+}
+function addFloorBorder(add,width,length,extension,y,thickness,color){
+  for(const sign of [-1,1]){
+    add([sign*(width+extension)*.5,y,0],[extension,thickness,length],0,color);
+    add([0,y,sign*(length+extension)*.5],[width+2*extension,thickness,extension],0,color);
+  }
+}
 export function buildVenuePlan(model,options={}) {
   const {seats,project,surface}=model;
   const official=ticketReconciliation(project,seats.length);
@@ -123,8 +163,10 @@ export function buildVenuePlan(model,options={}) {
         add([x,-.36,(lo+hi)/2],[stripWidth+.002,.27,hi-lo],0,base);
       }
     }
+    addFloorBorder(add,surface.width+apron,surface.length+apron,1.35,-.12,.20,colorRGB('#38363b'));
+    addFloorBorder(add,surface.width,surface.length,apron*.5,-.11,.20,colorRGB(courtColors.apron));
   }
-  add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,courtColors?colorRGB(courtColors.apron):darkField);
+  if(!courtColors)add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,darkField);
   add([0,basketball?-.012:.005,0],[surface.width,.07,surface.length],0,field);
   const white=colorRGB(courtColors?.lines??'#f8f7ef');
   const line = (x1, y1, z1, x2, y2, z2, width, color) => {
@@ -155,7 +197,9 @@ export function buildVenuePlan(model,options={}) {
     const wood = (courtColors?.boards??['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85']).map(colorRGB);
     for(let i=0;i<64;i++){
       const x=-width/2+(i+.5)*width/64;
-      add([x,.0385,0],[width/64,.004,length],0,wood[(i*7+Math.floor(i/5))%wood.length]);
+      const painted=courtColors&&Math.abs(x)<BASKETBALL_LANE.width*.5-width/128;
+      const boardLength=painted?length-2*BASKETBALL_LANE.length:length;
+      add([x,courtColors ? .032 : .0385,0],[width/64,.004,boardLength],0,wood[(i*7+Math.floor(i/5))%wood.length]);
     }
     const markingY=.052, paint=colorRGB(courtColors?.lane??'#476a8c');
     arc(0,markingY,0,1.83,0,Math.PI*2,.035,white,40);
@@ -226,13 +270,7 @@ export function buildVenuePlan(model,options={}) {
     }
     }
     if(chartPreview){
-      // Low courtside objects only, positioned within the published floor zone.
-      for(const z of [-8.4,8.4]){
-        for(let i=0;i<8;i++){
-          add([-width/2-1.69,.41,z+(i-3.5)*.58],[.42,.085,.48],0,accent);
-          add([-width/2-1.84,.66,z+(i-3.5)*.58],[.07,.46,.48],0,accent);
-        }
-      }
+      addCourtsideChairs(add,width,length,roundSeats,seats);
       add([-width/2-1.08,.44,0],[.57,.85,5.1],0,housing);
       add([-width/2-.775,.51,0],[.044,.40,4.98],0,accent);
     }

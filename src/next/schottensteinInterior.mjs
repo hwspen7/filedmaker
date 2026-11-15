@@ -1,5 +1,7 @@
 // Native visual geometry for the Schottenstein Center basketball configuration.
 // Metres are modeled estimates except for regulation court and published ribbon height.
+import { schottensteinDeckHeight } from '../schottensteinSeating.mjs';
+
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
 const deckBottom=[-.28,6.75,12.99];
@@ -37,7 +39,7 @@ function addDeckRims(add,footprints,fascia,edge) {
     if(!deck.length)continue;
     const rim=deck.flatMap(profile=>profile.corners.slice(0,2)).sort((a,b)=>
       Math.atan2(a.z,a.x)-Math.atan2(b.z,b.x));
-    const top=deck[0].frontHeight-.055,bottom=deckBottom[tier];
+    const top=deck[0].rimHeight-.055,bottom=deckBottom[tier];
     for(let i=0;i<rim.length;i++){
       const a=rim[i],b=rim[(i+1)%rim.length];
       if(distance(a,b)<.06)continue;
@@ -49,7 +51,7 @@ function addDeckRims(add,footprints,fascia,edge) {
 
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
   const tread=color('#a0a0a4'), fascia=color('#393237'), edge=color('#bcb9b8');
-  const rail=color('#211f23'), suite=color('#574e4b'), glass=color('#887e71');
+  const suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
   if(rows.length)addDeckRims(add,footprints,fascia,edge);
   for(const row of rows){
@@ -66,17 +68,7 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   const profileBySection=new Map(footprints.map(profile=>[profile.id,profile]));
   for(const row of rows){
     const profile=profileBySection.get(row.sectionId);
-    const front=row.slot===0, rear=row.slot===profile.depthRows-1;
-    if(front){
-      if(row.tier>0){
-        spanBox(add,row.left,row.right,row.y+.49,.045,.052,rail);
-        for(let q=0;q<=1;q+=.25){
-          const p=mix(row.left,row.right,q);
-          add([p.x,row.y+.23,p.z],[.045,.53,.045],0,rail);
-        }
-      }
-    }
-    if(rear)spanBox(add,row.left,row.right,row.y-.36,.5,.27,fascia);
+    if(row.slot===profile.depthRows-1)spanBox(add,row.left,row.right,row.y-.36,.5,.27,fascia);
   }
   const pressSide=profileBySection.get('323');
   if(pressSide){
@@ -102,7 +94,7 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
       const b=aisleEdges[j];
       if(matched.has(j)||a.profile.tier!==b.profile.tier)continue;
       const front=distance(a.front,b.front),back=distance(a.back,b.back);
-      if(front<.45||front>2.95||back<.45||back>3.25||Math.abs(a.profile.frontHeight-b.profile.frontHeight)>.08)continue;
+      if(front<.45||front>2.95||back<.45||back>3.25)continue;
       if(front+back<bestCost){best=j;bestCost=front+back;}
     }
     if(best<0)continue;
@@ -115,15 +107,10 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
       const p=mix(a.front,a.back,t),q=mix(b.front,b.back,t);
       const width=distance(p,q);
       if(width<.42||width>3.15)continue;
-      const height=(rowHeightAt(a.profile,p)+rowHeightAt(b.profile,q))*.5;
+      const left=rowHeightAt(a.profile,p),right=rowHeightAt(b.profile,q);
+      const guide=schottensteinDeckHeight(a.profile.tier,mix(p,q,.5));
+      const height=Math.max(Math.min(left,right),Math.min(Math.max(left,right),guide));
       spanBox(add,mix(p,q,.08),mix(p,q,.92),height-.095,.19,stepDepth*.97,tread);
-      const m=mix(p,q,.5);
-      if(j%3===0)add([m.x,height+.36,m.z],[.038,.72,.038],0,rail);
-      if(j>0){
-        const prevT=(j-.5)/steps;
-        const prev=mix(mix(a.front,a.back,prevT),mix(b.front,b.back,prevT),.5);
-        spanBox(add,prev,m,height+.65,.048,.044,rail);
-      }
     }
   }
 
