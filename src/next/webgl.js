@@ -46,11 +46,22 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>28.5)vColor=vec3(.70,.67,.62); // Upper seating bowl concrete
+    if(uDeck>39.5)vColor=vec3(.20,.27,.29); // Glass double entrance doors
+    else if(uDeck>38.5)vColor=vec3(.72,.72,.68); // Projecting metal entry canopy
+    else if(uDeck>37.5)vColor=vec3(.25,.30,.32); // Entrance mullions
+    else if(uDeck>36.5)vColor=vec3(.28,.38,.41); // Deep vestibule curtain wall
+    else if(uDeck>35.5)vColor=vec3(.52,.30,.25); // Brick entrance wings
+    else if(uDeck>34.5)vColor=vec3(.72,.72,.68); // Circular rotunda roof ribs
+    else if(uDeck>33.5)vColor=vec3(.82,.80,.75); // Metal lantern roof ring
+    else if(uDeck>32.5)vColor=vec3(.28,.33,.35); // Tall tower window frames
+    else if(uDeck>31.5)vColor=vec3(.56,.31,.26); // Brick piers
+    else if(uDeck>30.5)vColor=vec3(.54,.30,.25); // Brick entrance-level walls
+    else if(uDeck>29.5)vColor=vec3(.41,.42,.43); // Horizontal metal panel joints
+    else if(uDeck>28.5)vColor=vec3(.70,.67,.62); // Upper seating bowl concrete
     else if(uDeck>27.5)vColor=vec3(.24,.28,.30); // Press enclosure glazing
     else if(uDeck>26.5)vColor=vec3(.48,.43,.39); // Press enclosure walls
-    else if(uDeck>25.5)vColor=vec3(.23,.29,.33); // Rotunda glazing
-    else if(uDeck>24.5)vColor=vec3(.49,.28,.23); // Rotunda masonry
+    else if(uDeck>25.5)vColor=vec3(.28,.40,.43); // Recessed tower glazing
+    else if(uDeck>24.5)vColor=vec3(.57,.31,.26); // OSU rotunda brick masonry
     else if(uDeck>23.5)vColor=aNormal.y>0.?vec3(.68,.67,.63):vec3(.23,.24,.25); // Enclosed building roof
     else if(uDeck>22.5)vColor=vec3(.30,.31,.32); // Radial roof beams with actual depth
     else if(uDeck>21.5)vColor=vec3(.65,.64,.62); // Muted roof decking
@@ -67,7 +78,7 @@ void main(){
     else if(uDeck>10.5)vColor=vec3(.82,.80,.76); // Reserved for aisle surfaces
     else if(uDeck>9.5)vColor=vec3(.72,.64,.54); // Muted champagne fascia trim
     else if(uDeck>8.5)vColor=vec3(.22,.25,.27); // Recessed graphite glazing
-    else if(uDeck>7.5)vColor=vec3(.58,.57,.54); // Architectural warm-stone facade
+    else if(uDeck>7.5)vColor=vec3(.75,.76,.76); // Light horizontal metal siding
     else if(uDeck>6.5)vColor=vec3(.75,.73,.69); // Continuous tier concourses
     else if(uDeck>5.5)vColor=vec3(.65,.63,.60); // Stepped row fascias
     else if(uDeck>4.5)vColor=vec3(.80,.78,.74); // Row-aligned stone seat decks
@@ -177,7 +188,10 @@ const structureLayers=[
   ['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],
   ['downlights',21],['roofDeck',22],['radialBeams',23],['buildingRoof',24],
   ['entryMasonry',25],['entryGlass',26],['pressWalls',27],['pressGlass',28],
-  ['cutawayFacade',8],['externalTrim',10],['galleryFloorMesh',7],['upperBowl',29],
+  ['cutawayFacade',8],['externalTrim',30],['galleryFloorMesh',7],['upperBowl',29],
+  ['brickBase',31],['brickPiers',32],['towerFrames',33],['towerCrown',34],
+  ['towerRibs',35],['entryBrick',36],['entryCurtain',37],
+  ['entryFrames',38],['entryCanopy',39],['entryDoors',40],
 ];
 const interiorLayers=new Set(['decks','fascias','upperBowl','concourse','aisles','stepEdges',
   'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
