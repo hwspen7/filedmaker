@@ -2,7 +2,7 @@
 // The plan is renderer-independent and never invents official ticket inventory.
 import { seatColor, seatKind } from '../seatPresentation.mjs';
 import { ticketReconciliation } from '../seatFirst.mjs';
-import { polygonSpans, schottensteinDiagramEdge } from '../schottensteinSeating.mjs';
+import { polygonSpans } from '../schottensteinSeating.mjs';
 import { addSchottensteinBoard, addSchottensteinBowl, buildSchottensteinDecks } from './schottensteinInterior.mjs';
 
 const SCHOTTENSTEIN_COURT_COLORS = {
@@ -154,16 +154,8 @@ export function buildVenuePlan(model,options={}) {
   const darkField=colorRGB(basketball?'#24354b':'#254c42');
   const apron=basketball?3.5:7;
   if(chartPreview){
-    const base=colorRGB('#443d3b');
-    const limits=schottensteinDiagramEdge.map(point=>point.x);
-    const near=Math.min(...limits),far=Math.max(...limits);
-    const strips=Math.ceil((far-near)/.35), stripWidth=(far-near)/strips;
-    for(let i=0;i<strips;i++){
-      const x=near+(i+.5)*stripWidth;
-      for(const [lo,hi] of polygonSpans([schottensteinDiagramEdge],x)){
-        add([x,-.36,(lo+hi)/2],[stripWidth+.002,.27,hi-lo],0,base,-4);
-      }
-    }
+    // Only keep the court/apron boundary. A full-size gray arena floor plate
+    // has no place in the open, seat-first preview (including human views).
     addFloorBorder(add,surface.width+apron,surface.length+apron,1.35,-.12,.20,colorRGB('#38363b'));
     addFloorBorder(add,surface.width,surface.length,apron*.5,-.11,.20,colorRGB(courtColors.apron));
   }
