@@ -17,7 +17,7 @@ function addChartRegions(add,color,features,spanAt) {
     const limits=feature.outline.map(p=>p.x);
     const near=Math.min(...limits),far=Math.max(...limits);
     const segments=Math.ceil((far-near)/.40), depth=(far-near)/segments;
-    const tint=color(feature.kind==='press'?'#696258':feature.kind==='band'?'#5e594f':'#898073');
+    const tint=color(feature.kind==='press'?'#555561':feature.kind==='band'?'#4f525b':'#afb1b3');
     for(let i=0;i<segments;i++){
       const x=near+(i+.5)*depth;
       for(const [lo,hi] of spanAt([feature.outline],x)){
@@ -128,10 +128,61 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
   return new Float32Array(data);
 }
 
+// Shallow, dedicated display pedestal. Unlike the removed gray support shell,
+// it stays entirely below the court, follows the softened bowl perimeter,
+// and never appears in the first-person seating view.
+export function buildSchottensteinPedestal(seats) {
+  if(!seats.length)return {body:new Float32Array(0),trim:new Float32Array(0)};
+  const count=160, tau=Math.PI*2;
+  const edge=Array.from({length:count},(_,i)=>{
+    const angle=i*tau/count;
+    const p=schottensteinDeckPoint(2,angle,1);
+    return Math.hypot(p.x,p.z)+.85;
+  });
+  // Distribute local chart irregularities over adjacent angular stations.
+  const smoothed=edge.map((_,i)=>{
+    let sum=0, weight=0;
+    for(let k=-4;k<=4;k++){
+      const w=5-Math.abs(k);
+      sum+=edge[(i+k+count)%count]*w;
+      weight+=w;
+    }
+    return sum/weight;
+  });
+  const rim=smoothed.map((r,i)=>{
+    const a=i*tau/count;
+    return {x:r*Math.cos(a),z:r*Math.sin(a)};
+  });
+  const body=[],trim=[];
+  const vertex=(p,y,n)=>[p.x,y,p.z,...n];
+  const topY=-.42, bottomY=-1.24, trimTop=-.48,trimBottom=-.56;
+  const up=[0,1,0];
+  for(let i=0;i<count;i++){
+    const a=rim[i],b=rim[(i+1)%count];
+    const center=vertex({x:0,z:0},topY,up);
+    // Counter-clockwise when viewed from above in the X-Z plane.
+    body.push(...center,...vertex(b,topY,up),...vertex(a,topY,up));
+    const az=(Math.atan2(a.z,a.x)+Math.atan2(b.z,b.x))/2;
+    // Wrapping angles near 2pi needs a geometric midpoint instead.
+    const mid={x:(a.x+b.x)/2,z:(a.z+b.z)/2};
+    const len=Math.hypot(mid.x,mid.z)||1;
+    const outward=[mid.x/len,0,mid.z/len];
+    const side=(buffer,hi,lo)=>{
+      const v=(p,y)=>vertex(p,y,outward);
+      buffer.push(...v(a,hi),...v(b,hi),...v(b,lo));
+      buffer.push(...v(a,hi),...v(b,lo),...v(a,lo));
+    };
+    side(body,topY,bottomY);
+    side(trim,trimTop,trimBottom);
+  }
+  return {body:new Float32Array(body),trim:new Float32Array(trim)};
+}
+
 export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) {
-  const tread=color('#81786d'), fascia=color('#575248');
-  const suite=color('#a09783'), glass=color('#6c665b');
-  const red=color('#962c3a'), led=color('#9f4650');
+  // Restrained stone, graphite and scarlet trim. No broad gray rear shell.
+  const tread=color('#c5c5c4'), fascia=color('#686a72');
+  const suite=color('#565764'), glass=color('#353c46');
+  const red=color('#8c3047'), led=color('#a3485e');
   // The entry level has distinct seating banks close to the court.
   // The elevated tiers use the continuous decks instead of row slabs.
   for(const {left,right,y,depth,tier} of rows){
