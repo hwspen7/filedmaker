@@ -102,7 +102,11 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
     assert.ok(Math.abs(Math.cos(yaw))>2*Math.abs(Math.sin(yaw)),`Section ${id} faces the near end of the court`);
   }
   const terrace=model.sectionFootprints.filter(section=>section.tier===2);
-  assert.ok(terrace.every(section=>Math.abs(section.rise/section.treadDepth-.46)<1e-8));
+  assert.ok(terrace.every(section=>section.frontHeight===terrace[0].frontHeight));
+  assert.ok(terrace.every(section=>section.rise/section.treadDepth<=.59000001));
+  const rear=model.seats.filter(seat=>['301','302','303','305','306','308'].includes(seat.sectionId)&&seat.row==='U');
+  assert.ok(rear.length>0);
+  assert.ok(rear.every(seat=>Math.abs(seat.y-rear[0].y)<1e-8));
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);
@@ -146,6 +150,14 @@ test('phase-one basketball preview models documented club rows and the upper ais
  assert.equal(inRow('106','AA').length,0);
  assert.ok(inRow('106','U').length>0);
  assert.ok(inRow('122','AA').length>0);
+ for(const section of model.sectionFootprints){
+   const rows=new Map();
+   for(const seat of model.seats){
+     if(seat.sectionId===section.id)rows.set(seat.row,(rows.get(seat.row)??0)+1);
+   }
+   assert.equal(rows.size,section.rows,`Section ${section.id} row coverage`);
+   if(section.publishedRowCounts)assert.deepEqual([...rows.values()],[14,14,14,14,14,18,18,18,18,18]);
+ }
  assert.ok(inRow('305','U').length>0);
  assert.ok(inRow('304','H').length>0);
  assert.equal(inRow('304','B').length,0);
@@ -188,8 +200,7 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  const plan=buildVenuePlan(model);
  assert.equal(plan.arenaInterior,true);
  assert.equal(plan.scoreboardHeight,16.3);
- assert.equal(plan.features.filter(feature=>feature.kind==='entrance').length,12);
- assert.deepEqual(plan.features.filter(feature=>feature.outline).map(feature=>feature.label),
+ assert.deepEqual(plan.features.map(feature=>feature.label),
    ['Band Area','Press Box','Accessible Platform']);
  const boxes=decode(plan);
  const ceiling=boxes.filter(box=>box.id===-2);

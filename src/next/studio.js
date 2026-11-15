@@ -221,14 +221,14 @@ function selectSeat(seat){
   $('seatDetails').replaceChildren();
   const title=document.createElement('strong');title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
   const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
-  const access=plan.features.find(feature=>feature.kind==='entrance'&&feature.sectionId===seat?.sectionId);
-  if(access){
-    const link=document.createElement('a');
-    link.href=access.source;
-    link.target='_blank';
-    link.rel='noopener';
-    link.textContent=`Section access at Row ${access.row} ↗`;
-    $('seatDetails').append(link);
+  const section=model.seatingRows&&model.sectionFootprints.find(item=>item.id===seat?.sectionId);
+  if(section){
+    const rows=seatsBySection.get(section.id);
+    const count=[...rows.values()].reduce((sum,items)=>sum+items.length,0);
+    const inventory=document.createElement('p');
+    const method=section.publishedRowCounts?'published row counts':'allocated by row width';
+    inventory.textContent=`${fmt(count)} modeled seats · ${fmt(rows.size)} rows · ${method}`;
+    $('seatDetails').append(inventory);
   }
   updateReferencePhoto(seat);
   if(seat){$('selectedPreview').textContent=plan.hasRoster?`Ticket reference ${seat.uid}`:`Illustrative position · ${seat.sectionId} / row ${seat.row}`;}

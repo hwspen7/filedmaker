@@ -2,6 +2,7 @@
 // Metres are modeled estimates except for regulation court and published ribbon height.
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
 const distance = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
+const deckBottom=[-.28,6.75,12.99];
 const rowHeightAt=(profile,point)=>{
   const depth=-profile.nx*point.x-profile.nz*point.z;
   const row=Math.max(0,Math.min(profile.depthRows-1,(depth-profile.near)/profile.treadDepth-.5));
@@ -15,25 +16,8 @@ function spanBox(add,a,b,y,height,depth,color,id=-1) {
     Math.atan2(a.z-b.z,b.x-a.x),color,id);
 }
 
-function addSectionAccess(add,feature,color) {
-  const {x,y,z,yaw}=feature;
-  const place=(dx,dy,dz)=>[x+Math.cos(yaw)*dx+Math.sin(yaw)*dz,y+dy,
-    z-Math.sin(yaw)*dx+Math.cos(yaw)*dz];
-  const wall=color('#54525a'), corridor=color('#25242b'), stair=color('#96949a');
-  const side=color('#333139');
-  add(place(0,-.10,0),[1.84,.20,2.30],yaw,stair);
-  add(place(0,1.04,-1.10),[1.34,2.00,.12],yaw,corridor);
-  for(const dx of [-.77,.77]){
-    add(place(dx,1.02,-.49),[.17,2.08,1.23],yaw,wall);
-    add(place(dx,.50,.52),[.045,.99,.045],yaw,side);
-    add(place(dx,.98,.07),[.048,.044,1.0],yaw,side);
-  }
-  add(place(0,2.10,-.49),[1.72,.18,1.24],yaw,wall);
-}
-
 function addChartRegions(add,color,features,spanAt) {
   for(const feature of features){
-    if(feature.kind==='entrance'){addSectionAccess(add,feature,color);continue;}
     const limits=feature.outline.map(p=>p.x);
     const near=Math.min(...limits),far=Math.max(...limits);
     const segments=Math.ceil((far-near)/.40), depth=(far-near)/segments;
@@ -47,17 +31,19 @@ function addChartRegions(add,color,features,spanAt) {
   }
 }
 
-function addUpperGate(add,rows,color) {
-  const row=rows.find(r=>r.sectionId==='302'&&r.row==='A'&&r.width>1.65);
-  if(!row)return;
-  // Black guard gate observed in the section 302 reference photo.
-  const front=point=>({x:point.x+Math.sin(row.yaw)*row.depth*.50,
-    z:point.z+Math.cos(row.yaw)*row.depth*.50});
-  const a=front(mix(row.left,row.right,.32)),b=front(mix(row.left,row.right,.63)),metal=color('#211e24');
-  for(const dy of [.14,.52,.97])spanBox(add,a,b,row.y+dy,.043,.058,metal);
-  for(let i=0;i<=10;i++){
-    const p=mix(a,b,i/10);
-    add([p.x,row.y+.5,p.z],[.022,.97,.027],row.yaw,metal);
+function addDeckRims(add,footprints,fascia,edge) {
+  for(let tier=0;tier<deckBottom.length;tier++){
+    const deck=footprints.filter(profile=>profile.tier===tier);
+    if(!deck.length)continue;
+    const rim=deck.flatMap(profile=>profile.corners.slice(0,2)).sort((a,b)=>
+      Math.atan2(a.z,a.x)-Math.atan2(b.z,b.x));
+    const top=deck[0].frontHeight-.055,bottom=deckBottom[tier];
+    for(let i=0;i<rim.length;i++){
+      const a=rim[i],b=rim[(i+1)%rim.length];
+      if(distance(a,b)<.06)continue;
+      spanBox(add,a,b,(top+bottom)*.5,top-bottom,.23,fascia);
+      spanBox(add,a,b,top-.06,.075,.25,edge);
+    }
   }
 }
 
@@ -65,12 +51,14 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   const tread=color('#a0a0a4'), fascia=color('#393237'), edge=color('#bcb9b8');
   const rail=color('#211f23'), suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
+  if(rows.length)addDeckRims(add,footprints,fascia,edge);
   for(const row of rows){
     const {left,right,y,depth,rise}=row;
     const forward={x:Math.sin(row.yaw),z:Math.cos(row.yaw)};
     const a={x:left.x+forward.x*.025,z:left.z+forward.z*.025};
     const b={x:right.x+forward.x*.025,z:right.z+forward.z*.025};
-    spanBox(add,a,b,y-rise/2,rise,depth*1.025,tread);
+    const slab=Math.min(y-deckBottom[row.tier],Math.max(.52,rise*1.8));
+    spanBox(add,a,b,y-slab*.5,slab,depth*1.025,tread);
     const noseA={x:a.x+forward.x*depth/2,z:a.z+forward.z*depth/2};
     const noseB={x:b.x+forward.x*depth/2,z:b.z+forward.z*depth/2};
     spanBox(add,noseA,noseB,y-.028,.052,.048,edge);
@@ -80,8 +68,6 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     const profile=profileBySection.get(row.sectionId);
     const front=row.slot===0, rear=row.slot===profile.depthRows-1;
     if(front){
-      const h=row.tier===0?Math.min(row.y,.8):row.tier===1?1.06:2;
-      spanBox(add,row.left,row.right,row.y-h/2,h,.23,fascia);
       if(row.tier>0){
         spanBox(add,row.left,row.right,row.y+.49,.045,.052,rail);
         for(let q=0;q<=1;q+=.25){
@@ -142,7 +128,6 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   }
 
   addChartRegions(add,color,features,spanAt);
-  addUpperGate(add,rows,color);
 
   const point=(angle,rx,rz)=>{
     const x=Math.cos(angle),z=Math.sin(angle);
