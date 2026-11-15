@@ -11,7 +11,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('full building model contains six independent architectural layers',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length>1000 && vertices.length%18===0,name);
@@ -19,6 +19,8 @@ test('full building model contains six independent architectural layers',()=>{
   }
   assert.ok(g.decks.length/18>10000);
   assert.ok(g.facade.length/18>1500);
+  assert.ok(g.aisles.length/18>900);
+  assert.equal(g.aisles.length,g.stepEdges.length);
   assert.ok(g.glazing.length/18>600);
 });
 
