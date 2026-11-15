@@ -12,7 +12,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('OSU arena has a full-depth structural gallery, inset windows and no invented exit signs or stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','upperBowl','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams','buildingRoof','entryMasonry','entryGlass','pressWalls','pressGlass','cutawayFacade','externalTrim','galleryFloorMesh']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams','buildingRoof','entryMasonry','entryGlass','pressWalls','pressGlass','cutawayFacade','externalTrim','galleryFloorMesh']);
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
@@ -117,30 +117,4 @@ test('exterior facade is grounded and stepped seat decks follow their assigned e
   assert.ok(facadeMaxX-deckMinX>30,'The enclosed building has nonzero spatial depth');
   const shader=String(NativeVenueRenderer);
   assert.ok(shader.includes('architectureVisibleInMode'));
-});
-
-test('Schottenstein upper stand has a closed, continuously shaded structural bowl',()=>{
- const mesh=build().architectureGeometry.upperBowl;
- assert.ok(mesh.length>10000);
- const edges=new Map(), normals=new Map();
- const pointKey=vertex=>vertex.slice(0,3).join(',');
- let peak=-Infinity,pressPeak=-Infinity;
- for(let i=0;i<mesh.length;i+=18){
-   const triangle=[0,6,12].map(offset=>mesh.slice(i+offset,i+offset+6));
-   const points=triangle.map(pointKey);
-   assert.equal(new Set(points).size,3,'Every triangle has three distinct vertices');
-   for(const [j,v] of triangle.entries()){
-     const key=points[j],next=points[(j+1)%3],edge=[key,next].sort().join('|');
-     edges.set(edge,(edges.get(edge)??0)+1);
-     const [x,y,z,nx,ny,nz]=v;
-     assert.ok(Math.abs(Math.hypot(nx,ny,nz)-1)<1e-6);
-     if(Math.abs(z)<.01&&x>0)pressPeak=Math.max(pressPeak,y);
-     peak=Math.max(peak,y);
-     const previous=normals.get(key);
-     if(previous)assert.deepEqual(v.slice(3),previous);
-     normals.set(key,v.slice(3));
-   }
- }
- assert.ok([...edges.values()].every(count=>count===2),'No open section seams or disconnected caps');
- assert.ok(peak>28&&pressPeak<24.1,'The bowl rolls down behind the existing press seats');
 });

@@ -8,7 +8,7 @@ const scanArtifacts = {
 };
 
 const protectedBanks = new Set([105,114,131]);
-const mediaBack = new Map([[321,23.8],[322,23.6],[323,24.4],[324,24.5],[325,25.4],[326,26.2]]);
+export const SCHOTTENSTEIN_MEDIA_BANKS = new Set([321,322,323,324,325,326]);
 export const ACCESS_FRONT_DEPTH = .48;
 const accessBanks = new Set([304,307,314,331]);
 const alignToRear = new Set([313,315,320]);
@@ -28,7 +28,7 @@ export function refineSchottensteinContour(section, outlines) {
 
 export function schottensteinRowHeading(section, front, rear) {
   if (alignToRear.has(section)) return rear;
-  if (section < 200 || mediaBack.has(section)) {
+  if (section < 200 || SCHOTTENSTEIN_MEDIA_BANKS.has(section)) {
     return {x:front.x+rear.x,z:front.z+rear.z};
   }
   // The two bearings describe the same bank. Weight them by direction
@@ -54,9 +54,9 @@ function broaderEnd(start, limit, direction, width, target) {
 // keyed inventories and documented voids on their original boundaries.
 export function refineSchottensteinBank(section, tier, near, far, rows, spansAt) {
   if (protectedBanks.has(section)||accessBanks.has(section))return {near,far};
-  const minimum = mediaBack.has(section)?Math.min(.60,(far-near)/rows*.84):[.47,.58,.65][tier];
+  const minimum = SCHOTTENSTEIN_MEDIA_BANKS.has(section)?Math.min(.60,(far-near)/rows*.84):[.47,.58,.65][tier];
   const totalAdjustment=Math.max(0,(far-near)-minimum*rows);
-  const rearLimit=Math.min(totalAdjustment,mediaBack.has(section)?1.75:[.85,1.15,2.25][tier]);
+  const rearLimit=Math.min(totalAdjustment,SCHOTTENSTEIN_MEDIA_BANKS.has(section)?1.75:[.85,1.15,2.25][tier]);
   const rear=broaderEnd(far,rearLimit,-1,end=>runWidth(spansAt,end-(end-near)/(2*rows)),.90);
   const firstWidth=start=>runWidth(spansAt,start+(rear-start)/(2*rows));
   const pitch=(rear-near)/rows;
@@ -84,15 +84,6 @@ export function refineAccessibleRear(section, near, treadDepth, spansAt) {
     }
   }
   return {end,depth:treadDepth};
-}
-
-export function schottensteinMediaElevation(section,tierFront,slotCount,treadDepth){
-  const target=mediaBack.get(section);
-  if(target===undefined)return null;
-  // Lift the media-side floor while limiting the row-to-row rake.
-  const climb=1.08*treadDepth*(slotCount-1);
-  const front=Math.min(tierFront+2.15,Math.max(tierFront+.35,target-climb));
-  return {front,rear:Math.min(target,front+climb)};
 }
 
 // Drop thin fragments unsupported by a bank of three consecutive rows.

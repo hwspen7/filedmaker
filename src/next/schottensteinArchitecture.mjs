@@ -1,12 +1,11 @@
 // Schottenstein Center architectural cutaway: reconstructed, not surveyed.
 // All vertex coordinates are metres. Separate from ticket inventories and
 // authoritative imported-XYZ seats.
-import { SCHOTTENSTEIN_ROOF_EAVE, SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
+import { SCHOTTENSTEIN_ROOF_EAVE, SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint, schottensteinTreadHeight } from '../schottensteinSeating.mjs';
 import { addRoofShell, addRoundVolume } from './structuralMesh.mjs';
 
 const TAU=Math.PI*2;
 const SEGMENTS=192;
-const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 const radius=p=>Math.hypot(p.x,p.z);
 const vec=(p,y)=>[p.x,y,p.z];
 const subtract=(a,b)=>a.map((x,i)=>x-b[i]);
@@ -55,72 +54,14 @@ function betweenDecks(out,innerTier,outerTier,elevation){
   ringStrip(out,from,to,'up');
 }
 
-// A continuous concrete section through the upper stand. Fit the rim to the
-// arena's rounded corners and lower it gradually behind the press-side banks.
-function addUpperBowl(out){
-  const bands=20;
-  const frontY=SCHOTTENSTEIN_TERRACE_RIM.front-1.23;
-  const rearY=SCHOTTENSTEIN_TERRACE_RIM.rear-.39;
-  const pressBlend=(angle,start,end)=>{
-    const degrees=Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))*360/TAU;
-    const t=clamp((degrees-start)/(end-start),0,1);
-    return 1-t*t*(3-2*t);
-  };
-  const profile=angle=>{
-    const inner=radius(schottensteinDeckPoint(2,angle,0))-1.12;
-    const outer=radius(schottensteinDeckPoint(2,angle,1))+.55+1.95*Math.sin(2*angle)**4
-      -5.45*pressBlend(angle,1,27);
-    const rise=rearY-4.18*pressBlend(angle,3,42)-frontY;
-    const point=(r,y)=>[r*Math.cos(angle),y,r*Math.sin(angle)];
-    const section=Array.from({length:bands+1},(_,i)=>{
-      const t=i/bands;
-      return point(inner+(outer-inner)*t,frontY+rise*t**2.15);
-    });
-    // Roll each lip into the underside so a close orbit shows a chamfer
-    // instead of a paper-thin cut. Close the section all the way to the front.
-    return [
-      ...section,
-      point(outer+.14,frontY+rise-.16),
-      point(outer+.14,frontY+rise-.48),
-      point(outer-.12,frontY+rise-.67),
-      ...section.slice(0,-1).reverse().map(([x,y,z])=>[x,y-.67,z]),
-      point(inner-.12,frontY-.50),
-      point(inner-.12,frontY-.14)
-    ];
-  };
-  const stations=Array.from({length:SEGMENTS},(_,i)=>profile(i*TAU/SEGMENTS));
-  const vertices=stations.map((section,i)=>section.map((point,k)=>{
-    const before=stations[(i+SEGMENTS-1)%SEGMENTS][k],after=stations[(i+1)%SEGMENTS][k];
-    const previous=section[(k+section.length-1)%section.length],next=section[(k+1)%section.length];
-    const incoming=normalize(subtract(point,previous)),outgoing=normalize(subtract(next,point));
-    const across=incoming.map((v,axis)=>v+outgoing[axis]);
-    return [...point,...normalize(cross(subtract(after,before),across))];
-  }));
-  for(let i=0;i<SEGMENTS;i++){
-    const a=vertices[i],b=vertices[(i+1)%SEGMENTS];
-    for(let k=0;k<a.length;k++){
-      const l=(k+1)%a.length;
-      const p=a[k],q=b[k],r=b[l],s=a[l];
-      out.push(...p,...q,...r,...p,...r,...s);
-    }
-  }
-}
 
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],upperBowl=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[],cutawayFacade=[],externalTrim=[],galleryFloorMesh=[];
-  addUpperBowl(upperBowl);
-  // Geometry must follow the actual generated row spans, not an unrelated
-  // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
-  // and made chairs appear detached from irregular section elevations.
-  // Treads are individual horizontal landings with a proper inward riser.
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[],cutawayFacade=[],externalTrim=[],galleryFloorMesh=[];
+  // Keep each tread within its mapped row span. Both aisle-facing ends
+  // follow the same elevation profile as the neighbouring bank.
   const treadRows=model.seatingRows.filter(row=>row.tier===1||row.tier===2);
-  const heightBySlot=new Map(treadRows.map(row=>[row.sectionId+':'+row.slot,row.y]));
-  const rowPoint=(row,t)=>{
-    const x=row.left.x+(row.right.x-row.left.x)*t;
-    const z=row.left.z+(row.right.z-row.left.z)*t;
-    return {x,z,y:row.y};
-  };
+  const depthBySlot=new Map(treadRows.map(row=>[row.sectionId+':'+row.slot,row.depth]));
   for(const row of treadRows){
     if(!(row.width>.35&&row.depth>.12))continue;
     const strips=Math.max(8,Math.ceil(row.width/.62));
@@ -128,26 +69,29 @@ export function buildSchottensteinArchitecture(model){
     const depth=row.depth;
     const front=depth*.5,back=depth*.5;
     const tangent=normalize([row.right.x-row.left.x,0,row.right.z-row.left.z]);
-    const previous=heightBySlot.get(row.sectionId+':'+(row.slot-1));
-    const rise=clamp(previous===undefined?(row.tier===2?.66:.40):row.y-previous,.14,.72)+.04;
+    const stepDepth=(depth+(depthBySlot.get(row.sectionId+':'+(row.slot-1))??depth))*.5;
+    const rowPoint=t=>{
+      const x=row.left.x+(row.right.x-row.left.x)*t;
+      const z=row.left.z+(row.right.z-row.left.z)*t;
+      const lift=row.leftLift+(row.rightLift-row.leftLift)*t;
+      const y=schottensteinTreadHeight(row.tier,{x,z})+lift;
+      const previous=schottensteinTreadHeight(row.tier,{x:x-outward.x*stepDepth,z:z-outward.z*stepDepth})+lift;
+      return {x,z,y,bottom:Math.min(y-.14,previous)-.04};
+    };
     for(let i=0;i<strips;i++){
-      const a=rowPoint(row,i/strips),b=rowPoint(row,(i+1)/strips);
-      // Each tessellated lateral strip is anchored to the seat height in
-      // exactly the same section. Neither slope nor a generic annulus is
-      // allowed to bridge a missing seat run.
+      const a=rowPoint(i/strips),b=rowPoint((i+1)/strips);
       const p=(v,d,y=v.y-.15)=>[v.x+outward.x*d,y,v.z+outward.z*d];
       const innerA=p(a,-front),innerB=p(b,-front);
       const outerA=p(a,back),outerB=p(b,back);
-      quad(decks,innerA,innerB,outerB,outerA,[0,1,0]);
-      // The low face is placed on the aisle-facing edge, below this row's
-      // seat height, and never rises across the visible seating surface.
-      const downA=p(a,-front,a.y-.15-rise);
-      const downB=p(b,-front,b.y-.15-rise);
+      const slope=(b.y-a.y)/(row.width/strips);
+      quad(decks,innerA,innerB,outerB,outerA,[-tangent[0]*slope,1,-tangent[2]*slope]);
+      const downA=p(a,-front,a.bottom-.15);
+      const downB=p(b,-front,b.bottom-.15);
       const inward=[-outward.x,0,-outward.z];
       quad(fascias,innerA,innerB,downB,downA,inward);
       // Close the aisle-facing ends with the same nosing and riser depth.
-      if(i===0)quad(fascias,innerA,outerA,p(a,back,a.y-.15-rise),downA,tangent.map(v=>-v));
-      if(i===strips-1)quad(fascias,innerB,outerB,p(b,back,b.y-.15-rise),downB,tangent);
+      if(i===0)quad(fascias,innerA,outerA,p(a,back,a.bottom-.15),downA,tangent.map(v=>-v));
+      if(i===strips-1)quad(fascias,innerB,outerB,p(b,back,b.bottom-.15),downB,tangent);
     }
   }
   // Only the two global level fronts need a continuous trim. Occupied rows
@@ -371,6 +315,6 @@ export function buildSchottensteinArchitecture(model){
   // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
   // staircases are intentionally absent. The map's genuine seat-free
   // circulation gaps remain untouched.
-  return Object.fromEntries(Object.entries({decks,fascias,upperBowl,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass,cutawayFacade,externalTrim,galleryFloorMesh})
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,backWall,galleryGlass,galleryGlow,windowFrames,pilasters,roofEdge,soffit,downlights,roofDeck,radialBeams,buildingRoof,entryMasonry,entryGlass,pressWalls,pressGlass,cutawayFacade,externalTrim,galleryFloorMesh})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }

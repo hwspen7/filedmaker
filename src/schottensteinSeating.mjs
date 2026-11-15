@@ -2,8 +2,8 @@ import {
   SCHOTTENSTEIN_CHART_LABELS, SCHOTTENSTEIN_DIAGRAM_EDGE, SCHOTTENSTEIN_SECTION_CONTOURS,
 } from './schottensteinChartContours.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
-import { ACCESS_FRONT_DEPTH, connectedSchottensteinRuns, refineAccessibleRear, refineSchottensteinBank, refineSchottensteinContour,
-  schottensteinMediaElevation, schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
+import { ACCESS_FRONT_DEPTH, SCHOTTENSTEIN_MEDIA_BANKS, connectedSchottensteinRuns, refineAccessibleRear, refineSchottensteinBank, refineSchottensteinContour,
+  schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
 
 // The guide endpoints orient the rows. The traced chart contours clip them.
 export const SCHOTTENSTEIN_CHART_URL =
@@ -298,6 +298,24 @@ export function schottensteinDeckHeight(tier, point) {
   return deckHeight(tier, tier === 0 ? Math.max(0, Math.min(1, fraction)) : fraction);
 }
 
+// Every elevated bank samples the same bowl profile in world coordinates.
+// A shorter bank naturally stops lower. It does not get a separate rise.
+export function schottensteinTreadHeight(tier, point) {
+  const height=schottensteinDeckHeight(tier,point);
+  if(tier!==2)return height;
+  const ease=(from,to,value)=>{
+    const t=Math.max(0,Math.min(1,(value-from)/(to-from)));
+    return t*t*(3-2*t);
+  };
+  const bearing=Math.atan2(point.z,point.x),angle=Math.abs(bearing);
+  const media=1.65*(1-ease(0,.64,angle));
+  const mediaShoulder=1.22*ease(.42,.70,bearing)*(1-ease(.76,1.04,bearing))*ease(18,24,height);
+  // Follow the corner runs more closely and ease the rear up to the
+  // gallery without introducing a section-specific change of rake.
+  const corner=.32*ease(1.8,2.05,angle)-.92*ease(2.05,2.46,angle)+.60*ease(2.46,3,angle);
+  return height+media+mediaShoulder+corner-.34*ease(21,28,height);
+}
+
 export function schottensteinDeckPoint(tier, angle, fraction) {
   let radius;
   if(tier===0){
@@ -323,12 +341,8 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
   let ranges=polygonSpans(block.projected,depth);
   const lowerProfile = lowerElevations.get(block.id);
-  const [frontY]=tierElevations[block.tier];
-  const media=schottensteinMediaElevation(Number(block.id),frontY,block.depthRows,block.treadDepth);
-  const y=lowerProfile ? lowerProfile.first + slot * lowerProfile.rise
-    : media ? media.front+(media.rear-media.front)*slot/(block.depthRows-1)
-    : block.accessibleRear&&slot<3 ? frontY+slot*.38
-    : deckHeight(block.tier,slot/(block.depthRows-1));
+  const heightAt=lowerProfile ? ()=>lowerProfile.first + slot * lowerProfile.rise
+    : position=>schottensteinTreadHeight(block.tier,position);
   if(reserve){
     for(const [start,end] of polygonSpans(block.reserved,depth)){
       ranges=ranges.flatMap(([low,high])=>end<=low||start>=high?[[low,high]]:
@@ -338,7 +352,63 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const spans=ranges.map(([low,high])=>
     ({left:point(high),right:point(low),width:high-low,low,high}));
   return {spans,width:spans.reduce((sum,span)=>sum+span.width,0),yaw:Math.atan2(nx,nz),
-    y,slot,treadDepth};
+    heightAt,slot,treadDepth};
+}
+
+// Two traced row ends can sit at slightly different depths across a common
+// aisle. Fit a gradual correction to both sides using only facing row ends
+// close enough to belong to that aisle. Keep interruptions in the plan.
+function fitAisleElevations() {
+  const edges=new Map();
+  for(const tier of [1,2]){
+    const banks=blocks.filter(block=>block.tier===tier)
+      .sort((a,b)=>azimuth(a.labelPoint)-azimuth(b.labelPoint));
+    const samples=new Map(banks.map(block=>[block.id,new Map(
+      Array.from({length:block.rows},(_,row)=>rowGeometry(block,row,{reserve:true}))
+        .filter(row=>row.spans.length).map(row=>[row.slot,row])
+    )]));
+    banks.forEach((bank,index)=>{
+      const next=banks[(index+1)%banks.length];
+      // The shorter media banks have their own landings and a different
+      // row sequence. Their elevations stay on the shared spatial profile.
+      if(SCHOTTENSTEIN_MEDIA_BANKS.has(Number(bank.id))||SCHOTTENSTEIN_MEDIA_BANKS.has(Number(next.id)))return;
+      const matches=[];
+      for(const [slot,row] of samples.get(bank.id)){
+        const other=samples.get(next.id).get(slot);
+        if(!other)continue;
+        const a=row.spans.at(-1).right,b=other.spans[0].left;
+        if(Math.hypot(a.x-b.x,a.z-b.z)>2.85)continue;
+        matches.push({slot,lift:(other.heightAt(b)-row.heightAt(a))*.5});
+      }
+      if(matches.length<3)return;
+      const mean=property=>matches.reduce((sum,item)=>sum+item[property],0)/matches.length;
+      const center=mean('slot'),level=mean('lift');
+      const slope=matches.reduce((sum,p)=>sum+(p.slot-center)*(p.lift-level),0)
+        /matches.reduce((sum,p)=>sum+(p.slot-center)**2,0);
+      const adjust=(id,side,direction)=>{
+        const pair=edges.get(id)??{};
+        pair[side]=slot=>direction*(level+slope*(slot-center));
+        edges.set(id,pair);
+      };
+      adjust(bank.id,'right',1);
+      adjust(next.id,'left',-1);
+    });
+  }
+  return edges;
+}
+
+const aisleElevations=fitAisleElevations();
+
+function rowElevations(block,row){
+  const edges=aisleElevations.get(block.id);
+  if(!edges||!row.spans.length)return {heightAt:row.heightAt,liftAt:()=>0};
+  const high=row.spans[0].high,low=row.spans.at(-1).low;
+  const left=edges.left?.(row.slot)??0,right=edges.right?.(row.slot)??0;
+  const middle=(high+low)*.5,mean=(left+right)*.5;
+  // A narrow end run must not inherit a steep tilt from a wide rear bank.
+  const grade=Math.max(-.145,Math.min(.145,(right-left)/(high-low)));
+  const liftAt=({x,z})=>mean+grade*(middle-(-block.nz*x+block.nx*z));
+  return {liftAt,heightAt:point=>row.heightAt(point)+liftAt(point)};
 }
 
 function pointAlongSpans(spans,distance) {
@@ -410,6 +480,7 @@ export function buildSchottensteinSeating(pitch) {
   allocateSeats(unallocated,publishedSeatTotal-assignedSeats);
   for(const {block,sectionIndex,rowLabel,g,seatSpans} of rows){
     const from=seats.length;
+    const {heightAt,liftAt}=rowElevations(block,g);
     for(const {left,right,width,count} of seatSpans){
       if(!count)continue;
       // Fill a row run evenly when its real-scale pitch remains plausible.
@@ -419,14 +490,15 @@ export function buildSchottensteinSeating(pitch) {
       const spacing=fullPitch<=Math.max(.79,pitch*1.43)?fullPitch:cappedPitch;
       const inset=(width-count*spacing)/2;
       // Keep the blank ends of the chart scan out of the circulation gaps.
+      const first=lerp(left,right,inset/width),last=lerp(left,right,1-inset/width);
       seatingRows.push({
-        left:lerp(left,right,inset/width),right:lerp(left,right,1-inset/width),width:count*spacing,
-        y:g.y,yaw:g.yaw,slot:g.slot,tier:block.tier,sectionId:block.id,row:rowLabel,depth:g.treadDepth,
+        left:first,right:last,width:count*spacing,leftLift:liftAt(first),rightLift:liftAt(last),
+        y:heightAt(lerp(first,last,.5)),yaw:g.yaw,slot:g.slot,tier:block.tier,sectionId:block.id,row:rowLabel,depth:g.treadDepth,
       });
       for(let i=0;i<count;i++){
         const position=lerp(left,right,(inset+(i+.5)*spacing)/width);
         const number=seats.length-from+1;
-        seats.push({...position,y:g.y,yaw:g.yaw,tier:block.tier,sectionId:block.id,
+        seats.push({...position,y:heightAt(position),yaw:g.yaw,tier:block.tier,sectionId:block.id,
           sectionIndex,row:rowLabel,number,uid:`DEMO-${block.id}-${rowLabel}-${number}`,
           seatingDepth:g.treadDepth,seatWidth:spacing,
           inferredRowColor:block.tier===0&&g.slot<(block.id==='105'?11:Math.round(block.rows*.52))?'courtside':'bowl'});
@@ -457,11 +529,12 @@ export function estimateSchottensteinRoster(roster) {
       const documentedRow = block.details?.labels.indexOf(label.toUpperCase()) ?? -1;
       const row = documentedRow>=0 ? documentedRow : Math.min(block.rows-1,index*block.rows/labels.length);
       const g = rowGeometry(block, row);
+      const {heightAt}=rowElevations(block,g);
       const members = rows.get(label).sort((a, b) => compare(a.number, b.number));
       if (members.length * .32 > g.width) throw new Error(`Section ${block.id}, row ${label} exceeds this estimated footprint. Supply XYZ for this roster.`);
       members.forEach((seat, i) => {
         const position = pointAlongSpans(g.spans,(i+.5)*g.width/members.length);
-        seats.push({ ...seat, ...position, y: g.y, tier: `T${block.tier + 1}` });
+        seats.push({ ...seat, ...position, y: heightAt(position), tier: `T${block.tier + 1}` });
       });
     });
   }

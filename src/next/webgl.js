@@ -46,8 +46,7 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>28.5)vColor=vec3(.70,.67,.62); // Upper seating bowl concrete
-    else if(uDeck>27.5)vColor=vec3(.24,.28,.30); // Press enclosure glazing
+    if(uDeck>27.5)vColor=vec3(.24,.28,.30); // Press enclosure glazing
     else if(uDeck>26.5)vColor=vec3(.48,.43,.39); // Press enclosure walls
     else if(uDeck>25.5)vColor=vec3(.23,.29,.33); // Rotunda glazing
     else if(uDeck>24.5)vColor=vec3(.49,.28,.23); // Rotunda masonry
@@ -177,12 +176,12 @@ const structureLayers=[
   ['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],
   ['downlights',21],['roofDeck',22],['radialBeams',23],['buildingRoof',24],
   ['entryMasonry',25],['entryGlass',26],['pressWalls',27],['pressGlass',28],
-  ['cutawayFacade',8],['externalTrim',10],['galleryFloorMesh',7],['upperBowl',29],
+  ['cutawayFacade',8],['externalTrim',10],['galleryFloorMesh',7],
 ];
-const interiorLayers=new Set(['decks','fascias','upperBowl','concourse','aisles','stepEdges',
+const interiorLayers=new Set(['decks','fascias','concourse','aisles','stepEdges',
   'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
   'downlights','roofDeck','radialBeams','pressWalls','pressGlass','buildingRoof','galleryFloorMesh']);
-const schottensteinCutaway=new Set(['decks','fascias','upperBowl','concourse','trim','pressWalls','pressGlass','cutawayFacade']);
+const schottensteinCutaway=new Set(['decks','fascias','concourse','trim','pressWalls','pressGlass','cutawayFacade']);
 
 export class NativeVenueRenderer {
   // Keep the real seat-view deck, not the gray overview backing sheet.

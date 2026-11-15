@@ -7,7 +7,7 @@ import { importTicketRoster } from '../src/seatFirst.mjs';
 import { generateSeats } from '../src/model.mjs';
 import { seatViewAnchors } from '../src/view.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
-import { schottensteinDeckHeight, schottensteinDeckPoint, allocateSeats } from '../src/schottensteinSeating.mjs';
+import { schottensteinDeckHeight, schottensteinDeckPoint, schottensteinTreadHeight, allocateSeats } from '../src/schottensteinSeating.mjs';
 import { buildSchottensteinDecks } from '../src/next/schottensteinInterior.mjs';
 import { NativeVenueRenderer } from '../src/next/webgl.js';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
@@ -109,24 +109,31 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
     const rows = sectionRows(section.id);
     const bySlot = new Map();
     for (const row of rows) {
-      if (bySlot.has(row.slot)) assert.equal(row.y, bySlot.get(row.slot));
-      bySlot.set(row.slot, row.y);
+      const spans=bySlot.get(row.slot)??[];
+      spans.push(row.y);
+      bySlot.set(row.slot,spans);
     }
-    const heights = [...bySlot.values()];
+    const heights = [...bySlot.values()].map(spans=>spans.reduce((a,b)=>a+b,0)/spans.length);
     assert.ok(heights.every((height, i) => i === 0 || height > heights[i - 1]), `Section ${section.id}`);
   }
-  const regular = ['301','302','303','305','306','308','319','320','334'].map(sectionRows);
-  assert.ok(regular.every(rows => rows[0].y > 14.9 && rows[0].y < 16
-    && rows.at(-1).y > 27.9 && rows.at(-1).y < 29.1));
   const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
   assert.ok(pressSide.every(rows => rows.at(-1).y > 23 && rows.at(-1).y < 27));
-  const treadHeight = new Map(model.seatingRows.map(row=>[row.sectionId+':'+row.row,row.y]));
-  for(const seat of model.seats){
-    assert.equal(seat.y,treadHeight.get(seat.sectionId+':'+seat.row),'Each chair sits on its level tread');
+  const treads=new Map();
+  for(const row of model.seatingRows){
+    const key=row.sectionId+':'+row.row;
+    const spans=treads.get(key)??[];
+    spans.push(row);
+    treads.set(key,spans);
   }
-  for(let slot=0;slot<=20;slot++){
-    const elevations=regular.map(rows=>rows.find(row=>row.slot===slot).y);
-    assert.equal(new Set(elevations).size,1,'Regular upper banks share row elevations');
+  for(const seat of model.seats){
+    const matches=treads.get(seat.sectionId+':'+seat.row);
+    assert.ok(matches.some(row=>{
+      if(row.tier===0)return seat.y===row.y;
+      const {left,right,width}=row;
+      const fraction=((seat.x-left.x)*(right.x-left.x)+(seat.z-left.z)*(right.z-left.z))/width**2;
+      const lift=row.leftLift+(row.rightLift-row.leftLift)*fraction;
+      return fraction>=0&&fraction<=1&&Math.abs(seat.y-schottensteinTreadHeight(row.tier,seat)-lift)<1e-9;
+    }),seat.uid+' follows its tread elevation');
   }
   for(const tier of [1,2]){
     const radii=Array.from({length:256},(_,i)=>{
@@ -350,6 +357,28 @@ test('manual terrace refinements remove isolated slits and retain wide rear rows
  assert.equal(spans('323','C').length,0,'The press-side gap remains open');
  assert.ok(rows('U')[0].y-rows('T')[0].y>rows('I')[0].y-rows('H')[0].y,
    'The terrace rises progressively towards the back');
+});
+
+test('facing row ends at the club and upper corner aisles share an elevation and rake',()=>{
+ const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
+ const pairs=[['215','217'],['217','218'],['315','316'],['316','317'],['317','318'],['318','319']];
+ const point=(id,label,side)=>{
+   const row=model.seatingRows.find(row=>row.sectionId===id&&row.row===label);
+   const end=row[side];
+   return {...end,y:schottensteinTreadHeight(row.tier,end)+row[side+'Lift']};
+ };
+ const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+ for(const [left,right] of pairs){
+   const labels=left.startsWith('2')?['G','H','I','J']:['J','N','T','U'];
+   const ends=labels.map(row=>[point(left,row,'right'),point(right,row,'left')]);
+   for(const [a,b] of ends){
+     assert.ok(distance(a,b)>1.25,'Leave the actual aisle in plan');
+     assert.ok(Math.abs(a.y-b.y)<.11,`${left}/${right} tread ends line up across the aisle`);
+   }
+   const grade=side=>(ends.at(-1)[side].y-ends[0][side].y)/distance(ends.at(-1)[side],ends[0][side]);
+   assert.ok(Math.abs(grade(0)-grade(1))<.06,`${left}/${right} physical rake stays continuous`);
+ }
+ assert.equal(buildVenuePlan(model).architectureGeometry.upperBowl,undefined);
 });
 
 test('manual bowl fitting also fills clipped lower and club banks',()=>{
