@@ -182,7 +182,20 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  const plan=buildVenuePlan(model);
  assert.equal(plan.arenaInterior,true);
  assert.equal(plan.scoreboardHeight,16.3);
- assert.equal(plan.features.filter(feature=>feature.kind==='entrance').length,12);
+ const access=plan.features.filter(feature=>feature.kind==='concourse-access');
+ assert.deepEqual([0,1,2].map(tier=>access.filter(feature=>feature.tier===tier).length),[26,26,34]);
+ assert.equal(new Set(access.map(feature=>feature.id)).size,86);
+ for(const point of access){
+   assert.ok(Math.abs(point.nearY-point.farY)<=point.depth*.55+1e-6);
+   const sine=Math.sin(point.yaw),cosine=Math.cos(point.yaw);
+   assert.ok(!model.seats.some(seat=>{
+     if(seat.tier!==point.tier)return false;
+     const dx=seat.x-point.x,dz=seat.z-point.z;
+     return Math.abs(dx*cosine-dz*sine)<point.width*.5+.15
+       &&Math.abs(dx*sine+dz*cosine)<point.depth*.5+.10;
+   }),point.label);
+ }
+ assert.equal(plan.chairCount,19049);
  assert.deepEqual(plan.features.filter(feature=>feature.outline).map(feature=>feature.label),
    ['Band Area','Press Box','Accessible Platform']);
  const boxes=decode(plan);

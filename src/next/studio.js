@@ -17,6 +17,7 @@ const palettePresets={
 };
 const fmt=n=>Number(n||0).toLocaleString('en-US');
 const limited=s=>String(s??'').slice(0,150);
+const accessColors=['#f8d08c','#9ee3d6','#a7c8f5'];
 function download(filename,content,type='application/json'){
   const a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));
   a.href=u;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);
@@ -45,6 +46,21 @@ function renderProject(){
       rows.get(row).push(seat);
     }
     plan=buildVenuePlan(model,{palette:palettePresets[$('palette').value],detail:$('detail').value});
+    const access=plan.features.filter(feature=>feature.kind==='concourse-access');
+    $('accessSummary').hidden=!access.length;
+    if(access.length){
+      const levels=new Map();
+      for(const point of access)levels.set(point.level,(levels.get(point.level)??0)+1);
+      const source=document.createElement('a');
+      source.href=access[0].source;
+      source.target='_blank';
+      source.rel='noopener';
+      source.textContent='Official concourse map ↗';
+      $('accessSummary').replaceChildren(
+        `${access.length} mapped bowl access runs · ${[...levels].map(([level,count])=>`${level} ${count}`).join(' · ')}. `,
+        source,
+      );
+    }
     if(!renderer){try{renderer=new NativeVenueRenderer($('viewport3d'),seat=>selectSeat(seat));}catch(e){error(e.message);mode='top';}}
     if(renderer)renderer.load(plan);
     $('rosterRequirements').textContent=model.sectionFootprints
@@ -141,13 +157,13 @@ function selectSeat(seat){
   $('seatDetails').replaceChildren();
   const title=document.createElement('strong');title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
   const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
-  const access=plan.features.find(feature=>feature.kind==='entrance'&&feature.sectionId===seat?.sectionId);
+  const access=plan.features.find(feature=>feature.kind==='concourse-access'&&feature.sectionIds.includes(seat?.sectionId));
   if(access){
     const link=document.createElement('a');
     link.href=access.source;
     link.target='_blank';
     link.rel='noopener';
-    link.textContent=`Section access at Row ${access.row} ↗`;
+    link.textContent='Find concourse access on the official map ↗';
     $('seatDetails').append(link);
   }
   updateReferencePhoto(seat);
@@ -186,7 +202,7 @@ function view(which){
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
   $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
   $('viewHint').textContent=which==='top'
-    ?(plan.features.length?'Select a section · Gold dots mark venue features':model.sectionFootprints?'Select a numbered section':'Select a seat on the map')
+    ?(plan.features.length?'Select a section or a colored access marker':model.sectionFootprints?'Select a numbered section':'Select a seat on the map')
     :which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
   if(which==='top')drawMap();else {renderer?.view(which,selected);renderer?.resize();}
 }
@@ -267,10 +283,18 @@ function drawMap(){
       ctx.beginPath();ctx.arc(...p,radius,0,Math.PI*2);ctx.fill();
     }
   }
+  const accessHits=[];
   for(const feature of plan.features){
     const point=pos(feature);
-    ctx.fillStyle='#e6b986';ctx.strokeStyle='#283847';ctx.lineWidth=dpr;
-    ctx.beginPath();ctx.arc(...point,2.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if(feature.kind==='concourse-access'){
+      accessHits.push({feature,point});
+      ctx.fillStyle=accessColors[feature.tier];ctx.strokeStyle='#22334d';ctx.lineWidth=dpr;
+      const r=2.4*dpr;
+      ctx.beginPath();ctx.rect(point[0]-r,point[1]-r,2*r,2*r);ctx.fill();ctx.stroke();
+    }else{
+      ctx.fillStyle='#e6b986';ctx.strokeStyle='#283847';ctx.lineWidth=dpr;
+      ctx.beginPath();ctx.arc(...point,2.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
+    }
   }
   if(selected){
     ctx.fillStyle='#ffc26b';ctx.strokeStyle='#fff';ctx.lineWidth=1.4*dpr;
@@ -278,6 +302,15 @@ function drawMap(){
   }
   c.onclick=e=>{
     const b=c.getBoundingClientRect(),x=(e.clientX-b.left)*c.width/b.width,y=(e.clientY-b.top)*c.height/b.height;
+    let access=null,accessDistance=5*dpr;
+    for(const {feature,point} of accessHits){
+      const distance=Math.hypot(point[0]-x,point[1]-y);
+      if(distance<accessDistance){access=feature;accessDistance=distance;}
+    }
+    if(access){
+      $('viewHint').textContent=`${access.level} · ${access.label}`;
+      return;
+    }
     if(!chart||plan.hasRoster){
       let best=null,min=((chart?5:18)*dpr)**2;
       for(const s of plan.seats){
