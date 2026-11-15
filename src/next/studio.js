@@ -290,7 +290,7 @@ function drawMap(){
   const chart=model.sectionFootprints;
   const horizontal=chart||plan.surface.sport==='basketball';
   const palette=palettePresets[$('palette').value];
-  const tint=(tier,index)=>palette?.[tier]||(model.seatingRows?['#783045','#9a5164','#be8594'][tier]:seatColor(project,tier,index));
+  const tint=(tier,index)=>palette?.[tier]||(model.seatingRows?['#903549','#823348','#743245'][tier]:seatColor(project,tier,index));
   let extentX=plan.surface.width/2+8,extentZ=plan.surface.length/2+8;
   for(const s of plan.seats){
     extentX=Math.max(extentX,Math.abs(s.x)+3);
