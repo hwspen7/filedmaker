@@ -183,7 +183,7 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   // Restrained stone, graphite and scarlet trim. No broad gray rear shell.
   const tread=color('#c5c5c4'), fascia=color('#686a72');
   const suite=color('#565764'), glass=color('#353c46');
-  const red=color('#8c3047'), led=color('#a3485e');
+  const led=color('#a3485e');
   // The entry level has distinct seating banks close to the court.
   // The elevated tiers use the continuous decks instead of row slabs.
   for(const {left,right,y,depth,tier} of rows){
@@ -194,17 +194,11 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
 
   addChartRegions(add,color,features,spanAt);
 
-  const point=(angle,rx,rz)=>{
-    const x=Math.cos(angle),z=Math.sin(angle);
-    return {x:rx*Math.sign(x)*Math.abs(x)**.68,z:rz*Math.sign(z)*Math.abs(z)**.68};
-  };
   const terracePoints=footprints.filter(section=>section.tier===2).flatMap(section=>section.outlines.flat());
   const outerX=Math.max(...terracePoints.map(p=>Math.abs(p.x)))+1.5;
   const outerZ=Math.max(...terracePoints.map(p=>Math.abs(p.z)))+2.5;
   // Keep the ribbon below the forward edge of the reconstructed terrace.
   const ribbonTop = SCHOTTENSTEIN_TERRACE_RIM.front - .67;
-  const outerTrim = SCHOTTENSTEIN_TERRACE_RIM.rear + 1.35;
-  const outerWallBottom = 19.25;
   // Recessed suite band, ribbon and upper fascia observed in the arena photos.
   for(let i=0;i<64;i++){
     const a=i*2*Math.PI/64,b=(i+1)*2*Math.PI/64;
@@ -217,9 +211,6 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     spanBox(add,face(mix(p,q,.10)),face(mix(p,q,.88)),ribbonTop-1.54,1.03,.045,glass,INWARD_FACING);
     spanBox(add,p,q,ribbonTop-.58,.9144,.39,led,INWARD_FACING);
     spanBox(add,p,q,ribbonTop-.07,.14,.43,fascia,INWARD_FACING);
-    const outerA=point(a,outerX,outerZ),outerB=point(b,outerX,outerZ);
-    // Facade and crown now use sectional architectural mesh, replacing the
-    // older overlapping square-edged continuous perimeter wall.
   }
   // Interior overhead structure is visible from the spectator camera.
   const ceiling=color('#27262b'), truss=color('#535057'), light=color('#ddd8cf');
@@ -263,6 +254,6 @@ export function addSchottensteinBoard(add,color) {
   const hangerBottom = 18.15, hangerTop = roofHeight - .95;
   for(const x of [-1.19,1.19])for(const z of [-1.19,1.19]){
     add([x,13.83,z],[2.19,.035,2.19],0,color('#bc4250'));
-    add([x*1.65,(hangerBottom+hangerTop)/2,z*1.65],[.042,hangerTop-hangerBottom,.042],0,housing);
+    add([x*1.65,(hangerBottom+hangerTop)/2,z*1.65],[.042,hangerTop-hangerBottom,.042],0,housing,HIDDEN_IN_CUTAWAY);
   }
 }
