@@ -98,7 +98,7 @@ export function buildSchottensteinExitMarkers(model){
 
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
-  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],crown=[],signs=[],exitLights=[];
+  const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],crown=[],signs=[],exitLights=[],exitGlyphs=[];
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
@@ -240,6 +240,50 @@ export function buildSchottensteinArchitecture(model){
   }
   // Intentionally no generated stair treads or radial stair ribbons.
   // The actual empty aisles remain visible between the mapped seat banks.
-  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,crown,signs,exitLights})
+  // Geometry-backed lettering belongs to the wall, not to a floating UI badge.
+  // The 5x7 strokes are two-sided through correct triangle winding and remain
+  // legible from spectator positions even when HTML area labels are hidden.
+  const font={
+    E:['11111','10000','10000','11110','10000','10000','11111'],
+    X:['10001','01010','00100','00100','00100','01010','10001'],
+    I:['11111','00100','00100','00100','00100','00100','11111'],
+    T:['11111','00100','00100','00100','00100','00100','00100'],
+    '0':['01110','10001','10011','10101','11001','10001','01110'],
+    '1':['00100','01100','00100','00100','00100','00100','01110'],
+    '2':['01110','10001','00001','00010','00100','01000','11111'],
+    '3':['11110','00001','00001','01110','00001','00001','11110'],
+    '4':['00010','00110','01010','10010','11111','00010','00010'],
+    '5':['11111','10000','10000','11110','00001','00001','11110'],
+    '6':['01110','10000','10000','11110','10001','10001','01110'],
+    '7':['11111','00001','00010','00100','01000','01000','01000'],
+    '8':['01110','10001','10001','01110','10001','10001','01110'],
+    '9':['01110','10001','10001','01111','00001','00001','01110']
+  };
+  for(const marker of exits){
+    const angle=marker.angle,normal=inward(angle);
+    const tangent=[Math.sin(angle),-Math.cos(angle)];
+    const wall=ringPoint(2,angle,1,innerOffset-.078);
+    const pixel=.029,advance=pixel*6;
+    const line=(label,top)=>{
+      const span=label.length*advance-pixel;
+      for(let index=0;index<label.length;index++){
+        const glyph=font[label[index]];
+        if(!glyph)continue;
+        for(let r=0;r<7;r++)for(let c=0;c<5;c++){
+          if(glyph[r][c]!=='1')continue;
+          const left=index*advance+c*pixel-span/2, right=left+pixel*.89;
+          const upper=top-r*pixel,lower=upper-pixel*.92;
+          const onWall=(x,y)=>[
+            wall.x+tangent[0]*x,y,wall.z+tangent[1]*x
+          ];
+          quad(exitGlyphs,onWall(left,lower),onWall(right,lower),
+            onWall(right,upper),onWall(left,upper),normal);
+        }
+      }
+    };
+    line('EXIT',wall.y+2.43);
+    line(marker.number,wall.y+2.15);
+  }
+  return Object.fromEntries(Object.entries({decks,fascias,concourse,facade,glazing,trim,aisles,stepEdges,crown,signs,exitLights,exitGlyphs})
     .map(([key,list])=>[key,new Float32Array(list)]));
 }
