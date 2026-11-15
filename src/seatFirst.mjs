@@ -21,6 +21,18 @@ export function tierBlue(tier=0,section=0){
   const index=Math.max(0,Math.min(3,Math.trunc(tier)||0));
   return (Math.abs(section)%5===0 ? BLUE_VARIANTS : BLUE_TIERS)[index];
 }
+function capacityReference(project,meta={}){
+  const facts=venueFacts(project?.venueReference?.id);
+  const general=facts?.capacity;
+  const season=facts?.mensBasketballCapacity;
+  if(season&&usesSchottensteinChart(project)){
+    const generalDefault=meta.officialCapacity===general.value&&meta.capacitySource===general.source;
+    const seasonDefault=meta.officialCapacity===season.value&&meta.capacitySource===season.source;
+    if(meta.officialCapacity==null||generalDefault||seasonDefault)return season;
+  }
+  return {value:meta.officialCapacity??general?.value??null,
+    source:meta.capacitySource||general?.source||'',scope:meta.capacityScope||general?.scope||''};
+}
 export function enableSeatFirst(input,opts={}) {
   const p=structuredClone(input);
   p.seatFirst=true;
@@ -31,12 +43,12 @@ export function enableSeatFirst(input,opts={}) {
   p.showFixtures=true;
   p.detailLevel='standard';
   if(p.blueTheme) p.sections.forEach((s,i)=>{s.color=tierBlue(0,i);});
-  const facts=venueFacts(p.venueReference?.id);
   const original=p.ticketing||{};
+  const capacity=capacityReference(p,original);
   p.ticketing={
-    officialCapacity:opts.officialCapacity??original.officialCapacity??facts?.capacity?.value??null,
-    capacitySource:opts.capacitySource??original.capacitySource??facts?.capacity?.source??'',
-    capacityScope:opts.capacityScope??original.capacityScope??facts?.capacity?.scope??'',
+    officialCapacity:opts.officialCapacity??capacity.value,
+    capacitySource:opts.capacitySource??capacity.source,
+    capacityScope:opts.capacityScope??capacity.scope,
     inventorySource:original.inventorySource||'',
     inventoryCount:original.inventoryCount??null,
     inventoryMode:original.inventoryMode||'none',
@@ -196,11 +208,12 @@ export function importTicketRoster(input,csv,source='School-supplied ticket inve
 }
 export function ticketReconciliation(project,modeledCount=null){
   const meta=validateTicketing(project?.ticketing);
-  const official=meta?.officialCapacity??venueFacts(project?.venueReference?.id)?.capacity?.value??null;
+  const capacity=capacityReference(project,meta??{});
+  const official=capacity.value;
   const modeled=modeledCount===null?null:Math.max(0,Math.trunc(modeledCount));
   const inventory=meta?.inventoryCount??(project?.survey?.mode==='imported' ? project.survey.seats.length : null);
   const reconciled=official!==null&&inventory!==null&&official===inventory;
-  return {officialCapacity:official,officialSource:meta?.capacitySource||venueFacts(project?.venueReference?.id)?.capacity?.source||'',
+  return {officialCapacity:official,officialSource:capacity.source,capacityWithStudents:capacity.withStudents??null,
     inventoryCount:inventory,modelSeatCount:modeled,
     inventoryVsOfficial:official===null||inventory===null?null:inventory-official,
     modelVsInventory:inventory===null||modeled===null?null:modeled-inventory,

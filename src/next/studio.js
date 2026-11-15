@@ -64,7 +64,8 @@ function renderProject(){
       link.href=plan.official.officialSource;
       link.target='_blank';
       link.rel='noopener';
-      link.textContent='Published capacity source ↗';
+      link.textContent=plan.official.capacityWithStudents===null?'Published capacity source ↗'
+        :`${fmt(plan.official.capacityWithStudents)} with students · Season record book ↗`;
       capacitySource.replaceChildren(link);
     }
     $('visualCount').textContent=fmt(model.seats.length);

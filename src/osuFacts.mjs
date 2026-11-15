@@ -26,6 +26,8 @@ export const OSU_FACTS = Object.freeze({
     name: 'Jerome Schottenstein Center', sport: 'ncaa', city: 'Columbus, Ohio',
     capacity: {value:19500, scope:'basketball configuration, published figure',
       source:'https://ohiostatebuckeyes.com/sports/2023/6/1/the-jerome-schottenstein-center'},
+    mensBasketballCapacity: {value:19049, withStudents:18809, scope:'2026–27 Ohio State men’s basketball',
+      source:'https://ohiostatebuckeyes.com/documents/download/2026/11/6/2026-27_Ohio_State_Men_s_Basketball_Record_Book.pdf'},
     alternativeCapacity: {value:19700, scope:'basketball maximum, venue quick facts',
       source:'https://www.schottensteincenter.com/events/buckeyes',
       note:'Published figures vary by configuration and source; do not calibrate generated seating to either without a seat inventory.'},

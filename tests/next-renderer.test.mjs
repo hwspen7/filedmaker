@@ -100,6 +100,8 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   assert.ok(model.seats.every(s =>
     Math.abs(s.x) > model.surface.width/2 || Math.abs(s.z) > model.surface.length/2));
   assert.equal(plan.hasRoster, false);
+  assert.equal(plan.official.officialCapacity,19049);
+  assert.equal(plan.official.capacityWithStudents,18809);
   assert.equal(plan.positionCollisions, 0);
   assert.ok(plan.roundedCount > 0);
   assert.equal(buildVenuePlan(model, {detail:'compact'}).roundedCount, 0);
@@ -163,8 +165,9 @@ test('surveyed Ohio State import keeps supplied positions and the native section
    ['A',0,-13,1,5],['B',2,34,16,-7],
  ]);
  assert.equal(plan.chairCount,2);
- assert.equal(plan.official.officialCapacity,19500);
- assert.equal(plan.official.inventoryVsOfficial,2-19500);
+ assert.equal(plan.official.officialCapacity,19049);
+ assert.equal(plan.official.capacityWithStudents,18809);
+ assert.equal(plan.official.inventoryVsOfficial,2-19049);
  assert.ok(generateSeats(project).seats.length>12000);
 });
 
