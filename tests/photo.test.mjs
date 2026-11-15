@@ -50,7 +50,7 @@ test('project persists numeric photo registration diagnostics without embedding 
   assert.ok(!JSON.stringify(a).includes('data:image'));
 });
 test('UI provides photo landmark tagging and an explicit uncertainty disclaimer',()=>{
-  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../legacy/index.html',import.meta.url),'utf8');
   const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
   assert.match(html,/calibrationPhotoDialog|photoCalibrationDialog/);
   assert.match(app,/fitPhotoView/);

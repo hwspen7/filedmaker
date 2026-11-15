@@ -1,7 +1,7 @@
 import { generateSeats, SURFACES } from '../src/model.mjs';
-import { StadiumScene } from '../src/scene.js';
+import { SeatScene as StadiumScene } from '../src/next/compatScene.js';
 import { createSchoolProject, applySchoolRowPlan, applySchoolSurvey, schoolReadiness, schoolExampleRowsCSV } from '../src/schoolPipeline.mjs';
-import { buildSchoolViewerHTML } from '../src/schoolPublisher.mjs';
+import { buildSchoolViewerHTML, buildOfflineSchoolViewerHTML } from '../src/schoolPublisher.mjs';
 import { enableSeatFirst, importTicketRoster, ticketReconciliation, ticketMappingCSV, demoTicketRosterCSV } from '../src/seatFirst.mjs';
 const $=id=>document.getElementById(id);
 let project=createSchoolProject('college-gym',{school:$('schoolName').value,venue:$('venueName').value,primaryColor:$('schoolColor').value});
@@ -42,7 +42,7 @@ $('ticketExample').onclick=()=>save('fictional-ticket-roster.csv',demoTicketRost
 $('setCapacity').onclick=()=>{try{const raw=$('officialCapacity').value.trim(),source=$('capacitySource').value.trim(),scope=$('capacityScope').value.trim();if(raw&&!source)throw Error('Provide an HTTPS source for an official capacity figure.');const copy=structuredClone(project);copy.ticketing={...(copy.ticketing||{}),officialCapacity:raw===''?null:Number(raw),capacitySource:source,capacityScope:scope};project=enableSeatFirst(copy);render();toast('Capacity reference recorded. This does not create or remove ticket seats.');}catch(err){toast(err.message,true);}};
 $('clearRows').onclick=()=>{try{const copy=structuredClone(project);copy.survey.mode='generated';copy.survey.seats=[];if(copy.ticketing){copy.ticketing.inventoryCount=null;copy.ticketing.inventoryMode='none';copy.ticketing.coordinates='none';copy.ticketing.inventorySource='';}copy.school.status='draft';copy.school.seatCoordinateMethod='parametric-estimate';project=copy;render();}catch(e){toast(e.message,true);}};
 $('openViewer').onclick=()=>{try{localStorage.setItem('filedmaker.viewer.project',JSON.stringify(project));window.open('../viewer/','_blank','noopener');toast('Seat Viewer opened with current seat identities.');}catch(e){toast('Could not open viewer: '+e.message,true);}};
-$('publish').onclick=()=>{try{save(slug()+'-seat-preview.html',buildSchoolViewerHTML(project),'text/html;charset=utf-8');toast('Standalone preview exported. This is not a live ticketing website.');}catch(e){toast(e.message,true);}};
+$('publish').onclick=async()=>{try{const response=await fetch('../src/next/webgl.js');if(!response.ok)throw Error('Local WebGL renderer was not found.');const rendererSource=await response.text();save(slug()+'-seat-preview.html',buildOfflineSchoolViewerHTML(project,rendererSource),'text/html;charset=utf-8');toast('Standalone offline 2D/3D preview exported. Not a live ticketing website.');}catch(e){toast(e.message,true);}};
 $('exportTicketMapping').onclick=()=>{try{save(slug()+'-ticket-mapping.csv',ticketMappingCSV(project),'text/csv;charset=utf-8');toast('Ticket identity mapping exported. No live inventory is linked.');}catch(e){toast(e.message,true);}};
 $('exportJson').onclick=()=>save(slug()+'.filedmaker.json',JSON.stringify({format:'filedmaker-project',project},null,2),'application/json');
 $('exportSeats').onclick=()=>{if(!model)return;const esc=v=>'"'+String(v).replace(/"/g,'""')+'"';const rows=['seat_id,section,row,seat,x_m,y_m,z_m,data_source'];for(const s of model.seats){rows.push([s.uid,s.sectionId,s.row,s.number,s.x.toFixed(4),s.y.toFixed(4),s.z.toFixed(4),project.school?.seatCoordinateMethod||'estimated'].map(esc).join(','));}save(slug()+'-seats.csv',rows.join('\r\n'),'text/csv;charset=utf-8');};

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {createProject,generateSeats,SURFACES} from '../src/model.mjs';
 import {VIEW_DEFAULTS,validateViewOptions,eyePosition,viewpoint,viewingTarget,nearbySeat,crowdCandidates,sightlineNote,apparentAngleMeters} from '../src/view.mjs';
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('../legacy/index.html',import.meta.url),'utf8');
 const scene=readFileSync(new URL('../src/scene.js',import.meta.url),'utf8');
 const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
 const model=generateSeats(createProject('nba'));

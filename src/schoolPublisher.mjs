@@ -1,6 +1,7 @@
 // Standalone school seat-selection PREVIEW generator.
 // No checkout, holds, inventory counts or booking claims. Local selection only.
 import { generateSeats } from './model.mjs';
+import { buildVenuePlan } from './next/venuePlan.mjs';
 import { schoolReadiness } from './schoolPipeline.mjs';
 import { BLUE_TIERS, ticketReconciliation } from './seatFirst.mjs';
 import { seatColor, seatKind } from './seatPresentation.mjs';
@@ -88,4 +89,49 @@ $('threeBtn').onclick=async()=>{display('three');try{(await bootThree()).orbit()
 $('eyeBtn').onclick=async()=>{if(selected<0){$('details').textContent='Select a seat on the 2D map first.';display('map');return;}display('eye');try{(await bootThree()).seatView(data.seats[selected]);}catch{}};
 </script></body></html>`;
   return html;
+}
+
+// Standalone school preview with the exact same WebGL2 renderer as the studio.
+// Renderer source is loaded from this installation at export time, then bundled
+// into the HTML. The generated page requires no CDN, login, or remote server.
+export function buildOfflineSchoolViewerHTML(input,rendererSource){
+  if(typeof rendererSource!=='string'||!rendererSource.includes('class NativeVenueRenderer'))throw Error('Offline renderer source is missing.');
+  const model=generateSeats(input),project=model.project;
+  const plan=buildVenuePlan(model);
+  const bytes=new Uint8Array(plan.instanceData.buffer);
+  let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+  const base64=btoa(binary);
+  const payload={
+    name:project.school?.venue||project.title,
+    surface:model.surface,
+    school:project.school?.school||'School venue',
+    officialCapacity:plan.official.officialCapacity,
+    verifiedTicketIDs:plan.hasRoster,
+    coordinateQuality:project.ticketing?.coordinates||'estimated',
+    seats:plan.seats.map(s=>({uid:String(s.uid),x:s.x,y:s.y,z:s.z,yaw:s.yaw,tier:s.tier,sectionId:String(s.sectionId),row:String(s.row),number:String(s.number)})),
+    instanceCount:plan.instanceCount,
+    packedInstances:base64,
+  };
+  const safe=JSON.stringify(payload).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
+  const renderCode=rendererSource.replace(/\bexport class NativeVenueRenderer\b/,'class NativeVenueRenderer');
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>School Seat Preview · FiledMaker</title><style>
+*{box-sizing:border-box}body{font-family:system-ui,Segoe UI,Arial;margin:0;background:#f3f6f7;color:#253842}header{background:white;border-bottom:1px solid #e0e7ea;padding:18px 25px;display:flex;justify-content:space-between;gap:15px;align-items:center}header strong{font-size:18px}header small{display:block;margin-top:4px;color:#8796a0}.layout{display:grid;grid-template-columns:minmax(0,1fr) 275px;height:calc(100vh - 75px)}main{padding:20px;display:flex;flex-direction:column;min-width:0}.viewport{position:relative;flex:1;min-height:350px;border-radius:14px;border:1px solid #dce5e9;overflow:hidden;background:#eff4f6}canvas{width:100%;height:100%;display:block;touch-action:none}canvas[hidden]{display:none}.controls{display:flex;gap:7px;margin-bottom:12px}button{border:1px solid #d4dee3;background:white;color:#3a5261;border-radius:8px;padding:9px 13px;font-size:12px;cursor:pointer}button.active{background:#273e4c;border-color:#273e4c;color:white}.details{border-left:1px solid #dfe7eb;background:#fff;padding:22px;overflow:auto}h3{font-size:12px;letter-spacing:.7px;color:#778795}input{border:1px solid #d9e3e7;border-radius:8px;padding:11px;width:100%}.card{background:#f5f8fa;padding:14px;margin:14px 0;border-radius:10px;color:#5d7280;font-size:12px;line-height:1.5}.card strong{font-size:14px;color:#293d49}.disclaimer{font-size:11px;line-height:1.65;color:#8b6771;padding-top:10px}footer{padding:12px 2px;color:#8d9aa3;font-size:11px}@media(max-width:760px){.layout{display:block;height:auto}main{height:60vh}.details{border-left:0}}
+</style></head><body><header><div><strong id="name"></strong><small id="school"></small></div><span style="font-size:12px;color:#8d6d44">Seat preview · Not live tickets</span></header><div class="layout"><main><div class="controls"><button class="active" id="two">2D Map</button><button id="three">3D Venue</button><button id="eye">Human View</button></div><div class="viewport"><canvas id="map"></canvas><canvas id="stage" hidden></canvas></div><footer id="note"></footer></main><aside class="details"><h3>SEAT SEARCH</h3><input id="search" placeholder="Section / Row / Seat ID"><button id="find" style="width:100%;margin-top:8px">Locate seat</button><div class="card" id="details">Select a seat on the 2D map to preview.</div><h3>CAPACITY</h3><div class="card" id="capacity"></div><div class="disclaimer">This page has no payment or live availability connection. School staff must verify the section mapping, exact seat coordinates, accessible seats and sightlines before selling tickets.</div></aside></div><script type="application/json" id="payload">${safe}</script><script>
+${renderCode}
+const data=JSON.parse(document.getElementById('payload').textContent),$=id=>document.getElementById(id),seats=data.seats;
+$('name').textContent=data.name;$('school').textContent=data.school;$('capacity').textContent='Published capacity: '+(data.officialCapacity==null?'not supplied':data.officialCapacity.toLocaleString())+' · '+seats.length.toLocaleString()+' visual positions · '+(data.verifiedTicketIDs?'imported seat IDs':'synthetic seats only');
+$('note').textContent=data.verifiedTicketIDs?'School-supplied seat IDs; XYZ may be estimated':'Illustrative positions only — no official seat inventory';
+const raw=atob(data.packedInstances),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+const plan={seats,surface:data.surface,instanceCount:data.instanceCount,instanceData:new Float32Array(bytes.buffer)};
+const map=$('map'),ctx=map.getContext('2d');let chosen=null,renderer=null,mode='two';
+let extent=Math.max(data.surface.width/2+5,data.surface.length/2+5);for(const s of seats)extent=Math.max(extent,Math.abs(s.x)+4,Math.abs(s.z)+4);
+function draw(){const r=map.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);map.width=r.width*dpr;map.height=r.height*dpr;const w=map.width,h=map.height,scale=.44*Math.min(w,h)/extent,cx=w/2,cy=h/2;ctx.fillStyle='#eef3f6';ctx.fillRect(0,0,w,h);ctx.fillStyle=data.surface.sport==='basketball'?'#bdb2a2':'#397f55';ctx.fillRect(cx-data.surface.width*scale/2,cy-data.surface.length*scale/2,data.surface.width*scale,data.surface.length*scale);ctx.strokeStyle='white';ctx.lineWidth=1.6*dpr;ctx.strokeRect(cx-data.surface.width*scale/2,cy-data.surface.length*scale/2,data.surface.width*scale,data.surface.length*scale);
+ const step=Math.max(1,Math.ceil(seats.length/10000));for(let i=0;i<seats.length;i+=step){const s=seats[i];ctx.fillStyle=['#466b80','#668ca1','#8faaba','#b1c4cf'][s.tier%4];ctx.fillRect(cx+s.x*scale-1.1,cy+s.z*scale-1.1,2.2,2.2);}if(chosen){ctx.fillStyle='#f2ac48';ctx.beginPath();ctx.arc(cx+chosen.x*scale,cy+chosen.z*scale,5*dpr,0,Math.PI*2);ctx.fill();}map._transform={cx,cy,scale,dpr};}
+map.onclick=e=>{const r=map.getBoundingClientRect(),x=(e.clientX-r.left)*map.width/r.width,y=(e.clientY-r.top)*map.height/r.height;const {cx,cy,scale}=map._transform;let best=null,d=14*14*map.width/r.width;for(const s of seats){const dist=(cx+s.x*scale-x)**2+(cy+s.z*scale-y)**2;if(dist<d){d=dist;best=s;}}if(best)select(best);};
+function select(s){chosen=s;$('details').textContent='Section '+s.sectionId+' · Row '+s.row+' · Seat '+s.number+' · '+s.uid+(data.verifiedTicketIDs?' (imported ID)':' (illustrative ID)');if(mode==='two')draw();if(mode==='eye'&&renderer)renderer.view('human',s);}
+$('find').onclick=()=>{const q=$('search').value.trim().toLowerCase();const s=seats.find(s=>s.uid.toLowerCase()===q)||seats.find(s=>s.uid.toLowerCase().includes(q));if(s)select(s);else $('details').textContent='No match found.';};
+function scene(){if(!renderer){renderer=new NativeVenueRenderer($('stage'),s=>select(s));renderer.load(plan);}renderer.resize();return renderer;}
+function setMode(which){if(which==='eye'&&!chosen){$('details').textContent='Select a seat on the 2D map first.';return;}mode=which;map.hidden=which!=='two';$('stage').hidden=which==='two';for(const id of ['two','three','eye'])$(id).classList.toggle('active',id===which);if(which==='two')draw();else{try{scene().view(which==='three'?'overview':'human',chosen);}catch(e){$('details').textContent='3D unavailable on this device: '+e.message;setMode('two');}}}
+$('two').onclick=()=>setMode('two');$('three').onclick=()=>setMode('three');$('eye').onclick=()=>setMode('eye');window.addEventListener('resize',()=>{if(mode==='two')draw();else renderer?.resize();});setMode('two');
+</script></body></html>`;
 }

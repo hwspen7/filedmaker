@@ -82,7 +82,7 @@ test('imported seats use numeric row navigation even though CSV labels are strin
   assert.equal(nearbySeat(m,s,'right').number,'2');assert.equal(nearbySeat(m,s,'back').row,'2');assert.equal(nearbySeat(m,s,'front'),null);
 });
 test('reviewer has explicit provenance and no false survey verification in UI',()=>{
-  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../legacy/index.html',import.meta.url),'utf8');const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
   assert.match(html,/Real data/);assert.match(html,/calibrationPhotoInput/);assert.match(app,/unverified/);
   assert.match(app,/seatCsvUpload/);assert.match(app,/obstructionReport/);
 });

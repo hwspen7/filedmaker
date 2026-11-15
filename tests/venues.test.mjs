@@ -64,7 +64,7 @@ test('3D scene includes new architecture, human seat view and sport equipment',(
 });
 test('UI exposes Ohio Stadium reconstruction and discloses uncertain capacity',()=>{
  const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
- const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../legacy/index.html',import.meta.url),'utf8');
  assert.match(html,/ohioVenueShortcut/);assert.match(app,/data-build-ohio-stadium/);
  assert.match(app,/NOT official/);assert.match(app,/detailLevel/);
  assert.match(html,/data-preset="soccer"/);assert.match(html,/data-preset="nba"/);

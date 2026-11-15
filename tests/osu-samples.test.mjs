@@ -86,7 +86,7 @@ test('sports arena pipeline and court render include Schottenstein visual featur
 });
 
 test('both OSU samples are reachable in the editor and expose QA export',()=>{
-  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../legacy/index.html',import.meta.url),'utf8');
   const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
   assert.match(html,/schottVenueShortcut/);
   assert.match(html,/ohioVenueShortcut/);

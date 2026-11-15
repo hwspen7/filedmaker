@@ -121,7 +121,7 @@ test('projects created under v2 migrate without breaking the new schema', () => 
 });
 
 test('browser markup exposes plan upload, independent section profiles and entrance controls', () => {
-  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../legacy/index.html',import.meta.url),'utf8');
   const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
   for(const id of ['planUpload','showPlanTab','outlineSvg']) assert.match(html,new RegExp(`id="${id}"`));
   for(const key of ['data-plan-prop','data-toggle-profile','data-add-portal','data-trace-plan']) assert.ok(app.includes(key));

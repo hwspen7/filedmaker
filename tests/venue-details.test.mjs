@@ -109,7 +109,7 @@ test('three dimensional scene actually invokes the new architecture pipeline',()
 });
 
 test('real venue UI provides user controls and source/disclaimer without replacing the generic workflow',()=>{
-  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../legacy/index.html',import.meta.url),'utf8');
   const app=readFileSync(new URL('../src/app.js',import.meta.url),'utf8');
   assert.match(html,/ohioVenueShortcut/);
   assert.match(app,/data-build-ohio-stadium/);

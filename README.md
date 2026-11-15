@@ -1,3 +1,35 @@
+# FiledMaker v10 — Seat Studio Rebuild
+
+**New default entry point:** `http://127.0.0.1:5174/` is a rebuilt seat-first viewer powered by a single dependency-free WebGL2 renderer. 2D remains available when WebGL2 is blocked. The school tool at `/school/` and viewer at `/viewer/` share the same renderer. The previous advanced modeling UI is retained at `/legacy/` for compatibility and its GLB export.
+
+## What changed
+
+- One shared seat geometry plan for studio, school preview and viewer instead of multiple incompatible seat meshes.
+- Compact chair geometry for NCAA basketball. Backless spectator benches for schematic American-football tiers, except where an explicit seat style is supplied.
+- Tread and riser support for every seat row, including end caps without bridging aisles.
+- Smooth orbit, overhead plan, section preview and human-eye camera, with self-seat and nearby-camera geometry exclusion.
+- A minimal playing surface, scoreboard, football goalposts or basketball hoops. No fabricated external architecture by default.
+- Published capacity, imported ticket inventory and model positions are separate metrics. A published capacity does not create seats.
+- School CSV import preserves section/row/seat IDs; missing XYZ positions are inferred and labeled as estimated.
+- Adjustable venue-derived seat palettes. Blue is not forced on every institution.
+- The school tool's Publish action can now export a self-contained offline HTML preview with bundled native 2D and WebGL2 rendering (large outputs for major stadiums).
+
+## Run locally
+
+On Windows run `start-windows.bat` from the repo folder, then open `http://127.0.0.1:5174/`. On macOS/Linux run `npm start`. Node 20+ is needed for the Node server, but the included Windows PowerShell server does not require Node.
+
+Run `npm run verify` for unit, geometry and HTTP checks.
+
+## Accuracy and visual validation
+
+Ohio Stadium and Schottenstein Center in the demo are **architectural/identity references with synthetic seat positions**. The official published capacity is separate from the number of programmatically rendered seat locations. There is no verified OSU seat inventory or surveyed bowl geometry in this repository. Do not publish demo seats as ticket seats.
+
+A complete school production deployment needs its authorized seat IDs, section geometry and a visual alignment check against photographs of known rows. The renderer and geometry rules have local unit verification, but current CI does **not** test the visual WebGL output. An actual browser/graphics-device inspection is required before declaring production visual acceptance.
+
+Older scene modules are preserved only for the legacy editor. The standalone legacy HTML exporter is still supported for previous projects; School Studio Publish now uses a bundled offline viewer instead.
+
+---
+
 ## New: School Seat Viewer (v9.2)
 
 The main production experience is now **seat-first**, not architectural cloning.

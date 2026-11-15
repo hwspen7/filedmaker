@@ -191,7 +191,7 @@ async function open3d(which){
  if(scene){scene.setViewOptions({posture:$('posture').value,target:$('target').value});return;}
  if(loading3d)return;loading3d=true;
  try{
-  const {StadiumScene}=await import('../src/scene.js');
+  const {SeatScene:StadiumScene}=await import('../src/next/compatScene.js');
   scene=new StadiumScene($('scene'),s=>choose(s),section=>{const s=sectionFirst.get(section);if(s)choose(s);});
   scene.load(model);scene.highlight(selected);
   scene.setViewOptions({posture:$('posture').value,target:$('target').value});scene.setView(which);scene.resize();
