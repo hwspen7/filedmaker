@@ -1,7 +1,6 @@
 // Configurable, non-surveyed architectural exterior for arena-shaped venues.
 // The generator owns geometry; venue-specific landmarks belong to a profile.
 // All coordinates are metres. Each mesh vertex is XYZ followed by unit normal.
-import { structuralQuad, addRoundVolume } from '../structuralMesh.mjs';
 
 const TAU=Math.PI*2;
 const finite=(v,label,lo,hi)=>{
@@ -38,7 +37,7 @@ function featureDirection(angle){
   // u is the public-facing horizontal axis, v projects away from the bowl.
   return {outward,tangent:[-Math.sin(angle),0,Math.cos(angle)]};
 }
-function rotunda(out,profile,footprint,angle,role){
+function rotunda(out,footprint,angle,role){
   const {outward,tangent}=featureDirection(angle);
   const site=footprint(angle),radius=role==='primary'?6.85:5.55;
   const height=role==='primary'?23.2:18.3;
@@ -151,7 +150,7 @@ export const ExteriorEngine={
     const beltStart=Math.min(10.3,h*.25),metalStart=beltStart;
     const panelPitch=1.16;
     for(let i=0;i<n;i++){
-      const bay=i%12,baseWindow=bay>=3&&bay<=7;
+      const bay=i%12,baseWindow=profile==='modern-glass'?bay>=1&&bay<=10:bay>=3&&bay<=7;
       const bands=baseWindow?[[0,1.5,'brick'],[1.5,6.8,'glass'],[6.8,beltStart,'brick']]
         :[[0,beltStart,'brick']];
       for(const [lo,hi,kind] of bands){
@@ -165,23 +164,26 @@ export const ExteriorEngine={
       for(const y of metalWindows){
         const lo=Math.min(y,h-.55),hi=Math.min(y+.62,h-.42);
         if(lo<=previous||hi<=lo)continue;
-        wall(arrays.metalPanels,i,previous,lo,.025);
-        if(bay===4||bay===5)wall(arrays.baseWindows,i,lo,hi,.08);
-        else wall(arrays.metalPanels,i,lo,hi,.025);
+        wall(arrays[profile==='masonry'?'brickBase':'metalPanels'],i,previous,lo,.025);
+        if((profile==='modern-glass'&&bay>=2&&bay<=9)||bay===4||bay===5){
+          wall(arrays.baseWindows,i,lo,hi,.08);
+        }else{
+          wall(arrays[profile==='masonry'?'brickBase':'metalPanels'],i,lo,hi,.025);
+        }
         previous=hi;
       }
-      wall(arrays.metalPanels,i,previous,h-.20,.025);
+      wall(arrays[profile==='masonry'?'brickBase':'metalPanels'],i,previous,h-.20,.025);
       for(let y=metalStart+panelPitch;y<h-.45;y+=panelPitch){
         // Horizontal metal joint. Sparse reveal lines remain visible close up.
         const inGap=metalWindows.some(t=>y>t&&y<t+.62)&&(bay===4||bay===5);
-        if(!inGap)wall(arrays.metalSeams,i,y,y+.055,.077);
+        if(!inGap&&profile!=='masonry')wall(arrays.metalSeams,i,y,y+.055,.077);
       }
       if(bay===0||bay===1)wall(arrays.brickPiers,i,0,beltStart,.12);
     }
     for(const entrance of entrances){
       const a=finite(entrance.angle,'Entrance angle',0,TAU);
       const role=entrance.role==='primary'?'primary':'secondary';
-      rotunda(arrays,profile,angle=>footprint(angle),a,role);
+      rotunda(arrays,angle=>footprint(angle),a,role);
     }
     return Object.fromEntries(Object.entries(arrays).map(([key,vertices])=>[key,new Float32Array(vertices)]));
   }
