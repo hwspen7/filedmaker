@@ -64,7 +64,7 @@ function prepareAreaLabels(){
     if(feature.outline)labels.push({text:feature.label,width:feature.kind==='accessible'?117:72,height:20,point:[feature.x,feature.y+1.12,feature.z]});
   }
   for(const exit of plan.exitMarkers??[]){
-    labels.push({text:'EXIT\n'+exit.number,width:43,height:29,point:[exit.x,exit.y,exit.z],exit:true});
+    labels.push({text:'EXIT\n'+exit.number,width:27,height:19,point:[exit.x,exit.y,exit.z],exit:true});
   }
   areaLabels=labels.map(label=>{
     const node=document.createElement(label.section?'button':'span');
