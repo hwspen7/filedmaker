@@ -80,3 +80,59 @@ export const GeometryEngine={
   }
 };
 export default GeometryEngine;
+
+// Smoothly fit a real rear boundary to actual chair locations. This is
+// intentionally reusable across sports and venue contours. It does not change
+// seats, capacities, row identifiers, or imported ticket positions.
+export function fitRearSeatEnvelope(seats,{tier=null,segments=192,clearance=.42,
+  spread=2,referenceRadius=null}={}){
+  if(!Array.isArray(seats)||!Number.isInteger(segments)||segments<32||segments>1024)
+    throw Error('Invalid rear-envelope seating input or resolution');
+  if(!Number.isFinite(clearance)||clearance<.2||clearance>2)
+    throw Error('Rear-envelope chair clearance must be between .2 and 2 metres');
+  if(!Number.isInteger(spread)||spread<0||spread>8)
+    throw Error('Rear-envelope angular spread must be between zero and eight');
+  const tau=Math.PI*2,mod=i=>(i+segments)%segments;
+  const sampled=new Float64Array(segments).fill(-Infinity);
+  for(const seat of seats){
+    if(tier!=null&&seat.tier!==tier)continue;
+    if(!Number.isFinite(seat.x)||!Number.isFinite(seat.z))
+      throw Error('Non-finite chair coordinate in rear-envelope input');
+    const angle=(Math.atan2(seat.z,seat.x)+tau)%tau;
+    const station=mod(Math.round(angle*segments/tau));
+    sampled[station]=Math.max(sampled[station],Math.hypot(seat.x,seat.z));
+  }
+  if(!sampled.some(Number.isFinite))throw Error('Rear-envelope tier has no valid seats');
+  const expanded=Array.from({length:segments},(_,i)=>{
+    let rear=-Infinity;
+    for(let k=-spread;k<=spread;k++)
+      rear=Math.max(rear,sampled[mod(i+k)]);
+    return rear;
+  });
+  // Interpolate the rare completely unoccupied stations, not the interior
+  // of an aisle. An aisle inherits the boundary of neighbouring chair banks.
+  for(let i=0;i<segments;i++){
+    if(Number.isFinite(expanded[i]))continue;
+    let before=i,after=i;
+    while(!Number.isFinite(expanded[before]))before=mod(before-1);
+    while(!Number.isFinite(expanded[after]))after=mod(after+1);
+    const distance=(after-before+segments)%segments;
+    const step=(i-before+segments)%segments;
+    const t=distance?step/distance:0;
+    expanded[i]=expanded[before]*(1-t)+expanded[after]*t;
+  }
+  const radii=Float64Array.from(expanded,(raw,i)=>{
+    const prior=expanded[mod(i-2)],next=expanded[mod(i+2)];
+    const smooth=(prior+2*expanded[mod(i-1)]+4*raw+
+      2*expanded[mod(i+1)]+next)/10;
+    // Never reduce a valid occupied sector below its seat clearance.
+    return Math.max(raw,smooth)+clearance;
+  });
+  if(referenceRadius!=null&&typeof referenceRadius!=='function')
+    throw Error('Reference radius must be a function');
+  return {radii,segments,clearance,radiusAt:angle=>{
+    const index=((angle%tau)+tau)%tau*segments/tau;
+    const low=Math.floor(index),t=index-low;
+    return radii[low]*(1-t)+radii[mod(low+1)]*t;
+  }};
+}
