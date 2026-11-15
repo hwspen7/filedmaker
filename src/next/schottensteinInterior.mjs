@@ -27,6 +27,30 @@ function addChartRegions(add,color,features,spanAt) {
   }
 }
 
+// Filter the whole circle, then carry any remaining chair clearance out
+// over neighbouring stations. The correction uses a rounded falloff so an
+// isolated outer chair does not turn into a spur in the visible edge.
+function smoothDeckEdge(rim, property, direction) {
+  const radius = 6;
+  const wraps = index => (index + rim.length) % rim.length;
+  const smoothed = rim.map((_, i) => {
+    let sum = 0;
+    for (let offset = -radius; offset <= radius; offset++) {
+      sum += (radius + 1 - Math.abs(offset)) * rim[wraps(i + offset)][property];
+    }
+    return sum / (radius + 1) ** 2;
+  });
+  const clearance = rim.map((r, i) => Math.max(0, direction * (r[property] - smoothed[i])));
+  return smoothed.map((r, i) => {
+    let correction = 0;
+    for (let offset = -radius; offset <= radius; offset++) {
+      const weight = .5 + .5 * Math.cos(Math.PI * offset / radius);
+      correction = Math.max(correction, weight * clearance[wraps(i + offset)]);
+    }
+    return r + direction * correction;
+  });
+}
+
 // Use one continuous mesh per elevated deck, including the surface across
 // section boundaries. The outer edge closes around the press-side cutout.
 export function buildSchottensteinDecks(seats, footprints, showDecks) {
@@ -58,20 +82,27 @@ export function buildSchottensteinDecks(seats, footprints, showDecks) {
       const length = Math.hypot(dx,1,dz);
       return [x,y,z,-dx/length,1/length,-dz/length];
     };
-    const grid = rim.map(({angle,near,far}) => Array.from({length: bands + 1}, (_, j) => {
-      const r = near + (far-near) * j / bands;
+    const inner = smoothDeckEdge(rim, 'near', -1);
+    const outer = smoothDeckEdge(rim, 'far', 1);
+    const grid = rim.map(({angle}, i) => Array.from({length: bands + 1}, (_, j) => {
+      const r = inner[i] + (outer[i] - inner[i]) * j / bands;
       return vertex(r*Math.cos(angle),r*Math.sin(angle));
     }));
     const quad = (a,b,c,d) => data.push(...a,...b,...c,...a,...c,...d);
     for (let i = 0; i < segments; i++) {
       const a = grid[i], b = grid[(i+1)%segments];
       for (let j = 0; j < bands; j++) quad(a[j],b[j],b[j+1],a[j+1]);
-      const angle = (i + .5) * turn / segments;
       for (const [j,sign] of [[0,-1],[bands,1]]) {
-        const normal = [sign*Math.cos(angle),0,sign*Math.sin(angle)];
-        const edge = (p,drop) => [p[0],p[1]-drop,p[2],...normal];
-        const x = edge(a[j],0), y = edge(b[j],0);
-        const c = edge(b[j],.39), d = edge(a[j],.39);
+        const edge = (station, drop) => {
+          const point = grid[station % segments][j];
+          const previous = grid[(station + segments - 1) % segments][j];
+          const next = grid[(station + 1) % segments][j];
+          const dx = next[0] - previous[0], dz = next[2] - previous[2];
+          const length = Math.hypot(dx,dz);
+          return [point[0],point[1]-drop,point[2],sign*dz/length,0,-sign*dx/length];
+        };
+        const x = edge(i,0), y = edge(i+1,0);
+        const c = edge(i+1,.39), d = edge(i,.39);
         if (sign<0) quad(y,x,d,c);
         else quad(x,y,c,d);
       }

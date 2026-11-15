@@ -235,6 +235,24 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
    const z = (bx-ax)*(cy-ay) - (by-ay)*(cx-ax);
    assert.ok(x*nx + y*ny + z*nz > 0, 'Deck triangle faces the rendered side');
  }
+ const rims=[new Map(),new Map()];
+ for(let i=0;i<plan.deckGeometry.length;i+=6){
+   const [x,y,z,,ny]=plan.deckGeometry.subarray(i,i+6);
+   if(y<0||ny!==0)continue;
+   const edge=rims[y<13?0:1];
+   const angle=(Math.round(Math.atan2(z,x)*128/Math.PI)+256)%256;
+   const radius=Math.hypot(x,z);
+   const [inner,outer]=edge.get(angle)??[radius,radius];
+   edge.set(angle,[Math.min(inner,radius),Math.max(outer,radius)]);
+ }
+ for(const rim of rims){
+   const radii=[...rim].sort(([a],[b])=>a-b).map(([,pair])=>pair);
+   assert.equal(radii.length,256);
+   for(let i=0;i<radii.length;i++){
+     const a=radii[(i+radii.length-1)%radii.length],b=radii[i],c=radii[(i+1)%radii.length];
+     assert.ok(b.every((r,side)=>Math.abs(a[side]+c[side]-2*r)<.55),'The deck lip avoids radial spikes');
+   }
+ }
  assert.equal(plan.arenaInterior,true);
  assert.equal(plan.scoreboardHeight,16.3);
  assert.deepEqual(plan.features.map(feature=>feature.label),
