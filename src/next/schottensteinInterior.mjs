@@ -118,37 +118,9 @@ export function addSchottensteinBowl(add,color,footprints,rows) {
   }
 }
 
-const scoreboardGlyphs = {
-  O:['01110','11011','11011','11011','11011','11011','01110'],
-  H:['11011','11011','11011','11111','11011','11011','11011'],
-  I:['111','010','010','010','010','010','111'],
-  S:['01111','11000','11000','01110','00011','00011','11110'],
-  T:['11111','00100','00100','00100','00100','00100','00100'],
-  A:['01110','11011','11011','11111','11011','11011','11011'],
-  E:['11111','11000','11000','11110','11000','11000','11111'],
-  ' ':['00','00','00','00','00','00','00'],
-};
-
-function boardLettering(add,point,sign,text,y,paint) {
-  const dot=.086;
-  const width=[...text].reduce((sum,c)=>sum+scoreboardGlyphs[c][0].length+1,0);
-  let start=-(width-1)*dot/2;
-  for(const char of text){
-    const grid=scoreboardGlyphs[char];
-    for(let row=0;row<grid.length;row++){
-      for(let col=0;col<grid[row].length;col++){
-        if(grid[row][col]==='0')continue;
-        const x=sign*(start+col*dot), a=point(x-dot*.53,.19), b=point(x+dot*.53,.19);
-        spanBox(add,a,b,y+(3-row)*dot,dot,.04,paint);
-      }
-    }
-    start+=(grid[0].length+1)*dot;
-  }
-}
-
 export function addSchottensteinBoard(add,color) {
   const housing=color('#232228'), trim=color('#981a2b'), led=color('#321e27');
-  const panel=color('#3d212c'), light=color('#f0efee'), ribbon=color('#b5273c');
+  const panel=color('#3d212c'), ribbon=color('#b5273c');
   const center=16.3, height=3.9, half=3.68, bow=.42;
   add([0,center-.05,0],[6.85,4.05,6.85],0,housing);
   for(const sign of [-1,1]){
@@ -166,28 +138,11 @@ export function addSchottensteinBoard(add,color) {
         spanBox(add,a,b,center-height/2-.14,.27,.37,trim);
         spanBox(add,a,b,center+height/2+.09,.18,.33,housing);
       }
-      boardLettering(add,point,side?-sign:sign,'OHIO STATE',center+.10,light);
     }
   }
   add([0,14.03,0],[5.3,.37,5.3],0,housing);
   for(const x of [-1.19,1.19])for(const z of [-1.19,1.19]){
     add([x,13.83,z],[2.19,.035,2.19],0,color('#bc4250'));
     add([x*1.65,22.6,z*1.65],[.042,8.9,.042],0,housing);
-  }
-}
-
-export function addBlockOMark(add,color) {
-  const octagon=(x,z,corner) => [
-    {x:-x+corner,z:-z},{x:x-corner,z:-z},{x,z:-z+corner},{x,z:z-corner},
-    {x:x-corner,z},{x:-x+corner,z},{x:-x,z:z-corner},{x:-x,z:-z+corner},
-  ];
-  for(const [x,z,corner,thickness,tint,y] of [
-    [2.35,3.12,.69,.72,'#f5f2ed',.066],
-    [2.35,3.12,.69,.55,'#ac142b',.071],
-  ]){
-    const points=octagon(x,z,corner);
-    for(let i=0;i<points.length;i++){
-      spanBox(add,points[i],points[(i+1)%points.length],y,.003,thickness,color(tint));
-    }
   }
 }

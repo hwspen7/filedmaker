@@ -153,6 +153,10 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  assert.ok(ceiling.some(box=>box.pos[1]>29));
  assert.ok(boxes.some(box=>box.id===-3&&Math.abs(box.size[1]-.9144)<.0001));
  assert.ok(boxes.some(box=>box.id===-1&&box.pos[1]>15&&box.size[1]>3.8&&box.size[2]<.4));
+ assert.ok(boxes.some(box=>box.id===-1&&box.pos[0]===0&&box.pos[2]===0
+   &&Math.abs(box.pos[1]-.051)<1e-5&&Math.abs(box.size[0]-model.surface.width)<1e-5));
+ assert.ok(!boxes.some(box=>Math.abs(box.pos[0])<4&&Math.abs(box.pos[2])<4
+   &&box.pos[1]>.064&&box.pos[1]<.08));
  assert.ok(plan.instanceData.every(Number.isFinite));
  assert.equal(buildVenuePlan(generateSeats(createOhioStadiumProject())).arenaInterior,false);
 });

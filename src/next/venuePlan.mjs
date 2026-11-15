@@ -3,7 +3,7 @@
 import { seatColor, seatKind } from '../seatPresentation.mjs';
 import { ticketReconciliation } from '../seatFirst.mjs';
 import { polygonSpans, schottensteinDiagramEdge } from '../schottensteinSeating.mjs';
-import { addBlockOMark, addSchottensteinBoard, addSchottensteinBowl } from './schottensteinInterior.mjs';
+import { addSchottensteinBoard, addSchottensteinBowl } from './schottensteinInterior.mjs';
 
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const colorRGB=(hex)=>{
@@ -96,10 +96,10 @@ export function buildVenuePlan(model,options={}) {
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows);
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
-    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB(chartPreview?'#b8b6b4':'#d7b781');
+    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB('#d7b781');
   const basketball = surface.sport==='basketball';
   const accent=colorRGB(chartPreview?'#992437':basketball?'#334e69':'#254c42');
-  const darkField=colorRGB(chartPreview?'#a2152c':basketball?'#24354b':'#254c42');
+  const darkField=colorRGB(basketball?'#24354b':'#254c42');
   const apron=basketball?3.5:7;
   if(chartPreview){
     const base=colorRGB('#656169');
@@ -129,11 +129,7 @@ export function buildVenuePlan(model,options={}) {
   };
   const length=surface.length,width=surface.width;
   // Boundary and midpoint lines are crisp, with no stock imagery or text clutter.
-  for(const z of [-length/2,length/2])add([0,.051,z],[width,.012,.085],0,white);
-  if(chartPreview){
-    const span=width/2-2.69;
-    for(const sign of [-1,1])add([sign*(width/2-span/2),.051,0],[span,.012,.052],0,white);
-  }else add([0,.051,0],[width,.012,.085],0,white);
+  for(const z of [-length/2,0,length/2])add([0,.051,z],[width,.012,.085],0,white);
   for(const x of [-width/2,width/2])add([x,.051,0],[.085,.012,length],0,white);
   if(surface.sport==='football'){
     for(let n=-45;n<=45;n+=5){const z=n*.9144;add([0,.06,z],[width,.01,n%10===0?.085:.05],0,white);}
@@ -145,15 +141,12 @@ export function buildVenuePlan(model,options={}) {
       add([0,1.52,z],[.1,3.05,.1],0,colorRGB('#f3cb66'));
     }
   } else if(basketball){
-    const wood = (chartPreview
-      ? ['#bbbab7','#c2c0bd','#bdbbb8','#c4c3c0','#b8b7b5']
-      : ['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85']).map(colorRGB);
+    const wood = ['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85'].map(colorRGB);
     for(let i=0;i<64;i++){
       const x=-width/2+(i+.5)*width/64;
       add([x,.0385,0],[width/64,.004,length],0,wood[(i*7+Math.floor(i/5))%wood.length]);
     }
-    const markingY=.052, paint=colorRGB(chartPreview?'#ab1730':'#476a8c');
-    if(chartPreview)addBlockOMark(add,colorRGB);
+    const markingY=.052, paint=colorRGB('#476a8c');
     arc(0,markingY,0,1.83,0,Math.PI*2,.035,white,40);
     for(const sign of [-1,1]){
       const baseline=sign*length/2;
