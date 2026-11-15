@@ -11,7 +11,7 @@ const build = () => buildVenuePlan(generateSeats({
 
 test('OSU arena has a full-depth structural gallery, inset windows and no invented exit signs or stairs',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights']);
+  assert.deepEqual(Object.keys(g),['decks','fascias','concourse','facade','glazing','trim','aisles','stepEdges','backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit','downlights','roofDeck','radialBeams');
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
@@ -30,6 +30,8 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.soffit.length/18>300,'Roof underside must span the gallery');
   assert.ok(g.roofEdge.length/18>300,'The open-air bowl has a framed outer roof edge');
   assert.ok(g.downlights.length/18>10);
+  assert.ok(g.roofDeck.length/18>200,'Roof has its own deck surface and material');
+  assert.ok(g.radialBeams.length/18>100,'Gallery canopy is supported by modeled radial beams');
   assert.equal(g.aisles.length+g.stepEdges.length,0,'No fabricated stair geometry');
 });
 
