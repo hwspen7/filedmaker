@@ -61,7 +61,7 @@ void main(){
     else if(uDeck>29.5)vColor=vec3(.41,.42,.43); // Horizontal metal panel joints
     else if(uDeck>28.5)vColor=vec3(.70,.67,.62); // Upper seating bowl concrete
     else if(uDeck>27.5)vColor=vec3(.24,.28,.30); // Press enclosure glazing
-    else if(uDeck>26.5)vColor=vec3(.48,.43,.39); // Press enclosure walls
+    else if(uDeck>26.5)vColor=vec3(.61,.59,.55); // Press enclosure matches the connected inner masonry
     else if(uDeck>25.5)vColor=vec3(.28,.40,.43); // Recessed tower glazing
     else if(uDeck>24.5)vColor=vec3(.57,.31,.26); // OSU rotunda brick masonry
     else if(uDeck>23.5)vColor=aNormal.y>0.?vec3(.68,.67,.63):vec3(.23,.24,.25); // Enclosed building roof
