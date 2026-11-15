@@ -172,12 +172,12 @@ export function buildSchottensteinPedestal(seats) {
     for(const [h0,r0,h1,r1] of [
       [-.24,-.08,-.59,-.08],
       [-.59,-.08,-.83,-.26],
-      [-.83,-.26,-1.63,-.26],
-      [-1.63,-.26,-1.93,.11],
-      [-1.93,.11,-2.28,.11]
+      [-.83,-.26,-2.05,-.26],
+      [-2.05,-.26,-2.38,.11],
+      [-2.38,.11,-3.05,.11]
     ])quad(body,cap(h0,r0),next(h0,r0),next(h1,r1),cap(h1,r1),n);
     // Recessed shadow joints give the base credible modelled thickness.
-    for(const [top,bottom,r] of [[-.55,-.65,-.055],[-1.55,-1.69,-.24],[-2.18,-2.27,.125]]){
+    for(const [top,bottom,r] of [[-.55,-.65,-.055],[-1.96,-2.10,-.24],[-2.96,-3.05,.125]]){
       quad(trim,cap(top,r),next(top,r),next(bottom,r),cap(bottom,r),n);
     }
   }
