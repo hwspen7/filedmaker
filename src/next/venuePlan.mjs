@@ -5,6 +5,8 @@ import { ticketReconciliation } from '../seatFirst.mjs';
 import { polygonSpans } from '../schottensteinSeating.mjs';
 import { addSchottensteinBoard, addSchottensteinBowl, buildSchottensteinDecks, buildSchottensteinPedestal } from './schottensteinInterior.mjs';
 import { buildSchottensteinArchitecture } from './schottensteinArchitecture.mjs';
+import { ArchitectureEngine } from './engines/architecture.mjs';
+import { ValidationEngine } from './engines/validation.mjs';
 
 const SCHOTTENSTEIN_COURT_COLORS = {
   wood:'#c7c7c3',
@@ -146,7 +148,11 @@ export function buildVenuePlan(model,options={}) {
   const features=model.features??[];
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
   const deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
-  const architectureGeometry = chartPreview ? buildSchottensteinArchitecture(model) : null;
+  const architectureGeometry = chartPreview ? buildSchottensteinArchitecture(model)
+    : model.proceduralGeometry ? ArchitectureEngine.build(model.proceduralGeometry) : null;
+  const engineAudit=model.proceduralGeometry ? ValidationEngine.validate({
+    seats,architectureGeometry,spec:model.proceduralSpec,optimization:model.optimization
+  }) : null;
   const pedestal = chartPreview && model.seatingRows ? buildSchottensteinPedestal(seats) : null;
   const courtColors=chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
   // Central surface is a physically scaled reference marker, not an entire building.
@@ -283,7 +289,8 @@ export function buildVenuePlan(model,options={}) {
   instanceData.set(elements,seatShells.length);
   return {instanceData,deckGeometry,architectureGeometry,pedestalGeometry:pedestal?.body,pedestalTrimGeometry:pedestal?.trim,
     instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
-    sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview,
+    sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview||Boolean(model.proceduralGeometry),
+    engineAudit,proceduralSpec:model.proceduralSpec??null,
     scoreboardHeight:chartPreview?16.3:13.6,features,seats,project,surface,official,
     courtStyle:courtColors?{...courtColors,apronWidth:apron,laneSize:BASKETBALL_LANE}:null,
     hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
