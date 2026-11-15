@@ -169,30 +169,32 @@ async function main(){
           const frame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
           writeFileSync(join(dir,'osu-refined-'+id+'.png'),Buffer.from(frame.data,'base64'));
         }
-        await evaluate(`(()=>{
-          const section=document.querySelector('#sectionPicker');
-          section.value='317';
-          section.dispatchEvent(new Event('change',{bubbles:true}));
-          const row=document.querySelector('#rowPicker');
-          row.value='U';
-          row.dispatchEvent(new Event('change',{bubbles:true}));
-          document.querySelector('[data-view=section]').click();
-          const canvas=document.querySelector('#viewport3d');
-          const {left,top,width,height}=canvas.getBoundingClientRect();
-          const capture=canvas.setPointerCapture;
-          canvas.setPointerCapture=()=>{};
-          try{
-            for(const [type,dx,dy] of [['pointerdown',0,0],['pointermove',-540,48],['pointerup',-540,48]]){
-              canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:1,
-                clientX:left+width/2+dx,clientY:top+height/2+dy,buttons:type==='pointerup'?0:1}));
-            }
-          }finally{canvas.setPointerCapture=capture;}
-        })()`);
-        if(!await evaluate("document.querySelector('#seatDetails').textContent.includes('317 · Row U')"))
-          throw Error('Could not focus the continuous upper corner terrace');
-        await delay(650);
-        const corner=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
-        writeFileSync(join(dir,'osu-corner-terrace.png'),Buffer.from(corner.data,'base64'));
+        for(const [sectionId,file] of [['317','corner-terrace'],['310','opposite-terrace']]){
+          await evaluate(`(()=>{
+            const section=document.querySelector('#sectionPicker');
+            section.value='${sectionId}';
+            section.dispatchEvent(new Event('change',{bubbles:true}));
+            const row=document.querySelector('#rowPicker');
+            row.value='U';
+            row.dispatchEvent(new Event('change',{bubbles:true}));
+            document.querySelector('[data-view=section]').click();
+            const canvas=document.querySelector('#viewport3d');
+            const {left,top,width,height}=canvas.getBoundingClientRect();
+            const capture=canvas.setPointerCapture;
+            canvas.setPointerCapture=()=>{};
+            try{
+              for(const [type,dx,dy] of [['pointerdown',0,0],['pointermove',-540,48],['pointerup',-540,48]]){
+                canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:1,
+                  clientX:left+width/2+dx,clientY:top+height/2+dy,buttons:type==='pointerup'?0:1}));
+              }
+            }finally{canvas.setPointerCapture=capture;}
+          })()`);
+          const focused=await evaluate(`document.querySelector('#seatDetails').textContent.includes('${sectionId} · Row U')`);
+          if(!focused)throw Error('Could not focus the upper terrace for section '+sectionId);
+          await delay(650);
+          const corner=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+          writeFileSync(join(dir,'osu-'+file+'.png'),Buffer.from(corner.data,'base64'));
+        }
         console.log('osu-seat: human-eye WebGL2 screenshot verified');
         await evaluate("document.querySelector('[data-view=overview]').click()");
       }

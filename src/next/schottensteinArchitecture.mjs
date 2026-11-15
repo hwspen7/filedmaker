@@ -58,40 +58,44 @@ function betweenDecks(out,innerTier,outerTier,elevation){
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
   const decks=[],fascias=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[],cutawayFacade=[],externalTrim=[],galleryFloorMesh=[];
-  // Keep each tread within its mapped row span. Both aisle-facing ends
-  // follow the same elevation profile as the neighbouring bank.
-  const treadRows=model.seatingRows.filter(row=>row.tier===1||row.tier===2);
-  const depthBySlot=new Map(treadRows.map(row=>[row.sectionId+':'+row.slot,row.depth]));
-  for(const row of treadRows){
+  const undersideDepth=[.53,.79,1.04];
+  // Cut the bearing surface from the shared tier profile, within each
+  // occupied footprint. Adjacent rows meet on that surface. The stepped
+  // upper faces can still carry seats at their individual tread elevations.
+  for(const row of model.seatingRows){
     if(!(row.width>.35&&row.depth>.12))continue;
     const strips=Math.max(8,Math.ceil(row.width/.62));
     const outward={x:-Math.sin(row.yaw),z:-Math.cos(row.yaw)};
-    const depth=row.depth;
-    const front=depth*.5,back=depth*.5;
+    const halfDepth=row.depth*.5;
     const tangent=normalize([row.right.x-row.left.x,0,row.right.z-row.left.z]);
-    const stepDepth=(depth+(depthBySlot.get(row.sectionId+':'+(row.slot-1))??depth))*.5;
     const rowPoint=t=>{
       const x=row.left.x+(row.right.x-row.left.x)*t;
       const z=row.left.z+(row.right.z-row.left.z)*t;
       const lift=row.leftLift+(row.rightLift-row.leftLift)*t;
       const y=schottensteinTreadHeight(row.tier,{x,z})+lift;
-      const previous=schottensteinTreadHeight(row.tier,{x:x-outward.x*stepDepth,z:z-outward.z*stepDepth})+lift;
-      return {x,z,y,bottom:Math.min(y-.14,previous)-.04};
+      return {x,z,y};
     };
+    const edge=(point,d)=>{
+      const x=point.x+outward.x*d,z=point.z+outward.z*d;
+      const bottom=Math.max(-.22,schottensteinTreadHeight(row.tier,{x,z})-undersideDepth[row.tier]);
+      return {top:[x,point.y,z],bottom:[x,bottom,z]};
+    };
+    let a=rowPoint(0),innerA=edge(a,-halfDepth),outerA=edge(a,halfDepth);
     for(let i=0;i<strips;i++){
-      const a=rowPoint(i/strips),b=rowPoint((i+1)/strips);
-      const p=(v,d,y=v.y-.15)=>[v.x+outward.x*d,y,v.z+outward.z*d];
-      const innerA=p(a,-front),innerB=p(b,-front);
-      const outerA=p(a,back),outerB=p(b,back);
+      const b=rowPoint((i+1)/strips),innerB=edge(b,-halfDepth),outerB=edge(b,halfDepth);
       const slope=(b.y-a.y)/(row.width/strips);
-      quad(decks,innerA,innerB,outerB,outerA,[-tangent[0]*slope,1,-tangent[2]*slope]);
-      const downA=p(a,-front,a.bottom-.15);
-      const downB=p(b,-front,b.bottom-.15);
+      quad(decks,innerA.top,innerB.top,outerB.top,outerA.top,[-tangent[0]*slope,1,-tangent[2]*slope]);
       const inward=[-outward.x,0,-outward.z];
-      quad(fascias,innerA,innerB,downB,downA,inward);
-      // Close the aisle-facing ends with the same nosing and riser depth.
-      if(i===0)quad(fascias,innerA,outerA,p(a,back,a.bottom-.15),downA,tangent.map(v=>-v));
-      if(i===strips-1)quad(fascias,innerB,outerB,p(b,back,b.bottom-.15),downB,tangent);
+      quad(fascias,innerA.top,innerB.top,innerB.bottom,innerA.bottom,inward);
+      quad(fascias,outerB.top,outerA.top,outerA.bottom,outerB.bottom,inward.map(v=>-v));
+      const aToB=subtract(innerB.bottom,innerA.bottom);
+      const aToOuter=subtract(outerA.bottom,innerA.bottom);
+      const normal=cross(aToOuter,aToB);
+      quad(fascias,innerA.bottom,innerB.bottom,outerB.bottom,outerA.bottom,
+        normal[1]<0?normal:normal.map(value=>-value));
+      if(i===0)quad(fascias,innerA.top,outerA.top,outerA.bottom,innerA.bottom,tangent.map(v=>-v));
+      if(i===strips-1)quad(fascias,innerB.top,outerB.top,outerB.bottom,innerB.bottom,tangent);
+      a=b;innerA=innerB;outerA=outerB;
     }
   }
   // Only the two global level fronts need a continuous trim. Occupied rows

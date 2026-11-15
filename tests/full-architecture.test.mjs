@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSchottensteinCenterProject, createOhioStadiumProject } from '../src/venues.mjs';
 import { generateSeats } from '../src/model.mjs';
-import { polygonSpans } from '../src/schottensteinSeating.mjs';
+import { polygonSpans, SCHOTTENSTEIN_ROOF_EAVE, schottensteinDeckHeight, schottensteinDeckPoint, schottensteinTreadHeight } from '../src/schottensteinSeating.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
 import { NativeVenueRenderer } from '../src/next/webgl.js';
 
@@ -108,13 +108,39 @@ test('exterior facade is grounded and stepped seat decks follow their assigned e
   for(let i=1;i<g.decks.length;i+=6){minDeck=Math.min(minDeck,g.decks[i]);maxDeck=Math.max(maxDeck,g.decks[i]);}
   assert.ok(minWall>=-.01 && minWall<.1);
   assert.ok(minDeck>.25 && maxDeck>26);
-  assert.ok(maxWall>40 && maxWall<41,'Facade reaches a uniform structural top');
+  assert.ok(Math.abs(maxWall-(SCHOTTENSTEIN_ROOF_EAVE-.44))<.001,'Facade reaches a uniform structural top');
   let minRoof=Infinity,maxRoof=-Infinity;
   for(let i=1;i<g.roofEdge.length;i+=6){minRoof=Math.min(minRoof,g.roofEdge[i]);maxRoof=Math.max(maxRoof,g.roofEdge[i]);}
-  assert.ok(minRoof>39.8 && maxRoof<41,'Roof is a level supported canopy, not a sawtooth crown');
+  assert.ok(Math.abs(minRoof-(SCHOTTENSTEIN_ROOF_EAVE-.70))<.001);
+  assert.ok(maxRoof<SCHOTTENSTEIN_ROOF_EAVE+.14,'Roof is a level supported canopy');
   const deckMinX=Math.min(...Array.from({length:g.decks.length/6},(_,i)=>g.decks[i*6]));
   const facadeMaxX=Math.max(...Array.from({length:g.facade.length/6},(_,i)=>g.facade[i*6]));
   assert.ok(facadeMaxX-deckMinX>30,'The enclosed building has nonzero spatial depth');
   const shader=String(NativeVenueRenderer);
   assert.ok(shader.includes('architectureVisibleInMode'));
+});
+
+test('occupied tread undersides sit on the same tier surface throughout the bowl',()=>{
+  const {fascias,concourse}=build().architectureGeometry;
+  const thickness=[.53,.79,1.04];
+  const counts=[0,0,0];
+  for(let i=0;i<fascias.length;i+=6){
+    const [x,y,z,,ny]=fascias.subarray(i,i+6);
+    if(ny>=-.05)continue;
+    const tier=thickness.findIndex((depth,tier)=>
+      Math.abs(y-Math.max(-.22,schottensteinTreadHeight(tier,{x,z})-depth))<.00002);
+    assert.notEqual(tier,-1,'The actual underside vertex follows the shared spatial profile');
+    counts[tier]++;
+  }
+  assert.ok(counts.every(count=>count>10000));
+  assert.ok(concourse.length>0);
+  const sectionRise=(height,tier,bearing)=>{
+    const front=schottensteinDeckPoint(tier,bearing,.2),rear=schottensteinDeckPoint(tier,bearing,.8);
+    return height(tier,rear)-height(tier,front);
+  };
+  for(const tier of [1,2]){
+    for(const bearing of [Math.PI/3,Math.PI/2,Math.PI,-Math.PI/2]){
+      assert.ok(sectionRise(schottensteinTreadHeight,tier,bearing)>sectionRise(schottensteinDeckHeight,tier,bearing)*1.025);
+    }
+  }
 });

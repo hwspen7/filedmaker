@@ -107,6 +107,14 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   const sectionRows = id => model.seatingRows.filter(row => row.sectionId === id);
   for (const section of model.sectionFootprints) {
     const rows = sectionRows(section.id);
+    if(section.tier===0){
+      for(const row of rows){
+        const x=(row.left.x+row.right.x)*.5,z=(row.left.z+row.right.z)*.5;
+        const ahead={x:x+Math.sin(row.yaw)*row.depth,z:z+Math.cos(row.yaw)*row.depth};
+        assert.ok(row.y>schottensteinTreadHeight(0,ahead),`Section ${section.id} rises towards the rear`);
+      }
+      continue;
+    }
     const bySlot = new Map();
     for (const row of rows) {
       const spans=bySlot.get(row.slot)??[];
@@ -128,7 +136,6 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   for(const seat of model.seats){
     const matches=treads.get(seat.sectionId+':'+seat.row);
     assert.ok(matches.some(row=>{
-      if(row.tier===0)return seat.y===row.y;
       const {left,right,width}=row;
       const fraction=((seat.x-left.x)*(right.x-left.x)+(seat.z-left.z)*(right.z-left.z))/width**2;
       const lift=row.leftLift+(row.rightLift-row.leftLift)*fraction;

@@ -136,8 +136,12 @@ const lowerCornerAisles={
 const minimumPitch=.48;
 const tierElevations = [[.56, 6.34], [8.05, 11.56], [15.45, 28.55]];
 // Model datum shared by the enclosure and the suspended interior fixtures.
-export const SCHOTTENSTEIN_ROOF_EAVE = 40.6;
-export const SCHOTTENSTEIN_TERRACE_RIM = { front: tierElevations[2][0], rear: tierElevations[2][1] };
+const upperRakeScale=1.065;
+export const SCHOTTENSTEIN_ROOF_EAVE = 41.55;
+export const SCHOTTENSTEIN_TERRACE_RIM = {
+  front: tierElevations[2][0],
+  rear: tierElevations[2][0]+(tierElevations[2][1]-tierElevations[2][0])*upperRakeScale,
+};
 // Manually fitted to the chart's sideline and end stands, excluding local
 // seating notches. The building footprint is independent of seat run ends.
 const elevatedAxes = [null, [[27.5,42.6],[34.7,49.0]], [[34.5,49.7],[50.1,64.9]]];
@@ -298,11 +302,19 @@ export function schottensteinDeckHeight(tier, point) {
   return deckHeight(tier, tier === 0 ? Math.max(0, Math.min(1, fraction)) : fraction);
 }
 
-// Every elevated bank samples the same bowl profile in world coordinates.
-// A shorter bank naturally stops lower. It does not get a separate rise.
+// Each tier has one spatial cross-section, shared by all its seating banks.
 export function schottensteinTreadHeight(tier, point) {
+  const [front,back]=tierElevations[tier];
+  if(tier===0){
+    // The lower tier rolls from the shallow sideline into the deeper ends.
+    // Blend the two grades around the corner without a break in slope.
+    const sideline=(Math.abs(point.x)-10.1)/15.1;
+    const end=(Math.abs(point.z)-19.9)/20.1;
+    const blend=.45,overlap=Math.max(0,blend-Math.abs(sideline-end));
+    return front+(back-front)*(Math.max(sideline,end)+overlap**2/(4*blend));
+  }
   const height=schottensteinDeckHeight(tier,point);
-  if(tier!==2)return height;
+  if(tier===1)return front+(height-front)*1.05;
   const ease=(from,to,value)=>{
     const t=Math.max(0,Math.min(1,(value-from)/(to-from)));
     return t*t*(3-2*t);
@@ -313,7 +325,8 @@ export function schottensteinTreadHeight(tier, point) {
   // Follow the corner runs more closely and ease the rear up to the
   // gallery without introducing a section-specific change of rake.
   const corner=.32*ease(1.8,2.05,angle)-.92*ease(2.05,2.46,angle)+.60*ease(2.46,3,angle);
-  return height+media+mediaShoulder+corner-.34*ease(21,28,height);
+  const upper=height+media+mediaShoulder+corner-.34*ease(21,28,height);
+  return front+(upper-front)*upperRakeScale;
 }
 
 export function schottensteinDeckPoint(tier, angle, fraction) {
@@ -328,21 +341,13 @@ export function schottensteinDeckPoint(tier, angle, fraction) {
   return {x:radius*Math.cos(angle),z:radius*Math.sin(angle)};
 }
 
-const lowerElevations = new Map(blocks.filter(block => block.tier === 0).map(block => {
-  const heightAt = slot => schottensteinDeckHeight(0, rowPlane(block, slot).point(block.profileAxis));
-  const first = heightAt(0), last = heightAt(block.depthRows - 1);
-  return [block.id, {first, rise: (last - first) / (block.depthRows - 1)}];
-}));
-
 function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
   const {point,depth,treadDepth}=rowPlane(block,slot);
   const {nx,nz} = block;
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
   let ranges=polygonSpans(block.projected,depth);
-  const lowerProfile = lowerElevations.get(block.id);
-  const heightAt=lowerProfile ? ()=>lowerProfile.first + slot * lowerProfile.rise
-    : position=>schottensteinTreadHeight(block.tier,position);
+  const heightAt=position=>schottensteinTreadHeight(block.tier,position);
   if(reserve){
     for(const [start,end] of polygonSpans(block.reserved,depth)){
       ranges=ranges.flatMap(([low,high])=>end<=low||start>=high?[[low,high]]:
