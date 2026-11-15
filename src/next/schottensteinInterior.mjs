@@ -218,8 +218,8 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
     spanBox(add,p,q,ribbonTop-.58,.9144,.39,led,INWARD_FACING);
     spanBox(add,p,q,ribbonTop-.07,.14,.43,fascia,INWARD_FACING);
     const outerA=point(a,outerX,outerZ),outerB=point(b,outerX,outerZ);
-    spanBox(add,outerA,outerB,(outerWallBottom+outerTrim)/2,outerTrim-outerWallBottom,.95,color('#353139'),HIDDEN_IN_CUTAWAY);
-    spanBox(add,outerA,outerB,outerTrim+.16,.33,.90,red,HIDDEN_IN_CUTAWAY);
+    // Facade and crown now use sectional architectural mesh, replacing the
+    // older overlapping square-edged continuous perimeter wall.
   }
   // Interior overhead structure is visible from the spectator camera.
   const ceiling=color('#27262b'), truss=color('#535057'), light=color('#ddd8cf');
