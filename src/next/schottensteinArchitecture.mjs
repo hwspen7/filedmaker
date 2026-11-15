@@ -3,6 +3,8 @@
 // authoritative imported-XYZ seats.
 import { SCHOTTENSTEIN_ROOF_EAVE, SCHOTTENSTEIN_TERRACE_RIM, schottensteinBuildingRadius, schottensteinDeckHeight, schottensteinDeckPoint } from '../schottensteinSeating.mjs';
 import { ExteriorEngine } from './engines/exterior.mjs';
+import { fitRearSeatEnvelope } from './engines/geometry.mjs';
+import { schottensteinRake } from '../schottensteinRefinement.mjs';
 
 const TAU=Math.PI*2;
 const SEGMENTS=192;
@@ -55,40 +57,48 @@ function betweenDecks(out,innerTier,outerTier,elevation){
   ringStrip(out,from,to,'up');
 }
 
-// A continuous concrete section through the upper stand. Fit the rim to the
-// arena's rounded corners and lower it gradually behind the press-side banks.
-function addUpperBowl(out){
+// The upper bowl is fitted to the actual outermost chairs, not a separate
+// analytic oval. Its integrated rear parapet rises directly behind row U.
+function addUpperBowl(out,seats){
   const bands=20;
-  const frontY=SCHOTTENSTEIN_TERRACE_RIM.front-1.23;
-  const rearY=SCHOTTENSTEIN_TERRACE_RIM.rear-.39;
+  const frontY=SCHOTTENSTEIN_TERRACE_RIM.front-.22;
+  const rearY=SCHOTTENSTEIN_TERRACE_RIM.rear-.22;
+  const rearEdge=fitRearSeatEnvelope(seats,{
+    tier:2,segments:SEGMENTS,clearance:.43,spread:2
+  });
   const pressBlend=(angle,start,end)=>{
     const degrees=Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))*360/TAU;
     const t=clamp((degrees-start)/(end-start),0,1);
     return 1-t*t*(3-2*t);
   };
-  const profile=angle=>{
+  const profile=(angle,index)=>{
     const inner=radius(schottensteinDeckPoint(2,angle,0))-1.12;
-    const outer=radius(schottensteinDeckPoint(2,angle,1))+.55+1.95*Math.sin(2*angle)**4
-      -5.45*pressBlend(angle,1,27);
+    const outer=Math.max(inner+2.0,rearEdge.radii[index]);
     const rise=rearY-4.18*pressBlend(angle,3,42)-frontY;
     const point=(r,y)=>[r*Math.cos(angle),y,r*Math.sin(angle)];
     const section=Array.from({length:bands+1},(_,i)=>{
       const t=i/bands;
-      return point(inner+(outer-inner)*t,frontY+rise*t**2.15);
+      return point(inner+(outer-inner)*t,frontY+rise*schottensteinRake(2,t));
     });
     // Roll each lip into the underside so a close orbit shows a chamfer
     // instead of a paper-thin cut. Close the section all the way to the front.
+    const lip=frontY+rise;
     return [
       ...section,
-      point(outer+.14,frontY+rise-.16),
-      point(outer+.14,frontY+rise-.48),
-      point(outer-.12,frontY+rise-.67),
+      // A short, solid parapet connects to the bowl itself. Its inner face
+      // begins less than half a metre behind the last chair, rather than
+      // leaving an empty belt of concrete around the upper tier.
+      point(outer+.06,lip+.07),
+      point(outer+.06,lip+.84),
+      point(outer+.34,lip+.84),
+      point(outer+.34,lip-.40),
+      point(outer-.12,lip-.66),
       ...section.slice(0,-1).reverse().map(([x,y,z])=>[x,y-.67,z]),
       point(inner-.12,frontY-.50),
       point(inner-.12,frontY-.14)
     ];
   };
-  const stations=Array.from({length:SEGMENTS},(_,i)=>profile(i*TAU/SEGMENTS));
+  const stations=Array.from({length:SEGMENTS},(_,i)=>profile(i*TAU/SEGMENTS,i));
   const vertices=stations.map((section,i)=>section.map((point,k)=>{
     const before=stations[(i+SEGMENTS-1)%SEGMENTS][k],after=stations[(i+1)%SEGMENTS][k];
     const previous=section[(k+section.length-1)%section.length],next=section[(k+1)%section.length];
@@ -109,7 +119,7 @@ function addUpperBowl(out){
 export function buildSchottensteinArchitecture(model){
   if(!model?.sectionFootprints?.length||!model?.seatingRows?.length)return null;
   const decks=[],fascias=[],upperBowl=[],concourse=[],facade=[],glazing=[],trim=[],aisles=[],stepEdges=[],backWall=[],galleryGlass=[],galleryGlow=[],windowFrames=[],pilasters=[],roofEdge=[],soffit=[],downlights=[],roofDeck=[],radialBeams=[],buildingRoof=[],entryMasonry=[],entryGlass=[],pressWalls=[],pressGlass=[],cutawayFacade=[],externalTrim=[],galleryFloorMesh=[];
-  addUpperBowl(upperBowl);
+  addUpperBowl(upperBowl,model.seats);
   // Geometry must follow the actual generated row spans, not an unrelated
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
