@@ -1,6 +1,7 @@
 // Generic architectural assembly from analytic tiers, independent of OSU references.
 import { GeometryEngine } from './geometry.mjs';
 import { addRoofShell, addRoundVolume } from '../structuralMesh.mjs';
+import { ExteriorEngine } from './exterior.mjs';
 const TAU=Math.PI*2;
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
@@ -24,7 +25,7 @@ export const ArchitectureEngine={
     const {spec,point}=geometry;
     if(!Number.isInteger(segments)||segments<32||segments>512)throw Error('Invalid architecture resolution');
     if(!Number.isInteger(bands)||bands<2||bands>32)throw Error('Invalid architecture bands');
-    const layers={decks:[],fascias:[],concourse:[],facade:[],glazing:[],trim:[],aisles:[],stepEdges:[],backWall:[],pilasters:[],soffit:[],roofDeck:[],buildingRoof:[]};
+    const layers={decks:[],fascias:[],concourse:[],facade:[],glazing:[],trim:[],aisles:[],stepEdges:[],backWall:[],pilasters:[],soffit:[],roofDeck:[],buildingRoof:[],brickBase:[],brickPiers:[],entryMasonry:[],entryGlass:[],towerFrames:[],towerCrown:[],towerRibs:[],entryBrick:[],entryCurtain:[],entryFrames:[],entryCanopy:[],entryDoors:[],externalTrim:[]};
     const strip=(out,fn1,fn2,n=up)=>{
       for(let i=0;i<segments;i++){
         const a=i*TAU/segments,b=(i+1)*TAU/segments;
@@ -121,6 +122,32 @@ export const ArchitectureEngine={
         const delta=.02;
         quad(layers.stepEdges,[d[0],d[1]+delta,d[2]],[c[0],c[1]+delta,c[2]],
           [c[0],c[1]+delta+.015,c[2]],[d[0],d[1]+delta+.015,d[2]],[Math.cos(angle),0,Math.sin(angle)]);
+      }
+    }
+    // An optional exterior profile reuses the identical mesh-building code
+    // used for OSU. Existing generic venues without a profile retain their
+    // original neutral shell and can be upgraded by editing JSON only.
+    if(spec.exterior){
+      const generated=ExteriorEngine.build({
+        footprint:angle=>{
+          const p=point(outerTier,angle,1,galleryWidth);
+          return {x:p.x,z:p.z};
+        },
+        height:Math.max(8,indoor?roofY:rearY+.98),
+        segments,
+        profile:spec.exterior.profile,
+        entrances:spec.exterior.entrances
+      });
+      layers.facade=[...generated.metalPanels];
+      layers.glazing=[...generated.baseWindows];
+      layers.externalTrim=[...generated.metalSeams];
+      layers.brickBase=[...generated.brickBase];
+      layers.brickPiers=[...generated.brickPiers];
+      layers.entryMasonry=[...generated.towerBrick];
+      layers.entryGlass=[...generated.towerWindows];
+      for(const key of ['towerFrames','towerCrown','towerRibs','entryBrick',
+        'entryCurtain','entryFrames','entryCanopy','entryDoors']){
+        layers[key]=[...generated[key]];
       }
     }
     return Object.fromEntries(Object.entries(layers).map(([key,data])=>[key,new Float32Array(data)]));
