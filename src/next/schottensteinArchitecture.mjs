@@ -386,22 +386,49 @@ export function buildSchottensteinArchitecture(model){
   // Deliberately open roof: the arena wall, eaves and gallery canopy remain,
   // while the central opaque lid is absent in every rendering and export.
 
-  // Model the mapped press enclosure at its own lower elevation. Its
-  // outline reserves the existing seat-free area in the seating model.
+  // Press suite is recessed into the existing upper gallery, not an extra
+  // freestanding roof slab in front of sections 321-326. All front faces
+  // share the gallery's radial envelope, directly behind the seats.
   const press=model.features?.find(feature=>feature.kind==='press');
-  if(press?.outline?.length>=3){
-    const low=press.y-.16,high=low+2.55;
-    const outline=press.outline;
-    const near=Math.min(...outline.map(p=>p.x));
-    for(let i=0;i<outline.length;i++){
-      const a=outline[i],b=outline[(i+1)%outline.length];
-      const dx=b.x-a.x,dz=b.z-a.z;
-      const outward=[dz,0,-dx];
-      const layer=Math.abs((a.x+b.x)/2-near)<.65?pressGlass:pressWalls;
-      quad(layer,vec(a,low),vec(b,low),vec(b,high),vec(a,high),outward);
+  if(press){
+    const centerAngle=Math.atan2(press.z,press.x);
+    const halfSpan=.52; // A wider architectural bay, around 52-58m across.
+    const frontOffset=.73,backOffset=4.85;
+    const base=galleryFloor-.30,sill=galleryFloor+1.06;
+    const header=galleryFloor+5.37,top=galleryFloor+6.23;
+    const signedAngle=a=>Math.atan2(Math.sin(a-centerAngle),Math.cos(a-centerAngle));
+    const pressSegments=[];
+    for(let i=0;i<SEGMENTS;i++){
+      const angle=(i+.5)*TAU/SEGMENTS;
+      if(Math.abs(signedAngle(angle))<=halfSpan)pressSegments.push(i);
     }
-    for(let i=1;i<outline.length-1;i++){
-      face(pressWalls,vec(outline[0],high),vec(outline[i],high),vec(outline[i+1],high),[0,1,0]);
+    if(pressSegments.length<8)throw Error('Press gallery requires sufficient facade segments');
+    for(const i of pressSegments){
+      // Wall, glazing and narrow mullions occupy one vertical plane. Their
+      // geometry is part of the building facade: there is NO wide, flat
+      // roof polygon or separate press canopy crossing the chair banks.
+      wallBand(pressWalls,i,frontOffset,base,base,sill,sill,'in');
+      wallBand(pressGlass,i,frontOffset-.028,sill,sill,header,header,'in');
+      wallBand(pressWalls,i,frontOffset,header,header,top,top,'in');
+      if(i%4===0){
+        wallBand(pressWalls,i,frontOffset-.052,sill-.09,sill-.09,
+          header+.09,header+.09,'in');
+      }
+      if(i%5===0){
+        wallBand(pressWalls,i,frontOffset-.065,header-.08,header-.08,
+          header+.08,header+.08,'in');
+      }
+    }
+    // Two short return walls close the gallery into the structural concourse.
+    // Their ends align with the outer building wall rather than projecting
+    // forward into the occupied seats.
+    for(const [index,side] of [[pressSegments[0],-1],
+      [(pressSegments.at(-1)+1)%SEGMENTS,1]]){
+      const at=(offset,y)=>station(index,offset,y);
+      const angle=index*TAU/SEGMENTS;
+      const tangent=[-Math.sin(angle)*side,0,Math.cos(angle)*side];
+      quad(pressWalls,at(frontOffset,base),at(backOffset,base),
+        at(backOffset,top),at(frontOffset,top),tangent);
     }
   }
   // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
