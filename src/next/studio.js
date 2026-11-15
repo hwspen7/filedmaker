@@ -10,6 +10,7 @@ import { NativeVenueRenderer } from './webgl.js';
 const $=id=>document.getElementById(id);
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
 let seatsBySection=new Map();
+let areaLabels=[],visibleAreaLabels=[];
 const palettePresets={
   slate:['#5e747e','#7b9099','#97aab2','#bacbd1'],
   navy:['#255583','#3f79a6','#76a7cd','#aacbe2'],
@@ -17,7 +18,6 @@ const palettePresets={
 };
 const fmt=n=>Number(n||0).toLocaleString('en-US');
 const limited=s=>String(s??'').slice(0,150);
-const accessColors=['#f8d08c','#9ee3d6','#a7c8f5'];
 function download(filename,content,type='application/json'){
   const a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));
   a.href=u;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);
@@ -31,6 +31,84 @@ function setPreset(name){
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));
     selected=null;renderProject();
   }catch(e){error(e.message)}
+}
+function prepareAreaLabels(){
+  const rowCenters=new Map();
+  for(const row of model.seatingRows??[]){
+    if(!rowCenters.has(row.sectionId))rowCenters.set(row.sectionId,[]);
+    rowCenters.get(row.sectionId).push(row);
+  }
+  const labels=[];
+  for(const section of model.sectionFootprints??[]){
+    const rows=rowCenters.get(section.id)??[];
+    const frontSlot=Math.floor(section.depthRows*.20);
+    let anchor=null;
+    for(const row of rows){
+      const offset=Math.abs(row.slot-frontSlot);
+      if(!anchor||offset<anchor.offset||(offset===anchor.offset&&row.width>anchor.width)){
+        anchor={x:(row.left.x+row.right.x)/2,y:row.y,z:(row.left.z+row.right.z)/2,offset,width:row.width};
+      }
+    }
+    if(!anchor&&seatsBySection.has(section.id)){
+      const seats=[...seatsBySection.get(section.id).values()].flat();
+      const {labelPoint}=section;
+      const distance=seat=>Math.hypot(seat.x-labelPoint.x,seat.z-labelPoint.z);
+      anchor=seats.reduce((closest,seat)=>distance(seat)<distance(closest)?seat:closest);
+    }
+    if(anchor)labels.push({section:section.id,text:section.id,width:32,height:21,point:[anchor.x,anchor.y+1.12,anchor.z]});
+  }
+  for(const feature of plan.features){
+    if(feature.outline)labels.push({text:feature.label,width:feature.kind==='accessible'?117:72,height:20,point:[feature.x,feature.y+1.12,feature.z]});
+  }
+  areaLabels=labels.map(label=>{
+    const node=document.createElement(label.section?'button':'span');
+    node.className=label.section?'area-label':'area-label zone';
+    node.textContent=label.text;
+    node.style.setProperty('--badge-width',`${label.width}px`);
+    node.style.setProperty('--badge-height',`${label.height}px`);
+    if(label.section){
+      node.type='button';
+      node.setAttribute('aria-label',`Focus section ${label.section}`);
+      node.onclick=()=>{pickSection(label.section);view('section');};
+    }
+    node.hidden=true;
+    return {...label,node};
+  });
+  $('areaLabels').replaceChildren(...areaLabels.map(label=>label.node));
+}
+function positionAreaLabels(scene){
+  const layer=$('areaLabels');
+  visibleAreaLabels=[];
+  layer.hidden=!areaLabels.length||(mode!=='overview'&&mode!=='section');
+  if(layer.hidden)return;
+  const bounds=layer.getBoundingClientRect();
+  const sx=bounds.width/scene.canvas.width,sy=bounds.height/scene.canvas.height;
+  const occupied=[...layer.parentElement.querySelectorAll('.status-pill, .viewport-float.bottom span')].map(node=>{
+    const r=node.getBoundingClientRect();
+    return {left:r.left-bounds.left-4,top:r.top-bounds.top-4,right:r.right-bounds.left+4,bottom:r.bottom-bounds.top+4};
+  });
+  const projected=[];
+  for(const label of areaLabels){
+    label.node.hidden=true;
+    const p=scene.projectPoint(label.point);
+    if(!p)continue;
+    const x=p[0]*sx,y=p[1]*sy;
+    const box={left:x-label.width/2-2,right:x+label.width/2+2,top:y-label.height/2-2,bottom:y+label.height/2+2};
+    if(box.left<0||box.top<0||box.right>bounds.width||box.bottom>bounds.height)continue;
+    const active=label.section!==undefined&&label.section===selected?.sectionId;
+    projected.push({...label,x,y,box,active,depth:p[2]});
+  }
+  projected.sort((a,b)=>Number(b.active)-Number(a.active)||Number(Boolean(a.section))-Number(Boolean(b.section))||a.depth-b.depth);
+  for(const label of projected){
+    const {box,node,x,y,active}=label;
+    if(occupied.some(r=>box.left<r.right&&box.right>r.left&&box.top<r.bottom&&box.bottom>r.top))continue;
+    occupied.push(box);
+    node.style.left=`${x}px`;
+    node.style.top=`${y}px`;
+    node.dataset.selected=String(active);
+    node.hidden=false;
+    visibleAreaLabels.push(label);
+  }
 }
 function renderProject(){
   const start=performance.now(),previous=selected?.uid;
@@ -46,23 +124,9 @@ function renderProject(){
       rows.get(row).push(seat);
     }
     plan=buildVenuePlan(model,{palette:palettePresets[$('palette').value],detail:$('detail').value});
-    const access=plan.features.filter(feature=>feature.kind==='concourse-access');
-    $('accessSummary').hidden=!access.length;
-    if(access.length){
-      const levels=new Map();
-      for(const point of access)levels.set(point.level,(levels.get(point.level)??0)+1);
-      const source=document.createElement('a');
-      source.href=access[0].source;
-      source.target='_blank';
-      source.rel='noopener';
-      source.textContent='Official concourse map ↗';
-      $('accessSummary').replaceChildren(
-        `${access.length} mapped bowl access runs · ${[...levels].map(([level,count])=>`${level} ${count}`).join(' · ')}. `,
-        source,
-      );
-    }
+    prepareAreaLabels();
     if(!renderer){try{renderer=new NativeVenueRenderer($('viewport3d'),seat=>selectSeat(seat));}catch(e){error(e.message);mode='top';}}
-    if(renderer)renderer.load(plan);
+    if(renderer){renderer.onFrame=positionAreaLabels;renderer.load(plan);}
     $('rosterRequirements').textContent=model.sectionFootprints
       ?'CSV with section, row, seat, x_m, y_m and z_m. Use seat centers at tread height in the court-centered frame.'
       :'CSV with section, row, seat and optional measured x/y/z. Original identifiers are preserved.';
@@ -157,13 +221,13 @@ function selectSeat(seat){
   $('seatDetails').replaceChildren();
   const title=document.createElement('strong');title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
   const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
-  const access=plan.features.find(feature=>feature.kind==='concourse-access'&&feature.sectionIds.includes(seat?.sectionId));
+  const access=plan.features.find(feature=>feature.kind==='entrance'&&feature.sectionId===seat?.sectionId);
   if(access){
     const link=document.createElement('a');
     link.href=access.source;
     link.target='_blank';
     link.rel='noopener';
-    link.textContent='Find concourse access on the official map ↗';
+    link.textContent=`Section access at Row ${access.row} ↗`;
     $('seatDetails').append(link);
   }
   updateReferencePhoto(seat);
@@ -171,7 +235,10 @@ function selectSeat(seat){
   else $('selectedPreview').textContent='Select a location to inspect a schematic seat view';
   if(mode==='human'&&seat)renderer?.view('human',seat);
   else if(mode==='section'&&seat)renderer?.view('section',seat);
-  else renderer?.highlight(seat);
+  else if(renderer){
+    renderer.highlight(seat);
+    positionAreaLabels(renderer);
+  }
 }
 function updateReferencePhoto(seat){
   const reference=SCHOTTENSTEIN_REFERENCE_VIEWS.find(item=>item.section===seat?.sectionId);
@@ -202,9 +269,12 @@ function view(which){
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
   $('viewLabel').textContent=({overview:'Whole venue / overview',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
   $('viewHint').textContent=which==='top'
-    ?(plan.features.length?'Select a section or a colored access marker':model.sectionFootprints?'Select a numbered section':'Select a seat on the map')
+    ?(plan.features.length?'Select a section · Gold dots mark venue features':model.sectionFootprints?'Select a numbered section':'Select a seat on the map')
     :which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
-  if(which==='top')drawMap();else {renderer?.view(which,selected);renderer?.resize();}
+  if(which==='top'){
+    $('areaLabels').hidden=true;
+    drawMap();
+  }else {renderer?.view(which,selected);renderer?.resize();}
 }
 function drawMap(){
   if(!plan)return;
@@ -283,18 +353,10 @@ function drawMap(){
       ctx.beginPath();ctx.arc(...p,radius,0,Math.PI*2);ctx.fill();
     }
   }
-  const accessHits=[];
   for(const feature of plan.features){
     const point=pos(feature);
-    if(feature.kind==='concourse-access'){
-      accessHits.push({feature,point});
-      ctx.fillStyle=accessColors[feature.tier];ctx.strokeStyle='#22334d';ctx.lineWidth=dpr;
-      const r=2.4*dpr;
-      ctx.beginPath();ctx.rect(point[0]-r,point[1]-r,2*r,2*r);ctx.fill();ctx.stroke();
-    }else{
-      ctx.fillStyle='#e6b986';ctx.strokeStyle='#283847';ctx.lineWidth=dpr;
-      ctx.beginPath();ctx.arc(...point,2.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
-    }
+    ctx.fillStyle='#e6b986';ctx.strokeStyle='#283847';ctx.lineWidth=dpr;
+    ctx.beginPath();ctx.arc(...point,2.6*dpr,0,Math.PI*2);ctx.fill();ctx.stroke();
   }
   if(selected){
     ctx.fillStyle='#ffc26b';ctx.strokeStyle='#fff';ctx.lineWidth=1.4*dpr;
@@ -302,15 +364,6 @@ function drawMap(){
   }
   c.onclick=e=>{
     const b=c.getBoundingClientRect(),x=(e.clientX-b.left)*c.width/b.width,y=(e.clientY-b.top)*c.height/b.height;
-    let access=null,accessDistance=5*dpr;
-    for(const {feature,point} of accessHits){
-      const distance=Math.hypot(point[0]-x,point[1]-y);
-      if(distance<accessDistance){access=feature;accessDistance=distance;}
-    }
-    if(access){
-      $('viewHint').textContent=`${access.level} · ${access.label}`;
-      return;
-    }
     if(!chart||plan.hasRoster){
       let best=null,min=((chart?5:18)*dpr)**2;
       for(const s of plan.seats){
@@ -408,9 +461,32 @@ $('openProject').onchange=async e=>{
  try{const decoded=JSON.parse(await file.text());project=validateProject(decoded.project||decoded);selected=null;document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));renderProject();}catch(ex){error('Invalid project: '+ex.message);}finally{e.target.value='';}
 };
 $('exportProject').onclick=()=>{if(project)download('filedmaker-project.json',JSON.stringify(project,null,2));};
+function captureVenue(){
+  renderer.render();
+  const scene=renderer.canvas;
+  if(!visibleAreaLabels.length)return scene.toDataURL('image/png');
+  const image=document.createElement('canvas');
+  image.width=scene.width;image.height=scene.height;
+  const ctx=image.getContext('2d');
+  ctx.drawImage(scene,0,0);
+  const frame=scene.getBoundingClientRect();
+  ctx.scale(image.width/frame.width,image.height/frame.height);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const {x,y,width,height,text,section,active} of visibleAreaLabels){
+    ctx.fillStyle=section?(active?'#7c263b':'#263748f0'):'#f3f6f9f5';
+    ctx.strokeStyle=section?'#ffffffb8':'#aebfce';
+    ctx.beginPath();
+    ctx.roundRect(x-width/2,y-height/2,width,height,5);
+    ctx.fill();ctx.stroke();
+    ctx.fillStyle=section?'#fff':'#203043';
+    ctx.font=section?'700 11px system-ui':'650 10px system-ui';
+    ctx.fillText(text,x,y);
+  }
+  return image.toDataURL('image/png');
+}
 $('capture').onclick=()=>{
   if(mode==='top'){drawMap();$('viewport2d').toBlob(b=>{if(b){const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='venue-plan.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);}});return;}
-  if(renderer){const a=document.createElement('a');a.href=renderer.capture();a.download='venue-view.png';a.click();}
+  if(renderer){const a=document.createElement('a');a.href=captureVenue();a.download='venue-view.png';a.click();}
 };
 window.addEventListener('resize',()=>{renderer?.resize();if(mode==='top')drawMap();});
 setPreset('schott');

@@ -269,6 +269,7 @@ export class NativeVenueRenderer {
       gl.bindVertexArray(this.roundedBox.vao);
       gl.drawArraysInstanced(gl.TRIANGLES,0,this.roundedBox.vertices,rounded);
     }
+    this.onFrame?.(this);
   }
   projectPoint(pos){if(!this.vp)return null;const m=this.vp,[x,y,z]=pos;const w=m[3]*x+m[7]*y+m[11]*z+m[15];if(w<=0)return null;
     const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/w,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/w;

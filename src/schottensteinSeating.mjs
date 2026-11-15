@@ -2,7 +2,6 @@ import {
   SCHOTTENSTEIN_CHART_LABELS, SCHOTTENSTEIN_DIAGRAM_EDGE, SCHOTTENSTEIN_SECTION_CONTOURS,
 } from './schottensteinChartContours.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
-import { SCHOTTENSTEIN_ACCESS_LEVELS, SCHOTTENSTEIN_ACCESS_RUNS, SCHOTTENSTEIN_ACCESS_SOURCE } from './schottensteinAccess.mjs';
 
 // The guide endpoints orient the rows. The traced chart contours clip them.
 export const SCHOTTENSTEIN_CHART_URL =
@@ -219,25 +218,23 @@ function pointAlongSpans(spans,distance) {
   return spans.at(-1).right;
 }
 
+const accessRows=[
+  ['104','U'],['105','U'],['106','U'],['107','U'],
+  ['114','S'],['121','U'],['122','U'],['123','U'],['124','U'],
+  ['206','A'],['302','A'],['323','A'],
+];
+
 function buildSchottensteinFeatures(rows) {
-  const features=SCHOTTENSTEIN_ACCESS_RUNS.flatMap((runs,tier)=>runs.map(([a,b,x,z,yaw,width,depth],index)=>{
-    const sectionIds=[a,b];
-    const nearby=rows.filter(row=>sectionIds.includes(row.sectionId));
-    let best=Infinity,anchor=null;
-    for(const row of nearby){
-      const dx=row.right.x-row.left.x,dz=row.right.z-row.left.z;
-      const t=Math.max(0,Math.min(1,((x-row.left.x)*dx+(z-row.left.z)*dz)/(dx*dx+dz*dz)));
-      const distance=Math.hypot(x-row.left.x-dx*t,z-row.left.z-dz*t);
-      if(distance<best){best=distance;anchor=row;}
-    }
-    const y=anchor?.y??byId.get(a).frontHeight;
-    const projectedSlope=anchor?Math.cos(yaw-anchor.yaw)*anchor.rise/anchor.depth:0;
-    const halfRise=Math.max(-.55,Math.min(.55,projectedSlope))*depth*.5;
-    const nearY=y-halfRise,farY=y+halfRise;
-    return {kind:'concourse-access',id:`access-${tier}-${index+1}`,tier,
-      level:SCHOTTENSTEIN_ACCESS_LEVELS[tier],label:`Access near ${a} / ${b}`,
-      sectionIds,x,y,z,yaw,width,depth,nearY,farY,source:SCHOTTENSTEIN_ACCESS_SOURCE};
-  }));
+  const features=accessRows.flatMap(([sectionId,label])=>{
+    const row=rows.filter(item=>item.sectionId===sectionId&&item.row===label)
+      .sort((a,b)=>b.width-a.width)[0];
+    if(!row)return [];
+    const point=lerp(row.left,row.right,.15);
+    const offset=label==='A'?-1.52:1.56;
+    return [{kind:'entrance',label:`Access ${sectionId}`,sectionId,row:label,
+      x:point.x-Math.sin(row.yaw)*offset,y:row.y,z:point.z-Math.cos(row.yaw)*offset,yaw:row.yaw,
+      source:referenceSite+sectionId}];
+  });
   const regions=chartRegions.map(region=>{
     const {sectionId,outline}=region;
     const point=outline.reduce((center,p)=>({x:center.x+p.x/outline.length,z:center.z+p.z/outline.length}),{x:0,z:0});

@@ -11,32 +11,24 @@ function spanBox(add,a,b,y,height,depth,color,id=-1) {
 }
 
 function addSectionAccess(add,feature,color) {
-  const {x,z,yaw,width,depth,nearY,farY,tier}=feature;
-  const place=(dx,y,dz)=>[x+Math.cos(yaw)*dx+Math.sin(yaw)*dz,y,
+  const {x,y,z,yaw}=feature;
+  const place=(dx,dy,dz)=>[x+Math.cos(yaw)*dx+Math.sin(yaw)*dz,y+dy,
     z-Math.sin(yaw)*dx+Math.cos(yaw)*dz];
-  const tread=color('#929097'), nose=color('#c6c3c6'), side=color('#4f4c53');
-  const rise=nearY-farY,count=Math.max(1,Math.round(Math.abs(rise)/.18));
-  const run=depth/count,thickness=Math.max(.16,Math.abs(rise)/count+.09);
-  for(let i=0;i<count;i++){
-    const fraction=(i+.5)/count, y=farY+rise*fraction;
-    const offset=depth*(fraction-.5);
-    add(place(0,y-thickness*.5+.015,offset),[width,thickness,run],yaw,tread);
-    add(place(0,y+.026,offset+run*.43),[width,.017,.045],yaw,nose);
+  const wall=color('#54525a'), corridor=color('#25242b'), stair=color('#96949a');
+  const side=color('#333139');
+  add(place(0,-.10,0),[1.84,.20,2.30],yaw,stair);
+  add(place(0,1.04,-1.10),[1.34,2.00,.12],yaw,corridor);
+  for(const dx of [-.77,.77]){
+    add(place(dx,1.02,-.49),[.17,2.08,1.23],yaw,wall);
+    add(place(dx,.50,.52),[.045,.99,.045],yaw,side);
+    add(place(dx,.98,.07),[.048,.044,1.0],yaw,side);
   }
-  if(tier===2){
-    for(const sign of [-1,1]){
-      const edge=sign*(width*.5-.04);
-      for(const at of [-1,1]){
-        const y=at<0?farY:nearY;
-        add(place(edge,y+.30,at*depth*.44),[.055,.60,.055],yaw,side);
-      }
-    }
-  }
+  add(place(0,2.10,-.49),[1.72,.18,1.24],yaw,wall);
 }
 
 function addChartRegions(add,color,features,spanAt) {
   for(const feature of features){
-    if(feature.kind==='concourse-access'){addSectionAccess(add,feature,color);continue;}
+    if(feature.kind==='entrance'){addSectionAccess(add,feature,color);continue;}
     const limits=feature.outline.map(p=>p.x);
     const near=Math.min(...limits),far=Math.max(...limits);
     const segments=Math.ceil((far-near)/.40), depth=(far-near)/segments;
@@ -68,13 +60,6 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   const tread=color('#a0a0a4'), fascia=color('#393237'), edge=color('#bcb9b8');
   const rail=color('#211f23'), suite=color('#574e4b'), glass=color('#887e71');
   const red=color('#a51c30'), led=color('#c94b41');
-  const mappedAccess=features.filter(feature=>feature.kind==='concourse-access');
-  const insideMappedAccess=(point,tier)=>mappedAccess.some(access=>{
-    if(access.tier!==tier)return false;
-    const dx=point.x-access.x,dz=point.z-access.z;
-    return Math.abs(dx*Math.cos(access.yaw)-dz*Math.sin(access.yaw))<access.width*.52
-      &&Math.abs(dx*Math.sin(access.yaw)+dz*Math.cos(access.yaw))<access.depth*.56;
-  });
   for(const row of rows){
     const {left,right,y,depth,rise}=row;
     const forward={x:Math.sin(row.yaw),z:Math.cos(row.yaw)};
@@ -138,14 +123,13 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
       const width=distance(p,q);
       if(width<.42||width>3.15)continue;
       const height=a.frontHeight+j*Math.min(a.rise,b.rise);
-      const m=mix(p,q,.5);
-      if(insideMappedAccess(m,a.tier))continue;
       spanBox(add,mix(p,q,.08),mix(p,q,.92),height-.095,.19,stepDepth*.97,tread);
+      const m=mix(p,q,.5);
       if(j%3===0)add([m.x,height+.36,m.z],[.038,.72,.038],0,rail);
       if(j>0){
         const prevT=(j-.5)/steps;
         const prev=mix(mix(a.front,a.back,prevT),mix(b.front,b.back,prevT),.5);
-        if(!insideMappedAccess(prev,a.tier))spanBox(add,prev,m,height+.65,.048,.044,rail);
+        spanBox(add,prev,m,height+.65,.048,.044,rail);
       }
     }
   }

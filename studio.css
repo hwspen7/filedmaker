@@ -9,6 +9,12 @@
 .camera-controls select{width:auto}
 .camera-controls button{min-height:34px;border:1px solid #cddbe7;border-radius:8px;background:#fff;color:#2b445b}
 .viewport-float.bottom{gap:8px}
+.area-labels{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.area-labels[hidden],.area-label[hidden]{display:none}
+.area-label{position:absolute;display:grid;place-items:center;width:var(--badge-width);height:var(--badge-height);transform:translate(-50%,-50%);padding:0;color:#fff;background:#263748f0;border:1px solid #ffffffb8;border-radius:5px;font:700 11px/1 Inter,system-ui,sans-serif;white-space:nowrap;box-shadow:0 1px 3px #15223545}
+button.area-label{pointer-events:auto}
+button.area-label:hover,button.area-label:focus-visible,.area-label[data-selected="true"]{background:#7c263b;border-color:#fff}
+.area-label.zone{color:#203043;background:#f3f6f9f5;border-color:#aebfce;font-size:10px;font-weight:650}
 @media(max-width:760px){
   .topbar{height:auto;min-height:58px;flex-wrap:wrap;gap:6px;padding:9px 12px}
   .top-actions{gap:5px;flex-wrap:wrap}
