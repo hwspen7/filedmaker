@@ -83,8 +83,8 @@ async function main(){
       if(statSync(target).size<12000)throw Error('Screenshot is suspiciously small: '+target);
       console.log(file+': WebGL2 OK; '+state.shown+' estimated seats; PNG '+statSync(target).size+' bytes');
       if(file==='osu'){
-        const markers=await evaluate("({total:document.querySelectorAll('.area-label.exit').length,visible:[...document.querySelectorAll('.area-label.exit')].filter(x=>!x.hidden).length})");
-        if(markers.total!==12||markers.visible<1)throw Error('OSU exit sign overlay missing: '+JSON.stringify(markers));
+        const markers=await evaluate("document.querySelectorAll('.area-label.exit').length");
+        if(markers!==0)throw Error('Removed EXIT overlays unexpectedly returned');
         const selected=await evaluate("(()=>{const select=document.querySelector('#sectionPicker');if(!select)return false;const pick=[...select.options].find(o=>o.value==='323')||[...select.options].find(o=>o.value);if(!pick)return false;select.value=pick.value;select.dispatchEvent(new Event('change',{bubbles:true}));return !document.querySelector('[data-view=human]').disabled})()");
         if(!selected)throw Error('Cannot select an OSU spectator seat for interior acceptance');
         await evaluate("document.querySelector('[data-view=section]').click()");
