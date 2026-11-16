@@ -66,7 +66,16 @@ export const GeometryEngine={
         historicalBuildingWidthMetres:signature.historicalBuildingWidthMetres==null?null:
           finite(signature.historicalBuildingWidthMetres,'Historic building width',40,250),
         historicalBuildingLengthMetres:signature.historicalBuildingLengthMetres==null?null:
-          finite(signature.historicalBuildingLengthMetres,'Historic building length',40,250)
+          finite(signature.historicalBuildingLengthMetres,'Historic building length',40,250),
+        asymmetricConcourseMetres:signature.asymmetricConcourseMetres==null?null:
+          Object.fromEntries(['north','south','east','west'].map(side=>[
+            side,finite(signature.asymmetricConcourseMetres[side],
+              'Measured '+side+' concourse depth',1,25)
+          ])),
+        historicalClearspanMetres:signature.historicalClearspanMetres==null?null:{
+          width:finite(signature.historicalClearspanMetres.width,'Historic clearspan width',40,150),
+          length:finite(signature.historicalClearspanMetres.length,'Historic clearspan length',40,150)
+        }
       }:null,entrances:entrances.map((item,index)=>({
         angle:finite(item.angle,'Entrance angle '+index,0,Math.PI*2),
         role:item.role==='primary'?'primary':'secondary'
