@@ -13,8 +13,9 @@ of its contour, row mesh, or seating identifiers.
   outline and tier profile. It supports circular, elliptical, octagonal,
   near-rectangular, and paired-grandstand layouts.
 - `src/next/engines/seating.mjs` uses actual section identifiers,
-  nonuniform section angles, row limits, skip rows, and area-specific
-  partial cutouts. The same seat runs produce labeled 2D section polygons.
+  source-verified section adjacency, row limits and independently
+  supported voids. Unsupported hand-drawn portal gaps were removed; the
+  same modeled seat runs produce the labeled 2D section polygons.
 - `src/next/engines/architecture.mjs` constructs concrete seat-deck
   strips and risers from individual modeled rows. It never fills an
   entire empty grandstand sector with a generic deck.
@@ -29,12 +30,12 @@ of its contour, row mesh, or seating identifiers.
 | School | Modeled geometry difference | Source-derived seating details | Still estimates |
 | --- | --- | --- | --- |
 | Indiana | Opposing detached main stands and separately clipped balcony banks | A–F and G–M lower stands, AA–FF and GG–MM balcony sections | Curved side-edge endpoints, internal portal sizes and rake |
-| Purdue | Circular 18-section lower/18-section upper bowl | Lower 01–18 and upper 101–118, premium blocks occupied | Exact curvature and inner/outer accessible entrances |
-| Illinois | Three radially separate rings including 48-sector upper gallery | 101–120, 121–143, 201–248 | 100/200 transition and accessible suite footprints |
-| Iowa | Compact sunken lower ring and distinct upper letter bank | A–N/AA–NN, student seating G–I and lower portions of E/K | Row-to-row tier transition and ADA row 42 platform |
+| Purdue | Circular 18-section lower/18-section upper bowl | Lower **1–18** (no leading zeros) and upper 101–118, premium blocks 8–11 remain occupied | Exact curvature and inner/outer accessible entrances |
+| Illinois | Three radially separate rings including 48-sector upper gallery | 101–120; 121–129 and 134–143 with a suite-space interruption; 201–248 | Courtside 9–13 and exact suite/ADA boundaries are deliberately **unmodeled** |
+| Iowa | Compact sunken ring with **28 contiguous full-height section columns** | A, AA, BB, ... NN, N, M, ... B in clockwise order. Both modeled row-depth bands use these same labels, with students in G–I and lower E/K | Verified section-specific row depths, courtside ECS/SCS/NCS and ADA positions remain unmodeled |
 | Michigan State | Lower/upper different shapes and material by row | Lower bench 1–9, no 10–12, lower chairs 13–28; upper chairs 1–13 and benches 14–19 | Exact student bench boundary and aisle portal widths |
 | Wisconsin | Angular 3-level bowl with staggered/overhanging balcony fronts | 101–128, 201–228, 301–328; south student sections | Cantilever dimensions and Nicholas/South club boundaries |
-| UCLA | Angular/octagonal bowl with nonuniform side sections | 101–126 and 200-level A/B/C subsections; 215 is media rather than spectator seating | Irregular student side polygons and individual media platform widths |
+| UCLA | Angular/octagonal bowl with distinct sideline and corner banks | 101–126; individually placed 206A/B/C, 210A/B, 211A/B/C, 219A/B/C, 223A/B, 224A/B/C; **215 MEDIA**, no seats | Exact student/ADA polygons and Pauley Perch table locations not surveyed |
 | Washington | Compact long rectangular bowl with 14 matching section columns in each row band | Sections 1–14 across rows 1–31; section 1 row 10/14 entrances | Most section-specific row widths and row break depths |
 
 ## Primary documentation
@@ -83,5 +84,22 @@ chart-informed human edits, not official licensed CAD meshes. They need
 visual comparison and per-section adjustments against authoritative
 photos or architectural drawings before they can be described as
 fully OSU-equivalent reconstructions or production-ready ticket inventory.
+
+## Verified chart alignment corrections (November 2026)
+
+`data/big-ten/section-chart-verified-order.json` is the authority for
+section identifiers and neighbor order of these eight venues. It rejects
+fabricated section IDs, records documented but unmodeled areas, and keeps
+estimated angular dimensions separate from section identity. Generic cyclic
+section widths, false zero-padding, and fictitious internal tunnels were
+removed from the first-wave generator. The actual official diagram can now
+be opened directly beside the capacity note on each Big Ten arena page.
+
+The source-linked diagram **does not certify** the curve of each 3D section,
+actual portal opening, individual row length, seat inventory, or survey
+coordinates. A section marked as official means its *label and chart
+location* were checked, not that its 3D vertices were measured. Any
+unmodeled documented section remains listed as missing rather than being
+silently approximated into a different section.
 
 The original Ohio State preset is unchanged.
