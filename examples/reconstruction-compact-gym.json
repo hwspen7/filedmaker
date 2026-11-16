@@ -1,0 +1,167 @@
+{
+  "format": "filedmaker-reconstruction",
+  "school": "Fictional District School",
+  "venue": "Compact Gym – Manual Data Example",
+  "sport": "nfhs-basketball",
+  "court": {
+    "width": 15.24,
+    "length": 25.6032
+  },
+  "officialCapacity": null,
+  "capacitySource": "",
+  "notes": "Synthetic demonstration only. Supply source-backed row counts and measurements for a real school.",
+  "exterior": {
+    "enabled": false,
+    "provider": null,
+    "parameters": null
+  },
+  "sections": [
+    {
+      "id": "HOME",
+      "tier": "T1",
+      "baseHeight": 0.48,
+      "rowRise": 0.28,
+      "source": "fictional-data-example",
+      "front": [
+        {
+          "x": -10,
+          "z": -5.8
+        },
+        {
+          "x": -10.25,
+          "z": 0
+        },
+        {
+          "x": -10,
+          "z": 5.8
+        }
+      ],
+      "back": [
+        {
+          "x": -14.8,
+          "z": -5.8
+        },
+        {
+          "x": -15.2,
+          "z": 0
+        },
+        {
+          "x": -14.8,
+          "z": 5.8
+        }
+      ],
+      "rows": [
+        {
+          "label": "A",
+          "seats": 18,
+          "first": 1,
+          "seatType": "bleacher",
+          "gaps": [
+            {
+              "after": 9,
+              "width": 1.2
+            }
+          ],
+          "elevation": 0.48
+        },
+        {
+          "label": "B",
+          "seats": 18,
+          "first": 1,
+          "seatType": "bleacher",
+          "gaps": [
+            {
+              "after": 9,
+              "width": 1.2
+            }
+          ]
+        },
+        {
+          "label": "C",
+          "seats": 17,
+          "first": 1,
+          "seatType": "bleacher",
+          "gaps": [
+            {
+              "after": 8,
+              "width": 1.2
+            }
+          ]
+        },
+        {
+          "label": "D",
+          "seats": 17,
+          "first": 1,
+          "seatType": "bleacher",
+          "gaps": [
+            {
+              "after": 8,
+              "width": 1.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "VISITORS",
+      "tier": "T1",
+      "baseHeight": 0.48,
+      "rowRise": 0.28,
+      "source": "fictional-data-example",
+      "front": [
+        {
+          "x": 10,
+          "z": -5.8
+        },
+        {
+          "x": 10.25,
+          "z": 0
+        },
+        {
+          "x": 10,
+          "z": 5.8
+        }
+      ],
+      "back": [
+        {
+          "x": 14.8,
+          "z": -5.8
+        },
+        {
+          "x": 15.2,
+          "z": 0
+        },
+        {
+          "x": 14.8,
+          "z": 5.8
+        }
+      ],
+      "rows": [
+        {
+          "label": "A",
+          "seats": 16,
+          "first": 1,
+          "seatType": "chair"
+        },
+        {
+          "label": "B",
+          "seats": 16,
+          "first": 1,
+          "seatType": "chair"
+        },
+        {
+          "label": "C",
+          "seats": 15,
+          "first": 1,
+          "seatType": "chair"
+        },
+        {
+          "label": "D",
+          "seats": 15,
+          "first": 1,
+          "seatType": "chair"
+        }
+      ]
+    }
+  ]
+}
