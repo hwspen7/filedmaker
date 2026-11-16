@@ -94,7 +94,7 @@ async function main(){
           };
         })()`);
         if(info?.warning?.startsWith('Unable to open'))throw Error(info.warning);
-        return info?.title===${JSON.stringify(arena)}&&info?.active&&
+        return info?.title===arena&&info?.active&&
           info?.seats!=='—'&&info?.canvas;
       },100);
       await evalJs("document.querySelector('[data-view=exterior]').click()");
