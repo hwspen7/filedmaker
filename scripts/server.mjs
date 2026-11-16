@@ -2,14 +2,31 @@ import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, extname, resolve, sep } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.csv': 'text/csv; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.glb': 'model/gltf-binary' };
 const port = Number(process.env.PORT || 5174);
+function gitValue(...args){
+  try{return execFileSync('git',args,{cwd:root,encoding:'utf8',timeout:1500,
+    stdio:['ignore','pipe','ignore']}).trim();}
+  catch{return null;}
+}
+const buildInfo={
+  branch:process.env.GITHUB_REF_NAME||gitValue('branch','--show-current')||'unknown',
+  commit:process.env.GITHUB_SHA||gitValue('rev-parse','HEAD')||'unknown',
+  root,venueCount:18,source:'local-checkout'
+};
 const server = http.createServer(async (req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if(path==='/__filedmaker/status'){
+      res.writeHead(200,{'content-type':'application/json; charset=utf-8',
+        'cache-control':'no-store','x-content-type-options':'nosniff'});
+      res.end(req.method==='HEAD'?undefined:JSON.stringify(buildInfo));
+      return;
+    }
     const requestFile = path.endsWith('/') ? `${path}index.html` : path;
     const file = resolve(root, `.${requestFile}`);
     if (file !== root && !file.startsWith(`${root}${sep}`)) { res.writeHead(403); res.end(); return; }
@@ -19,4 +36,17 @@ const server = http.createServer(async (req, res) => {
     res.end(req.method === 'HEAD' ? undefined : data);
   } catch { res.writeHead(404); res.end('Not found'); }
 });
-server.listen(port, '127.0.0.1', () => console.log(`FiledMaker at http://127.0.0.1:${port}/`));
+server.listen(port, '127.0.0.1', () => {
+  console.log(`FiledMaker at http://127.0.0.1:${port}/`);
+  console.log(`Serving ${buildInfo.branch} @ ${buildInfo.commit.slice(0,12)} from ${buildInfo.root}`);
+});
+server.on('error',error=>{
+  if(error.code==='EADDRINUSE'){
+    console.error(`Port ${port} is already occupied. That may be an OLD FiledMaker
+server serving another checkout or branch. Use scripts/launch-big-ten.ps1
+to start the verified development branch on a fresh port.`);
+    process.exitCode=1;
+    return;
+  }
+  throw error;
+});
