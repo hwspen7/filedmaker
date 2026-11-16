@@ -72,6 +72,15 @@ export const SignatureArchitectureEngine={
           l/2/Math.max(Math.abs(d),1e-9));
         return {x:dist*c,z:dist*d};
       }
+      // Pauley's documented concourse is asymmetrical, with a 40-foot
+      // north addition and much slimmer west side.
+      const concourse=signature.asymmetricConcourseMetres;
+      if(concourse){
+        const x=Math.cos(a),z=Math.sin(a),ax=Math.abs(x),az=Math.abs(z);
+        const w=(ax*(x>=0?concourse.east:concourse.west)+
+          az*(z>=0?concourse.north:concourse.south))/(ax+az);
+        return point(last,a,1,w);
+      }
       const p=point(last,a,1,galleryWidth+.1);
       if(roof==='copper-dome'){
         // A circular wall and dome, not the previous elongated oval.
@@ -208,9 +217,10 @@ export const SignatureArchitectureEngine={
     // facades on the best-documented historic buildings.
     const measuredRing=roof==='folded-dome'||roof==='copper-dome';
     const rectangular=roof==='gable-skylight'&&signature.historicalBuildingWidthMetres!=null;
-    if(measuredRing||rectangular){
-      const wallTop=base-.12,glassLow=measuredRing?6.2:11.2;
-      const glassHigh=Math.min(wallTop-1,measuredRing?15:17.5);
+    const asymmetric=Boolean(signature.asymmetricConcourseMetres);
+    if(measuredRing||rectangular||asymmetric){
+      const wallTop=base-.12,glassLow=asymmetric?3.7:measuredRing?6.2:11.2;
+      const glassHigh=Math.min(wallTop-1,asymmetric?15:measuredRing?15:17.5);
       for(let i=0;i<segments;i++){
         const a=i*TAU/segments,b=(i+1)*TAU/segments;
         const p=perimeter(a),q=perimeter(b),mid=(a+b)/2;
