@@ -189,7 +189,7 @@ export function normalizeVenue(input){
     if(!['update-row','add-row','remove-row','move-row','translate-section',
       'resize-section','set-section-elevation','set-seat-offset','clear-seat-offset',
       'add-structure','edit-structure','remove-structure','duplicate-structure',
-      'edit-surface'].includes(operation))
+      'edit-surface','batch-structure'].includes(operation))
       throw Error('Invalid staff edit operation');
     return {operation,section:name(a.section,'Edited section',30),
       row:a.row==null?'':String(a.row).slice(0,30),
