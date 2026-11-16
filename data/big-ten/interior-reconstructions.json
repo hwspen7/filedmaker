@@ -207,43 +207,16 @@
           "rearWidth": 1
         }
       ],
-      "notches": [
-        {
-          "tier": 0,
-          "id": "D",
-          "fromRow": 19,
-          "toRow": 21,
-          "at": 0.5,
-          "span": 0.14
-        },
-        {
-          "tier": 0,
-          "id": "K",
-          "fromRow": 19,
-          "toRow": 21,
-          "at": 0.5,
-          "span": 0.14
-        },
-        {
-          "tier": 1,
-          "id": "CC",
-          "fromRow": 7,
-          "toRow": 8,
-          "at": 0.5,
-          "span": 0.14
-        },
-        {
-          "tier": 1,
-          "id": "JJ",
-          "fromRow": 7,
-          "toRow": 8,
-          "at": 0.5,
-          "span": 0.14
-        }
-      ],
+      "notches": [],
       "seatTypes": [],
       "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019",
-      "notes": "Two opposing side banks and separate balcony banks follow the official 2026–27 seating diagram. Mid-bank notch positions are visual estimates, not surveyed portals."
+      "notes": "Two opposing side banks and separate balcony banks follow the official 2026–27 seating diagram. Mid-bank notch positions are visual estimates, not surveyed portals. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "undocumentedNotchesDiscarded": [
+        "D",
+        "K",
+        "CC",
+        "JJ"
+      ]
     },
     "purdue": {
       "type": "circular-floor",
@@ -313,55 +286,55 @@
       "sectionRules": [
         {
           "tier": 0,
-          "id": "01",
+          "id": "1",
           "frontWidth": 0.86,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "02",
+          "id": "2",
           "frontWidth": 0.89,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "03",
+          "id": "3",
           "frontWidth": 0.89,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "04",
+          "id": "4",
           "frontWidth": 0.91,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "05",
+          "id": "5",
           "frontWidth": 0.92,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "06",
+          "id": "6",
           "frontWidth": 0.92,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "07",
+          "id": "7",
           "frontWidth": 0.88,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "08",
+          "id": "8",
           "frontWidth": 0.72,
           "rearWidth": 1
         },
         {
           "tier": 0,
-          "id": "09",
+          "id": "9",
           "frontWidth": 0.7,
           "rearWidth": 1
         },
@@ -528,27 +501,30 @@
           "rearWidth": 1
         }
       ],
-      "notches": [
-        {
-          "tier": 1,
-          "id": "105",
-          "fromRow": 1,
-          "toRow": 3,
-          "at": 0.52,
-          "span": 0.17
-        },
-        {
-          "tier": 1,
-          "id": "115",
-          "fromRow": 1,
-          "toRow": 3,
-          "at": 0.52,
-          "span": 0.17
-        }
-      ],
+      "notches": [],
       "seatTypes": [],
       "source": "https://purduesports.com/mens-basketball-ticket-information",
-      "notes": "Inner sections 01–18 and outer 101–118 form a near-round seating dish. Expanded upper student end positions and inner premium seating are chart-informed. Concourse breaks are estimated. All premium blocks remain seated; no front rows are removed solely because a pricing map marks them white."
+      "notes": "Inner sections 01–18 and outer 101–118 form a near-round seating dish. Expanded upper student end positions and inner premium seating are chart-informed. Concourse breaks are estimated. All premium blocks remain seated; no front rows are removed solely because a pricing map marks them white. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "undocumentedNotchesDiscarded": [
+        "105",
+        "115"
+      ],
+      "premiumSections": [
+        "8",
+        "9",
+        "10",
+        "11",
+        "14"
+      ],
+      "studentSections": [
+        "104",
+        "105",
+        "106",
+        "107",
+        "114",
+        "115",
+        "116"
+      ]
     },
     "illinois": {
       "type": "three-concentric-rings",
@@ -685,14 +661,12 @@
         {
           "tier": 1,
           "id": "129",
-          "frontRows": 1,
           "frontWidth": 0.82,
           "rearWidth": 1
         },
         {
           "tier": 1,
           "id": "136",
-          "frontRows": 1,
           "frontWidth": 0.85,
           "rearWidth": 1
         },
@@ -862,30 +836,6 @@
           "tier": 1,
           "id": "128",
           "frontWidth": 0.8,
-          "rearWidth": 1
-        },
-        {
-          "tier": 1,
-          "id": "130",
-          "frontWidth": 0.85,
-          "rearWidth": 1
-        },
-        {
-          "tier": 1,
-          "id": "131",
-          "frontWidth": 0.87,
-          "rearWidth": 1
-        },
-        {
-          "tier": 1,
-          "id": "132",
-          "frontWidth": 0.9,
-          "rearWidth": 1
-        },
-        {
-          "tier": 1,
-          "id": "133",
-          "frontWidth": 0.77,
           "rearWidth": 1
         },
         {
@@ -1231,35 +1181,22 @@
           "rearWidth": 1
         }
       ],
-      "notches": [
-        {
-          "tier": 0,
-          "id": "111",
-          "fromRow": 8,
-          "toRow": 10,
-          "at": 0.45,
-          "span": 0.15
-        },
-        {
-          "tier": 0,
-          "id": "119",
-          "fromRow": 8,
-          "toRow": 10,
-          "at": 0.45,
-          "span": 0.15
-        },
-        {
-          "tier": 1,
-          "id": "134",
-          "fromRow": 2,
-          "toRow": 5,
-          "at": 0.52,
-          "span": 0.22
-        }
-      ],
+      "notches": [],
       "seatTypes": [],
       "source": "https://www.statefarmcenter.com/assets/doc/production_guide_19-4d1fa8277a.pdf",
-      "notes": "Published seating configuration distinguishes 100 lower, 100 upper/club and 48-sector 200 ring; measured suite and ADA platform polygons remain unavailable."
+      "notes": "Published seating configuration distinguishes 100 lower, 100 upper/club and 48-sector 200 ring; measured suite and ADA platform polygons remain unavailable. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "undocumentedNotchesDiscarded": [
+        "111",
+        "119",
+        "134"
+      ],
+      "unmodeledOfficialSections": [
+        "9",
+        "10",
+        "11",
+        "12",
+        "13"
+      ]
     },
     "iowa": {
       "type": "sunken-compact-bowl",
@@ -1488,65 +1425,23 @@
           "rearWidth": 1
         }
       ],
-      "notches": [
-        {
-          "tier": 0,
-          "id": "E",
-          "fromRow": 1,
-          "toRow": 4,
-          "at": 0.53,
-          "span": 0.17
-        },
-        {
-          "tier": 0,
-          "id": "K",
-          "fromRow": 1,
-          "toRow": 4,
-          "at": 0.53,
-          "span": 0.17
-        },
-        {
-          "tier": 1,
-          "id": "KK",
-          "fromRow": 17,
-          "toRow": 19,
-          "at": 0.5,
-          "span": 0.14
-        },
-        {
-          "tier": 1,
-          "id": "NN",
-          "fromRow": 17,
-          "toRow": 19,
-          "at": 0.5,
-          "span": 0.14
-        }
-      ],
-      "seatTypes": [
-        {
-          "tier": 0,
-          "fromRow": 1,
-          "toRow": 9,
-          "sections": [
-            "E",
-            "K"
-          ],
-          "kind": "bleacher"
-        },
-        {
-          "tier": 0,
-          "fromRow": 1,
-          "toRow": 19,
-          "sections": [
-            "G",
-            "H",
-            "I"
-          ],
-          "kind": "bleacher"
-        }
-      ],
+      "notches": [],
+      "seatTypes": [],
       "source": "https://hawkeyesports.com/mbbgameday",
-      "notes": "Official men’s gameday guide identifies student sections E/K rows 1–9 and G/H/I, plus K–N ADA row 42. Reconstructed portal cutouts remain illustrative."
+      "notes": "Official men’s gameday guide identifies student sections E/K rows 1–9 and G/H/I, plus K–N ADA row 42. Reconstructed portal cutouts remain illustrative. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "undocumentedNotchesDiscarded": [
+        "E",
+        "K",
+        "KK",
+        "NN"
+      ],
+      "studentSections": [
+        "E",
+        "G",
+        "H",
+        "I",
+        "K"
+      ]
     },
     "michigan-state": {
       "type": "skip-row-lower",
@@ -1985,32 +1880,7 @@
           "rearWidth": 1
         }
       ],
-      "notches": [
-        {
-          "tier": 0,
-          "id": "115",
-          "fromRow": 9,
-          "toRow": 15,
-          "at": 0.5,
-          "span": 0.21
-        },
-        {
-          "tier": 0,
-          "id": "128",
-          "fromRow": 9,
-          "toRow": 15,
-          "at": 0.5,
-          "span": 0.21
-        },
-        {
-          "tier": 1,
-          "id": "215",
-          "fromRow": 11,
-          "toRow": 14,
-          "at": 0.5,
-          "span": 0.15
-        }
-      ],
+      "notches": [],
       "seatTypes": [
         {
           "tier": 0,
@@ -2023,25 +1893,15 @@
           "fromRow": 14,
           "toRow": 19,
           "kind": "bleacher"
-        },
-        {
-          "tier": 1,
-          "fromRow": 1,
-          "toRow": 19,
-          "sections": [
-            "207",
-            "208",
-            "209",
-            "210",
-            "211",
-            "231",
-            "232"
-          ],
-          "kind": "bleacher"
         }
       ],
       "source": "https://msuspartans.com/sports/2018/7/20/facilities-breslin-center-section-map-html",
-      "notes": "Documented lower 1–9 bench and 13–28 chair rows with 10–12 omitted; upper 1–13 chairs, 14–19 benches; designated student sections in the 200 level."
+      "notes": "Documented lower 1–9 bench and 13–28 chair rows with 10–12 omitted; upper 1–13 chairs, 14–19 benches; designated student sections in the 200 level. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "undocumentedNotchesDiscarded": [
+        "115",
+        "128",
+        "215"
+      ]
     },
     "wisconsin": {
       "type": "overhanging-three-tier-octagon",
@@ -2171,28 +2031,24 @@
         {
           "tier": 0,
           "id": "104",
-          "frontRows": 6,
           "frontWidth": 0.6,
           "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "112",
-          "frontRows": 6,
           "frontWidth": 0.6,
           "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "118",
-          "frontRows": 6,
           "frontWidth": 0.6,
           "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "126",
-          "frontRows": 6,
           "frontWidth": 0.6,
           "rearWidth": 1
         },
@@ -2677,75 +2533,27 @@
           "rearWidth": 1
         }
       ],
-      "notches": [
-        {
-          "tier": 1,
-          "id": "208",
-          "fromRow": 1,
-          "toRow": 3,
-          "at": 0.52,
-          "span": 0.2
-        },
-        {
-          "tier": 1,
-          "id": "222",
-          "fromRow": 1,
-          "toRow": 3,
-          "at": 0.52,
-          "span": 0.2
-        },
-        {
-          "tier": 2,
-          "id": "315",
-          "fromRow": 1,
-          "toRow": 3,
-          "at": 0.5,
-          "span": 0.2
-        }
-      ],
-      "seatTypes": [
-        {
-          "tier": 0,
-          "fromRow": 1,
-          "toRow": 18,
-          "sections": [
-            "113",
-            "114",
-            "115",
-            "116",
-            "117"
-          ],
-          "kind": "bleacher"
-        },
-        {
-          "tier": 1,
-          "fromRow": 1,
-          "toRow": 8,
-          "sections": [
-            "213",
-            "214",
-            "215",
-            "216",
-            "217"
-          ],
-          "kind": "bleacher"
-        },
-        {
-          "tier": 2,
-          "fromRow": 1,
-          "toRow": 18,
-          "sections": [
-            "313",
-            "314",
-            "315",
-            "316",
-            "317"
-          ],
-          "kind": "bleacher"
-        }
-      ],
+      "notches": [],
+      "seatTypes": [],
       "source": "https://uwbadgers.com/documents/download/2023/6/27/MBB_Kohl_Center_Seating_Map_2024.pdf",
-      "notes": "Official plan has 101–128 / 201–228 / 301–328, north Nicholas Club, south student sections, band and corner wedges. Overhang offsets are not surveyed. Upper tier decks intentionally cantilever into the radial envelope of the preceding tier; overhang offsets are visual estimates."
+      "notes": "Official plan has 101–128 / 201–228 / 301–328, north Nicholas Club, south student sections, band and corner wedges. Overhang offsets are not surveyed. Upper tier decks intentionally cantilever into the radial envelope of the preceding tier; overhang offsets are visual estimates. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "undocumentedNotchesDiscarded": [
+        "208",
+        "222",
+        "315"
+      ],
+      "studentSections": [
+        "114",
+        "115",
+        "116",
+        "117",
+        "214",
+        "215",
+        "216",
+        "314",
+        "315",
+        "316"
+      ]
     },
     "ucla": {
       "type": "irregular-octagonal-two-level",
@@ -2841,35 +2649,30 @@
         {
           "tier": 0,
           "id": "107",
-          "frontRows": 5,
           "frontWidth": 0.8,
           "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "110",
-          "frontRows": 4,
           "frontWidth": 0.8,
           "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "120",
-          "frontRows": 7,
           "frontWidth": 0.8,
           "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "121",
-          "frontRows": 7,
           "frontWidth": 0.8,
           "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "122",
-          "frontRows": 7,
           "frontWidth": 0.8,
           "rearWidth": 1
         },
@@ -3210,58 +3013,10 @@
           "rearWidth": 1
         }
       ],
-      "notches": [
-        {
-          "tier": 0,
-          "id": "120",
-          "fromRow": 1,
-          "toRow": 11,
-          "at": 0.5,
-          "span": 0.19
-        },
-        {
-          "tier": 0,
-          "id": "121",
-          "fromRow": 1,
-          "toRow": 11,
-          "at": 0.5,
-          "span": 0.19
-        },
-        {
-          "tier": 1,
-          "id": "210A",
-          "fromRow": 1,
-          "toRow": 4,
-          "at": 0.5,
-          "span": 0.21
-        },
-        {
-          "tier": 1,
-          "id": "223B",
-          "fromRow": 1,
-          "toRow": 4,
-          "at": 0.5,
-          "span": 0.19
-        }
-      ],
-      "seatTypes": [
-        {
-          "tier": 0,
-          "fromRow": 1,
-          "toRow": 18,
-          "sections": [
-            "114",
-            "115",
-            "116",
-            "120",
-            "121",
-            "122"
-          ],
-          "kind": "bleacher"
-        }
-      ],
+      "notches": [],
+      "seatTypes": [],
       "source": "https://www.woodenathleticfund.com/assets/media/tickets-and-parking/2026-27-mbb-seating-map.pdf",
-      "notes": "2026–27 diagram shows rectangular sideline banks, angled corner wedges, 200-level A/B/C subdivisions, media at 215, and student seating at 114–116/120–122. Upper subdivision outline is approximate.",
+      "notes": "2026–27 diagram shows rectangular sideline banks, angled corner wedges, 200-level A/B/C subdivisions, media at 215, and student seating at 114–116/120–122. Upper subdivision outline is approximate. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
       "upperSubsections": [
         "201",
         "202",
@@ -3298,6 +3053,23 @@
         "224C",
         "225",
         "226"
+      ],
+      "undocumentedNotchesDiscarded": [
+        "120",
+        "121",
+        "210A",
+        "223B"
+      ],
+      "studentSections": [
+        "113",
+        "114",
+        "115",
+        "116",
+        "117",
+        "120",
+        "121",
+        "122",
+        "222"
       ]
     },
     "washington": {
@@ -3543,29 +3315,17 @@
           "toRow": 14,
           "at": 0.5,
           "span": 0.18
-        },
-        {
-          "tier": 0,
-          "id": "8",
-          "fromRow": 10,
-          "toRow": 10,
-          "at": 0.5,
-          "span": 0.18
         }
       ],
-      "seatTypes": [
-        {
-          "tier": 0,
-          "fromRow": 1,
-          "toRow": 10,
-          "sections": [
-            "1"
-          ],
-          "kind": "bleacher"
-        }
-      ],
+      "seatTypes": [],
       "source": "https://gohuskies.com/facilities/alaska-airlines-arena/41",
-      "notes": "Sections 1–14 continue through the lower and upper row bands, and section 1 entrances at rows 10 and 14 are published. Relative section arcs remain estimates."
+      "notes": "Sections 1–14 continue through the lower and upper row bands, and section 1 entrances at rows 10 and 14 are published. Relative section arcs remain estimates. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "undocumentedNotchesDiscarded": [
+        "8"
+      ],
+      "studentSections": [
+        "1"
+      ]
     }
   }
 }
