@@ -510,3 +510,48 @@ test('source verification guard rejects a fabricated section not present on offi
     /Chart section identity mismatch/,
     'Unknown section IDs must never silently become 3D seating');
 });
+
+
+test('all seventeen non-OSU venues preserve every mapped section and every seatable row',()=>{
+  for(const venue of catalog.venues.filter(v=>v.id!=='ohio-state')){
+    const {model,audit}=generateVenuePackage(toProceduralSpec(venue));
+    assert.ok(audit.passed,venue.id+': '+audit.errors.join('; '));
+    const coverage=model.sectionCoverage;
+    assert.ok(coverage,venue.id+' is missing seat-retention audit');
+    assert.deepEqual(coverage.missingSections,[],
+      venue.id+' lost a mapped section despite the official seating chart');
+    assert.deepEqual(coverage.omittedEligibleRows,[],
+      venue.id+' silently dropped narrow but seatable rows');
+    assert.ok(coverage.documentedSectionCount>0,venue.id);
+    const sectionIds=new Set(model.seats.map(s=>s.sectionId));
+    for(const tier of model.proceduralSpec.sectionMap){
+      for(const group of tier){
+        for(const id of group.sectionIds){
+          assert.ok(sectionIds.has(id),venue.id+' did not generate any seats for section '+id);
+        }
+      }
+    }
+  }
+});
+
+test('only actual diagram-backed row omissions may remove seats in first-wave venues',()=>{
+  const first=['indiana','purdue','illinois','iowa',
+    'michigan-state','wisconsin','ucla','washington'];
+  for(const id of first){
+    const spec=toProceduralSpec(get(id));
+    for(const cut of spec.interior.sectionRules){
+      assert.equal(cut.frontRows,0,id+' contains an unsupported front-row deletion');
+      assert.equal(cut.rearRows,0,id+' contains an unsupported rear-row deletion');
+      assert.equal(cut.frontWidth,1,id+' contains a fabricated tapered section opening');
+      assert.equal(cut.rearWidth,1,id+' contains a fabricated tapered section opening');
+    }
+    const g=GeometryEngine.create(spec);
+    for(const tier of g.spec.tiers)for(const bank of g.banksForTier(tier)){
+      for(let slot=0;slot<bank.rowCount;slot++){
+        if(bank.skipRows.includes(bank.rowStart+slot))continue;
+        const original=g.rowIntervals(tier,bank,slot);
+        assert.ok(original.length>=1,id+' section '+bank.sectionId+' lost row '+(bank.rowStart+slot));
+      }
+    }
+  }
+});
