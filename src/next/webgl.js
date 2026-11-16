@@ -48,7 +48,11 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>39.5)vColor=vec3(.20,.27,.29); // Glass double entrance doors
+    if(uDeck>43.5)vColor=vec3(.82,.83,.82); // Pale flat roof
+    else if(uDeck>42.5)vColor=vec3(.36,.39,.42); // Dark steel roof
+    else if(uDeck>41.5)vColor=vec3(.66,.47,.27); // Mackey copper roof
+    else if(uDeck>40.5)vColor=vec3(.94,.93,.89); // Illinois white shell
+    else if(uDeck>39.5)vColor=vec3(.20,.27,.29); // Glass double entrance doors
     else if(uDeck>38.5)vColor=vec3(.72,.72,.68); // Projecting metal entry canopy
     else if(uDeck>37.5)vColor=vec3(.25,.30,.32); // Entrance mullions
     else if(uDeck>36.5)vColor=vec3(.28,.38,.41); // Deep vestibule curtain wall
@@ -222,10 +226,16 @@ const structureLayers=[
   ['brickBase',31],['brickPiers',32],['towerFrames',33],['towerCrown',34],
   ['towerRibs',35],['entryBrick',36],['entryCurtain',37],
   ['entryFrames',38],['entryCanopy',39],['entryDoors',40],
+  ['roofWhite',41],['roofCopper',42],['roofSlate',43],['roofPale',44],
 ];
 const interiorLayers=new Set(['decks','fascias','upperBowl','concourse','aisles','stepEdges',
   'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
   'downlights','roofDeck','radialBeams','pressWalls','pressGlass','galleryFloorMesh']);
+const exteriorOnly=new Set(['facade','glazing','externalTrim','brickBase',
+  'brickPiers','entryMasonry','entryGlass','entryFrames','entryCanopy',
+  'entryDoors','towerBrick','towerWindows','towerFrames','towerCrown',
+  'towerRibs','entryBrick','entryCurtain','roofWhite','roofCopper',
+  'roofSlate','roofPale','radialBeams','buildingRoof','roofEdge']);
 const schottensteinCutaway=new Set(['decks','fascias','upperBowl','concourse','trim','pressWalls','pressGlass','cutawayFacade']);
 
 export class NativeVenueRenderer {
@@ -244,7 +254,8 @@ export class NativeVenueRenderer {
   // exterior and seat bowl, but never puts an opaque lid over the arena.
   static architectureLayerVisibleInMode(plan,mode,name){
     if(!plan?.arenaInterior||!plan?.architectureGeometry)return false;
-    if(name==='buildingRoof')return false;
+    if(mode==='exterior')return exteriorOnly.has(name);
+    if(['buildingRoof','roofWhite','roofCopper','roofSlate','roofPale'].includes(name))return false;
     if(name==='cutawayFacade')return mode==='section'&&Boolean(plan.architectureGeometry.cutawayFacade?.length);
     if(mode==='human')return interiorLayers.has(name);
     if(mode==='section'&&plan.architectureGeometry.cutawayFacade?.length)
@@ -383,6 +394,7 @@ export class NativeVenueRenderer {
       this.seat=seat;this.pan=[seat.x,seat.y,seat.z];
       this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
     }
+    if(mode==='exterior'){this.theta=1.12;this.phi=.61;this.zoomFactor=1.1;}
     if(mode==='overview'){
       this.theta=1.12;
       // High enough to see every seating bank above the retained outer facade.
@@ -439,6 +451,7 @@ export class NativeVenueRenderer {
       gl.bindVertexArray(this.deck.vao);
       gl.drawArrays(gl.TRIANGLES,0,this.deck.vertices);
     }
+    if(this.mode!=='exterior'){
     gl.uniform1f(this.locations.Deck,0);
     gl.uniform1f(this.locations.Round,0);
     gl.bindVertexArray(this.box.vao);
@@ -447,6 +460,7 @@ export class NativeVenueRenderer {
       gl.uniform1f(this.locations.Round,1);
       gl.bindVertexArray(this.roundedBox.vao);
       gl.drawArraysInstanced(gl.TRIANGLES,0,this.roundedBox.vertices,rounded);
+    }
     }
     this.onFrame?.(this);
   }
