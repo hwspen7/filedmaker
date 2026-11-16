@@ -1,0 +1,1176 @@
+{
+  "schemaVersion": "1.0",
+  "intendedUse": "first-wave Big Ten basketball interior studies",
+  "geometryStatus": "chart-informed/manual estimates: NOT surveyed section vertex coordinates or verified seating inventory",
+  "notes": "Individual structural changes are modeled from published section diagrams and available descriptions. Approximate tunnel locations, bank spans and platform widths must not be presented as official.",
+  "venues": {
+    "indiana": {
+      "type": "opposing-grandstands",
+      "outline": "grandstands",
+      "tierProfiles": [
+        {
+          "widthScale": 1.035,
+          "lengthScale": 0.985,
+          "radialInset": 0,
+          "rake": 0.58,
+          "wave": 0.24
+        },
+        {
+          "widthScale": 1.06,
+          "lengthScale": 0.96,
+          "radialInset": -0.35,
+          "rake": 1.05,
+          "wave": 0.36
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            1.08,
+            1.16,
+            1.23,
+            1.23,
+            1.16,
+            1.08
+          ],
+          [
+            1.02,
+            1.19,
+            1.31,
+            1.25,
+            1.14,
+            1.02
+          ]
+        ],
+        [
+          [
+            0.88,
+            1.1,
+            1.24,
+            1.25,
+            1.08,
+            0.89
+          ],
+          [
+            0.9,
+            1.09,
+            1.28,
+            1.23,
+            1.08,
+            0.92
+          ]
+        ]
+      ],
+      "sectionRules": [],
+      "notches": [
+        {
+          "tier": 0,
+          "id": "D",
+          "fromRow": 19,
+          "toRow": 21,
+          "at": 0.5,
+          "span": 0.14
+        },
+        {
+          "tier": 0,
+          "id": "K",
+          "fromRow": 19,
+          "toRow": 21,
+          "at": 0.5,
+          "span": 0.14
+        },
+        {
+          "tier": 1,
+          "id": "CC",
+          "fromRow": 7,
+          "toRow": 8,
+          "at": 0.5,
+          "span": 0.14
+        },
+        {
+          "tier": 1,
+          "id": "JJ",
+          "fromRow": 7,
+          "toRow": 8,
+          "at": 0.5,
+          "span": 0.14
+        }
+      ],
+      "seatTypes": [],
+      "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019",
+      "notes": "Two opposing side banks and separate balcony banks follow the official 2026–27 seating diagram. Mid-bank notch positions are visual estimates, not surveyed portals."
+    },
+    "purdue": {
+      "type": "circular-floor",
+      "outline": "circle",
+      "tierProfiles": [
+        {
+          "widthScale": 1,
+          "lengthScale": 1,
+          "radialInset": -0.3,
+          "rake": 0.22,
+          "wave": 0
+        },
+        {
+          "widthScale": 1,
+          "lengthScale": 1,
+          "radialInset": -0.5,
+          "rake": 0.38,
+          "wave": 0
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            0.94,
+            0.98,
+            1.04,
+            1.12,
+            1.13,
+            1.12,
+            1.12,
+            1.02,
+            0.9,
+            0.9,
+            1.02,
+            1.12,
+            1.13,
+            1.12,
+            1.1,
+            1.02,
+            0.95,
+            0.91
+          ]
+        ],
+        [
+          [
+            0.93,
+            0.97,
+            1.03,
+            1.14,
+            1.13,
+            1.13,
+            1.12,
+            1.01,
+            0.9,
+            0.9,
+            1.01,
+            1.12,
+            1.15,
+            1.14,
+            1.12,
+            1.03,
+            0.95,
+            0.9
+          ]
+        ]
+      ],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "09",
+          "frontRows": 6
+        },
+        {
+          "tier": 0,
+          "id": "10",
+          "frontRows": 6
+        },
+        {
+          "tier": 0,
+          "id": "08",
+          "frontRows": 4
+        },
+        {
+          "tier": 0,
+          "id": "11",
+          "frontRows": 4
+        }
+      ],
+      "notches": [
+        {
+          "tier": 1,
+          "id": "105",
+          "fromRow": 1,
+          "toRow": 3,
+          "at": 0.52,
+          "span": 0.17
+        },
+        {
+          "tier": 1,
+          "id": "115",
+          "fromRow": 1,
+          "toRow": 3,
+          "at": 0.52,
+          "span": 0.17
+        }
+      ],
+      "seatTypes": [],
+      "source": "https://purduesports.com/mens-basketball-ticket-information",
+      "notes": "Inner sections 01–18 and outer 101–118 form a near-round seating dish. Expanded upper student end positions and inner premium seating are chart-informed. Concourse breaks are estimated."
+    },
+    "illinois": {
+      "type": "three-concentric-rings",
+      "outline": "circle",
+      "tierProfiles": [
+        {
+          "widthScale": 1,
+          "lengthScale": 1,
+          "radialInset": 0.5,
+          "rake": 0.1,
+          "wave": 0
+        },
+        {
+          "widthScale": 1,
+          "lengthScale": 1,
+          "radialInset": -0.3,
+          "rake": 0.36,
+          "wave": 0
+        },
+        {
+          "widthScale": 1,
+          "lengthScale": 1,
+          "radialInset": 0,
+          "rake": 0.7,
+          "wave": 0.14
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            1.05,
+            1.04,
+            1.02,
+            1,
+            1,
+            0.98,
+            0.98,
+            1.02,
+            1.04,
+            1.05,
+            1.06,
+            1.04,
+            1.02,
+            1,
+            1,
+            0.98,
+            0.98,
+            1.02,
+            1.04,
+            1.05
+          ]
+        ],
+        [
+          [
+            1.02,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1.03,
+            1.04,
+            1.04,
+            1.03,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1.03,
+            1.04,
+            1.04,
+            1.03,
+            1,
+            1,
+            1,
+            1.02
+          ]
+        ],
+        [
+          [
+            0.92,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1.06,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0.92,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1.06,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0.92,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1.06,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0.92,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1.06,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      ],
+      "sectionRules": [
+        {
+          "tier": 1,
+          "id": "129",
+          "frontRows": 1
+        },
+        {
+          "tier": 1,
+          "id": "136",
+          "frontRows": 1
+        }
+      ],
+      "notches": [
+        {
+          "tier": 0,
+          "id": "111",
+          "fromRow": 8,
+          "toRow": 10,
+          "at": 0.45,
+          "span": 0.15
+        },
+        {
+          "tier": 0,
+          "id": "119",
+          "fromRow": 8,
+          "toRow": 10,
+          "at": 0.45,
+          "span": 0.15
+        },
+        {
+          "tier": 1,
+          "id": "134",
+          "fromRow": 2,
+          "toRow": 5,
+          "at": 0.52,
+          "span": 0.22
+        }
+      ],
+      "seatTypes": [],
+      "source": "https://www.statefarmcenter.com/assets/doc/production_guide_19-4d1fa8277a.pdf",
+      "notes": "Published seating configuration distinguishes 100 lower, 100 upper/club and 48-sector 200 ring; measured suite and ADA platform polygons remain unavailable."
+    },
+    "iowa": {
+      "type": "sunken-compact-bowl",
+      "outline": "ellipse",
+      "tierProfiles": [
+        {
+          "widthScale": 0.99,
+          "lengthScale": 1.005,
+          "radialInset": -0.45,
+          "rake": 0.18,
+          "wave": 0.22
+        },
+        {
+          "widthScale": 1.015,
+          "lengthScale": 0.99,
+          "radialInset": 0.2,
+          "rake": 0.78,
+          "wave": 0.22
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            1.03,
+            1.1,
+            1.1,
+            1.08,
+            1,
+            1.04,
+            1.15,
+            1.18,
+            1.18,
+            1.15,
+            1.05,
+            1.03,
+            1.02,
+            1.03
+          ]
+        ],
+        [
+          [
+            1.02,
+            1.04,
+            1.02,
+            0.98,
+            0.98,
+            1,
+            1.08,
+            1.12,
+            1.12,
+            1.08,
+            1.02,
+            1,
+            0.99,
+            1.01
+          ]
+        ]
+      ],
+      "sectionRules": [],
+      "notches": [
+        {
+          "tier": 0,
+          "id": "E",
+          "fromRow": 1,
+          "toRow": 4,
+          "at": 0.53,
+          "span": 0.17
+        },
+        {
+          "tier": 0,
+          "id": "K",
+          "fromRow": 1,
+          "toRow": 4,
+          "at": 0.53,
+          "span": 0.17
+        },
+        {
+          "tier": 1,
+          "id": "KK",
+          "fromRow": 17,
+          "toRow": 19,
+          "at": 0.5,
+          "span": 0.14
+        },
+        {
+          "tier": 1,
+          "id": "NN",
+          "fromRow": 17,
+          "toRow": 19,
+          "at": 0.5,
+          "span": 0.14
+        }
+      ],
+      "seatTypes": [
+        {
+          "tier": 0,
+          "fromRow": 1,
+          "toRow": 9,
+          "sections": [
+            "E",
+            "K"
+          ],
+          "kind": "bleacher"
+        },
+        {
+          "tier": 0,
+          "fromRow": 1,
+          "toRow": 19,
+          "sections": [
+            "G",
+            "H",
+            "I"
+          ],
+          "kind": "bleacher"
+        }
+      ],
+      "source": "https://hawkeyesports.com/mbbgameday",
+      "notes": "Official men’s gameday guide identifies student sections E/K rows 1–9 and G/H/I, plus K–N ADA row 42. Reconstructed portal cutouts remain illustrative."
+    },
+    "michigan-state": {
+      "type": "skip-row-lower",
+      "outline": "rounded-rectangle",
+      "tierProfiles": [
+        {
+          "widthScale": 1.035,
+          "lengthScale": 1,
+          "radialInset": 0,
+          "rake": 0.38,
+          "wave": 0.32
+        },
+        {
+          "widthScale": 1.025,
+          "lengthScale": 1.02,
+          "radialInset": -0.5,
+          "rake": 0.76,
+          "wave": 0.24
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            1.1,
+            1.05,
+            0.96,
+            0.88,
+            0.91,
+            1,
+            1.06,
+            1.12,
+            1.1,
+            1.05,
+            0.96,
+            0.88,
+            0.91,
+            1,
+            1.06,
+            1.12,
+            1.1,
+            1.05,
+            0.96,
+            0.88,
+            0.91,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            1,
+            0.97,
+            1.02,
+            1.05,
+            0.96,
+            1,
+            1,
+            0.97,
+            1.02,
+            1.05,
+            0.96,
+            1,
+            1,
+            0.97,
+            1.02,
+            1.05,
+            0.96,
+            1,
+            1,
+            0.97,
+            1.02,
+            1.05,
+            0.96,
+            1,
+            1,
+            0.97,
+            1.02,
+            1.05,
+            0.96,
+            1,
+            1,
+            0.97,
+            1.02,
+            1.05,
+            0.96
+          ]
+        ]
+      ],
+      "sectionRules": [],
+      "notches": [
+        {
+          "tier": 0,
+          "id": "115",
+          "fromRow": 9,
+          "toRow": 15,
+          "at": 0.5,
+          "span": 0.21
+        },
+        {
+          "tier": 0,
+          "id": "128",
+          "fromRow": 9,
+          "toRow": 15,
+          "at": 0.5,
+          "span": 0.21
+        },
+        {
+          "tier": 1,
+          "id": "215",
+          "fromRow": 11,
+          "toRow": 14,
+          "at": 0.5,
+          "span": 0.15
+        }
+      ],
+      "seatTypes": [
+        {
+          "tier": 0,
+          "fromRow": 1,
+          "toRow": 9,
+          "kind": "bleacher"
+        },
+        {
+          "tier": 1,
+          "fromRow": 14,
+          "toRow": 19,
+          "kind": "bleacher"
+        },
+        {
+          "tier": 1,
+          "fromRow": 1,
+          "toRow": 19,
+          "sections": [
+            "207",
+            "208",
+            "209",
+            "210",
+            "211",
+            "231",
+            "232"
+          ],
+          "kind": "bleacher"
+        }
+      ],
+      "source": "https://msuspartans.com/sports/2018/7/20/facilities-breslin-center-section-map-html",
+      "notes": "Documented lower 1–9 bench and 13–28 chair rows with 10–12 omitted; upper 1–13 chairs, 14–19 benches; designated student sections in the 200 level."
+    },
+    "wisconsin": {
+      "type": "overhanging-three-tier-octagon",
+      "outline": "octagon",
+      "tierProfiles": [
+        {
+          "widthScale": 1.01,
+          "lengthScale": 1.005,
+          "radialInset": 0,
+          "rake": 0.18,
+          "wave": 0
+        },
+        {
+          "widthScale": 1.04,
+          "lengthScale": 1.02,
+          "radialInset": -1.8,
+          "rake": 0.68,
+          "wave": 0
+        },
+        {
+          "widthScale": 1.065,
+          "lengthScale": 1.025,
+          "radialInset": -2.3,
+          "rake": 1.05,
+          "wave": 0
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            0.83,
+            1,
+            1.04,
+            0.77,
+            1.06,
+            1.13,
+            1.15,
+            1.17,
+            1.15,
+            1.13,
+            1.05,
+            0.77,
+            1.05,
+            1.06,
+            0.83,
+            1,
+            1.04,
+            0.77,
+            1.06,
+            1.13,
+            1.15,
+            1.17,
+            1.15,
+            1.13,
+            1.05,
+            0.77,
+            1.05,
+            1.06
+          ]
+        ],
+        [
+          [
+            0.82,
+            1,
+            1.05,
+            0.78,
+            1.07,
+            1.13,
+            1.16,
+            1.17,
+            1.15,
+            1.13,
+            1.05,
+            0.78,
+            1.05,
+            1.04,
+            0.82,
+            1,
+            1.05,
+            0.78,
+            1.07,
+            1.13,
+            1.16,
+            1.17,
+            1.15,
+            1.13,
+            1.05,
+            0.78,
+            1.05,
+            1.04
+          ]
+        ],
+        [
+          [
+            0.85,
+            1,
+            1.05,
+            0.8,
+            1.05,
+            1.15,
+            1.15,
+            1.17,
+            1.15,
+            1.13,
+            1.05,
+            0.8,
+            1.05,
+            1.05,
+            0.85,
+            1,
+            1.05,
+            0.8,
+            1.05,
+            1.15,
+            1.15,
+            1.17,
+            1.15,
+            1.13,
+            1.05,
+            0.8,
+            1.05,
+            1.05
+          ]
+        ]
+      ],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "104",
+          "frontRows": 6
+        },
+        {
+          "tier": 0,
+          "id": "112",
+          "frontRows": 6
+        },
+        {
+          "tier": 0,
+          "id": "118",
+          "frontRows": 6
+        },
+        {
+          "tier": 0,
+          "id": "126",
+          "frontRows": 6
+        }
+      ],
+      "notches": [
+        {
+          "tier": 1,
+          "id": "208",
+          "fromRow": 1,
+          "toRow": 3,
+          "at": 0.52,
+          "span": 0.2
+        },
+        {
+          "tier": 1,
+          "id": "222",
+          "fromRow": 1,
+          "toRow": 3,
+          "at": 0.52,
+          "span": 0.2
+        },
+        {
+          "tier": 2,
+          "id": "315",
+          "fromRow": 1,
+          "toRow": 3,
+          "at": 0.5,
+          "span": 0.2
+        }
+      ],
+      "seatTypes": [
+        {
+          "tier": 0,
+          "fromRow": 1,
+          "toRow": 18,
+          "sections": [
+            "113",
+            "114",
+            "115",
+            "116",
+            "117"
+          ],
+          "kind": "bleacher"
+        },
+        {
+          "tier": 1,
+          "fromRow": 1,
+          "toRow": 8,
+          "sections": [
+            "213",
+            "214",
+            "215",
+            "216",
+            "217"
+          ],
+          "kind": "bleacher"
+        },
+        {
+          "tier": 2,
+          "fromRow": 1,
+          "toRow": 18,
+          "sections": [
+            "313",
+            "314",
+            "315",
+            "316",
+            "317"
+          ],
+          "kind": "bleacher"
+        }
+      ],
+      "source": "https://uwbadgers.com/documents/download/2023/6/27/MBB_Kohl_Center_Seating_Map_2024.pdf",
+      "notes": "Official plan has 101–128 / 201–228 / 301–328, north Nicholas Club, south student sections, band and corner wedges. Overhang offsets are not surveyed."
+    },
+    "ucla": {
+      "type": "irregular-octagonal-two-level",
+      "outline": "octagon",
+      "tierProfiles": [
+        {
+          "widthScale": 1.045,
+          "lengthScale": 1.02,
+          "radialInset": 0.18,
+          "rake": 0.2,
+          "wave": 0.2
+        },
+        {
+          "widthScale": 1.05,
+          "lengthScale": 1.045,
+          "radialInset": -0.25,
+          "rake": 0.55,
+          "wave": 0.12
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            0.97,
+            1.15,
+            1.15,
+            0.96,
+            0.8,
+            0.68,
+            1.03,
+            1.21,
+            1.18,
+            0.85,
+            0.68,
+            0.8,
+            1,
+            1.14,
+            1.14,
+            1.02,
+            0.8,
+            0.85,
+            0.97,
+            1.04,
+            1.18,
+            1.19,
+            0.97,
+            0.84,
+            0.8,
+            0.91
+          ]
+        ],
+        [
+          [
+            0.94,
+            1.25,
+            0.94,
+            1.25,
+            0.94,
+            0.32,
+            0.32,
+            0.32,
+            0.94,
+            0.94,
+            0.94,
+            0.32,
+            0.32,
+            0.32,
+            0.32,
+            0.32,
+            0.94,
+            1.25,
+            0.94,
+            0.94,
+            1.25,
+            0.94,
+            0.32,
+            0.32,
+            0.32,
+            0.94,
+            0.94,
+            0.94,
+            0.32,
+            0.32,
+            0.32,
+            0.32,
+            0.32,
+            0.94,
+            0.94
+          ]
+        ]
+      ],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "107",
+          "frontRows": 5
+        },
+        {
+          "tier": 0,
+          "id": "110",
+          "frontRows": 4
+        },
+        {
+          "tier": 0,
+          "id": "120",
+          "frontRows": 7
+        },
+        {
+          "tier": 0,
+          "id": "121",
+          "frontRows": 7
+        },
+        {
+          "tier": 0,
+          "id": "122",
+          "frontRows": 7
+        },
+        {
+          "tier": 1,
+          "id": "215",
+          "frontRows": 18
+        }
+      ],
+      "notches": [
+        {
+          "tier": 0,
+          "id": "120",
+          "fromRow": 1,
+          "toRow": 11,
+          "at": 0.5,
+          "span": 0.19
+        },
+        {
+          "tier": 0,
+          "id": "121",
+          "fromRow": 1,
+          "toRow": 11,
+          "at": 0.5,
+          "span": 0.19
+        },
+        {
+          "tier": 1,
+          "id": "210A",
+          "fromRow": 1,
+          "toRow": 4,
+          "at": 0.5,
+          "span": 0.21
+        },
+        {
+          "tier": 1,
+          "id": "223B",
+          "fromRow": 1,
+          "toRow": 4,
+          "at": 0.5,
+          "span": 0.19
+        }
+      ],
+      "seatTypes": [
+        {
+          "tier": 0,
+          "fromRow": 1,
+          "toRow": 18,
+          "sections": [
+            "114",
+            "115",
+            "116",
+            "120",
+            "121",
+            "122"
+          ],
+          "kind": "bleacher"
+        }
+      ],
+      "source": "https://www.woodenathleticfund.com/assets/media/tickets-and-parking/2026-27-mbb-seating-map.pdf",
+      "notes": "2026–27 diagram shows rectangular sideline banks, angled corner wedges, 200-level A/B/C subdivisions, media at 215, and student seating at 114–116/120–122. Upper subdivision outline is approximate.",
+      "upperSubsections": [
+        "201",
+        "202",
+        "203",
+        "204",
+        "205",
+        "206A",
+        "206B",
+        "206C",
+        "207",
+        "208",
+        "209",
+        "210A",
+        "210B",
+        "211A",
+        "211B",
+        "211C",
+        "212",
+        "213",
+        "214",
+        "216",
+        "217",
+        "218",
+        "219A",
+        "219B",
+        "219C",
+        "220",
+        "221",
+        "222",
+        "223A",
+        "223B",
+        "224A",
+        "224B",
+        "224C",
+        "225",
+        "226"
+      ]
+    },
+    "washington": {
+      "type": "historic-rectangular-bowl",
+      "outline": "rectangle",
+      "tierProfiles": [
+        {
+          "widthScale": 1.06,
+          "lengthScale": 1.02,
+          "radialInset": 0.05,
+          "rake": 0.27,
+          "wave": 0.2
+        },
+        {
+          "widthScale": 1.07,
+          "lengthScale": 1.04,
+          "radialInset": -0.55,
+          "rake": 0.62,
+          "wave": 0.24
+        }
+      ],
+      "sectionWeights": [
+        [
+          [
+            0.85,
+            0.92,
+            1.07,
+            1.17,
+            1.18,
+            1.1,
+            1.02,
+            0.88,
+            0.96,
+            1.13,
+            1.17,
+            1.1,
+            1,
+            0.89
+          ]
+        ],
+        [
+          [
+            0.85,
+            0.92,
+            1.06,
+            1.14,
+            1.17,
+            1.1,
+            1.04,
+            0.9,
+            0.96,
+            1.13,
+            1.16,
+            1.09,
+            1,
+            0.89
+          ]
+        ]
+      ],
+      "sectionRules": [],
+      "notches": [
+        {
+          "tier": 0,
+          "id": "1",
+          "fromRow": 10,
+          "toRow": 10,
+          "at": 0.5,
+          "span": 0.18
+        },
+        {
+          "tier": 1,
+          "id": "1",
+          "fromRow": 14,
+          "toRow": 14,
+          "at": 0.5,
+          "span": 0.18
+        },
+        {
+          "tier": 0,
+          "id": "8",
+          "fromRow": 10,
+          "toRow": 10,
+          "at": 0.5,
+          "span": 0.18
+        }
+      ],
+      "seatTypes": [
+        {
+          "tier": 0,
+          "fromRow": 1,
+          "toRow": 10,
+          "sections": [
+            "1"
+          ],
+          "kind": "bleacher"
+        }
+      ],
+      "source": "https://gohuskies.com/facilities/alaska-airlines-arena/41",
+      "notes": "Sections 1–14 continue through the lower and upper row bands, and section 1 entrances at rows 10 and 14 are published. Relative section arcs remain estimates."
+    }
+  }
+}
