@@ -566,6 +566,27 @@ async function main(){
     const richCatalog=await evaluate("(()=>{document.querySelector('[data-model-tool=\"structures\"]').click();document.querySelector('#structureCategory').value='all';document.querySelector('#structureCategory').dispatchEvent(new Event('change'));document.querySelector('#structureSearch').value='roof';document.querySelector('#structureSearch').dispatchEvent(new Event('input'));return {total:document.querySelectorAll('[data-structure-kind]').length,shown:[...document.querySelectorAll('[data-structure-kind]')].filter(b=>!b.hidden).map(b=>b.dataset.structureKind)}})()");
     if(richCatalog.total!==23||richCatalog.shown.join(',')!=='roof')
       throw Error('Searchable 23-component catalog is not accessible: '+JSON.stringify(richCatalog));
+    // Exercise real multi-selection and layout commands in the initialized
+    // browser, including one-step history and persistent source seat totals.
+    const layoutEdited=await evaluate("(()=>{document.querySelector('#structureGroupTools').open=true;document.querySelector('#structureSelectAll').click();const before=document.querySelector('#structureSelect').options.length;document.querySelector('#structureGroupDx').value='1';document.querySelector('#structureGroupDz').value='0';document.querySelector('#structureGroupMove').click();const moved=document.querySelector('#workStatus').textContent;document.querySelector('#structureGroupAxis').value='z';document.querySelector('#structureGroupAlign').click();const aligned=document.querySelector('#workStatus').textContent;document.querySelector('#structureGroupCopies').value='2';document.querySelector('#structureGroupDx').value='1.5';document.querySelector('#structureGroupDz').value='.5';document.querySelector('#structureGroupArray').click();return {before,after:document.querySelector('#structureSelect').options.length,status:document.querySelector('#workStatus').textContent,moved,aligned,seats:document.querySelector('#mappedCount').textContent,selected:[...document.querySelector('#structureMultiSelect').selectedOptions].length}})()");
+    if(layoutEdited.before!==3||layoutEdited.after!==9||
+      layoutEdited.seats!=='1,499'||layoutEdited.selected!==6||
+      layoutEdited.status.includes('rejected')||
+      layoutEdited.moved.includes('rejected')||layoutEdited.aligned.includes('rejected'))
+      throw Error('Atomic component group layout failed in live browser: '+
+        JSON.stringify(layoutEdited));
+    await evaluate("document.querySelector('#undo').click()");
+    const undone=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
+    if(undone!==3)throw Error('Group array did not undo in one step');
+    await evaluate("document.querySelector('#redo').click()");
+    const redone=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
+    if(redone!==9)throw Error('Group array did not redo as one transaction');
+    await evaluate("document.querySelector('#showPlan').click()");
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'component-multi-selection-and-array.png'),Buffer.from(frame.data,'base64')));
+    console.log('studio: atomic multi-object alignment, movement, arrays, selection persistence and undo/redo verified');
+
     console.log('studio: court palette, dimensions, paint-zone geometry, boundary rejection, plan direct-edit and 23 searchable components verified');
 
     console.log('studio: compact header, seven reusable components, live WebGL2 geometry, transform, duplicate and 2D placement verified');
