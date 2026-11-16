@@ -475,8 +475,26 @@ function commitOperatorEdit(edit,summary,preferredRow=null){
 }
 function layout(){
   const r=canvas.getBoundingClientRect(),w=Math.max(1,r.width),h=Math.max(1,r.height);
-  const inset=32, maxX=Math.max(venue.court.width/2+18,12,...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.x)+4)));
-  const maxZ=Math.max(venue.court.length/2+9,20,...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.z)+4)));
+  const inset=32;
+  // Frame placed structures as well as source contours. Freeze the view
+  // bounds while dragging to avoid zoom feedback under the pointer.
+  const components=drag?.before?.structures??venue.structures??[];
+  const extents=components.map(s=>{
+    const angle=s.yaw*Math.PI/180,ca=Math.abs(Math.cos(angle));
+    const sn=Math.abs(Math.sin(angle));
+    return {x:Math.abs(s.x)+(ca*s.width+sn*s.depth)/2+2,
+      z:Math.abs(s.z)+(sn*s.width+ca*s.depth)/2+2};
+  });
+  const surface=venue.surfaceDesign,angle=surface.rotation*Math.PI/180;
+  const ca=Math.abs(Math.cos(angle)),sn=Math.abs(Math.sin(angle));
+  const halfWidth=venue.court.width/2+surface.apronWidth;
+  const halfLength=venue.court.length/2+surface.apronWidth;
+  const maxX=Math.max(venue.court.width/2+18,12,
+    ...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.x)+4)),
+    ...extents.map(v=>v.x),Math.abs(surface.centerX)+ca*halfWidth+sn*halfLength+4);
+  const maxZ=Math.max(venue.court.length/2+9,20,
+    ...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.z)+4)),
+    ...extents.map(v=>v.z),Math.abs(surface.centerZ)+sn*halfWidth+ca*halfLength+4);
   const scale=Math.min((w-2*inset)/(2*maxX),(h-2*inset)/(2*maxZ));
   if(image){
     const scaleImage=Math.min((w-2*inset)/image.width,(h-2*inset)/image.height);
@@ -709,7 +727,7 @@ function repaint(){
     editorMode==='select'&&activeModelTool==='surface'?
       'Court · drag handles to move, resize or rotate':
     editorMode==='select'&&activeModelTool==='structures'?
-      'Build · drag a component, resize handle or rotate handle':
+      'Build · drag to move, Ctrl-click to multi-select, or box-select empty space':
     editorMode==='select'?'Select · drag a section corner to adjust':
     editorMode==='calibrate'?'Calibration · mark all four court corners':
     editorMode==='measure'?'Ruler · select two plan points':
