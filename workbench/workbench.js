@@ -1,12 +1,14 @@
 import {SPORT_DEFAULTS,newVenue,normalizeVenue,parseVenueRows} from '../src/workbench/contract.mjs';
 import {registerCourt} from '../src/workbench/registration.mjs';
 import {fictionalGym} from '../src/workbench/fixtures.mjs';
+import {BOWL_STARTERS,buildSyntheticBowl} from '../src/workbench/bowlBuilder.mjs';
 import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
 import {applyVenueEdit,applyVenueBatchEdit} from '../src/workbench/editing.mjs';
 import {editVenueStructure} from '../src/workbench/structureEditor.mjs';
 import {editVenueStructureBatch} from '../src/workbench/structureBatch.mjs';
 import {addVenueAssembly,VENUE_ASSEMBLIES} from '../src/workbench/structureAssemblies.mjs';
-import {STRUCTURE_CATALOG} from '../src/workbench/structures.mjs';
+import {STRUCTURE_CATALOG,buildStructureInstances} from '../src/workbench/structures.mjs';
+import {snapPosition,objectGuideTargets,measuredOffset} from '../src/workbench/editorGuides.mjs';
 import {editPlayingSurface} from '../src/workbench/surfaceEditor.mjs';
 import {SURFACE_PRESETS,SURFACE_ZONE_KINDS,
   surfaceToWorld,worldToSurface} from '../src/workbench/surface.mjs';
@@ -212,7 +214,7 @@ function updateBatchPreview(){
     'Choose a section with source rows.';
 }
 function activateModelTool(tool){
-  const permitted=new Set(['rows','seats','batch','surface','structures','preview']);
+  const permitted=new Set(['bowl','rows','seats','batch','surface','structures','preview']);
   activeModelTool=tool;
   if(!permitted.has(tool))return;
   document.querySelectorAll('[data-model-tool]').forEach(btn=>
@@ -1626,6 +1628,72 @@ $('planFile').onchange=async event=>{
 };
 $('csvExample').onclick=()=>save('example-rows.csv',
   'section,row,seats,seat_start,tier,seat_type\r\nHOME,A,12,1,T1,bleacher\r\nHOME,B,12,1,T1,bleacher\r\nAWAY,A,10,1,T1,chair\r\n',mimeCSV);
+function bowlOptions(){
+  return {template:$('bowlPreset').value,
+    sectors:Number($('bowlSectors').value),levels:Number($('bowlLevels').value),
+    rowsPerTier:Number($('bowlRows').value),rowDepth:Number($('bowlRowDepth').value),
+    seatWidth:Number($('bowlSeatPitch').value),
+    rowRise:Number($('bowlRowRise').value),
+    clearance:Number($('bowlClearance').value)};
+}
+function updateBowlDefaults(){
+  const spec=BOWL_STARTERS[$('bowlPreset').value];
+  if(!spec)return;
+  for(const [id,n] of [
+    ['bowlSectors',spec.sectors],['bowlLevels',spec.rows.length],
+    ['bowlRows',spec.rows[0]],['bowlRowDepth',spec.rowDepth],
+    ['bowlSeatPitch',spec.seatWidth],['bowlRowRise',spec.rises[0]],
+    ['bowlClearance',spec.clearance]])$(id).value=String(n);
+  updateBowlEstimate();
+}
+function updateBowlEstimate(){
+  try{
+    const generated=buildSyntheticBowl(bowlOptions());
+    const seats=generated.rows.reduce((n,row)=>n+row.seats,0);
+    $('bowlEstimate').textContent=number(generated.sections.length)+
+      ' editable banks · '+number(generated.rows.length)+' rows · '+
+      number(seats)+' estimated seats. Not an official inventory.';
+    $('bowlBuild').disabled=false;
+  }catch(e){
+    $('bowlEstimate').textContent=e.message;
+    $('bowlBuild').disabled=true;
+  }
+}
+function loadSyntheticBowl(options,{quiet=false}={}){
+  try{
+    if(venue.sources.length||venue.officialCapacity!==null)
+      throw Error('This project contains source-backed records. Export it first, then open a new workspace before creating a fictional venue.');
+    if(!quiet&&(venue.rows.length||venue.sections.length||venue.structures.length)&&
+      !confirm('Replace the current unsourced draft with this entirely fictional seating bowl?'))return false;
+    const candidate=buildSyntheticBowl(options);
+    const before=structuredClone(venue);
+    venue=candidate;
+    image=null;registration=null;selectedSeat=null;selectedSection='';
+    selectedStructure='';selectedStructureIds.clear();selectedZone='';
+    editorMode='select';draftPoints=[];lastMeasurement=null;
+    if(pdfHandle){closePdfFile(pdfHandle).catch(()=>{});pdfHandle=null;}
+    $('pdfPageWrap').hidden=true;
+    $('pdfStatus').textContent='Synthetic example. No source PDF or measured drawing is attached.';
+    recordEdit(before,'Generate synthetic venue '+venue.venue);
+    sync();tryPreview();
+    workflowUI?.go('model');
+    activateModelTool('bowl');
+    message('Created '+number(venue.sections.length)+
+      ' editable spectator banks and '+number(venue.rows.length)+
+      ' row records. Entire model is synthetic and unverified.');
+    return true;
+  }catch(e){message('Bowl generation rejected: '+e.message,true);return false;}
+}
+$('bowlPreset').onchange=updateBowlDefaults;
+for(const id of ['bowlSectors','bowlLevels','bowlRows','bowlRowDepth',
+  'bowlSeatPitch','bowlRowRise','bowlClearance'])
+  $(id).addEventListener('input',updateBowlEstimate);
+$('bowlBuild').onclick=()=>loadSyntheticBowl(bowlOptions());
+$('sourceStarterLoad').onclick=()=>loadSyntheticBowl({
+  template:$('sourceStarterSelect').value
+});
+updateBowlDefaults();
+
 $('fixture').onclick=()=>{
   const before=structuredClone(venue);
   venue=fictionalGym();registration=null;image=null;preview=null;selectedSection='';
@@ -1978,6 +2046,12 @@ async function openRequestedCase(){
   if(example==='fictional'){
     const c=getVenueCase('fictional-gym');showCaseContext(c);
     $('fixture').click();
+  }else if(example?.startsWith('bowl-')&&
+    Object.hasOwn(BOWL_STARTERS,example.slice(5))){
+    const template=example.slice(5),record=getVenueCase('synthetic-'+template);
+    if(record)showCaseContext(record);
+    $('bowlPreset').value=template;updateBowlDefaults();
+    loadSyntheticBowl({template},{quiet:true});
   }else if(example==='aiken'){
     const c=getVenueCase('aiken-high');showCaseContext(c);
     try{
