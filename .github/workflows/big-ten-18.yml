@@ -12,6 +12,8 @@ on:
       - 'scripts/generate-big-ten.mjs'
       - 'scripts/browser-big-ten.mjs'
       - 'src/schoolPublisher.mjs'
+      - 'src/next/webgl.js'
+      - 'src/next/venuePlan.mjs'
       - 'scripts/generate-venue.mjs'
       - 'src/next/engines/**'
       - 'src/model.mjs'
