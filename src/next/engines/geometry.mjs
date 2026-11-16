@@ -24,7 +24,7 @@ export const GeometryEngine={
       radial+=rows*depth+gap;height+=rows*rise+elevationGap;
       return t;
     });
-    const sections=integer(input.sections??(field.width>30?24:20),'Sections',4,36);
+    const sections=integer(input.sections??(field.width>30?24:20),'Sections',4,64);
     const aisleWidth=finite(input.aisleWidth??1.1,'Aisle width',.8,5);
     const pitch=finite(input.seatPitch??.54,'Seat pitch',.43,.90);
     const exponent=finite(input.roundness??4.2,'Outline exponent',2,8);
@@ -70,11 +70,15 @@ export const GeometryEngine={
             if(keys.has(key))throw Error('Duplicate mapped section '+key);
             keys.add(key);
           }
+          const skipRows=group.skipRows??[];
+          if(!Array.isArray(skipRows)||new Set(skipRows).size!==skipRows.length||
+            skipRows.some(v=>!Number.isInteger(v)||v<rowStart||v>=rowStart+rowCount))
+            throw Error('Invalid mapped skipped row labels');
           const end=start+span;
           occupied.push([start,Math.min(TAU,end)]);
           if(end>TAU)occupied.push([0,end-TAU]);
           return {startAngle:start,spanAngle:span,sectionIds:[...ids],
-            weights:[...weights],rowStart,rowCount};
+            weights:[...weights],rowStart,rowCount,skipRows:[...skipRows]};
         });
         occupied.sort((a,b)=>a[0]-b[0]);
         for(let i=1;i<occupied.length;i++)
