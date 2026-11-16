@@ -128,9 +128,26 @@ export function normalizeVenue(input){
     const baseline=r.sourceSeats==null?null:finite(r.sourceSeats,'Source row count',1,300);
     if(baseline!==null&&!Number.isInteger(baseline))
       throw Error('Source row count must be an integer');
+    const attrs=rowAttributes(r,seats);
+    const allowedLabels=new Set(attrs.seatNumbers.length?attrs.seatNumbers:
+      Array.from({length:seats},(_,i)=>String(first+i)));
+    const rawOverrides=r.seatOverrides??[];
+    if(!Array.isArray(rawOverrides)||rawOverrides.length>seats)
+      throw Error('Seat overrides must be a list within the row count');
+    const overrideLabels=new Set();
+    const seatOverrides=rawOverrides.map(o=>{
+      const number=name(o.number,'Edited seat label',30);
+      if(!allowedLabels.has(number)||overrideLabels.has(number))
+        throw Error('Invalid or duplicated seat override label: '+number);
+      overrideLabels.add(number);
+      return {number,
+        dx:finite(o.dx??0,'Seat X shift',-1,1),
+        dy:finite(o.dy??0,'Seat elevation shift',-.75,.75),
+        dz:finite(o.dz??0,'Seat Z shift',-1,1)};
+    });
     return {section,row,seats,first,tier,seatType:kind,
       sourceSeats:baseline,operatorEdited:r.operatorEdited===true,
-      operatorAdded:r.operatorAdded===true,...rowAttributes(r,seats)};
+      operatorAdded:r.operatorAdded===true,seatOverrides,...attrs};
   });
   if(v.rows.reduce((n,r)=>n+r.seats,0)>40000)throw Error('Seat count exceeds the 40,000-seat preview limit');
   v.notes=Array.isArray(v.notes)?v.notes.map(s=>String(s).slice(0,250)).slice(0,50):[];
@@ -165,7 +182,7 @@ export function normalizeVenue(input){
   v.editLedger=(v.editLedger??[]).slice(-200).map(a=>{
     const operation=String(a.operation??'').slice(0,40);
     if(!['update-row','add-row','remove-row','move-row','translate-section',
-      'resize-section','set-section-elevation'].includes(operation))
+      'resize-section','set-section-elevation','set-seat-offset','clear-seat-offset'].includes(operation))
       throw Error('Invalid staff edit operation');
     return {operation,section:name(a.section,'Edited section',30),
       row:a.row==null?'':String(a.row).slice(0,30),

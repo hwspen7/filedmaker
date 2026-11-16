@@ -142,3 +142,64 @@ test('adjacent sections with inconsistent row rise produce an actionable warning
   assert.ok(generateTracedVenue(out.venue).quality.issues.some(x=>
     x.code==='ADJACENT_SECTION_ELEVATION'));
 });
+
+
+test('a single-seat correction changes only that seat, without altering row capacity',()=>{
+  const original=baseline(),before=generateTracedVenue(original);
+  const result=edit(original,'set-seat-offset',{section:'WEST-1',row:'1',
+    number:'1',dx:.08,dy:.12,dz:-.05});
+  const after=generateTracedVenue(result.venue);
+  assert.equal(result.seatDelta,0);
+  assert.equal(after.seats.length,1500);
+  const first=before.seats.find(s=>s.id==='WEST-1-1-1');
+  const changed=after.seats.find(s=>s.id===first.id);
+  assert.ok(Math.abs(changed.x-first.x-.08)<1e-8);
+  assert.ok(Math.abs(changed.y-first.y-.12)<1e-8);
+  assert.ok(Math.abs(changed.z-first.z+.05)<1e-8);
+  assert.deepEqual(after.seats.find(s=>s.id==='WEST-1-1-2'),
+    before.seats.find(s=>s.id==='WEST-1-1-2'));
+  assert.ok(after.quality.issues.some(x=>x.code==='INDIVIDUAL_SEAT_OFFSETS'));
+  assert.equal(after.quality.publicationEligible,false);
+  assert.equal(original.rows[0].seatOverrides,undefined);
+});
+test('per-seat offset is reversible and survives an editable JSON round-trip',()=>{
+  const v=baseline();
+  const modified=edit(v,'set-seat-offset',{section:'WEST-1',row:'1',
+    number:'1',dx:.1,dy:0,dz:0}).venue;
+  const restored=normalizeVenue(JSON.parse(JSON.stringify(modified)));
+  assert.deepEqual(restored.rows[0].seatOverrides,[{number:'1',dx:.1,dy:0,dz:0}]);
+  const cleared=edit(restored,'clear-seat-offset',{section:'WEST-1',row:'1',
+    number:'1'}).venue;
+  assert.equal(cleared.rows[0].seatOverrides.length,0);
+  const after=generateTracedVenue(cleared);
+  const before=generateTracedVenue(v);
+  const coordinates=seats=>seats.map(s=>({id:s.id,x:s.x,y:s.y,z:s.z}));
+  assert.deepEqual(coordinates(after.seats),coordinates(before.seats));
+  assert.equal(cleared.editLedger.length,2);
+});
+test('unknown, duplicate and excessive individual offsets fail closed',()=>{
+  const v=baseline();
+  assert.throws(()=>edit(v,'set-seat-offset',{section:'WEST-1',row:'1',
+    number:'999',dx:.2,dy:0,dz:0}),/Invalid or duplicated seat override/);
+  assert.throws(()=>edit(v,'set-seat-offset',{section:'WEST-1',row:'1',
+    number:'1',dx:3,dy:0,dz:0}),/between/);
+  assert.throws(()=>edit(v,'set-seat-offset',{section:'WEST-1',row:'1',
+    number:'1',dx:0,dy:0,dz:0}),/nonzero/);
+  assert.throws(()=>edit(v,'clear-seat-offset',{section:'WEST-1',row:'1',
+    number:'1'}),/no staff offset/);
+  v.rows[0].seatOverrides=[{number:'1',dx:.1,dy:0,dz:0},
+    {number:'1',dx:.2,dy:0,dz:0}];
+  assert.throws(()=>normalizeVenue(v),/duplicated seat override/);
+});
+test('Aiken QA draft permits staff coordinate correction but stays non-official',async()=>{
+  const {makeAikenUnverifiedOperatorDraft}=await import('../src/workbench/qa/aiken-operator-draft.mjs');
+  const draft=makeAikenUnverifiedOperatorDraft();
+  const first=draft.rows[0];
+  const revised=edit(draft,'set-seat-offset',{section:first.section,row:first.row,
+    number:'1',dx:.08,dy:0,dz:0});
+  const preview=generateTracedVenue(revised.venue);
+  assert.equal(preview.seats.length,1418);
+  assert.equal(preview.audit.publishedCapacity,1418);
+  assert.equal(preview.quality.publicationEligible,false);
+  assert.match(revised.venue.notes.join(' '),/not the real official row counts/i);
+});

@@ -40,6 +40,9 @@ export function assessVenueGeometry(traced){
       add('blocking','CROSSED_SECTION','Section footprint is self-intersecting',section.id);
   }
   const staffRows=venue.rows.filter(r=>r.operatorEdited);
+  const adjustedSeats=venue.rows.reduce((n,r)=>n+(r.seatOverrides?.length??0),0);
+  if(adjustedSeats)add('review','INDIVIDUAL_SEAT_OFFSETS',
+    adjustedSeats+' individual seats have staff-estimated coordinate offsets');
   if(staffRows.length){
     const changed=staffRows.filter(r=>r.sourceSeats!==null&&
       r.sourceSeats!==undefined&&r.sourceSeats!==r.seats);

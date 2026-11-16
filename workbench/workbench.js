@@ -190,6 +190,20 @@ function fillRowFields(){
     'Staff-edited · original count '+(r.sourceSeats??'not supplied')+
       ' · pending source verification':
     'Imported/fixture row · '+r.seats+' modeled seats · unverified geometry';
+  const valid=new Set(r.seatNumbers.length?r.seatNumbers:
+    Array.from({length:r.seats},(_,i)=>String(r.first+i)));
+  if(!valid.has($('seatEditNumber').value))
+    $('seatEditNumber').value=r.seatNumbers[0]??String(r.first);
+  fillSeatOffsetFields();
+}
+function fillSeatOffsetFields(){
+  const row=venue.rows.find(r=>r.section===$('rowEditSection').value&&
+    r.row===$('rowEditRow').value);
+  const number=$('seatEditNumber').value.trim();
+  const override=row?.seatOverrides?.find(o=>o.number===number);
+  $('seatShiftX').value=override?.dx??0;
+  $('seatShiftY').value=override?.dy??0;
+  $('seatShiftZ').value=override?.dz??0;
 }
 function commitOperatorEdit(edit,summary,preferredRow=null){
   try{
@@ -200,6 +214,9 @@ function commitOperatorEdit(edit,summary,preferredRow=null){
     sync();
     refreshRowControls(edit.section,preferredRow??edit.row);
     tryPreview();
+    if(edit.type==='set-seat-offset'||edit.type==='clear-seat-offset'){
+      $('seatEditNumber').value=edit.number;fillSeatOffsetFields();
+    }
     message(summary+' saved · '+(result.seatDelta>=0?'+':'')+result.seatDelta+
       ' seats. Check original school evidence before delivery.');
     return true;
@@ -280,6 +297,15 @@ function draw(){
     for(let i=0;i<preview.seats.length;i+=stride){
       const p=worldToScreen(preview.seats[i],g);
       ctx.beginPath();ctx.arc(p.x,p.y,1.55,0,Math.PI*2);ctx.fill();
+    }
+    // A selected source row is visible on the calibrated 2D drawing.
+    const section=$('rowEditSection').value,row=$('rowEditRow').value;
+    if(section&&row){
+      ctx.fillStyle='#e49b3b';ctx.strokeStyle='#fefefe';ctx.lineWidth=1;
+      for(const seat of preview.seats)if(seat.section===section&&seat.row===row){
+        const p=worldToScreen(seat,g);
+        ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();ctx.stroke();
+      }
     }
   }
   if(selectedSection){
@@ -448,6 +474,22 @@ canvas.addEventListener('pointerdown',event=>{
       }
       repaint();return;
     }
+    if(preview&&workflowUI?.current==='model'){
+      let nearest=null,distance=10;
+      for(const seat of preview.seats){
+        const xy=worldToScreen(seat,g),d=Math.hypot(xy.x-p.x,xy.y-p.y);
+        if(d<distance){distance=d;nearest=seat;}
+      }
+      if(nearest){
+        selectedSection=nearest.section;
+        $('sectionSelect').value=selectedSection;
+        updateSectionFields();
+        refreshRowControls(nearest.section,nearest.row);
+        message('Selected '+nearest.section+' / '+nearest.row+
+          ' on the plan. The row editor is ready.');
+        repaint();return;
+      }
+    }
     let section=venue.sections.find(s=>s.id===selectedSection);
     let handle=-1;
     if(section)handle=cornerList(section).findIndex(q=>{
@@ -545,8 +587,21 @@ $('resizeSelectedSection').onclick=()=>{
     factor:percent?Number(percent)/100:null},'Resize section'))
     $('sectionWidthPct').value='100';
 };
-$('rowEditSection').onchange=()=>refreshRowControls($('rowEditSection').value);
-$('rowEditRow').onchange=()=>fillRowFields();
+$('rowEditSection').onchange=()=>{refreshRowControls($('rowEditSection').value);draw();};
+$('rowEditRow').onchange=()=>{fillRowFields();draw();};
+$('seatEditNumber').onchange=()=>fillSeatOffsetFields();
+$('seatApplyOffset').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  commitOperatorEdit({type:'set-seat-offset',section,row,
+    number:$('seatEditNumber').value.trim(),
+    dx:$('seatShiftX').value,dy:$('seatShiftY').value,dz:$('seatShiftZ').value},
+    'Adjust individual seat',row);
+};
+$('seatResetOffset').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  commitOperatorEdit({type:'clear-seat-offset',section,row,
+    number:$('seatEditNumber').value.trim()},'Clear individual seat correction',row);
+};
 $('applyRowEdit').onclick=()=>{
   const section=$('rowEditSection').value,row=$('rowEditRow').value;
   if(!section||!row){message('Select an existing section and row.',true);return;}
@@ -752,6 +807,7 @@ function open3d(mode){
       renderer.highlight(s);
       if(venue.rows.some(r=>r.section===s.sectionId&&r.row===s.row)){
         refreshRowControls(s.sectionId,s.row);
+        $('seatEditNumber').value=String(s.number);fillSeatOffsetFields();
       }
     });}
     catch(e){message('WebGL2 unavailable: '+e.message,true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
@@ -836,6 +892,16 @@ $('saveReport').onclick=()=>{
     sourceManifest:preview.venue.sources,sourceReview:assessSources(preview.venue),
     quality:preview.quality,changeLog:preview.venue.changeLog,
     staffEditLedger:preview.venue.editLedger,
+    staffEditSummary:{
+      editedRows:preview.venue.rows.filter(r=>r.operatorEdited).length,
+      addedRows:preview.venue.rows.filter(r=>r.operatorAdded).length,
+      changedSourceSeatCounts:preview.venue.rows.filter(r=>
+        r.sourceSeats!==null&&r.sourceSeats!==undefined&&
+        r.seats!==r.sourceSeats).length,
+      deletedRowEvents:preview.venue.editLedger.filter(e=>e.operation==='remove-row').length,
+      adjustedSeats:preview.venue.rows.reduce((n,r)=>n+(r.seatOverrides?.length??0),0),
+      sourceReconciliationRequired:preview.venue.editLedger.length>0
+    },
     ...preview.audit,rowRuns:preview.rowRuns,warnings:preview.warnings},null,2));
 };
 $('publish').onclick=async()=>{

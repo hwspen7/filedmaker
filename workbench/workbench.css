@@ -75,3 +75,7 @@
 .row-edit-panel input,.row-edit-panel select,#sectionAdvanced input{max-width:100%}
 #rowAdvanced input,#rowAdvanced select,#rowOperations input,#sectionAdvanced input{width:100%;margin-top:6px;padding:8px;border:1px solid #dfe5e9;border-radius:8px;background:white;color:#344651}
 #rowOperations>.row-actions{margin:13px 0}
+
+#seatAdvanced .hint{margin:10px 0}#seatAdvanced .row-actions{margin:13px 0}
+#seatAdvanced button{font-size:11px;border:1px solid #dfe5e9;border-radius:9px;background:#fff;padding:9px 11px;color:#4d6170}
+#seatAdvanced input{width:100%;margin-top:6px;padding:8px;border:1px solid #dfe5e9;border-radius:8px;background:white;color:#344651}

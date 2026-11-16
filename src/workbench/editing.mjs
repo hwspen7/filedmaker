@@ -83,6 +83,24 @@ export function applyVenueEdit(input,edit){
       sourceSeats:r.sourceSeats??(r.operatorAdded?null:previous)};
     v.rows[i]=next;
     affected=rowKey(r);log(v,operation,r.section,r.row,previous,count,note);
+  }else if(operation==='set-seat-offset'||operation==='clear-seat-offset'){
+    const i=rowFor(v,id,edit.row),r=v.rows[i],number=text(edit.number,'Seat label');
+    const old=structuredClone(r.seatOverrides??[]);
+    const remaining=old.filter(o=>o.number!==number);
+    if(operation==='set-seat-offset'){
+      const entry={number,dx:finite(edit.dx,'X seat shift',-1,1),
+        dy:finite(edit.dy,'Y seat shift',-.75,.75),
+        dz:finite(edit.dz,'Z seat shift',-1,1)};
+      if(!entry.dx&&!entry.dy&&!entry.dz)
+        throw Error('Choose a nonzero seat offset or clear the current override');
+      remaining.push(entry);
+    }else if(old.length===remaining.length)throw Error('This seat has no staff offset');
+    r.seatOverrides=remaining;
+    r.operatorEdited=true;
+    r.sourceSeats??=r.operatorAdded?null:r.seats;
+    affected=rowKey(r)+' / '+number;
+    log(v,operation,r.section,r.row,r.seats,r.seats,
+      'Individual seat coordinate corrected by staff, not a surveyed position');
   }else if(operation==='add-row'){
     const s=sectionFor(v,id),r=edit.newRow;
     if(!r||typeof r!=='object')throw Error('Provide the new row');

@@ -456,3 +456,8 @@ For actual ticket-sale integration, the school must supply canonical section/row
 ## Reference bowl corrections
 
 The Ohio Stadium and Schottenstein Center reference scenes no longer invent default aisle cuts. Their **illustrative** sectors are spaced by the front-row perimeter to avoid isolated corner fragments. Only untouched obsolete example cutouts are removed during project validation; staff-authored and measured aisles are preserved. Native WebGL2 uses transparent canvas output, while seating support colors avoid the previous white ground slab. These changes do not establish exact official seating identities.
+
+
+## Staff-operated precision editing
+
+See [Operator modeling](docs/OPERATOR_MODELING.md) for section, row and single-seat editing, the bounded edit ledger, geometry checks, and explicit source-verification requirements.

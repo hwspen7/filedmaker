@@ -120,6 +120,16 @@
 <div class="pair"><label>Row depth offset (m)<input id="rowDepthOffset" type="number" step=".05" min="-3" max="3"></label>
 <label>Row height (m)<input id="rowEditElevation" type="number" step=".05" min="0" max="100" placeholder="Section default"></label></div>
 </details>
+<details class="disclosure" id="seatAdvanced"><summary>Fine-tune an individual seat</summary>
+<p class="hint">Choose a seat label or click a seat in the 3D overview. These are estimated local coordinate corrections, not surveyed measurements.</p>
+<label>Seat number / label<input id="seatEditNumber" maxlength="30" placeholder="e.g. 12"></label>
+<div class="pair">
+<label>Shift X (m)<input id="seatShiftX" type="number" min="-1" max="1" step=".05" value="0"></label>
+<label>Shift Z (m)<input id="seatShiftZ" type="number" min="-1" max="1" step=".05" value="0"></label></div>
+<label>Shift elevation Y (m)<input id="seatShiftY" type="number" min="-.75" max=".75" step=".05" value="0"></label>
+<div class="row-actions"><button id="seatApplyOffset" type="button">Apply seat correction</button>
+<button id="seatResetOffset" type="button">Clear correction</button></div>
+</details>
 <details class="disclosure" id="rowOperations"><summary>Add, reorder or remove a row</summary>
 <label>New row label<input id="rowNewLabel" maxlength="30" placeholder="e.g. 16"></label>
 <label>New row seat count<input id="rowNewSeats" type="number" min="1" max="300" step="1" value="12"></label>

@@ -53,6 +53,7 @@ export function generateTracedVenue(input){
       if(pitch<.43)warnings.push(s.id+' row '+row.row+' has '+pitch.toFixed(2)+' m average seat pitch: verify layout');
       const heights=row.elevation??(s.baseHeight+i*s.rowRise);
       const seatPositions=[],start=seats.length;
+      const overrideMap=new Map((row.seatOverrides??[]).map(o=>[o.number,o]));
       for(let n=0;n<row.seats;n++){
         let target=station.positions[n].distance,at=samples[0];
         for(let j=0;j<segments.length;j++){
@@ -65,9 +66,11 @@ export function generateTracedVenue(input){
           target-=segments[j];
         }
         const number=station.positions[n].label,id=s.id+'-'+row.row+'-'+number;
+        const shift=overrideMap.get(number);
         if(ids.has(id))throw Error('Duplicate seat identity '+id);
         ids.add(id);
-        const seat={id,section:s.id,row:row.row,number,tier:row.tier,x:at.x,y:heights,z:at.z,
+        const seat={id,section:s.id,row:row.row,number,tier:row.tier,
+          x:at.x+(shift?.dx??0),y:heights+(shift?.dy??0),z:at.z+(shift?.dz??0),
           seatType:row.seatType,
           provenance:row.operatorEdited?'operator-edited/needs-source-review':
             (row.elevation===null?'plan-trace/estimated-elevation':
@@ -77,7 +80,8 @@ export function generateTracedVenue(input){
       rowRuns.push({section:s.id,row:row.row,count:row.seats,width,seatPitch:pitch,
         aisleGaps:row.gaps,height:heights,seatType:row.seatType,start,
         operatorEdited:row.operatorEdited,sourceSeats:row.sourceSeats,
-        insets:[row.insetStartM,row.insetEndM],depthOffsetM:row.depthOffsetM});
+        insets:[row.insetStartM,row.insetEndM],depthOffsetM:row.depthOffsetM,
+        seatOverrides:row.seatOverrides.length});
     }
   }
   const declared=venue.rows.reduce((a,r)=>a+r.seats,0);

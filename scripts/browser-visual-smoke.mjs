@@ -440,6 +440,16 @@ async function main(){
     const noChange=await evaluate("(()=>{document.querySelector('#rowEditSeats').value='0';document.querySelector('#applyRowEdit').click();return {count:document.querySelector('#mappedCount').textContent,error:document.querySelector('#workStatus').textContent}})()");
     if(noChange.count!=='1,499'||!noChange.error.includes('Edit rejected'))
       throw Error('Invalid seat count did not fail atomically');
+
+    const seatEdited=await evaluate("(()=>{document.querySelector('#seatAdvanced').open=true;document.querySelector('#seatEditNumber').value='1';document.querySelector('#seatShiftX').value='.08';document.querySelector('#seatShiftY').value='.12';document.querySelector('#seatShiftZ').value='0';document.querySelector('#seatApplyOffset').click();return {count:document.querySelector('#mappedCount').textContent,qa:document.querySelector('#qa').textContent,error:document.querySelector('#workStatus').textContent}})()");
+    if(seatEdited.count!=='1,499'||!seatEdited.qa.includes('INDIVIDUAL_SEAT_OFFSETS')||
+      seatEdited.error.includes('Edit rejected'))throw Error('Individual seat override was not applied: '+JSON.stringify(seatEdited));
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-single-seat.png'),Buffer.from(frame.data,'base64')));
+    const resetSeat=await evaluate("(()=>{document.querySelector('#seatResetOffset').click();return {count:document.querySelector('#mappedCount').textContent,qa:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent}})()");
+    if(resetSeat.count!=='1,499'||resetSeat.qa.includes('INDIVIDUAL_SEAT_OFFSETS')||
+      resetSeat.status.includes('Edit rejected'))throw Error('Seat correction did not clear cleanly');
     await evaluate("document.querySelector('[data-open-stage=\"calibrate\"]').click()");
     const moved=await evaluate("(()=>{const select=document.querySelector('#sectionSelect');select.value='WEST-1';select.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#sectionMoveX').value='.1';document.querySelector('#sectionMoveZ').value='0';document.querySelector('#moveSelectedSection').click();return {seats:document.querySelector('#mappedCount').textContent,ledger:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent}})()");
     if(moved.seats!=='1,499'||moved.status.includes('Edit rejected'))
