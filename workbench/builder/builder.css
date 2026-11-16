@@ -96,3 +96,10 @@ button.danger{color:#ae3f38;border-color:#edc9c4}
 .asset-links a{display:block;margin:8px 0;color:#237094}
 .asset-links p{font-size:11px;color:#94a2ac}
 .sidebar .file-button{display:block;text-align:center;margin-top:10px}
+
+.hall-dimensions,.array-panel{border-top:1px solid #edf1f3;margin-top:13px;padding-top:12px}
+.hall-dimensions summary,.array-panel summary{font-size:11px;font-weight:650;cursor:pointer;color:#536b7c}
+.hall-dimensions .field-row,.array-panel .field-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.hall-dimensions label,.array-panel label{font-size:11px;color:#698091;display:flex;flex-direction:column;gap:5px}
+.hall-dimensions input,.array-panel input{min-width:0;width:100%;padding:8px 7px;border-radius:8px;border:1px solid #d9e4e9}
+.array-panel{margin-bottom:14px}
