@@ -17,7 +17,7 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   for(const [name,vertices] of Object.entries(g)){
     assert.ok(vertices instanceof Float32Array,name);
     assert.ok(vertices.length%18===0,name);
-    if (!['aisles','stepEdges','buildingRoof'].includes(name)) assert.ok(vertices.length>0,name);
+    if (!['aisles','stepEdges','buildingRoof','pressWalls','pressGlass'].includes(name)) assert.ok(vertices.length>0,name);
     assert.ok(vertices.every(Number.isFinite),name);
   }
   assert.ok(g.decks.length/18>8000);
@@ -43,7 +43,8 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.towerCrown.length>1000,'Real open-topped lantern cornices');
   assert.ok(g.towerFrames.length>0,'Round tower windows have frames');
   assert.ok(g.externalTrim.length>1000,'Panel seams replace the old uniform gray facade');
-  assert.ok(g.pressGlass.length>0);
+  assert.equal(g.pressWalls.length,0,'No duplicate gray Press Box wall strip');
+  assert.equal(g.pressGlass.length,0,'Existing upper-gallery windows serve Press Box');
   const press=plan.features.find(feature=>feature.kind==='press');
   assert.ok(!plan.seats.some(seat=>polygonSpans([press.outline],seat.x)
     .some(([a,b])=>seat.z>a&&seat.z<b)),'Press enclosure does not replace any seat');
@@ -63,55 +64,19 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.equal(g.aisles.length+g.stepEdges.length,0,'No fabricated stair geometry');
 });
 
-test('Press Box occupies a broad, tall gallery bay instead of a detached gray roof',()=>{
-  const plan=build(),{pressWalls,pressGlass}=plan.architectureGeometry;
-  const press=plan.features.find(feature=>feature.kind==='press');
-  const vertexData=mesh=>Array.from({length:mesh.length/6},(_,i)=>({
-    x:mesh[i*6],y:mesh[i*6+1],z:mesh[i*6+2],normalY:mesh[i*6+4]
-  }));
-  const windows=vertexData(pressGlass),wall=vertexData(pressWalls);
-  assert.ok(windows.length>120,'Press gallery should be much wider than four small panes');
-  const min=Math.min(...windows.map(p=>p.z)),max=Math.max(...windows.map(p=>p.z));
-  assert.ok(max-min>46,'Press frontage should cover a broad curved gallery bay');
-  const height=Math.max(...windows.map(p=>p.y))-Math.min(...windows.map(p=>p.y));
-  assert.ok(height>4.1,'Press glazing must be taller than the original short box');
-  assert.ok(windows.every(p=>Math.abs(p.normalY)<.001));
-  assert.ok(wall.every(p=>Math.abs(p.normalY)<.001),
-    'Press structure may contain walls, not a floating horizontal gray roof slab');
-  assert.ok(wall.every(p=>p.y>=28.5&&p.y<36));
-  // The source seating exclusion remains unchanged; only the visible Press
-  // Box building volume and annotation are relocated behind the upper row.
-  const edge=fitRearSeatEnvelope(plan.seats,{
-    tier:2,segments:192,clearance:.38,spread:1
-  });
-  assert.ok(windows.every(p=>
-    Math.hypot(p.x,p.z)>edge.radiusAt(Math.atan2(p.z,p.x))+.10),
-    'Press windows must be behind the final occupied row');
-  assert.ok(Math.hypot(press.x,press.z)>52,
-    'Press label should attach to the rear gallery rather than the chair bank');
-  assert.equal(plan.seats.length,19049);
-});
-
-test('Press Box lower gallery is structurally connected to the short rear seating banks',()=>{
+test('Press Box label stays on the existing gallery; no floating gray strip can be generated',()=>{
   const plan=build(),g=plan.architectureGeometry;
   const press=plan.features.find(f=>f.kind==='press');
-  const center=Math.atan2(press.z,press.x);
-  const angularDiff=a=>Math.abs(Math.atan2(Math.sin(a-center),Math.cos(a-center)));
-  const vertices=mesh=>Array.from({length:mesh.length/6},(_,i)=>({
-    x:mesh[i*6],y:mesh[i*6+1],z:mesh[i*6+2]
-  }));
-  const local=p=>angularDiff(Math.atan2(p.z,p.x))<.52;
-  const seatY=plan.seats.filter(s=>s.tier===2&&local(s));
-  const infill=vertices(g.backWall).filter(p=>local(p)&&p.y<28.5);
-  assert.ok(infill.length>75,'Continuous under-gallery masonry is missing');
-  assert.ok(Math.min(...infill.map(p=>p.y))<26.5,
-    'Press-side masonry must extend below the raised gallery level');
-  const lowDeck=vertices(g.galleryFloorMesh).filter(p=>local(p)&&p.y<28);
-  assert.ok(lowDeck.length>60,
-    'Rear terrace must connect the last seat row to the lower press wall');
-  const other=vertices(g.galleryFloorMesh).filter(p=>!local(p));
-  assert.ok(other.length>200,'Other arena sectors remain intact');
-  assert.equal(plan.seats.length,19049,'Press infill must not change seat count');
+  assert.ok(press,'Press Box label remains in the venue plan');
+  assert.equal(g.pressWalls.length,0,'A detached Press Box gray wall has been removed');
+  assert.equal(g.pressGlass.length,0,'No duplicated Press Box glass slab');
+  assert.ok(g.galleryGlass.length>0,'Continuous arena-gallery glazing remains');
+  assert.ok(g.backWall.length>0,'Existing integrated rear wall remains');
+  assert.ok(g.galleryFloorMesh.length>0,'Existing circulation gallery remains');
+  const source=String(buildSchottensteinArchitecture);
+  assert.doesNotMatch(source,/quad\\(galleryFloorMesh,\\s*p\\(innerA/,
+    'No extra radial press-floor strip may be generated');
+  assert.equal(plan.seats.length,19049,'No ticketed seat is removed');
 });
 
 test('the main roof perimeter is convex and independent of the media seating cutout',()=>{
