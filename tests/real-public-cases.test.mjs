@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {auditPublicVenueCase} from '../src/workbench/publicCaseAudit.mjs';
 import {REAL_SCHOOL_CASES,BAY_PORT_PAC_SAMPLE_ROWS} from './fixtures/actual-school-cases.mjs';
 import {parseVenueRows} from '../src/workbench/contract.mjs';
+import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
+import {makeAikenUnverifiedOperatorDraft} from '../src/workbench/qa/aiken-operator-draft.mjs';
 test('six independently sourced US school facility cases reconcile without manufacturing rows',()=>{
   assert.equal(REAL_SCHOOL_CASES.length,6);
   for(const venue of REAL_SCHOOL_CASES){
@@ -70,4 +72,21 @@ test('Bay Port real school arts venue: faithfully retain odd, even and reverse l
   assert.equal(parsed.find(r=>r.section==='HOUSE LEFT'&&r.row==='A').seatNumbers[3],'A7');
   assert.equal(parsed.find(r=>r.section==='HOUSE RIGHT'&&r.row==='B').seatNumbers.at(-1),'B18');
   assert.equal(parsed.find(r=>r.section==='CENTER'&&r.row==='A').seatNumbers[0],'A114');
+});
+
+test('source-grounded Aiken human-draft generates 1,418 provisional, explicitly non-official seats',()=>{
+  const draft=makeAikenUnverifiedOperatorDraft();
+  const planned=new Map(REAL_SCHOOL_CASES[0].banks.map(b=>[b.id,b.netSeats]));
+  for(const [id,count] of planned){
+    assert.equal(draft.rows.filter(r=>r.section===id).reduce((n,r)=>n+r.seats,0),count);
+  }
+  assert.ok(draft.rows.every(row=>row.row.startsWith('ASSUMED-')));
+  assert.ok(draft.sections.every(section=>section.provenance.includes('human-assumed')));
+  assert.match(draft.notes.join(' '),/not the real official row counts/i);
+  const actual=buildWorkbenchPreview(draft);
+  assert.equal(actual.seats.length,1418);
+  assert.equal(actual.model.seats.length,1418);
+  assert.equal(actual.quality.blockingCount,0);
+  assert.equal(actual.quality.publicationEligible,false);
+  assert.equal(actual.quality.sourceReview.allReviewed,false);
 });

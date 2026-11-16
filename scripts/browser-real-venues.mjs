@@ -114,6 +114,39 @@ try{
       throw Error('Invalid real PDF manual-review state: '+item.id);
     const screenshot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     writeFileSync(join(out,item.id+'.png'),Buffer.from(screenshot.data,'base64'));
+
+    if(item.id==='aiken-high-taylor-gym'){
+      // Source-based exact bank totals + explicitly ASSUMED staff row layout.
+      // This proves an editable preliminary 3D model, NOT a real seating reconstruction.
+      const load="(async()=>{"+
+        "const {makeAikenUnverifiedOperatorDraft}=await import('/src/workbench/qa/aiken-operator-draft.mjs');"+
+        "const draft=makeAikenUnverifiedOperatorDraft();"+
+        "const file=new File([JSON.stringify(draft)],'aiken-operator-estimate.json',{type:'application/json'});"+
+        "const transfer=new DataTransfer();transfer.items.add(file);"+
+        "const el=document.querySelector('#openProject');el.files=transfer.files;"+
+        "el.dispatchEvent(new Event('change',{bubbles:true}));"+
+        "return {rows:draft.rows.length,estimated:draft.notes.some(x=>x.includes('ASSUMED'))}})()";
+      const metadata=await evaluate(load);
+      const ready=await poll(async()=>{
+        const state=await evaluate("({venue:document.querySelector('#workspaceName').textContent,"+
+          "seats:document.querySelector('#mappedCount').textContent,"+
+          "sections:document.querySelector('#sectionCount').textContent,"+
+          "qa:document.querySelector('#qa').textContent})");
+        return state.seats==='1,418'&&state.sections==='4'?state:null;
+      },55);
+      if(!metadata.estimated||!ready.venue.includes('operator-estimated')||
+        !ready.qa.includes('review'))
+        throw Error('Unverified operator draft lost estimation flags: '+JSON.stringify(ready));
+      await evaluate("document.querySelector('#show3d').click()");
+      const visible=await poll(async()=>await evaluate(
+        "(()=>{const c=document.querySelector('#modelCanvas');return !c.hidden&&!!c.getContext('webgl2')})()"),45);
+      if(!visible)throw Error('Aiken operator-draft failed native 3D rendering');
+      await sleep(550);
+      const frame=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      writeFileSync(join(out,'aiken-unverified-operator-draft-3d.png'),Buffer.from(frame.data,'base64'));
+      console.log('REAL BANK TOTALS + UNVERIFIED ROW GEOMETRY: Aiken 1,418 illustrated in WebGL2; not official');
+    }
+
     const summary={id:item.id,url:item.url,sha256:item.sha256,bytes:size,
       page,pageCount:loaded.pageCount,text:state.status,sectionHints:state.matches,
       realSourceParsed:true,seatsInvented:0,sectionsInvented:0,

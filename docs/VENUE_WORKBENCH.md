@@ -234,3 +234,21 @@ and browser screenshots can be retained as ephemeral test artifacts.
 
 This track proves import and honest handling of incomplete documents.
 It does not certify the real-world seat map or architectural accuracy.
+
+
+### Aiken staff-edited illustrative three-dimensional draft
+
+The QA harness also constructs an explicitly UNVERIFIED, never-for-sale
+Aiken Taylor Gymnasium preview based on the published bank capacities:
+284 + 431 + 431 + 272 = 1,418 seats. The source does not supply the
+verified per-row records needed for a real seat-level model. Therefore
+every generated row label starts with ASSUMED-, the row distributions,
+seat locations, slopes and elevations are operator TEST assumptions.
+The browser acceptance checks that the engine can display these 1,418
+provisional positions, preserving bank totals without falsely certifying
+the source data. Never describe the rendering as the official venue.
+
+The source PDF and its browser import, and the separate illustrative
+3D model screenshot, are distinct pieces of evidence. Both must be
+described independently. The provisional model generator is stored
+under src/workbench/qa/aiken-operator-draft.mjs, not the production catalog.
