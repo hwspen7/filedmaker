@@ -179,9 +179,18 @@ export const ArchitectureEngine={
     // They never reuse the generic rotunda used by the earlier placeholders.
     const signatureMesh=SignatureArchitectureEngine.build(geometry,
       {segments,galleryWidth,roofY});
-    if(signatureMesh)for(const [key,mesh] of Object.entries(signatureMesh)){
-      if(!layers[key])layers[key]=[];
-      for(const value of mesh)layers[key].push(value);
+    if(signatureMesh){
+      // For the three buildings with documented footprints, custom perimeter
+      // glazing and masonry supersede the generic continuous oval facade.
+      const hasMeasuredPerimeter=Boolean(spec.exterior?.signature?.outerDiameterMetres||
+        spec.exterior?.signature?.historicalBuildingWidthMetres||
+        spec.exterior?.signature?.historicalDomeRiseMetres);
+      if(hasMeasuredPerimeter)for(const key of ['facade','glazing','brickBase','brickPiers'])
+        layers[key]=[];
+      for(const [key,mesh] of Object.entries(signatureMesh)){
+        if(!layers[key])layers[key]=[];
+        for(const value of mesh)layers[key].push(value);
+      }
     }
     return Object.fromEntries(Object.entries(layers).map(([key,data])=>[key,new Float32Array(data)]));
   }
