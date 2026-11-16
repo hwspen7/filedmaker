@@ -149,3 +149,18 @@ committing it. No partial changes survive a failed operation. Accepted
 groups form one undo/redo step and one provisional audit event. These
 schematic structures do not establish legal access, egress, load capacity
 or measured construction geometry.
+
+## Canvas framing and keyboard operations
+
+The 2D canvas now includes the actual bounds of every placed component and
+the translated or rotated playing surface. Component bounds remain stable
+during a pointer drag so the camera scale does not move underneath the cursor.
+
+With the Build tool active and focus outside inputs, arrow keys nudge the
+selected item or selection by 25 cm. Holding Shift uses 5 cm increments.
+Ctrl/Cmd+D duplicates a component or the whole selection, and Delete asks
+before removing the selection. These shortcuts are disabled inside editable
+form controls and do not replace the standard undo/redo commands.
+
+The advanced arrangement tools remain closed until needed, so the scene
+canvas retains the larger canvas-first layout.
