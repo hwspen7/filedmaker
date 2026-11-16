@@ -1295,7 +1295,7 @@ $('structureSelectOne').onclick=()=>{
 for(const [button,action] of [
   ['structureGroupAlign','align'],['structureGroupSpace','distribute'],
   ['structureGroupMirror','mirror'],['structureGroupMove','translate'],
-  ['structureGroupCopy','duplicate']
+  ['structureGroupCopy','duplicate'],['structureGroupArray','array']
 ]){
   $(button).onclick=()=>{
     const command={action,ids:[...selectedStructureIds]};
