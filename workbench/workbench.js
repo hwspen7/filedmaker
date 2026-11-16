@@ -562,7 +562,7 @@ function resize(){
 function currentSnapStep(event){
   // Shift allows fine placement. Alt bypasses automatic grid or magnet
   // snapping for independent manual adjustments.
-  return event?.shiftKey?.1:Number($('gridStep').value);
+  return event?.shiftKey ? .1 : Number($('gridStep').value);
 }
 function inferObjectPoint(point,excluded=[],event=null){
   const step=currentSnapStep(event),enabled=$('snapEnabled').checked&&!event?.altKey;
@@ -614,7 +614,7 @@ function drawInferenceGuides(g){
   ctx.setLineDash([]);
   const p=worldToScreen(guideState,g),label=
     'X '+guideState.x.toFixed(2)+' m · Z '+guideState.z.toFixed(2)+' m';
-  ctx.font='600 11px system-ui';
+  ctx.font='600 11px system-ui';ctx.textAlign='left';
   const width=ctx.measureText(label).width+16;
   ctx.fillStyle='#243d4deb';
   ctx.fillRect(Math.min(g.w-width-5,Math.max(5,p.x+12)),
