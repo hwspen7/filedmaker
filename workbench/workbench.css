@@ -270,3 +270,20 @@ html,body{height:100%;overflow:hidden}
  .canvas-header .model-toolbar{flex:1 1 100%;justify-content:space-between}
  .canvas-header .model-toolbar .zoom-tool{display:none}
 }
+
+/* Contextual case evidence lives in the optional project menu, never over
+   camera controls or the editable model viewport. */
+.studio-header .top-menu-content{width:325px;max-width:calc(100vw - 26px);
+  max-height:min(520px,80vh);overflow:auto}
+.studio-header .top-menu-content .case-context{position:static;top:auto;
+  left:auto;right:auto;bottom:auto;max-width:none;width:auto;
+  margin:6px 0 0;box-shadow:none;border:0;border-top:1px solid #e5ecee;
+  border-radius:0;background:transparent;padding:10px 7px;display:flex;
+  flex-direction:column;align-items:flex-start;gap:5px}
+.studio-header .top-menu-content .case-context p{display:block;font-size:10px;
+  line-height:1.5;color:#81909a;margin:2px 0}
+.studio-header .top-menu-content .case-context a{font-size:10px;color:#3d657c;
+  text-decoration:underline}
+.studio-header .top-menu-content .case-context button{
+  position:absolute;right:8px;bottom:11px;background:transparent;border:0;
+  font-size:16px;color:#84939d}

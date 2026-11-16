@@ -154,3 +154,12 @@ test('modeling supports a real seven-kind component library',()=>{
   assert.match(js,/editVenueStructure/);
   assert.match(js,/activateModelTool\('structures'\)/);
 });
+
+test('source-case context is placed inside the collapsed project menu',()=>{
+  const markup=read('workbench/index.html');
+  const menu=markup.indexOf('class="top-menu-content"');
+  const context=markup.indexOf('id="caseContext"');
+  const dropdownEnd=markup.indexOf('</details>',menu);
+  assert.ok(menu>=0&&context>menu&&context<dropdownEnd);
+  assert.doesNotMatch(markup,/<div class="steps-strip"/);
+});
