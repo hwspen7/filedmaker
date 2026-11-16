@@ -22,7 +22,7 @@
               "F"
             ],
             "rowStart": 1,
-            "rowCount": 29
+            "rowCount": 43
           },
           {
             "startAngle": 3.81,
@@ -36,7 +36,7 @@
               "M"
             ],
             "rowStart": 1,
-            "rowCount": 29
+            "rowCount": 43
           }
         ],
         [
@@ -52,7 +52,7 @@
               "FF"
             ],
             "rowStart": 1,
-            "rowCount": 19
+            "rowCount": 16
           },
           {
             "startAngle": 3.84,
@@ -66,7 +66,7 @@
               "MM"
             ],
             "rowStart": 1,
-            "rowCount": 19
+            "rowCount": 16
           }
         ]
       ],
@@ -101,7 +101,7 @@
         "North/south loge-box precise polygons",
         "North/south lobby footprints"
       ],
-      "notes": "Official 2026–27 map places A–F along the west stand from south to north, G/H/J/K/L/M on east from north to south, and pairs of separate balcony arcs. Row and radial edges are not available as CAD."
+      "notes": "Official 2026–27 map places A–F along the west stand from south to north, G/H/J/K/L/M on east from north to south, and pairs of separate balcony arcs. Row and radial edges are not available as CAD. Official ticket inventory exposes main-stand rows through 43, and published balcony diagram shows around 16 rows. These maximum row bands still require per-section verification."
     },
     "purdue": {
       "source": "https://purduesports.com/mens-basketball-ticket-information",
@@ -567,7 +567,7 @@
         "Section EA accessible seating",
         "Exact ADA row 42 platform geometry"
       ],
-      "notes": "A, AA, BB,...NN, N, M,... B are 28 consecutively adjacent full-height section columns around Carver-Hawkeye Arena, not lower/upper disjoint sets. The two engine bands represent row-depth zones of these same sectors, with provisional 1–19 / 20–42 division."
+      "notes": "A, AA, BB,...NN, N, M,... B are 28 consecutively adjacent full-height section columns around Carver-Hawkeye Arena, not lower/upper disjoint sets. The two engine bands represent row-depth zones of these same sectors, with provisional 1–19 / 20–42 division. Two contiguous row bands are retained for mesh management, not because single- versus double-letter sections occupy different physical tiers."
     },
     "michigan-state": {
       "source": "https://msuspartans.com/sports/2018/7/20/facilities-breslin-center-section-map-html",
