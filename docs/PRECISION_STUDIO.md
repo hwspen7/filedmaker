@@ -18,7 +18,11 @@ uploaded reference drawing, authentic row inventory, or one of six
    position, dimensions and paint zones.
 4. Use **Build** for single objects or composite assemblies. Objects can be
    selected, duplicated, aligned, mirrored and arranged in repeated arrays.
-   The right-hand tool details remain collapsible when not needed.
+   Click a part in 2D or 3D and edit its coordinates, dimensions and
+   orientation in the small floating **Selected object** panel. The panel
+   also provides Copy and Delete, while its close button keeps the model
+   visible. More advanced arrangements remain in the collapsible Build
+   controls.
 5. In **2D**, Grid and Snap show metric spacing. Red inference guides
    align to neighboring component centers/edges, section control points,
    or the playing surface center. The label displays the actual X/Z
