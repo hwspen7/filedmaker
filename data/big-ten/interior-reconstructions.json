@@ -23,44 +23,6 @@
           "wave": 0.36
         }
       ],
-      "sectionWeights": [
-        [
-          [
-            1.08,
-            1.16,
-            1.23,
-            1.23,
-            1.16,
-            1.08
-          ],
-          [
-            1.02,
-            1.19,
-            1.31,
-            1.25,
-            1.14,
-            1.02
-          ]
-        ],
-        [
-          [
-            0.88,
-            1.1,
-            1.24,
-            1.25,
-            1.08,
-            0.89
-          ],
-          [
-            0.9,
-            1.09,
-            1.28,
-            1.23,
-            1.08,
-            0.92
-          ]
-        ]
-      ],
       "sectionRules": [
         {
           "tier": 0,
@@ -210,13 +172,14 @@
       "notches": [],
       "seatTypes": [],
       "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019",
-      "notes": "Two opposing side banks and separate balcony banks follow the official 2026–27 seating diagram. Mid-bank notch positions are visual estimates, not surveyed portals. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "notes": "Two opposing side banks and separate balcony banks follow the official 2026–27 seating diagram. Mid-bank notch positions are visual estimates, not surveyed portals. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "D",
         "K",
         "CC",
         "JJ"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     },
     "purdue": {
       "type": "circular-floor",
@@ -236,52 +199,6 @@
           "rake": 0.38,
           "wave": 0
         }
-      ],
-      "sectionWeights": [
-        [
-          [
-            0.94,
-            0.98,
-            1.04,
-            1.12,
-            1.13,
-            1.12,
-            1.12,
-            1.02,
-            0.9,
-            0.9,
-            1.02,
-            1.12,
-            1.13,
-            1.12,
-            1.1,
-            1.02,
-            0.95,
-            0.91
-          ]
-        ],
-        [
-          [
-            0.93,
-            0.97,
-            1.03,
-            1.14,
-            1.13,
-            1.13,
-            1.12,
-            1.01,
-            0.9,
-            0.9,
-            1.01,
-            1.12,
-            1.15,
-            1.14,
-            1.12,
-            1.03,
-            0.95,
-            0.9
-          ]
-        ]
       ],
       "sectionRules": [
         {
@@ -504,7 +421,7 @@
       "notches": [],
       "seatTypes": [],
       "source": "https://purduesports.com/mens-basketball-ticket-information",
-      "notes": "Inner sections 01–18 and outer 101–118 form a near-round seating dish. Expanded upper student end positions and inner premium seating are chart-informed. Concourse breaks are estimated. All premium blocks remain seated; no front rows are removed solely because a pricing map marks them white. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "notes": "Inner sections 01–18 and outer 101–118 form a near-round seating dish. Expanded upper student end positions and inner premium seating are chart-informed. Concourse breaks are estimated. All premium blocks remain seated; no front rows are removed solely because a pricing map marks them white. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "105",
         "115"
@@ -524,7 +441,8 @@
         "114",
         "115",
         "116"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     },
     "illinois": {
       "type": "three-concentric-rings",
@@ -551,111 +469,6 @@
           "rake": 0.7,
           "wave": 0.14
         }
-      ],
-      "sectionWeights": [
-        [
-          [
-            1.05,
-            1.04,
-            1.02,
-            1,
-            1,
-            0.98,
-            0.98,
-            1.02,
-            1.04,
-            1.05,
-            1.06,
-            1.04,
-            1.02,
-            1,
-            1,
-            0.98,
-            0.98,
-            1.02,
-            1.04,
-            1.05
-          ]
-        ],
-        [
-          [
-            1.02,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1.03,
-            1.04,
-            1.04,
-            1.03,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1.03,
-            1.04,
-            1.04,
-            1.03,
-            1,
-            1,
-            1,
-            1.02
-          ]
-        ],
-        [
-          [
-            0.92,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1.06,
-            1,
-            1,
-            1,
-            1,
-            1,
-            0.92,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1.06,
-            1,
-            1,
-            1,
-            1,
-            1,
-            0.92,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1.06,
-            1,
-            1,
-            1,
-            1,
-            1,
-            0.92,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1.06,
-            1,
-            1,
-            1,
-            1,
-            1
-          ]
-        ]
       ],
       "sectionRules": [
         {
@@ -1184,7 +997,7 @@
       "notches": [],
       "seatTypes": [],
       "source": "https://www.statefarmcenter.com/assets/doc/production_guide_19-4d1fa8277a.pdf",
-      "notes": "Published seating configuration distinguishes 100 lower, 100 upper/club and 48-sector 200 ring; measured suite and ADA platform polygons remain unavailable. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "notes": "Published seating configuration distinguishes 100 lower, 100 upper/club and 48-sector 200 ring; measured suite and ADA platform polygons remain unavailable. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "111",
         "119",
@@ -1196,7 +1009,8 @@
         "11",
         "12",
         "13"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     },
     "iowa": {
       "type": "sunken-compact-bowl",
@@ -1216,44 +1030,6 @@
           "rake": 0.78,
           "wave": 0.22
         }
-      ],
-      "sectionWeights": [
-        [
-          [
-            1.03,
-            1.1,
-            1.1,
-            1.08,
-            1,
-            1.04,
-            1.15,
-            1.18,
-            1.18,
-            1.15,
-            1.05,
-            1.03,
-            1.02,
-            1.03
-          ]
-        ],
-        [
-          [
-            1.02,
-            1.04,
-            1.02,
-            0.98,
-            0.98,
-            1,
-            1.08,
-            1.12,
-            1.12,
-            1.08,
-            1.02,
-            1,
-            0.99,
-            1.01
-          ]
-        ]
       ],
       "sectionRules": [
         {
@@ -1428,7 +1204,7 @@
       "notches": [],
       "seatTypes": [],
       "source": "https://hawkeyesports.com/mbbgameday",
-      "notes": "Official men’s gameday guide identifies student sections E/K rows 1–9 and G/H/I, plus K–N ADA row 42. Reconstructed portal cutouts remain illustrative. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "notes": "Official men’s gameday guide identifies student sections E/K rows 1–9 and G/H/I, plus K–N ADA row 42. Reconstructed portal cutouts remain illustrative. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "E",
         "K",
@@ -1441,7 +1217,8 @@
         "H",
         "I",
         "K"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     },
     "michigan-state": {
       "type": "skip-row-lower",
@@ -1461,74 +1238,6 @@
           "rake": 0.76,
           "wave": 0.24
         }
-      ],
-      "sectionWeights": [
-        [
-          [
-            1.1,
-            1.05,
-            0.96,
-            0.88,
-            0.91,
-            1,
-            1.06,
-            1.12,
-            1.1,
-            1.05,
-            0.96,
-            0.88,
-            0.91,
-            1,
-            1.06,
-            1.12,
-            1.1,
-            1.05,
-            0.96,
-            0.88,
-            0.91,
-            1
-          ]
-        ],
-        [
-          [
-            1,
-            1,
-            0.97,
-            1.02,
-            1.05,
-            0.96,
-            1,
-            1,
-            0.97,
-            1.02,
-            1.05,
-            0.96,
-            1,
-            1,
-            0.97,
-            1.02,
-            1.05,
-            0.96,
-            1,
-            1,
-            0.97,
-            1.02,
-            1.05,
-            0.96,
-            1,
-            1,
-            0.97,
-            1.02,
-            1.05,
-            0.96,
-            1,
-            1,
-            0.97,
-            1.02,
-            1.05,
-            0.96
-          ]
-        ]
       ],
       "sectionRules": [
         {
@@ -1896,12 +1605,13 @@
         }
       ],
       "source": "https://msuspartans.com/sports/2018/7/20/facilities-breslin-center-section-map-html",
-      "notes": "Documented lower 1–9 bench and 13–28 chair rows with 10–12 omitted; upper 1–13 chairs, 14–19 benches; designated student sections in the 200 level. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "notes": "Documented lower 1–9 bench and 13–28 chair rows with 10–12 omitted; upper 1–13 chairs, 14–19 benches; designated student sections in the 200 level. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "115",
         "128",
         "215"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     },
     "wisconsin": {
       "type": "overhanging-three-tier-octagon",
@@ -1928,104 +1638,6 @@
           "rake": 1.05,
           "wave": 0
         }
-      ],
-      "sectionWeights": [
-        [
-          [
-            0.83,
-            1,
-            1.04,
-            0.77,
-            1.06,
-            1.13,
-            1.15,
-            1.17,
-            1.15,
-            1.13,
-            1.05,
-            0.77,
-            1.05,
-            1.06,
-            0.83,
-            1,
-            1.04,
-            0.77,
-            1.06,
-            1.13,
-            1.15,
-            1.17,
-            1.15,
-            1.13,
-            1.05,
-            0.77,
-            1.05,
-            1.06
-          ]
-        ],
-        [
-          [
-            0.82,
-            1,
-            1.05,
-            0.78,
-            1.07,
-            1.13,
-            1.16,
-            1.17,
-            1.15,
-            1.13,
-            1.05,
-            0.78,
-            1.05,
-            1.04,
-            0.82,
-            1,
-            1.05,
-            0.78,
-            1.07,
-            1.13,
-            1.16,
-            1.17,
-            1.15,
-            1.13,
-            1.05,
-            0.78,
-            1.05,
-            1.04
-          ]
-        ],
-        [
-          [
-            0.85,
-            1,
-            1.05,
-            0.8,
-            1.05,
-            1.15,
-            1.15,
-            1.17,
-            1.15,
-            1.13,
-            1.05,
-            0.8,
-            1.05,
-            1.05,
-            0.85,
-            1,
-            1.05,
-            0.8,
-            1.05,
-            1.15,
-            1.15,
-            1.17,
-            1.15,
-            1.13,
-            1.05,
-            0.8,
-            1.05,
-            1.05
-          ]
-        ]
       ],
       "sectionRules": [
         {
@@ -2536,7 +2148,7 @@
       "notches": [],
       "seatTypes": [],
       "source": "https://uwbadgers.com/documents/download/2023/6/27/MBB_Kohl_Center_Seating_Map_2024.pdf",
-      "notes": "Official plan has 101–128 / 201–228 / 301–328, north Nicholas Club, south student sections, band and corner wedges. Overhang offsets are not surveyed. Upper tier decks intentionally cantilever into the radial envelope of the preceding tier; overhang offsets are visual estimates. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "notes": "Official plan has 101–128 / 201–228 / 301–328, north Nicholas Club, south student sections, band and corner wedges. Overhang offsets are not surveyed. Upper tier decks intentionally cantilever into the radial envelope of the preceding tier; overhang offsets are visual estimates. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "208",
         "222",
@@ -2553,7 +2165,8 @@
         "314",
         "315",
         "316"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     },
     "ucla": {
       "type": "irregular-octagonal-two-level",
@@ -2573,77 +2186,6 @@
           "rake": 0.55,
           "wave": 0.12
         }
-      ],
-      "sectionWeights": [
-        [
-          [
-            0.97,
-            1.15,
-            1.15,
-            0.96,
-            0.8,
-            0.68,
-            1.03,
-            1.21,
-            1.18,
-            0.85,
-            0.68,
-            0.8,
-            1,
-            1.14,
-            1.14,
-            1.02,
-            0.8,
-            0.85,
-            0.97,
-            1.04,
-            1.18,
-            1.19,
-            0.97,
-            0.84,
-            0.8,
-            0.91
-          ]
-        ],
-        [
-          [
-            0.94,
-            1.25,
-            0.94,
-            1.25,
-            0.94,
-            0.32,
-            0.32,
-            0.32,
-            0.94,
-            0.94,
-            0.94,
-            0.32,
-            0.32,
-            0.32,
-            0.32,
-            0.32,
-            0.94,
-            1.25,
-            0.94,
-            0.94,
-            1.25,
-            0.94,
-            0.32,
-            0.32,
-            0.32,
-            0.94,
-            0.94,
-            0.94,
-            0.32,
-            0.32,
-            0.32,
-            0.32,
-            0.32,
-            0.94,
-            0.94
-          ]
-        ]
       ],
       "sectionRules": [
         {
@@ -3016,44 +2558,7 @@
       "notches": [],
       "seatTypes": [],
       "source": "https://www.woodenathleticfund.com/assets/media/tickets-and-parking/2026-27-mbb-seating-map.pdf",
-      "notes": "2026–27 diagram shows rectangular sideline banks, angled corner wedges, 200-level A/B/C subdivisions, media at 215, and student seating at 114–116/120–122. Upper subdivision outline is approximate. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
-      "upperSubsections": [
-        "201",
-        "202",
-        "203",
-        "204",
-        "205",
-        "206A",
-        "206B",
-        "206C",
-        "207",
-        "208",
-        "209",
-        "210A",
-        "210B",
-        "211A",
-        "211B",
-        "211C",
-        "212",
-        "213",
-        "214",
-        "216",
-        "217",
-        "218",
-        "219A",
-        "219B",
-        "219C",
-        "220",
-        "221",
-        "222",
-        "223A",
-        "223B",
-        "224A",
-        "224B",
-        "224C",
-        "225",
-        "226"
-      ],
+      "notes": "2026–27 diagram shows rectangular sideline banks, angled corner wedges, 200-level A/B/C subdivisions, media at 215, and student seating at 114–116/120–122. Upper subdivision outline is approximate. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "120",
         "121",
@@ -3070,7 +2575,8 @@
         "121",
         "122",
         "222"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     },
     "washington": {
       "type": "historic-rectangular-bowl",
@@ -3090,44 +2596,6 @@
           "rake": 0.62,
           "wave": 0.24
         }
-      ],
-      "sectionWeights": [
-        [
-          [
-            0.85,
-            0.92,
-            1.07,
-            1.17,
-            1.18,
-            1.1,
-            1.02,
-            0.88,
-            0.96,
-            1.13,
-            1.17,
-            1.1,
-            1,
-            0.89
-          ]
-        ],
-        [
-          [
-            0.85,
-            0.92,
-            1.06,
-            1.14,
-            1.17,
-            1.1,
-            1.04,
-            0.9,
-            0.96,
-            1.13,
-            1.16,
-            1.09,
-            1,
-            0.89
-          ]
-        ]
       ],
       "sectionRules": [
         {
@@ -3319,13 +2787,14 @@
       ],
       "seatTypes": [],
       "source": "https://gohuskies.com/facilities/alaska-airlines-arena/41",
-      "notes": "Sections 1–14 continue through the lower and upper row bands, and section 1 entrances at rows 10 and 14 are published. Relative section arcs remain estimates. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates.",
+      "notes": "Sections 1–14 continue through the lower and upper row bands, and section 1 entrances at rows 10 and 14 are published. Relative section arcs remain estimates. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted.",
       "undocumentedNotchesDiscarded": [
         "8"
       ],
       "studentSections": [
         "1"
-      ]
+      ],
+      "geometryStatus": "official-section-identifiers;not-surveyed-bowl-or-seat-coordinates"
     }
   }
 }
