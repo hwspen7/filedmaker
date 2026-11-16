@@ -298,6 +298,33 @@
 <button data-structure-kind="sign" data-structure-category="equipment" type="button">Sign</button>
 <button data-structure-kind="door" data-structure-category="equipment" type="button">Door</button>
       </div>
+      <details class="disclosure" id="structureAssemblyTools">
+        <summary>Quick-build assemblies · 6 layouts</summary>
+        <p class="hint">Add multiple editable components in one step. Each template can be moved, rotated, scaled, inspected and undone as one placement.</p>
+        <label>Assembly template
+          <select id="structureAssemblyPreset">
+            <option value="entrance">Main entry and gates</option>
+            <option value="spectator_access">Accessible spectator access</option>
+            <option value="player_tunnel">Player tunnel and staging</option>
+            <option value="bleacher_bay">Terraced stand and aisle</option>
+            <option value="press_station">Press and scorer station</option>
+            <option value="covered_concourse">Covered concourse bay</option>
+          </select>
+        </label>
+        <div class="pair">
+          <label>X (m)<input id="structureAssemblyX" type="number" min="-2000" max="2000" step=".25" value="0"></label>
+          <label>Z (m)<input id="structureAssemblyZ" type="number" min="-2000" max="2000" step=".25" value="0"></label>
+        </div>
+        <div class="pair">
+          <label>Rotation (°)<input id="structureAssemblyYaw" type="number" min="-180" max="180" step="15" value="0"></label>
+          <label>Scale<input id="structureAssemblyScale" type="number" min=".5" max="2" step=".05" value="1"></label>
+        </div>
+        <div class="row-actions">
+          <button class="primary" id="structureAssemblyAdd" type="button">Add assembly</button>
+          <button id="structureAssemblyPlace" type="button">Place on 2D plan</button>
+        </div>
+        <p class="hint">Templates are schematic. Verify actual dimensions, access routes and safety requirements before publication.</p>
+      </details>
       <label>Selected component<select id="structureSelect"></select></label>
       <div class="row-actions">
         <button class="primary" id="structureAdd" type="button">Add component</button>
