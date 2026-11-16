@@ -31,6 +31,18 @@ export const PROCEDURAL_DEMOS=Object.freeze({
 export function createProceduralProject(input){
   const profile=GeometryEngine.normalize(input),project=createProject(profile.surface);
   project.title=profile.name;
+  if(input.provenance?.school){
+    project.school={school:input.provenance.school,venue:profile.name};
+    // Published capacity belongs to metadata, NOT to an imported ticket list.
+    project.ticketing={
+      officialCapacity:input.provenance.publishedCapacity,
+      inventoryCount:null,
+      capacitySource:input.sources?.[0]?.url??null,
+      capacityScope:'men-basketball',
+      inventoryMode:'none',
+      coordinates:'estimated'
+    };
+  }
   project.roof=profile.template==='indoor-arena';
   project.seatPitch=profile.seatPitch;
   project.aisleWidth=profile.aisleWidth;
