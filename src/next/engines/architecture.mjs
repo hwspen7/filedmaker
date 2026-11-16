@@ -21,7 +21,7 @@ function vertical(out,a,b,bottom,top){
   quad(out,[a.x,bottom,a.z],[b.x,bottom,b.z],[b.x,top,b.z],[a.x,top,a.z],n);
 }
 export const ArchitectureEngine={
-  build(input,{segments=128,bands=10}={}){
+  build(input,{segments=128,bands=10,seatingRows=null}={}){
     const geometry=input?.spec&&typeof input.point==='function'?input:GeometryEngine.create(input);
     const {spec,point}=geometry;
     if(!Number.isInteger(segments)||segments<32||segments>512)throw Error('Invalid architecture resolution');
@@ -75,6 +75,57 @@ export const ArchitectureEngine={
       const y=spec.tiers[t].baseY+spec.tiers[t].rows*spec.tiers[t].rise+.18;
       strip(layers.concourse,a=>({...first(a),y}),a=>({...second(a),y}),up,
         angle=>insideTier(t,angle)&&insideTier(t+1,angle));
+    }
+    if(spec.interior){
+      // The OSU-style view uses row-bounded concrete treads. Remove the
+      // old continuous curved underlays, which span actual section portals,
+      // separated Indiana stands, and the Wisconsin corner cuts.
+      for(const key of ['decks','fascias','concourse','aisles','stepEdges','trim'])
+        layers[key]=[];
+      const rowPatches=seatingRows??spec.tiers.flatMap(tier=>
+        geometry.banksForTier(tier).flatMap(bank=>
+          Array.from({length:bank.rowCount},(_,slot)=>
+            geometry.rowIntervals(tier,bank,slot).map(([lo,hi])=>({
+              tier:tier.index,slot,lo,hi,sectionId:bank.sectionId
+            }))
+          ).flat()
+        )
+      );
+      for(const row of rowPatches){
+        const tier=spec.tiers[row.tier],u=row.slot/tier.rows,v=(row.slot+1)/tier.rows;
+        const steps=Math.max(2,Math.ceil((row.hi-row.lo)/.09));
+        for(let k=0;k<steps;k++){
+          const a=row.lo+(row.hi-row.lo)*k/steps;
+          const b=row.lo+(row.hi-row.lo)*(k+1)/steps;
+          const p=point(row.tier,a,u),q=point(row.tier,b,u),
+            r=point(row.tier,b,v),t=point(row.tier,a,v);
+          const normal=[-(Math.cos((a+b)/2))*.40,1,
+            -(Math.sin((a+b)/2))*.40];
+          const below=x=>[x.x,x.y-.22,x.z];
+          quad(layers.decks,below(p),below(q),below(r),below(t),normal);
+          // The riser follows the rear of each individual section row and
+          // does not bridge the gaps left for circulation.
+          vertical(layers.fascias,r,t,Math.min(r.y,t.y)-.61,
+            Math.min(r.y,t.y)-.21);
+        }
+      }
+      // Each distinct tier receives a discontinuous entry concourse. There
+      // is no automatically closed gray ring across empty seating wedges.
+      for(let i=0;i<spec.tiers.length-1;i++){
+        const tier=spec.tiers[i],next=spec.tiers[i+1];
+        for(const bank of geometry.banksForTier(tier)){
+          const u=Math.max(0,tier.rows-1),segmentsInBank=6;
+          for(let k=0;k<segmentsInBank;k++){
+            const a=bank.lo+(bank.hi-bank.lo)*k/segmentsInBank,
+              b=bank.lo+(bank.hi-bank.lo)*(k+1)/segmentsInBank;
+            const p=point(i,a,1),q=point(i,b,1),
+              r=point(i+1,b,0),t=point(i+1,a,0);
+            const y=Math.max(p.y,q.y)+.05;
+            quad(layers.concourse,[p.x,y,p.z],[q.x,y,q.z],
+              [r.x,y,r.z],[t.x,y,t.z],up);
+          }
+        }
+      }
     }
     const outerTier=spec.tiers.length-1;
     const indoor=spec.template==='indoor-arena';
