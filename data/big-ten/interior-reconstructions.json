@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
-  "intendedUse": "first-wave Big Ten basketball interior studies",
+  "intendedUse": "17 source-linked Big Ten basketball interiors, plus unchanged specialist OSU reference; eight with reviewed chart adjacency and nine with illustrative school-distinct bowl shapes",
   "geometryStatus": "chart-informed/manual estimates: NOT surveyed section vertex coordinates or verified seating inventory",
-  "notes": "Individual structural changes are modeled from published section diagrams and available descriptions. Approximate tunnel locations, bank spans and platform widths must not be presented as official.",
+  "notes": "Official section identity is preserved from reference charts, where supported, but exact seating row/polygon geometry remains unsurveyed. Removed invented first-wave taper, portal, trim omissions. The nine additional interiors have no fake student blocks or fake portals and do not claim chart-calibrated layouts.",
   "venues": {
     "indiana": {
       "type": "opposing-grandstands",
@@ -351,6 +351,270 @@
         "1"
       ],
       "geometryStatus": "chart-backed-section-identity;unsurveyed-section-contours"
+    },
+    "maryland": {
+      "type": "separate-student-wall-and-upper-gallery",
+      "outline": "rounded-rectangle",
+      "tierProfiles": [
+        {
+          "widthScale": 1.045,
+          "lengthScale": 1.005,
+          "radialInset": 0,
+          "rake": 0.22,
+          "wave": 0.2
+        },
+        {
+          "widthScale": 1.055,
+          "lengthScale": 0.995,
+          "radialInset": -0.15,
+          "rake": 0.4,
+          "wave": 0.18
+        },
+        {
+          "widthScale": 1.06,
+          "lengthScale": 1.02,
+          "radialInset": -0.2,
+          "rake": 0.66,
+          "wave": 0.15
+        }
+      ],
+      "source": "https://umterps.com/sports/2019/8/19/seating-charts",
+      "notes": "School has 101–126 and 201–226 seating labels, with lower bowl/student-bank separation and upper seating. Three simplified geometric row bands follow a published chart but walls, suite edges and row lengths are NOT surveyed.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "michigan": {
+      "type": "low-elliptic-bowl-with-west-student-baseline",
+      "outline": "ellipse",
+      "tierProfiles": [
+        {
+          "widthScale": 1.01,
+          "lengthScale": 1.09,
+          "radialInset": -0.1,
+          "rake": 0.28,
+          "wave": 0.24
+        },
+        {
+          "widthScale": 1.035,
+          "lengthScale": 1.055,
+          "radialInset": -0.25,
+          "rake": 0.6,
+          "wave": 0.16
+        }
+      ],
+      "source": "https://mgoblue.com/sports/2026/9/22/mens-basketball-crisler-center-seating-chart-text-alternative",
+      "notes": "Crisler official lower club, sideline, corner and baseline section identities use different row ranges. The existing per-school section IDs remain source linked, but these outline elevations and radii are schematic.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "minnesota": {
+      "type": "historic-barn-rectangular-elevated-floor",
+      "outline": "rectangle",
+      "tierProfiles": [
+        {
+          "widthScale": 1.09,
+          "lengthScale": 1.02,
+          "radialInset": 0.08,
+          "rake": 0.25,
+          "wave": 0.08
+        },
+        {
+          "widthScale": 1.055,
+          "lengthScale": 1.055,
+          "radialInset": -0.18,
+          "rake": 0.52,
+          "wave": 0.04
+        }
+      ],
+      "source": "https://gophersports.com/sports/2026/6/12/facilities-the-barn-blue-cross-blue-shield",
+      "notes": "Williams Arena elevated playing floor and historic side stands are documented. The linked 2007–08 section drawing is historical and NOT proof of current 2026 labels, row counts or section adjacency.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "nebraska": {
+      "type": "stepped-three-level-faceted-bowl",
+      "outline": "octagon",
+      "tierProfiles": [
+        {
+          "widthScale": 1.018,
+          "lengthScale": 1.03,
+          "radialInset": 0,
+          "rake": 0.17,
+          "wave": 0.1
+        },
+        {
+          "widthScale": 1.01,
+          "lengthScale": 1.02,
+          "radialInset": -0.3,
+          "rake": 0.42,
+          "wave": 0.14
+        },
+        {
+          "widthScale": 1.045,
+          "lengthScale": 1.04,
+          "radialInset": -0.5,
+          "rake": 0.68,
+          "wave": 0.16
+        }
+      ],
+      "source": "https://pachtml-production.s3-us-west-2.amazonaws.com/www/huskers/images/seatmaps/PinnacleBankArenaMBB-public.pdf",
+      "notes": "Official Pinnacle Bank Arena basketball chart confirms all three numbered 100/200/300 layers and ADA tiers. Faceted outline and level geometry here remain diagram-derived estimates.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "northwestern": {
+      "type": "compact-welsh-ryan-rectangular-bowl",
+      "outline": "rounded-rectangle",
+      "tierProfiles": [
+        {
+          "widthScale": 1.08,
+          "lengthScale": 1.025,
+          "radialInset": 0,
+          "rake": 0.18,
+          "wave": 0.1
+        },
+        {
+          "widthScale": 1.035,
+          "lengthScale": 1.04,
+          "radialInset": -0.32,
+          "rake": 0.55,
+          "wave": 0.1
+        }
+      ],
+      "source": "https://nusports.com/mens-basketball-gameday-information",
+      "notes": "Official venue information confirms MAIN/UPPER levels, while exact row and portal geometry is unknown. Do not fabricate the Wilson Club gap.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "oregon": {
+      "type": "angular-steep-end-bowl",
+      "outline": "octagon",
+      "tierProfiles": [
+        {
+          "widthScale": 1.02,
+          "lengthScale": 1.095,
+          "radialInset": 0,
+          "rake": 0.18,
+          "wave": 0.24
+        },
+        {
+          "widthScale": 1.05,
+          "lengthScale": 1.07,
+          "radialInset": -0.42,
+          "rake": 0.67,
+          "wave": 0.15
+        }
+      ],
+      "source": "https://goducks.com/sports/2011/6/21/209800386",
+      "notes": "Matthew Knight Arena's angular enclosure motivates a faceted interior study. Individual 101–121 and 201–221 section footprints are still seating-diagram estimates, not physical measurements.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "penn-state": {
+      "type": "wide-concourse-double-gallery",
+      "outline": "ellipse",
+      "tierProfiles": [
+        {
+          "widthScale": 1.065,
+          "lengthScale": 1.02,
+          "radialInset": -0.1,
+          "rake": 0.19,
+          "wave": 0.18
+        },
+        {
+          "widthScale": 1.09,
+          "lengthScale": 1.025,
+          "radialInset": -0.28,
+          "rake": 0.57,
+          "wave": 0.18
+        }
+      ],
+      "source": "https://bjc.psu.edu/events/seating-charts",
+      "notes": "Bryce Jordan Center official basketball seating chart separates the 100 and 200 seating gallery with nonseating premium spaces. Missing row/section edge data are not artificially filled with portals.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "rutgers": {
+      "type": "three-layer-angular-rac",
+      "outline": "rectangle",
+      "tierProfiles": [
+        {
+          "widthScale": 1.07,
+          "lengthScale": 0.975,
+          "radialInset": 0,
+          "rake": 0.15,
+          "wave": 0.07
+        },
+        {
+          "widthScale": 1.06,
+          "lengthScale": 0.99,
+          "radialInset": -0.25,
+          "rake": 0.35,
+          "wave": 0.07
+        },
+        {
+          "widthScale": 1.045,
+          "lengthScale": 1.01,
+          "radialInset": -0.5,
+          "rake": 0.66,
+          "wave": 0.08
+        }
+      ],
+      "source": "https://scarletknights.com/sports/2017/6/11/tickets-rac-seating-html",
+      "notes": "Rutgers Athletics confirms 100 courtside and student zones, 201–217 mezzanine and 301–317 promenade around the RAC. The 100/200/300 area boundaries and court loges are not surveyed.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
+    },
+    "usc": {
+      "type": "galen-box-bowl-and-gallery",
+      "outline": "rectangle",
+      "tierProfiles": [
+        {
+          "widthScale": 1.105,
+          "lengthScale": 1.015,
+          "radialInset": 0,
+          "rake": 0.2,
+          "wave": 0.08
+        },
+        {
+          "widthScale": 1.09,
+          "lengthScale": 1.055,
+          "radialInset": -0.25,
+          "rake": 0.58,
+          "wave": 0.12
+        }
+      ],
+      "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/uscdev.sidearmsports.com/documents/2026/6/29/2026-27_MBB_PSM_pricing_-_For_Print.pdf",
+      "notes": "USC's current men's basketball diagram shows a 100 level, 200 level and two separate rows of courtside. 100/200 polygons are estimates and courtside inventory is explicitly not generated.",
+      "sectionRules": [],
+      "notches": [],
+      "seatTypes": [],
+      "geometryStatus": "illustrative-unsurveyed:chart-labelled-sections-not-individually-traced",
+      "scope": "applied-to-synthetic-model-only"
     }
   },
   "seatRetentionPolicy": "The model must not delete or narrow rows solely to match an illustrative fan-shaped contour. Confirmed voids and documented skipped rows are handled separately."
