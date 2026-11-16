@@ -335,6 +335,26 @@ async function main(){
     const accurate=await evaluate("document.querySelector('#caseGrid .case-card')?.textContent.includes('Unverified staff draft')");
     if(!accurate)throw Error('Aiken catalog card lost its unverified status');
     console.log('cases: sixteen cases listed, six real-school filters, search, evidence labels verified');
+    const demoCards=await evaluate("(()=>{document.querySelector('#searchCases').value='';document.querySelector('#searchCases').dispatchEvent(new Event('input'));document.querySelector('[data-filter=\"models\"]').click();return [...document.querySelectorAll('#caseGrid .case-card')].filter(c=>c.dataset.case.startsWith('synthetic-')).map(c=>({id:c.dataset.case,href:c.href}))})()");
+    if(demoCards.length!==6||demoCards.some(c=>!c.href.includes('example=bowl-')))
+      throw Error('Six generated source-labeled venue cases are not navigable: '+
+        JSON.stringify(demoCards));
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+
+      '/workbench/?example=bowl-college-two-tier'});
+    const arenaCase=await poll(async()=>{
+      const state=await evaluate("({ready:document.documentElement.dataset.workbenchReady,stage:document.documentElement.dataset.activeStage,seats:document.querySelector('#mappedCount')?.textContent,sections:Number(document.querySelector('#sectionCount')?.textContent),rows:Number(document.querySelector('#rowCount')?.textContent),qa:document.querySelector('#qa')?.textContent,webgl:!!document.querySelector('#modelCanvas')?.getContext('webgl2')})");
+      return state?.ready==='true'&&state?.stage==='model'&&state?.sections>20&&
+        state?.rows>200&&state?.webgl?state:null;
+    },75);
+    if(!arenaCase.seats||arenaCase.seats==='0'||
+      !arenaCase.qa.includes('synthetic')&&
+      !arenaCase.qa.includes('SYNTHETIC'))
+      throw Error('Generated two-tier arena has no real source-labeled seating: '+
+        JSON.stringify(arenaCase));
+    await delay(350);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'synthetic-two-tier-arena.png'),Buffer.from(frame.data,'base64')));
+    console.log('cases: synthetic two-tier arena rendered with hundreds of editable rows and genuine WebGL2 geometry');
 
     // Real pointer click in the CENTER of a card, not merely its action label.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/?group=schools'});
@@ -509,6 +529,33 @@ async function main(){
       !made.qa.includes('OPERATOR_STRUCTURES_UNVERIFIED')||
       made.status.includes('Component rejected'))
       throw Error('Platform component is not attached to the live model: '+JSON.stringify(made));
+    const accuracy=await evaluate("(()=>{const step=document.querySelector('#gridStep');step.value='.25';step.dispatchEvent(new Event('change'));document.querySelector('#studioHelpToggle').click();const help=!document.querySelector('#studioHelp').hidden;document.querySelector('#studioHelpClose').click();return {grid:document.querySelector('#gridVisible').checked,snap:document.querySelector('#snapEnabled').checked,step:step.value,help,hidden:document.querySelector('#studioHelp').hidden}})()");
+    if(!accuracy.grid||!accuracy.snap||accuracy.step!=='.25'||
+      !accuracy.help||!accuracy.hidden)
+      throw Error('Metric grid and interactive beginner help are not functional: '+
+        JSON.stringify(accuracy));
+    await evaluate("document.querySelector('#show3d').click()");
+    const pick3d=await poll(async()=>{
+      const v=await evaluate("(()=>{document.querySelector('#structureSelect').dispatchEvent(new Event('change'));const c=document.querySelector('#modelCanvas');const r=c.getBoundingClientRect();return {id:c.dataset.operatorId,x:Number(c.dataset.operatorScreenX),y:Number(c.dataset.operatorScreenY),left:r.left,top:r.top,width:r.width,height:r.height,startY:Number(document.querySelector('#structureY').value),gizmo:!document.querySelector('#gizmoCanvas').hidden}})()");
+      return v?.id&&v.gizmo&&Number.isFinite(v.x)&&Number.isFinite(v.y)?v:null;
+    },60);
+    const dx=pick3d.left+pick3d.x,dy=pick3d.top+pick3d.y;
+    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy,modifiers:8});
+    await client.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',x:dx,y:dy,clickCount:1,modifiers:8});
+    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy-18,modifiers:9});
+    const dragReadout=await evaluate("document.querySelector('#threeDEditReadout').textContent");
+    await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',x:dx,y:dy-18,clickCount:1,modifiers:8});
+    const changed3d=await poll(async()=>{
+      const r=await evaluate("({y:Number(document.querySelector('#structureY').value),status:document.querySelector('#workStatus').textContent})");
+      return r?.y>pick3d.startY+.1?r:null;
+    },40);
+    if(!dragReadout.includes('ΔY')||changed3d.status.includes('rejected'))
+      throw Error('Actual WebGL canvas Shift-drag editing did not update 3D height: '+
+        JSON.stringify({dragReadout,changed3d,pick3d}));
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'3d-direct-edit-axes.png'),Buffer.from(frame.data,'base64')));
+    console.log('studio: live 3D axis gizmo, camera-plane picking, height drag and reversible geometry editing verified');
     await delay(220);
     await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
       writeFileSync(join(dir,'component-library-3d.png'),Buffer.from(frame.data,'base64')));
