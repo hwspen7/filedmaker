@@ -96,12 +96,24 @@
         "LL",
         "MM"
       ],
-      "unmodeledSections": [],
+      "unmodeledSections": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+      ],
       "unmodeledFeatures": [
         "North/south loge-box precise polygons",
-        "North/south lobby footprints"
+        "North/south lobby footprints",
+        "Courtside SEC 1–10 boxes printed around north and south sidelines"
       ],
-      "notes": "Official 2026–27 map places A–F along the west stand from south to north, G/H/J/K/L/M on east from north to south, and pairs of separate balcony arcs. Row and radial edges are not available as CAD. Official ticket inventory exposes main-stand rows through 43, and published balcony diagram shows around 16 rows. These maximum row bands still require per-section verification."
+      "notes": "Official 2026–27 map places A–F along the west stand from south to north, G/H/J/K/L/M on east from north to south, and pairs of separate balcony arcs. Row and radial edges are not available as CAD. Official ticket inventory exposes main-stand rows through 43, and published balcony diagram shows around 16 rows. These maximum row bands still require per-section verification. Official diagram separately labels court-level SEC 1–10; these are deliberately not invented as full main-bowl sections."
     },
     "purdue": {
       "source": "https://purduesports.com/mens-basketball-ticket-information",
@@ -206,7 +218,8 @@
       "unmodeledSections": [],
       "unmodeledFeatures": [
         "Individual premium club geometry in 8-11",
-        "Tunnel outlines"
+        "Tunnel outlines",
+        "Courtside floor row-specific club chairs near court"
       ],
       "notes": "Official Mackey chart prints section numbers 1–18 (no leading zero) with 101–118 outer. Clockwise orientation anchored at section 1 on the lower-left/baseline."
     },
