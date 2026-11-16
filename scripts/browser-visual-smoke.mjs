@@ -529,6 +529,45 @@ async function main(){
     const structureRendered=await poll(async()=>await evaluate("(()=>{const c=document.querySelector('#modelCanvas');return {visible:!c.hidden,hasContext:!!c.getContext('webgl2'),n:document.querySelector('#structureSelect').options.length}})()"),35);
     if(!structureRendered.visible||!structureRendered.hasContext||structureRendered.n!==3)
       throw Error('3D component preview failed after 2D placement');
+
+    await evaluate("document.querySelector('[data-model-tool=\"surface\"]').click()");
+    const palette=await evaluate("(()=>{const b=document.querySelector('[data-surface-preset=\"navy\"]');b.click();return {status:document.querySelector('#workStatus').textContent,floor:document.querySelector('#surfaceFloor').value,count:document.querySelector('#mappedCount').textContent,pane:!document.querySelector('[data-model-tool-pane=\"surface\"]').hidden}})()");
+    if(!palette.pane||palette.floor!=='#8ba9bd'||palette.count!=='1,499'||
+      palette.status.includes('Court edit rejected'))
+      throw Error('Live venue surface preset did not change: '+JSON.stringify(palette));
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'surface-navy-court.png'),Buffer.from(frame.data,'base64')));
+    const courtChanged=await evaluate("(()=>{document.querySelector('#surfaceDimensions').open=true;document.querySelector('#surfaceWidth').value='16.5';document.querySelector('#surfaceLength').value='28.0';document.querySelector('#surfaceApplyDimensions').click();return {status:document.querySelector('#workStatus').textContent,description:document.querySelector('#surfaceStatus').textContent,qa:document.querySelector('#qa').textContent,count:document.querySelector('#mappedCount').textContent}})()");
+    if(!courtChanged.description.includes('16.50 × 28.00')||
+      !courtChanged.qa.includes('PLAYING_SURFACE_RECALIBRATION_REQUIRED')||
+      courtChanged.count!=='1,499'||courtChanged.status.includes('Court edit rejected'))
+      throw Error('Playing surface dimensional edit has no effect: '+JSON.stringify(courtChanged));
+    const addedPaint=await evaluate("(()=>{document.querySelector('#surfaceZones').open=true;document.querySelector('#zoneKind').value='rectangle';document.querySelector('#zoneWidth').value='2';document.querySelector('#zoneDepth').value='1';document.querySelector('#zoneColor').value='#557b9d';document.querySelector('#zoneAdd').click();return {count:document.querySelector('#mappedCount').textContent,zones:document.querySelector('#zoneSelect').options.length,status:document.querySelector('#workStatus').textContent,qa:document.querySelector('#qa').textContent}})()");
+    if(addedPaint.zones!==1||addedPaint.count!=='1,499'||
+      !addedPaint.qa.includes('PAINTED_FLOOR_ZONES_UNVERIFIED')||
+      addedPaint.status.includes('Court edit rejected'))
+      throw Error('Painted surface zone was not added: '+JSON.stringify(addedPaint));
+    const invalidPaint=await evaluate("(()=>{document.querySelector('#zoneWidth').value='80';document.querySelector('#zoneAdd').click();return {zones:document.querySelector('#zoneSelect').options.length,status:document.querySelector('#workStatus').textContent}})()");
+    if(invalidPaint.zones!==1||!invalidPaint.status.includes('Court edit rejected'))
+      throw Error('Surface-zone boundary check did not roll back: '+JSON.stringify(invalidPaint));
+    await evaluate("document.querySelector('#surfaceEditOnPlan').click()");
+    const surfaceControls=await evaluate("(()=>{const c=document.querySelector('#planCanvas');const style=document.querySelector('#surfaceStatus').textContent;return {visible:!c.hidden,stage:document.querySelector('[data-open-stage=\"model\"]').getAttribute('aria-current'),status:style}})()");
+    if(!surfaceControls.visible||surfaceControls.stage!=='step')
+      throw Error('2D direct-edit surface tools are not accessible: '+JSON.stringify(surfaceControls));
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'surface-direct-edit-plan.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#show3d').click()");
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'surface-custom-floor-3d.png'),Buffer.from(frame.data,'base64')));
+    // New structural templates remain searchable rather than all rendered at once.
+    const richCatalog=await evaluate("(()=>{document.querySelector('[data-model-tool=\"structures\"]').click();document.querySelector('#structureCategory').value='all';document.querySelector('#structureCategory').dispatchEvent(new Event('change'));document.querySelector('#structureSearch').value='roof';document.querySelector('#structureSearch').dispatchEvent(new Event('input'));return {total:document.querySelectorAll('[data-structure-kind]').length,shown:[...document.querySelectorAll('[data-structure-kind]')].filter(b=>!b.hidden).map(b=>b.dataset.structureKind)}})()");
+    if(richCatalog.total!==23||richCatalog.shown.join(',')!=='roof')
+      throw Error('Searchable 23-component catalog is not accessible: '+JSON.stringify(richCatalog));
+    console.log('studio: court palette, dimensions, paint-zone geometry, boundary rejection, plan direct-edit and 23 searchable components verified');
+
     console.log('studio: compact header, seven reusable components, live WebGL2 geometry, transform, duplicate and 2D placement verified');
 
     console.log('operator editing: source counts adjusted with review flags, 3D updated, invalid edit rejected, undo/redo and section translation verified');

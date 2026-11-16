@@ -156,26 +156,47 @@ export function buildVenuePlan(model,options={}) {
     seats,architectureGeometry,spec:model.proceduralSpec,optimization:model.optimization
   }) : null;
   const pedestal = chartPreview && model.seatingRows ? buildSchottensteinPedestal(seats) : null;
-  const courtColors=chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
+  const operatorSurface=options.operatorSurface??null;
+  const operatorCourt=operatorSurface!==null;
+  const colorShade=(hex,adjust)=>{
+    const n=parseInt(hex.slice(1),16),parts=[(n>>16)&255,(n>>8)&255,n&255];
+    return '#'+parts.map(v=>Math.max(0,Math.min(255,Math.round(v+adjust)))
+      .toString(16).padStart(2,'0')).join('');
+  };
+  const courtColors=operatorCourt?{
+    wood:operatorSurface.floor,apron:operatorSurface.apron,
+    lines:operatorSurface.lines,lane:operatorSurface.lane,
+    boards:[-12,-7,-2,3,8,13].map(offset=>colorShade(operatorSurface.floor,offset))
+  }:chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
+  const addCourt=(pos,size,yaw,color,id=-1,rounded=false)=>{
+    if(!operatorCourt)return add(pos,size,yaw,color,id,rounded);
+    const a=operatorSurface.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+    return add([operatorSurface.centerX+pos[0]*c+pos[2]*s,pos[1],
+      operatorSurface.centerZ-pos[0]*s+pos[2]*c],size,
+      yaw+a,color,id,rounded);
+  };
   // Central surface is a physically scaled reference marker, not an entire building.
-  const field=surface.sport==='football'?colorRGB('#277047'):
+  const field=operatorCourt?colorRGB(operatorSurface.floor):
+    surface.sport==='football'?colorRGB('#277047'):
     surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB(courtColors?.wood??'#d7b781');
   const basketball = surface.sport==='basketball';
-  const accent=colorRGB(chartPreview?'#992437':basketball?'#334e69':'#254c42');
-  const darkField=colorRGB(basketball?'#24354b':'#254c42');
-  const apron=basketball?3.5:7;
+  const accent=colorRGB(operatorCourt?operatorSurface.apron:
+    chartPreview?'#992437':basketball?'#334e69':'#254c42');
+  const darkField=colorRGB(operatorCourt?operatorSurface.apron:
+    basketball?'#24354b':'#254c42');
+  const apron=operatorCourt?operatorSurface.apronWidth:basketball?3.5:7;
   if(chartPreview){
     // Only keep the court/apron boundary. A full-size gray arena floor plate
     // has no place in the open, seat-first preview (including human views).
-    addFloorBorder(add,surface.width+apron,surface.length+apron,1.35,-.12,.20,colorRGB('#38363b'));
-    addFloorBorder(add,surface.width,surface.length,apron*.5,-.11,.20,colorRGB(courtColors.apron));
+    addFloorBorder(addCourt,surface.width+apron,surface.length+apron,1.35,-.12,.20,colorRGB('#38363b'));
+    addFloorBorder(addCourt,surface.width,surface.length,apron*.5,-.11,.20,colorRGB(courtColors.apron));
   }
-  if(!courtColors)add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,darkField);
-  add([0,basketball?-.012:.005,0],[surface.width,.07,surface.length],0,field);
+  if(!courtColors)addCourt([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,darkField);
+  addCourt([0,basketball?-.012:.005,0],[surface.width,.07,surface.length],0,field);
   const white=colorRGB(courtColors?.lines??'#f8f7ef');
   const line = (x1, y1, z1, x2, y2, z2, width, color) => {
     const dx=x2-x1, dz=z2-z1;
-    add([(x1+x2)/2,(y1+y2)/2,(z1+z2)/2],[width,width,Math.hypot(dx,dz)+width*.4],
+    addCourt([(x1+x2)/2,(y1+y2)/2,(z1+z2)/2],[width,width,Math.hypot(dx,dz)+width*.4],
       Math.atan2(dx,dz),color);
   };
   const arc = (x,y,z,r,start,end,width,color,segments=32) => {
@@ -186,103 +207,112 @@ export function buildVenuePlan(model,options={}) {
   };
   const length=surface.length,width=surface.width;
   // Boundary and midpoint lines are crisp, with no stock imagery or text clutter.
-  for(const z of [-length/2,0,length/2])add([0,.051,z],[width,.012,.085],0,white);
-  for(const x of [-width/2,width/2])add([x,.051,0],[.085,.012,length],0,white);
+  if(!operatorCourt||operatorSurface.showMarkings){
+    for(const z of [-length/2,0,length/2])addCourt([0,.051,z],[width,.012,.085],0,white);
+    for(const x of [-width/2,width/2])addCourt([x,.051,0],[.085,.012,length],0,white);
+  }
   if(surface.sport==='football'){
-    for(let n=-45;n<=45;n+=5){const z=n*.9144;add([0,.06,z],[width,.01,n%10===0?.085:.05],0,white);}
+    if(!operatorCourt||operatorSurface.showMarkings)
+      for(let n=-45;n<=45;n+=5){const z=n*.9144;addCourt([0,.06,z],[width,.01,n%10===0?.085:.05],0,white);}
     for(const sign of [-1,1]){
-      add([0,.056,sign*(length/2-4.57)],[width,.015,9.144],0,colorRGB(project.venueReference?.id==='ohio-stadium'?'#b51f36':'#314d68'));
+      addCourt([0,.056,sign*(length/2-4.57)],[width,.015,9.144],0,colorRGB(project.venueReference?.id==='ohio-stadium'?'#b51f36':'#314d68'));
       const z=sign*(length/2+1.2);
-      for(const x of [-2.82,2.82])add([x,5.7,z],[.09,5.9,.09],0,colorRGB('#f3cb66'));
-      add([0,3.05,z],[5.72,.09,.10],0,colorRGB('#f3cb66'));
-      add([0,1.52,z],[.1,3.05,.1],0,colorRGB('#f3cb66'));
+      for(const x of [-2.82,2.82])addCourt([x,5.7,z],[.09,5.9,.09],0,colorRGB('#f3cb66'));
+      addCourt([0,3.05,z],[5.72,.09,.10],0,colorRGB('#f3cb66'));
+      addCourt([0,1.52,z],[.1,3.05,.1],0,colorRGB('#f3cb66'));
     }
   } else if(basketball){
     const wood = (courtColors?.boards??['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85']).map(colorRGB);
-    for(let i=0;i<64;i++){
+    if(!operatorCourt||operatorSurface.showBoards)for(let i=0;i<64;i++){
       const x=-width/2+(i+.5)*width/64;
       const painted=courtColors&&Math.abs(x)<BASKETBALL_LANE.width*.5-width/128;
       const boardLength=painted?length-2*BASKETBALL_LANE.length:length;
-      add([x,courtColors ? .032 : .0385,0],[width/64,.004,boardLength],0,wood[(i*7+Math.floor(i/5))%wood.length]);
+      addCourt([x,courtColors ? .032 : .0385,0],[width/64,.004,boardLength],0,wood[(i*7+Math.floor(i/5))%wood.length]);
     }
     const markingY=.052, paint=colorRGB(courtColors?.lane??'#476a8c');
-    arc(0,markingY,0,1.83,0,Math.PI*2,.035,white,40);
+    if(!operatorCourt||operatorSurface.showMarkings)
+      arc(0,markingY,0,1.83,0,Math.PI*2,.035,white,40);
     for(const sign of [-1,1]){
       const baseline=sign*length/2;
       const rim=baseline-sign*1.60;
       const board=baseline-sign*1.22;
       const foul=baseline-sign*BASKETBALL_LANE.length;
       const laneHalf=BASKETBALL_LANE.width*.5;
-      add([0,.042,(baseline+foul)/2],[BASKETBALL_LANE.width,.005,BASKETBALL_LANE.length],0,paint);
-      add([0,markingY,foul],[laneHalf*2,.009,.04],0,white);
-      const laneCenter=(baseline+foul)/2;
-      for(const x of [-laneHalf,laneHalf]){
-        add([x,markingY,laneCenter],[.04,.009,BASKETBALL_LANE.length],0,white);
+      if(!operatorCourt||operatorSurface.showMarkings){
+        addCourt([0,.042,(baseline+foul)/2],[BASKETBALL_LANE.width,.005,BASKETBALL_LANE.length],0,paint);
+        addCourt([0,markingY,foul],[laneHalf*2,.009,.04],0,white);
+        const laneCenter=(baseline+foul)/2;
+        for(const x of [-laneHalf,laneHalf])
+          addCourt([x,markingY,laneCenter],[.04,.009,BASKETBALL_LANE.length],0,white);
+        arc(0,markingY,foul,1.83,sign>0?Math.PI/2:-Math.PI/2,
+          sign>0?Math.PI*1.5:Math.PI/2,.035,white);
+        arc(0,markingY,rim,1.22,sign>0?Math.PI/2:-Math.PI/2,
+          sign>0?Math.PI*1.5:Math.PI/2,.035,white,20);
+        const radius=Math.min(surface.threePointRadiusM||6.75,width/2-.4);
+        const corner=Math.min(radius,width/2-.68);
+        const angle=Math.asin(Math.min(.999999,corner/radius));
+        const joins=rim-sign*Math.sqrt(radius*radius-corner*corner);
+        arc(0,markingY,rim,radius,sign>0?Math.PI-angle:-angle,
+          sign>0?Math.PI+angle:angle,.04,white,44);
+        for(const x of [-corner,corner])
+          line(x,markingY,joins,x,markingY,baseline,.04,white);
       }
-      arc(0,markingY,foul,1.83,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white);
-      arc(0,markingY,rim,1.22,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white,20);
-      const radius=surface.threePointRadiusM||6.75;
-      const corner=Math.min(radius,width/2-.68);
-      const angle=Math.asin(corner/radius);
-      const joins=rim-sign*Math.sqrt(radius*radius-corner*corner);
-      arc(0,markingY,rim,radius,sign>0?Math.PI-angle:-angle,sign>0?Math.PI+angle:angle,.04,white,44);
-      for(const x of [-corner,corner])line(x,markingY,joins,x,markingY,baseline,.04,white);
       const post=baseline+sign*1.22;
-      add([0,.28,post],[1.10,.58,.88],0,chartPreview?colorRGB('#28252a'):darkField);
-      add([0,1.58,post],[.20,3.16,.19],0,chartPreview?white:accent);
-      add([0,3.18,(post+board)/2],[.13,.13,Math.abs(post-board)],0,chartPreview?white:steel);
-      add([0,3.45,board],[1.83,1.06,.062],0,colorRGB('#a5bfd0'));
+      addCourt([0,.28,post],[1.10,.58,.88],0,chartPreview?colorRGB('#28252a'):darkField);
+      addCourt([0,1.58,post],[.20,3.16,.19],0,chartPreview?white:accent);
+      addCourt([0,3.18,(post+board)/2],[.13,.13,Math.abs(post-board)],0,chartPreview?white:steel);
+      addCourt([0,3.45,board],[1.83,1.06,.062],0,colorRGB('#a5bfd0'));
       const boardFace=board-sign*.036;
       for(const x of [-.87,.87,-.294,.294]){
         const outer=Math.abs(x)>.5;
-        add([x,outer?3.45:3.27,boardFace],[.027,outer?1.01:.45,.016],0,white);
+        addCourt([x,outer?3.45:3.27,boardFace],[.027,outer?1.01:.45,.016],0,white);
       }
       for(const [y,span] of [[2.95,1.77],[3.95,1.77],[3.05,.60],[3.50,.60]]){
-        add([0,y,boardFace],[span,.026,.02],0,white);
+        addCourt([0,y,boardFace],[span,.026,.02],0,white);
       }
       const rimColor=colorRGB('#f16c32'), net=colorRGB('#eeeae0');
-      add([0,3.05,(rim+board)/2],[.09,.03,Math.abs(rim-board)],0,rimColor);
+      addCourt([0,3.05,(rim+board)/2],[.09,.03,Math.abs(rim-board)],0,rimColor);
       arc(0,3.05,rim,.2286,0,Math.PI*2,.024,rimColor,24);
       arc(0,2.70,rim,.145,0,Math.PI*2,.012,net,16);
       for(let i=0;i<12;i++){
         const a=i*Math.PI/6;
         const dx=Math.sin(a),dz=Math.cos(a);
-        add([dx*.18,2.875,rim+dz*.18],[.012,.35,.012],0,net);
+        addCourt([dx*.18,2.875,rim+dz*.18],[.012,.35,.012],0,net);
       }
     }
     const housing=colorRGB('#192b3c');
-    if(chartPreview) addSchottensteinBoard(add,colorRGB);
-    else {
+    if(chartPreview && !operatorCourt) addSchottensteinBoard(addCourt,colorRGB);
+    else if(!operatorCourt) {
     const screen=colorRGB('#286695'), bevel=colorRGB('#587d9e');
-    add([0,13.6,0],[4.65,2.5,6.4],0,housing);
-    add([0,12.30,0],[4.75,.11,6.5],0,bevel);
-    add([0,14.88,0],[4.75,.11,6.5],0,bevel);
+    addCourt([0,13.6,0],[4.65,2.5,6.4],0,housing);
+    addCourt([0,12.30,0],[4.75,.11,6.5],0,bevel);
+    addCourt([0,14.88,0],[4.75,.11,6.5],0,bevel);
     for(const side of [-1,1]){
       for(const end of [false,true]){
         const x=end?0:side*2.343,z=end?side*3.216:0;
         const yaw=end?0:Math.PI/2,w=end?4.31:6.08;
-        add([x,13.68,z],[w,1.87,.055],yaw,screen);
-        add([x,12.59,z],[w,.19,.067],yaw,bevel);
-        add([x,14.72,z],[w,.11,.072],yaw,accent);
+        addCourt([x,13.68,z],[w,1.87,.055],yaw,screen);
+        addCourt([x,12.59,z],[w,.19,.067],yaw,bevel);
+        addCourt([x,14.72,z],[w,.11,.072],yaw,accent);
         // Screen graphics remain generic and work in offline exports.
         for(const offset of [-.29,.29]){
           const shift=w*offset;
-          add([x+(end?shift:side*.035),13.73,z+(end?side*.035:shift)],
+          addCourt([x+(end?shift:side*.035),13.73,z+(end?side*.035:shift)],
             [w*.26,.91,.025],yaw,colorRGB('#4c86ad'));
         }
       }
     }
     }
-    if(chartPreview){
-      addCourtsideChairs(add,width,length,roundSeats,seats);
-      add([-width/2-1.08,.44,0],[.57,.85,5.1],0,housing);
-      add([-width/2-.775,.51,0],[.044,.40,4.98],0,accent);
+    if(chartPreview&&!operatorCourt){
+      addCourtsideChairs(addCourt,width,length,roundSeats,seats);
+      addCourt([-width/2-1.08,.44,0],[.57,.85,5.1],0,housing);
+      addCourt([-width/2-.775,.51,0],[.044,.40,4.98],0,accent);
     }
   } else {
     for(const sign of [-1,1]){
       const z=sign*(length/2+.25);
-      for(const x of [-3.66,3.66])add([x,1.22,z],[.075,2.44,.075],0,white);
-      add([0,2.44,z],[7.32,.08,.08],0,white);
+      for(const x of [-3.66,3.66])addCourt([x,1.22,z],[.075,2.44,.075],0,white);
+      addCourt([0,2.44,z],[7.32,.08,.08],0,white);
     }
   }
   const schematic= model.seatOrigin!=='imported' || project.ticketing?.coordinates!=='supplied-unverified';

@@ -5,6 +5,9 @@ import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
 import {applyVenueEdit,applyVenueBatchEdit} from '../src/workbench/editing.mjs';
 import {editVenueStructure} from '../src/workbench/structureEditor.mjs';
 import {STRUCTURE_CATALOG} from '../src/workbench/structures.mjs';
+import {editPlayingSurface} from '../src/workbench/surfaceEditor.mjs';
+import {SURFACE_PRESETS,SURFACE_ZONE_KINDS,
+  surfaceToWorld,worldToSurface} from '../src/workbench/surface.mjs';
 import {generateTracedVenue} from '../src/workbench/generator.mjs';
 import {NativeVenueRenderer} from '../src/next/webgl.js';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
@@ -25,7 +28,9 @@ const canvas=$('planCanvas'),modelCanvas=$('modelCanvas'),ctx=canvas.getContext(
 let venue=newVenue(),registration=null,image=null,editorMode='select',draftPoints=[];
 let lastMeasurement=null;
 const measurementKey=()=>JSON.stringify([venue.plan.name,venue.court,venue.calibration.corners]);
-let preview=null,renderer=null,selectedSection='',selectedSeat=null,selectedStructure='',activeStructureKind='platform',drag=null,viewMode='plan';
+let preview=null,renderer=null,selectedSection='',selectedSeat=null,
+  selectedStructure='',selectedZone='',activeModelTool='rows',
+  activeStructureKind='platform',drag=null,viewMode='plan';
 let pendingRows=null,vectorDrawing=null,pdfHandle=null,workflowUI=null;
 const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
@@ -125,6 +130,7 @@ function sync(){
   refreshSections();
   refreshRowControls();
   refreshStructureControls();
+  refreshSurfaceControls();
 }
 function renderPdfSuggestions(){
   const root=$('pdfLabels');root.replaceChildren();
@@ -203,7 +209,8 @@ function updateBatchPreview(){
     'Choose a section with source rows.';
 }
 function activateModelTool(tool){
-  const permitted=new Set(['rows','seats','batch','structures','preview']);
+  const permitted=new Set(['rows','seats','batch','surface','structures','preview']);
+  activeModelTool=tool;
   if(!permitted.has(tool))return;
   document.querySelectorAll('[data-model-tool]').forEach(btn=>
     btn.setAttribute('aria-pressed',String(btn.dataset.modelTool===tool)));
@@ -223,6 +230,83 @@ function commitBatch(edit,summary){
   }catch(e){message('Batch rejected: '+e.message,true);}
 }
 
+
+function refreshSurfaceControls(preferredZone=null){
+  const style=venue.surfaceDesign;
+  const props={surfaceFloor:'floor',surfaceApron:'apron',surfaceLines:'lines',
+    surfaceLane:'lane',surfaceApronWidth:'apronWidth',
+    surfaceX:'centerX',surfaceZ:'centerZ',surfaceRotation:'rotation'};
+  for(const [id,property] of Object.entries(props))$(id).value=style[property];
+  $('surfaceShowMarkings').checked=style.showMarkings;
+  $('surfaceShowBoards').checked=style.showBoards;
+  $('surfaceWidth').value=venue.court.width;
+  $('surfaceLength').value=venue.court.length;
+  $('surfaceStatus').textContent=style.preset+' · '+style.zones.length+
+    ' painted zones · '+venue.court.width.toFixed(2)+' × '+
+    venue.court.length.toFixed(2)+' m · unverified';
+  document.querySelectorAll('[data-surface-preset]').forEach(button=>
+    button.setAttribute('aria-pressed',String(button.dataset.surfacePreset===style.preset)));
+  const select=$('zoneSelect'),id=preferredZone??selectedZone??select.value;
+  select.replaceChildren(...style.zones.map(zone=>new Option(zone.label+' · '+zone.id,zone.id)));
+  const chosen=style.zones.find(zone=>zone.id===id)||style.zones[0];
+  selectedZone=chosen?.id??'';
+  if(chosen){
+    select.value=chosen.id;
+    $('zoneKind').value=chosen.kind;
+    $('zoneWidth').value=chosen.width;
+    $('zoneDepth').value=chosen.depth;
+    $('zoneColor').value=chosen.color;
+    $('zoneLabel').value=chosen.label;
+    $('zoneX').value=chosen.x;
+    $('zoneZ').value=chosen.z;
+    $('zoneRotation').value=chosen.rotation;
+  }else{
+    $('zoneLabel').value='';
+    $('zoneX').value='0';
+    $('zoneZ').value='0';
+    $('zoneRotation').value='0';
+  }
+}
+function surfaceStyleFields(){
+  return {floor:$('surfaceFloor').value,apron:$('surfaceApron').value,
+    lines:$('surfaceLines').value,lane:$('surfaceLane').value,
+    apronWidth:$('surfaceApronWidth').value,
+    centerX:$('surfaceX').value,centerZ:$('surfaceZ').value,
+    rotation:$('surfaceRotation').value,
+    showMarkings:$('surfaceShowMarkings').checked,
+    showBoards:$('surfaceShowBoards').checked};
+}
+function zoneFormFields(){
+  return {x:$('zoneX').value,z:$('zoneZ').value,
+    width:$('zoneWidth').value,depth:$('zoneDepth').value,
+    rotation:$('zoneRotation').value,
+    color:$('zoneColor').value,label:$('zoneLabel').value};
+}
+function commitSurface(command,title){
+  try{
+    const before=structuredClone(venue);
+    const result=editPlayingSurface(venue,command);
+    venue=result.venue;
+    selectedZone=result.action==='zone-remove'?'':result.id||selectedZone;
+    recordEdit(before,title);
+    sync();tryPreview();
+    refreshSurfaceControls(selectedZone);
+    message(title+' saved · playing surface updated · original source seats unchanged. '+
+      'Recheck measurements and field markings.');
+    return true;
+  }catch(e){message('Court edit rejected: '+e.message,true);return false;}
+}
+function courtHandles(){
+  const style=venue.surfaceDesign,{width,length}=venue.court;
+  return {center:surfaceToWorld({x:0,z:0},style),
+    width:surfaceToWorld({x:width/2,z:0},style),
+    length:surfaceToWorld({x:0,z:length/2},style),
+    rotate:surfaceToWorld({x:0,z:length/2+2.2},style)};
+}
+const snap=(value,step=.25)=>Math.round(value/step)*step;
+function zoneCenter(zone){
+  return surfaceToWorld(zone,venue.surfaceDesign);
+}
 function fillStructureFields(s){
   const preset=STRUCTURE_CATALOG[s?.kind??activeStructureKind];
   $('structureLabel').value=s?.label??preset.label;
@@ -232,6 +316,23 @@ function fillStructureFields(s){
     ['structureDepth','depth',preset.depth],['structureHeight','height',preset.height]
   ])$(id).value=s?.[prop]??defaultValue;
   $('structureNote').value=s?.note??'';
+}
+function refreshStructurePalette(){
+  const category=$('structureCategory').value;
+  const search=$('structureSearch').value.trim().toLowerCase();
+  document.querySelectorAll('[data-structure-kind]').forEach(button=>{
+    const spec=STRUCTURE_CATALOG[button.dataset.structureKind];
+    const group=button.dataset.structureCategory;
+    button.hidden=(category!=='all'&&category!==group)||
+      Boolean(search&&!spec.label.toLowerCase().includes(search)&&
+        !button.dataset.structureKind.includes(search));
+  });
+}
+function structureHandles(s){
+  const a=s.yaw*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+  const at=(x,z)=>({x:s.x+c*x+sn*z,z:s.z-sn*x+c*z});
+  return {resize:at(s.width/2,s.depth/2),
+    rotate:at(0,s.depth/2+1.6)};
 }
 function refreshStructureControls(preferred=null){
   const structures=venue.structures??[];
@@ -248,6 +349,7 @@ function refreshStructureControls(preferred=null){
   document.querySelectorAll('[data-structure-kind]').forEach(button=>
     button.setAttribute('aria-pressed',
       String(button.dataset.structureKind===activeStructureKind)));
+  refreshStructurePalette();
   $('structureStatus').textContent=structures.length?
     structures.length+' component(s) · selected '+(current?.label||'none')+
       ' · provisional geometry':
@@ -391,10 +493,14 @@ function draw(){
     ctx.drawImage(image,r.x,r.y,r.width,r.height);
     ctx.fillStyle='#ffffff27';ctx.fillRect(r.x,r.y,r.width,r.height);
   }
-  const court=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,z])=>worldToScreen({x:x*venue.court.width/2,z:z*venue.court.length/2},g));
-  if(!image||registration)outline(court,image?'#7ba7ab25':'#b9d1d2','#f8fafa',2);
+  const surfaceStyle=venue.surfaceDesign;
+  const court=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,z])=>
+    worldToScreen(surfaceToWorld({x:x*venue.court.width/2,
+      z:z*venue.court.length/2},surfaceStyle),g));
+  if(!image||registration)outline(court,image?'#7ba7ab25':
+    surfaceStyle.floor+'7c',surfaceStyle.lines,2);
   if(!image||registration){
-    const center=worldToScreen({x:0,z:0},g);
+    const center=worldToScreen(surfaceToWorld({x:0,z:0},surfaceStyle),g);
     ctx.beginPath();ctx.ellipse(center.x,center.y,Math.max(2,1.83*(image?2:g.scale)),Math.max(2,1.83*(image?2:g.scale)),0,0,Math.PI*2);
     ctx.strokeStyle='#e6ffff';ctx.lineWidth=1;ctx.stroke();
   }
@@ -422,6 +528,40 @@ function draw(){
     }
   }
 
+
+  // Editable surface overlays are drawn in source-world coordinates.
+  for(const zone of surfaceStyle.zones){
+    const a=zone.rotation*Math.PI/180,c=Math.cos(a),sin=Math.sin(a);
+    const local=([x,z])=>{
+      const rotate={x:zone.x+x*c+z*sin,z:zone.z-x*sin+z*c};
+      return worldToScreen(surfaceToWorld(rotate,surfaceStyle),g);
+    };
+    const d=zone.kind==='stripe'?Math.min(zone.depth,.25):zone.depth;
+    const vertices=zone.kind==='circle'?
+      Array.from({length:40},(_,i)=>{
+        const t=i*2*Math.PI/40;return local([Math.cos(t)*zone.width/2,
+          Math.sin(t)*zone.depth/2]);
+      }):
+      [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([x,z])=>
+        local([x*zone.width,z*d]));
+    outline(vertices,zone.color+'78',zone.id===selectedZone?'#bb782b':zone.color,
+      zone.id===selectedZone?2.8:1.4);
+    if(activeModelTool==='surface'&&zone.id===selectedZone){
+      const center=worldToScreen(zoneCenter(zone),g);
+      ctx.beginPath();ctx.arc(center.x,center.y,6,0,Math.PI*2);
+      ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#bf8134';ctx.lineWidth=2;ctx.stroke();
+    }
+  }
+  if(activeModelTool==='surface'&&workflowUI?.current==='model'){
+    const controls=courtHandles();
+    for(const [kind,p] of Object.entries(controls)){
+      const q=worldToScreen(p,g);
+      ctx.beginPath();ctx.arc(q.x,q.y,kind==='center'?7:6,0,Math.PI*2);
+      ctx.fillStyle=kind==='center'?'#ffd285':kind==='rotate'?'#8cacb9':'#fff';
+      ctx.fill();
+      ctx.strokeStyle='#3d6c7e';ctx.lineWidth=2;ctx.stroke();
+    }
+  }
   // Source-derived components are drawn above seating plans for reliable
   // selection, but never change the official aisle or row inventory.
   for(const s of venue.structures??[]){
@@ -440,6 +580,12 @@ function draw(){
     if(chosen){
       ctx.beginPath();ctx.arc(center.x,center.y,5,0,2*Math.PI);
       ctx.fillStyle='#ffc16a';ctx.fill();
+      if(activeModelTool==='structures')for(const [kind,pos] of Object.entries(structureHandles(s))){
+        const q=worldToScreen(pos,g);
+        ctx.beginPath();ctx.arc(q.x,q.y,kind==='rotate'?6:7,0,Math.PI*2);
+        ctx.fillStyle=kind==='rotate'?'#b9e1e6':'#fff';
+        ctx.fill();ctx.strokeStyle='#276d8c';ctx.lineWidth=2;ctx.stroke();
+      }
     }
   }
   if(lastMeasurement&&lastMeasurement.key===measurementKey()){
@@ -632,13 +778,25 @@ canvas.addEventListener('pointerdown',event=>{
       }else message('Measure a second point on the drawing.');
       repaint();return;
     }
+    if(editorMode==='place-zone'){
+      const world=screenToWorld(p,g),local=worldToSurface(world,venue.surfaceDesign);
+      const ok=commitSurface({action:'zone-add',kind:$('zoneKind').value,
+        x:snap(local.x),z:snap(local.z),width:$('zoneWidth').value,
+        depth:$('zoneDepth').value,color:$('zoneColor').value},
+        'Place custom surface marking');
+      if(ok){editorMode='select';activateModelTool('surface');}
+      repaint();return;
+    }
     if(editorMode==='place-structure'){
       const world=screenToWorld(p,g);
       const values=structureFormValues();
       const success=commitStructure({action:'add',kind:activeStructureKind,
         ...values,x:world.x,z:world.z},
         'Place '+STRUCTURE_CATALOG[activeStructureKind].label);
-      if(success){editorMode='select';selectedSection='';draw();}
+      if(success){
+        if(!$('structureRepeat').checked)editorMode='select';
+        selectedSection='';draw();
+      }
       repaint();return;
     }
     if(editorMode==='trace'){
@@ -650,7 +808,43 @@ canvas.addEventListener('pointerdown',event=>{
       }
       repaint();return;
     }
+    if(workflowUI?.current==='model'&&activeModelTool==='surface'){
+      const design=venue.surfaceDesign;
+      let candidate=null,distance=13;
+      for(const zone of design.zones){
+        const q=worldToScreen(zoneCenter(zone),g);
+        const d=Math.hypot(q.x-p.x,q.y-p.y);
+        if(d<distance){candidate=zone;distance=d;}
+      }
+      if(candidate){
+        selectedZone=candidate.id;refreshSurfaceControls(selectedZone);
+        drag={kind:'zone',id:selectedZone,before:structuredClone(venue)};
+        canvas.setPointerCapture(event.pointerId);
+        draw();return;
+      }
+      let handle=null;distance=16;
+      for(const [kind,world] of Object.entries(courtHandles())){
+        const q=worldToScreen(world,g),d=Math.hypot(q.x-p.x,q.y-p.y);
+        if(d<distance){handle=kind;distance=d;}
+      }
+      if(handle){
+        drag={kind:'court',handle,before:structuredClone(venue)};
+        canvas.setPointerCapture(event.pointerId);
+        return;
+      }
+    }
     if(workflowUI?.current==='model'&&(venue.structures?.length??0)){
+      const selected=venue.structures.find(s=>s.id===selectedStructure);
+      if(selected&&activeModelTool==='structures'){
+        for(const [mode,point] of Object.entries(structureHandles(selected))){
+          const q=worldToScreen(point,g);
+          if(Math.hypot(q.x-p.x,q.y-p.y)<15){
+            drag={kind:'structure',mode,id:selected.id,before:structuredClone(venue)};
+            canvas.setPointerCapture(event.pointerId);
+            return;
+          }
+        }
+      }
       let closest=null,distance=18;
       for(const structure of venue.structures){
         const q=worldToScreen(structure,g),d=Math.hypot(q.x-p.x,q.y-p.y);
@@ -658,7 +852,10 @@ canvas.addEventListener('pointerdown',event=>{
       }
       if(closest){
         selectStructure(closest.id);
-        drag={kind:'structure',id:closest.id,before:structuredClone(venue)};
+        const world=screenToWorld(p,g);
+        drag={kind:'structure',mode:'move',id:closest.id,
+          offsetX:world.x-closest.x,offsetZ:world.z-closest.z,
+          before:structuredClone(venue)};
         canvas.setPointerCapture(event.pointerId);
         return;
       }
@@ -694,14 +891,55 @@ canvas.addEventListener('pointerdown',event=>{
 });
 canvas.addEventListener('pointermove',event=>{
   if(!drag)return;
+  if(drag.kind==='court'||drag.kind==='zone'){
+    try{
+      const world=screenToWorld(pointer(event),layout()),design=venue.surfaceDesign;
+      if(drag.kind==='zone'){
+        const zone=design.zones.find(s=>s.id===drag.id);
+        if(zone){
+          const local=worldToSurface(world,design);
+          zone.x=snap(local.x,event.shiftKey?.05:.25);
+          zone.z=snap(local.z,event.shiftKey?.05:.25);
+        }
+      }else if(drag.handle==='center'){
+        design.centerX=snap(world.x,event.shiftKey?.05:.25);
+        design.centerZ=snap(world.z,event.shiftKey?.05:.25);
+      }else{
+        const local=worldToSurface(world,design);
+        if(drag.handle==='width'){
+          venue.court.width=Math.min(160,Math.max(8,snap(2*Math.abs(local.x),.25)));
+        }else if(drag.handle==='length'){
+          venue.court.length=Math.min(200,Math.max(15,snap(2*Math.abs(local.z),.25)));
+        }else if(drag.handle==='rotate'){
+          const angle=Math.atan2(world.x-design.centerX,world.z-design.centerZ)*180/Math.PI;
+          design.rotation=Math.max(-180,Math.min(180,snap(angle,5)));
+        }
+      }
+      draw();
+    }catch{}
+    return;
+  }
   if(drag.kind==='structure'){
     try{
       const position=screenToWorld(pointer(event),layout());
-      if(event.shiftKey){position.x=Math.round(position.x*10)/10;
-        position.z=Math.round(position.z*10)/10;}
+      const step=event.shiftKey?.05:.25;
       const structure=venue.structures.find(s=>s.id===drag.id);
       if(structure&&Number.isFinite(position.x+position.z)){
-        structure.x=position.x;structure.z=position.z;draw();
+        if(drag.mode==='resize'){
+          const a=structure.yaw*Math.PI/180,c=Math.cos(a),sin=Math.sin(a);
+          const x=position.x-structure.x,z=position.z-structure.z;
+          const localX=c*x-sin*z,localZ=sin*x+c*z;
+          structure.width=Math.min(30,Math.max(.4,snap(2*Math.abs(localX),step)));
+          structure.depth=Math.min(24,Math.max(.08,snap(2*Math.abs(localZ),step)));
+        }else if(drag.mode==='rotate'){
+          structure.yaw=Math.max(-180,Math.min(180,
+            snap(Math.atan2(position.x-structure.x,
+              position.z-structure.z)*180/Math.PI,5)));
+        }else{
+          structure.x=snap(position.x-(drag.offsetX??0),step);
+          structure.z=snap(position.z-(drag.offsetZ??0),step);
+        }
+        draw();
       }
     }catch{}
     return;
@@ -726,6 +964,27 @@ function releasePointer(event){
   if(!drag)return;
   const completed=drag;drag=null;
   if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
+  if(completed.kind==='court'||completed.kind==='zone'){
+    const changed=structuredClone(venue);
+    venue=completed.before;
+    let command=null,summary='Move playing surface';
+    if(completed.kind==='zone'){
+      const zone=changed.surfaceDesign.zones.find(s=>s.id===completed.id);
+      if(zone)command={action:'zone-update',id:zone.id,
+        changes:{x:zone.x,z:zone.z}};
+      summary='Move painted floor zone';
+    }else if(completed.handle==='width'||completed.handle==='length'){
+      command={action:'dimensions',width:changed.court.width,length:changed.court.length};
+      summary='Resize court on 2D plan';
+    }else{
+      command={action:'style',changes:{
+        centerX:changed.surfaceDesign.centerX,centerZ:changed.surfaceDesign.centerZ,
+        rotation:changed.surfaceDesign.rotation}};
+    }
+    if(command)commitSurface(command,summary);
+    else {sync();tryPreview();}
+    return;
+  }
   try{
     const candidate=normalizeVenue(venue);
     if(candidate.rows.length&&candidate.rows.every(r=>candidate.sections.some(s=>
@@ -813,7 +1072,66 @@ $('batchApplyInsets').onclick=()=>commitBatch({section:$('batchSection').value,
   insetEndM:$('batchInsetEnd').value},'Batch row clearance');
 document.querySelectorAll('[data-model-tool]').forEach(button=>
   button.onclick=()=>activateModelTool(button.dataset.modelTool));
+
 $('openReviewFromScene').onclick=()=>workflowUI?.go('review');
+
+document.querySelectorAll('[data-surface-preset]').forEach(button=>
+  button.onclick=()=>commitSurface({action:'preset',
+    preset:button.dataset.surfacePreset},'Set playing surface palette'));
+$('surfaceApplyStyle').onclick=()=>commitSurface({
+  action:'style',changes:surfaceStyleFields()
+},'Edit floor colors, markings and placement');
+$('surfaceApplyDimensions').onclick=()=>commitSurface({
+  action:'dimensions',width:$('surfaceWidth').value,
+  length:$('surfaceLength').value
+},'Resize documented playing area');
+$('surfaceReset').onclick=()=>commitSurface({
+  action:'reset'
+},'Reset playing surface finish');
+$('surfaceEditOnPlan').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the source plan before manipulating the playing surface.',true);
+    return;
+  }
+  $('showPlan').click();
+  activateModelTool('surface');
+  editorMode='select';
+  repaint();
+  message('Drag the center handle to move, the side handles to resize, or the upper handle to rotate. Hold Shift for fine snapping.');
+};
+$('zoneAdd').onclick=()=>{
+  commitSurface({action:'zone-add',kind:$('zoneKind').value,
+    x:0,z:0,width:$('zoneWidth').value,depth:$('zoneDepth').value,
+    color:$('zoneColor').value},'Add painted floor area');
+};
+$('zonePlace').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the court drawing before locating a painted zone.',true);
+    return;
+  }
+  $('showPlan').click();activateModelTool('surface');
+  $('surfaceZones').open=true;
+  editorMode='place-zone';
+  repaint();
+  message('Click the plan to place the zone. The shape and size can be adjusted afterwards.');
+};
+$('zoneSelect').onchange=()=>{
+  selectedZone=$('zoneSelect').value;
+  refreshSurfaceControls(selectedZone);draw();
+};
+$('zoneApply').onclick=()=>{
+  if(!selectedZone)return message('Select a painted zone first.',true);
+  commitSurface({action:'zone-update',id:selectedZone,
+    changes:zoneFormFields()},'Edit painted floor area');
+};
+$('zoneDuplicate').onclick=()=>{
+  if(!selectedZone)return message('Select a painted zone first.',true);
+  commitSurface({action:'zone-duplicate',id:selectedZone},'Duplicate floor area');
+};
+$('zoneRemove').onclick=()=>{
+  if(!selectedZone)return message('Select a painted zone first.',true);
+  commitSurface({action:'zone-remove',id:selectedZone},'Remove painted floor area');
+};
 
 function setStructureKind(kind){
   if(!Object.hasOwn(STRUCTURE_CATALOG,kind))return;
@@ -822,11 +1140,29 @@ function setStructureKind(kind){
   document.querySelectorAll('[data-structure-kind]').forEach(button=>
     button.setAttribute('aria-pressed',
       String(button.dataset.structureKind===kind)));
+  const category=STRUCTURE_CATALOG[kind].category||
+    ({platform:'access',stairs:'access',rail:'access',portal:'access',
+      wall:'structure',scoreboard:'equipment',table:'equipment'}[kind]??'access');
+  if($('structureCategory').value!=='all')$('structureCategory').value=category;
+  refreshStructurePalette();
   $('structureStatus').textContent='Ready to create '+STRUCTURE_CATALOG[kind].label+
     '. Set the dimensions, then add or place on the 2D plan.';
 }
 document.querySelectorAll('[data-structure-kind]').forEach(button=>
   button.onclick=()=>setStructureKind(button.dataset.structureKind));
+$('structureCategory').onchange=()=>refreshStructurePalette();
+$('structureSearch').oninput=()=>refreshStructurePalette();
+document.querySelectorAll('[data-structure-nudge]').forEach(button=>
+  button.onclick=()=>{
+    const s=venue.structures.find(x=>x.id===selectedStructure);
+    if(!s)return message('Select a component to move.',true);
+    const delta={left:[-.25,0],right:[.25,0],up:[0,-.25],down:[0,.25]}
+      [button.dataset.structureNudge];
+    if(!delta)return;
+    commitStructure({action:'update',id:s.id,
+      changes:{x:Math.round((s.x+delta[0])*100)/100,
+        z:Math.round((s.z+delta[1])*100)/100}},'Nudge venue component');
+  });
 $('structureSelect').onchange=()=>selectStructure($('structureSelect').value);
 $('structureAdd').onclick=()=>{
   commitStructure({action:'add',kind:activeStructureKind,

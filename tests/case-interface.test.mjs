@@ -163,3 +163,25 @@ test('source-case context is placed inside the collapsed project menu',()=>{
   assert.ok(menu>=0&&context>menu&&context<dropdownEnd);
   assert.doesNotMatch(markup,/<div class="steps-strip"/);
 });
+
+
+test('direct-edit studio offers court tools and a searchable expanded component library',()=>{
+  const html=read('workbench/index.html'),css=read('workbench/workbench.css'),
+    js=read('workbench/workbench.js');
+  for(const name of ['surface','structures']){
+    assert.match(html,new RegExp('data-model-tool="'+name+'"'));
+    assert.match(html,new RegExp('data-model-tool-pane="'+name+'"'));
+  }
+  for(const id of ['surfaceFloor','surfaceApron','surfaceLines','surfaceLane',
+    'surfaceWidth','surfaceLength','surfaceApplyDimensions','surfaceEditOnPlan',
+    'surfaceShowMarkings','zonePlace','zoneSelect','zoneDuplicate','zoneRemove',
+    'structureCategory','structureSearch','structureRepeat'])
+      assert.match(html,new RegExp('id="'+id+'"'),id);
+  assert.match(js,/editPlayingSurface/);
+  assert.match(js,/worldToSurface/);
+  assert.match(js,/structureHandles/);
+  assert.match(css,/\.surface-palettes/);
+  const kinds=[...html.matchAll(/data-structure-kind="([^"]+)"/g)]
+    .map(x=>x[1]);
+  assert.equal(new Set(kinds).size,23);
+});

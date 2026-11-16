@@ -2,6 +2,7 @@
 import {parseCSV} from '../survey.mjs';
 import {rowAttributes} from './rowLayout.mjs';
 import {normalizeStructures} from './structures.mjs';
+import {defaultSurfaceDesign,normalizeSurfaceDesign} from './surface.mjs';
 export const SPORT_DEFAULTS=Object.freeze({
   'nfhs-basketball':{width:15.24,length:25.6032,profile:'high-basketball'},
   ncaa:{width:15.24,length:28.6512,profile:'college-basketball'},
@@ -30,7 +31,8 @@ export function newVenue(sport='nfhs-basketball'){
     school:'Example school',venue:'Untitled school venue',sport,
     court:{width:d.width,length:d.length},officialCapacity:null,
     capacitySource:'',plan:{name:'',mime:'',width:0,height:0,imageData:'',pageNumber:null,labels:[]},
-    calibration:{corners:[],checkpoints:[]},sections:[],rows:[],structures:[],notes:[],
+    calibration:{corners:[],checkpoints:[]},sections:[],rows:[],structures:[],
+    surfaceDesign:defaultSurfaceDesign(sport),notes:[],
     sources:[],rowSourceId:null,planSourceId:null,changeLog:[],vectorCandidates:[],editLedger:[]};
 }
 export function parseVenueRows(csv){
@@ -152,6 +154,7 @@ export function normalizeVenue(input){
   });
   if(v.rows.reduce((n,r)=>n+r.seats,0)>40000)throw Error('Seat count exceeds the 40,000-seat preview limit');
   v.structures=normalizeStructures(v.structures??[]);
+  v.surfaceDesign=normalizeSurfaceDesign(v.surfaceDesign,v.sport);
   v.notes=Array.isArray(v.notes)?v.notes.map(s=>String(s).slice(0,250)).slice(0,50):[];
   if(!Array.isArray(v.vectorCandidates||[])||(v.vectorCandidates||[]).length>500)
     throw Error('Invalid vector candidate collection');
@@ -185,7 +188,8 @@ export function normalizeVenue(input){
     const operation=String(a.operation??'').slice(0,40);
     if(!['update-row','add-row','remove-row','move-row','translate-section',
       'resize-section','set-section-elevation','set-seat-offset','clear-seat-offset',
-      'add-structure','edit-structure','remove-structure','duplicate-structure'].includes(operation))
+      'add-structure','edit-structure','remove-structure','duplicate-structure',
+      'edit-surface'].includes(operation))
       throw Error('Invalid staff edit operation');
     return {operation,section:name(a.section,'Edited section',30),
       row:a.row==null?'':String(a.row).slice(0,30),

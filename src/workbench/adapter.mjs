@@ -6,6 +6,7 @@ import {buildVenuePlan} from '../next/venuePlan.mjs';
 import {SPORT_DEFAULTS} from './contract.mjs';
 import {generateTracedVenue} from './generator.mjs';
 import {buildStructureInstances} from './structures.mjs';
+import {buildZoneInstances} from './surface.mjs';
 export function buildWorkbenchPreview(input){
   const traced=generateTracedVenue(input),v=traced.venue;
   if(!traced.seats.length)throw Error('Import rows and trace sections before generating the 3D preview');
@@ -26,19 +27,26 @@ export function buildWorkbenchPreview(input){
     inventoryMode:'none',inventoryCount:null,coordinates:'estimated'};
   const validated=validateProject(project);
   const model=generateSeats(validated);
+  // The project schema keeps its sport profile; staff-edited surface geometry
+  // is passed separately to the rendering plan, never mistaken for surveyed seats.
+  model.surface={...model.surface,width:v.court.width,length:v.court.length};
   if(model.seats.length!==traced.seats.length)throw Error('Renderer dropped source seats');
-  const plan=buildVenuePlan(model,{detail:'compact'});
+  const plan=buildVenuePlan(model,{detail:'compact',operatorSurface:v.surfaceDesign});
   // Fit the editing camera to actual staff-traced seats, not optional
   // oversized architectural or invisible reference mesh bounds.
   plan.operatorWorkspace=true;
   plan.operatorStructures=v.structures??[];
   const furniture=buildStructureInstances(plan.operatorStructures);
-  if(furniture.length){
-    const merged=new Float32Array(plan.instanceData.length+furniture.length);
+  const painted=buildZoneInstances(v.surfaceDesign);
+  const extra=furniture.length+painted.length;
+  if(extra){
+    const merged=new Float32Array(plan.instanceData.length+extra);
     merged.set(plan.instanceData,0);
     merged.set(furniture,plan.instanceData.length);
+    merged.set(painted,plan.instanceData.length+furniture.length);
     plan.instanceData=merged;
     plan.instanceCount=merged.length/11;
   }
+  plan.operatorSurface=v.surfaceDesign;
   return {...traced,project:validated,model,plan};
 }

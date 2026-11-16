@@ -14,9 +14,9 @@ test('project contract keeps the operator structure collection optional for lega
   assert.deepEqual(p.structures,[]);
   delete p.structures;
   assert.deepEqual(normalizeVenue(p).structures,[]);
-  assert.equal(Object.keys(STRUCTURE_CATALOG).length,7);
+  assert.equal(Object.keys(STRUCTURE_CATALOG).length,23);
 });
-test('all seven structural primitives generate bounded WebGL2 instances',()=>{
+test('all twenty-three structural primitives generate bounded WebGL2 instances',()=>{
   for(const kind of Object.keys(STRUCTURE_CATALOG)){
     const initial=newVenue(),after=change(initial,'add',{kind});
     const structures=after.venue.structures;

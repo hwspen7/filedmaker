@@ -86,3 +86,32 @@ Placement never removes seats. Candidate edits that collide with
 existing seat positions are rejected; remaining accessibility and
 safety considerations still require independent staff or professional
 review. The models are *generic placeholders*, not architectural as-builts.
+
+
+## Court and field editor
+
+The Court tool offers eight one-click floor/field palettes and explicit
+custom colors for the playing area, apron, lines and key/lane. The staff
+may toggle markings and boards, move or rotate the playing surface and
+set source-supported dimensions. Existing seats are unchanged. Width and
+length edits raise a source re-registration warning.
+
+The 2D plan exposes direct handles for center translation, playing width,
+playing length and orientation. A source plan must be calibrated first.
+Custom painted shapes (rectangle, circle/ellipse outline and stripe) can
+be placed on the 2D plan, edited, copied and deleted. Painted zones are
+bounded to the actual playing area, retained in JSON and included in
+WebGL2 scene instances. They are not official logos or venue branding.
+
+## Expanded searchable construction palette
+
+The Build pane now offers 23 procedural components across access,
+structure, seating and equipment groups. Staff can search by name,
+repeatedly place a selected component, nudge it by 25 cm, or drag
+2D handles to resize and rotate. Precise numeric controls remain
+collapsed by default. Every edit is reversible and subject to seat
+interference checks. Components are schematic shapes rather than
+fully engineered building elements.
+
+Tests must distinguish source-preserving preview edits from verified
+construction measurements and accessibility compliance.

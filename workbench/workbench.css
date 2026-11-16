@@ -287,3 +287,53 @@ html,body{height:100%;overflow:hidden}
 .studio-header .top-menu-content .case-context button{
   position:absolute;right:8px;bottom:11px;background:transparent;border:0;
   font-size:16px;color:#84939d}
+
+
+/* Workspace tools use discoverable presets before exposing numeric inputs. */
+.model-tool-tabs{grid-template-columns:repeat(6,minmax(0,1fr))}
+.model-tool-tabs button{font-size:10px;min-width:0;white-space:nowrap}
+.court-editor .small-title{font-size:12px}
+.court-editor .hint{font-size:10px;line-height:1.55}
+.surface-palettes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;margin:12px 0}
+.surface-palettes button{position:relative;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;min-height:54px;
+  border-radius:9px;border:1px solid #dce5e8;
+  color:#3d515c;background:#fff;padding:7px 3px 4px;
+  font-size:9px;font-weight:600;cursor:pointer}
+.surface-palettes button::before{content:'';display:block;width:30px;height:17px;
+  margin:0 auto 5px;border-radius:4px;
+  background:#d7b781;border:2px solid #334b62}
+.surface-palettes button[data-surface-preset="pale"]::before{background:#ecd5ab;border-color:#7a8f9b}
+.surface-palettes button[data-surface-preset="charcoal"]::before{background:#53575b;border-color:#252b32}
+.surface-palettes button[data-surface-preset="navy"]::before{background:#8ba9bd;border-color:#183d5b}
+.surface-palettes button[data-surface-preset="crimson"]::before{background:#d0b28a;border-color:#963c48}
+.surface-palettes button[data-surface-preset="green"]::before{background:#bcac86;border-color:#2c6752}
+.surface-palettes button[data-surface-preset="turf"]::before{background:#337747;border-color:#284b36}
+.surface-palettes button[data-surface-preset="blueTurf"]::before{background:#285b87;border-color:#1c3b62}
+.surface-palettes button[aria-pressed=true],
+.component-kinds button[aria-pressed=true]{border:2px solid #24495d;
+  background:#eaf1f4;color:#213e50}
+.court-editor .row-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.court-editor .row-actions button{flex:1;min-width:92px;border:1px solid #dbe4e8;
+  background:#fff;color:#344d5b;border-radius:8px;padding:10px;
+  font-size:11px;cursor:pointer}
+.court-editor .row-actions .primary{background:#283e4b;color:#fff}
+.court-editor .disclosure{padding:11px;border:1px solid #e4ebef;border-radius:9px;margin:10px 0}
+.court-editor input:not([type=checkbox]),.court-editor select{width:100%;
+  box-sizing:border-box;border:1px solid #dce5e9;border-radius:8px;
+  padding:8px;font-size:11px;min-height:34px}
+.surface-colors{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.surface-colors label{font-size:10px;overflow:hidden}
+.surface-colors input[type=color]{width:100%;height:34px;padding:3px}
+.surface-toggle{display:flex;align-items:center;gap:8px;font-size:11px}
+.surface-toggle input[type=checkbox]{width:15px;height:15px;flex:none}
+.component-editor .compact-search{font-size:10px}
+.component-editor .component-kinds button[hidden]{display:none!important}
+.component-editor .component-kinds{max-height:240px;overflow:auto;align-content:start}
+.component-editor .component-kinds button{min-height:40px}
+.object-move-pad{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:10px 0}
+.object-move-pad button{border:1px solid #dce7e9;background:#f7fafb;
+  color:#345160;border-radius:8px;min-height:33px;cursor:pointer}
+.object-move-pad button:hover{background:#e8f1f3}
+@media(max-width:1080px){.model-tool-tabs button{font-size:9px}}

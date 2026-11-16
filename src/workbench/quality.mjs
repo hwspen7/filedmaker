@@ -40,6 +40,15 @@ export function assessVenueGeometry(traced){
     if(topology.crossed)
       add('blocking','CROSSED_SECTION','Section footprint is self-intersecting',section.id);
   }
+  const surface=venue.surfaceDesign;
+  if(surface?.dimensionsEdited)
+    add('review','PLAYING_SURFACE_RECALIBRATION_REQUIRED',
+      'The field/court dimensions changed; recheck the source registration and stand clearances');
+  if(surface?.zones?.length)add('review','PAINTED_FLOOR_ZONES_UNVERIFIED',
+    surface.zones.length+' operator-authored painted areas require source comparison');
+  if(surface&&(surface.centerX||surface.centerZ||surface.rotation))
+    add('review','PLAYING_SURFACE_TRANSFORM_UNVERIFIED',
+      'The playing surface has a staff-estimated offset or rotation');
   const structures=venue.structures??[];
   if(structures.length)add('review','OPERATOR_STRUCTURES_UNVERIFIED',
     structures.length+' staff-placed venue structures require source and accessibility review');

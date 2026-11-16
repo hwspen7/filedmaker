@@ -113,6 +113,7 @@
     <button type="button" data-model-tool="rows" aria-pressed="true">Rows</button>
     <button type="button" data-model-tool="seats" aria-pressed="false">Seats</button>
     <button type="button" data-model-tool="batch" aria-pressed="false">Batch</button>
+<button type="button" data-model-tool="surface" aria-pressed="false">Court</button>
 <button type="button" data-model-tool="structures" aria-pressed="false">Build</button>
     <button type="button" data-model-tool="preview" aria-pressed="false">Scene</button>
   </div>
@@ -183,27 +184,135 @@
       <p class="hint">Applies in one undoable transaction. Never invents extra seats or aisle measurements.</p>
     </div>
   </div>
+  <div data-model-tool-pane="surface" hidden>
+    <div class="section court-editor">
+      <div class="small-title">Court / field studio</div>
+      <p class="hint">Choose a palette. The 3D court updates immediately and retains the documented seat inventory.</p>
+      <div class="surface-palettes" role="group" aria-label="Playing surface finish">
+        <button data-surface-preset="maple" type="button">Maple</button>
+        <button data-surface-preset="pale" type="button">Light</button>
+        <button data-surface-preset="charcoal" type="button">Dark</button>
+        <button data-surface-preset="navy" type="button">Blue</button>
+        <button data-surface-preset="crimson" type="button">Red</button>
+        <button data-surface-preset="green" type="button">Green</button>
+        <button data-surface-preset="turf" type="button">Turf</button>
+        <button data-surface-preset="blueTurf" type="button">Blue turf</button>
+      </div>
+      <div class="row-actions">
+        <button id="surfaceEditOnPlan" type="button">Edit directly on 2D</button>
+        <button id="surfaceReset" type="button">Reset finish</button>
+      </div>
+      <p class="hint" id="surfaceStatus" aria-live="polite">Surface colors and markings are provisional.</p>
+      <details class="disclosure" id="surfaceAppearance">
+        <summary>Colors, markings &amp; position</summary>
+        <div class="surface-colors">
+          <label>Floor<input id="surfaceFloor" type="color"></label>
+          <label>Apron<input id="surfaceApron" type="color"></label>
+          <label>Lines<input id="surfaceLines" type="color"></label>
+          <label>Lane<input id="surfaceLane" type="color"></label>
+        </div>
+        <label>Apron width (m)<input id="surfaceApronWidth" type="number" step=".25" min=".5" max="12"></label>
+        <div class="pair">
+          <label>Field X (m)<input id="surfaceX" type="number" step=".25" min="-40" max="40"></label>
+          <label>Field Z (m)<input id="surfaceZ" type="number" step=".25" min="-40" max="40"></label>
+        </div>
+        <label>Field rotation (°)<input id="surfaceRotation" type="number" step="15" min="-180" max="180"></label>
+        <label class="surface-toggle"><input id="surfaceShowMarkings" type="checkbox"> Show playing lines</label>
+        <label class="surface-toggle"><input id="surfaceShowBoards" type="checkbox"> Show wood board pattern</label>
+        <button id="surfaceApplyStyle" class="primary full" type="button">Apply surface design</button>
+      </details>
+      <details class="disclosure" id="surfaceDimensions">
+        <summary>Playing area dimensions</summary>
+        <p class="hint">Change only when documented. Existing plan calibration and sightline assumptions must be rechecked.</p>
+        <div class="pair">
+          <label>Width (m)<input id="surfaceWidth" type="number" step=".01" min="8" max="160"></label>
+          <label>Length (m)<input id="surfaceLength" type="number" step=".01" min="15" max="200"></label>
+        </div>
+        <button id="surfaceApplyDimensions" type="button">Update court dimensions</button>
+      </details>
+      <details class="disclosure" id="surfaceZones">
+        <summary>Painted areas &amp; custom markings</summary>
+        <label>Shape<select id="zoneKind">
+          <option value="rectangle">Painted rectangle</option>
+          <option value="circle">Circle / ellipse</option>
+          <option value="stripe">Stripe</option>
+        </select></label>
+        <div class="pair">
+          <label>Width (m)<input id="zoneWidth" type="number" step=".25" min=".15" max="80" value="2"></label>
+          <label>Depth (m)<input id="zoneDepth" type="number" step=".25" min=".15" max="80" value="2"></label>
+        </div>
+        <label>Paint<input id="zoneColor" type="color" value="#375f82"></label>
+        <div class="row-actions">
+          <button id="zoneAdd" type="button">Add at center</button>
+          <button id="zonePlace" class="primary" type="button">Place on 2D</button>
+        </div>
+        <label>Selected zone<select id="zoneSelect"></select></label>
+        <label>Zone name<input id="zoneLabel" maxlength="80"></label>
+        <div class="pair">
+          <label>Local X (m)<input id="zoneX" type="number" step=".25" min="-200" max="200"></label>
+          <label>Local Z (m)<input id="zoneZ" type="number" step=".25" min="-200" max="200"></label>
+        </div>
+        <label>Rotation (°)<input id="zoneRotation" type="number" step="15" min="-180" max="180"></label>
+        <div class="row-actions">
+          <button id="zoneApply" type="button">Apply</button>
+          <button id="zoneDuplicate" type="button">Copy</button>
+          <button id="zoneRemove" type="button">Delete</button>
+        </div>
+      </details>
+    </div>
+  </div>
   <div data-model-tool-pane="structures" hidden>
     <div class="section component-editor">
       <div class="small-title">Venue component library</div>
       <p class="hint">Use generic elements, then position them from the plan. These are estimates, not official measurements.</p>
-      <div class="component-kinds" role="group" aria-label="Select a reusable component">
-        <button data-structure-kind="platform" type="button">▣ Platform</button>
-        <button data-structure-kind="stairs" type="button">▤ Stairs</button>
-        <button data-structure-kind="rail" type="button">╏ Railing</button>
-        <button data-structure-kind="wall" type="button">▥ Wall</button>
-        <button data-structure-kind="portal" type="button">⌑ Entrance</button>
-        <button data-structure-kind="scoreboard" type="button">▦ Scoreboard</button>
-        <button data-structure-kind="table" type="button">▱ Desk</button>
+      <label>Component group<select id="structureCategory">
+  <option value="access">Access & circulation</option>
+  <option value="structure">Structural elements</option>
+  <option value="seating">Seating & terraces</option>
+  <option value="equipment">Venue equipment</option>
+  <option value="all">Show all templates</option>
+</select></label>
+<label class="compact-search">Find a component<input id="structureSearch" type="search" placeholder="Search templates" autocomplete="off"></label>
+<div class="component-kinds" role="group" aria-label="Select a reusable component">
+        <button data-structure-kind="platform" data-structure-category="access" type="button">▣ Platform</button>
+        <button data-structure-kind="stairs" data-structure-category="access" type="button">▤ Stairs</button>
+        <button data-structure-kind="rail" data-structure-category="access" type="button">╏ Railing</button>
+        <button data-structure-kind="wall" data-structure-category="structure" type="button">▥ Wall</button>
+        <button data-structure-kind="portal" data-structure-category="access" type="button">⌑ Entrance</button>
+        <button data-structure-kind="scoreboard" data-structure-category="equipment" type="button">▦ Scoreboard</button>
+        <button data-structure-kind="table" data-structure-category="equipment" type="button">▱ Desk</button>
+<button data-structure-kind="ramp" data-structure-category="access" type="button">Ramp</button>
+<button data-structure-kind="landing" data-structure-category="access" type="button">Landing</button>
+<button data-structure-kind="tunnel" data-structure-category="access" type="button">Tunnel</button>
+<button data-structure-kind="gate" data-structure-category="access" type="button">Gate</button>
+<button data-structure-kind="fence" data-structure-category="access" type="button">Fence</button>
+<button data-structure-kind="glass" data-structure-category="structure" type="button">Glazed wall</button>
+<button data-structure-kind="column" data-structure-category="structure" type="button">Column</button>
+<button data-structure-kind="beam" data-structure-category="structure" type="button">Beam</button>
+<button data-structure-kind="gantry" data-structure-category="structure" type="button">Service gantry</button>
+<button data-structure-kind="canopy" data-structure-category="structure" type="button">Canopy</button>
+<button data-structure-kind="roof" data-structure-category="structure" type="button">Roof segment</button>
+<button data-structure-kind="bleacher" data-structure-category="seating" type="button">Terraced stand</button>
+<button data-structure-kind="bench" data-structure-category="seating" type="button">Team bench</button>
+<button data-structure-kind="lighting" data-structure-category="equipment" type="button">Lighting mast</button>
+<button data-structure-kind="sign" data-structure-category="equipment" type="button">Sign</button>
+<button data-structure-kind="door" data-structure-category="equipment" type="button">Door</button>
       </div>
       <label>Selected component<select id="structureSelect"></select></label>
       <div class="row-actions">
         <button class="primary" id="structureAdd" type="button">Add component</button>
         <button id="structurePickOnPlan" type="button">Place on 2D plan</button>
       </div>
-      <div class="row-edit-status" id="structureStatus" aria-live="polite">Choose a component type or select an existing item.</div>
-      <details class="disclosure" id="structureTransform" open>
-        <summary>Position, dimensions and orientation</summary>
+      <label class="surface-toggle"><input id="structureRepeat" type="checkbox"> Keep placing after click</label>
+<div class="object-move-pad" role="group" aria-label="Move selected component">
+  <button data-structure-nudge="left" type="button" aria-label="Move left">←</button>
+  <button data-structure-nudge="up" type="button" aria-label="Move upward on plan">↑</button>
+  <button data-structure-nudge="down" type="button" aria-label="Move downward on plan">↓</button>
+  <button data-structure-nudge="right" type="button" aria-label="Move right">→</button>
+</div>
+<div class="row-edit-status" id="structureStatus" aria-live="polite">Choose a component type or select an existing item.</div>
+      <details class="disclosure" id="structureTransform">
+        <summary>Precise dimensions &amp; coordinates</summary>
         <label>Component label<input id="structureLabel" maxlength="80" placeholder="Operator label"></label>
         <div class="pair">
           <label>X position (m)<input id="structureX" type="number" step=".1" min="-2000" max="2000" value="0"></label>
