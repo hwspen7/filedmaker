@@ -186,7 +186,8 @@ test('all seventeen non-OSU arenas have source-linked real section labels',()=>{
     const spec=toProceduralSpec(venue);
     assert.ok(spec.sectionMap,venue.id+' must not use a generic numbered bowl');
     assert.ok(spec.provenance.sourceSectionMap?.startsWith('https://'),venue.id);
-    assert.equal(spec.provenance.sectionOutlineProvenance,'estimated-arc');
+    assert.equal(spec.provenance.sectionOutlineProvenance,
+      FIRST_WAVE_INTERIORS.includes(venue.id)?'official-adjacency-estimated-shape':'estimated-arc');
     assert.equal(spec.provenance.seatCoordinates,'not-available');
     GeometryEngine.normalize(spec);
   }
@@ -424,8 +425,8 @@ test('MSU rows, Wisconsin overhang, UCLA subsection IDs and Washington entries s
   const ucla=toProceduralSpec(get('ucla'));
   for(const id of ['206A','206B','206C','210A','210B','211C','219A',
     '223B','224A','224B','224C'])
-    assert.ok(ucla.sectionMap[1][0].sectionIds.includes(id),'Missing official Pauley subdivision '+id);
-  assert.ok(!ucla.sectionMap[1][0].sectionIds.includes('215'),
+    assert.ok(ucla.sectionMap[1].flatMap(g=>g.sectionIds).includes(id),'Missing official Pauley subdivision '+id);
+  assert.ok(!ucla.sectionMap[1].flatMap(g=>g.sectionIds).includes('215'),
     'Pauley section 215 on the published map is a media block');
   const was=GeometryEngine.create(toProceduralSpec(get('washington')));
   assert.equal(was.spec.sectionMap[0][0].sectionIds.length,14);
