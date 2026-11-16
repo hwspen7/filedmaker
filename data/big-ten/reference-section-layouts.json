@@ -919,6 +919,111 @@
           "elevationGap": 0
         }
       ]
+    },
+    "michigan-state": {
+      "source": "https://msuspartans.com/sports/2018/7/20/facilities-breslin-center-section-map-html",
+      "originalChart": "https://msuspartans.com/documents/download/2023/10/2/B23_GDA.pdf",
+      "layout": "elliptical-lower-chair-and-upper-bleacher-bowl",
+      "chartIds": "historical-checked-current-page",
+      "rowLabels": "documented",
+      "geometry": "estimated",
+      "notes": "Official 2026–27 page documents lower rows 1–9 bench and 13–28 chairs and upper rows 1–13 chairs, 14–19 benches. 2023 seating chart confirms actual section IDs; 10–12 lower aisle/row handling requires separate geometry validation.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.34,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "104",
+              "106",
+              "108",
+              "109",
+              "110",
+              "111",
+              "113",
+              "115",
+              "117",
+              "118",
+              "120",
+              "122",
+              "124",
+              "126",
+              "127",
+              "128",
+              "129",
+              "131",
+              "133",
+              "135"
+            ],
+            "rowStart": 1,
+            "rowCount": 28
+          }
+        ],
+        [
+          {
+            "startAngle": 0.34,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224",
+              "225",
+              "226",
+              "227",
+              "228",
+              "229",
+              "230",
+              "231",
+              "232",
+              "233",
+              "234",
+              "235",
+              "236"
+            ],
+            "rowStart": 1,
+            "rowCount": 19
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 28,
+          "depth": 0.83,
+          "rise": 0.32,
+          "gap": 2.3,
+          "elevationGap": 2.1
+        },
+        {
+          "rows": 19,
+          "depth": 0.84,
+          "rise": 0.42,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
     }
   }
 }
