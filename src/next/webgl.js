@@ -258,6 +258,11 @@ export class NativeVenueRenderer {
   static architectureLayerVisibleInMode(plan,mode,name){
     if(!plan?.arenaInterior||!plan?.architectureGeometry)return false;
     if(mode==='exterior')return exteriorOnly.has(name);
+    // An illustrative exterior envelope must not obscure the chart-driven
+    // seating bowl in the main view. The separately named exterior mode
+    // still presents those architectural shells for contextual inspection.
+    // OSU's specialized chart cutaway is unchanged.
+    if(plan.proceduralSpec?.interior&&exteriorOnly.has(name))return false;
     if(['buildingRoof','roofWhite','roofCopper','roofSlate','roofPale'].includes(name))return false;
     if(name==='cutawayFacade')return mode==='section'&&Boolean(plan.architectureGeometry.cutawayFacade?.length);
     if(mode==='human')return interiorLayers.has(name);
