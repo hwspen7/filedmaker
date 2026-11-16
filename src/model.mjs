@@ -493,7 +493,9 @@ export function generateSeats(input, { audienceLayout = true } = {}) {
     const output=SeatingEngine.generate(project.proceduralVenue);
     return {project,surface:{...surface,width:output.spec.field.width,length:output.spec.field.length},
       tiers,seats:output.seats,groups:output.groups,
-      seatingRows:output.seatingRows,proceduralGeometry:output.geometry,
+      seatingRows:output.seatingRows,
+      interiorSectionFootprints:output.interiorSectionFootprints,
+      proceduralGeometry:output.geometry,
       proceduralSpec:output.spec,optimization:output.optimization,
       capacity:output.seats.length,seatOrigin:'generated',registration:null,
       elevationCount:output.seats.length};
