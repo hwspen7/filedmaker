@@ -51,6 +51,8 @@ const point=(angle,rx,rz)=>{
     z:rz*Math.sign(b)*Math.abs(b)**power};
 };
 const length=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+const pathLength=points=>points.slice(1).reduce((sum,p,i)=>
+  sum+length(p,points[i]),0);
 
 export function buildSyntheticBowl(options={}){
   const template=String(options.template??'college-two-tier');
@@ -100,19 +102,30 @@ export function buildSyntheticBowl(options={}){
       if(spec.shape==='sidelines'&&Math.abs(Math.sin(mid))<.72)continue;
       if(spec.shape==='ends'&&Math.abs(Math.cos(mid))<.83)continue;
       const a=2*Math.PI*i/sectors,b=2*Math.PI*(i+1)/sectors;
-      const inner=[point(a,frontX,frontZ),point(b,frontX,frontZ)];
-      const outer=[point(a,backX,backZ),point(b,backX,backZ)];
-      const average=(length(inner[0],inner[1])+length(outer[0],outer[1]))/2;
-      const seats=Math.max(3,Math.min(200,Math.floor((average-.5)/seatWidth)));
+      // Five control points preserve a curved perimeter within each bank.
+      // The operator may still drag individual section corners afterward.
+      const inner=Array.from({length:5},(_,j)=>
+        point(a+(b-a)*j/4,frontX,frontZ));
+      const outer=Array.from({length:5},(_,j)=>
+        point(a+(b-a)*j/4,backX,backZ));
+      const frontLength=pathLength(inner),backLength=pathLength(outer);
       const id='T'+(tierIndex+1)+'-'+String(i+1).padStart(2,'0');
       v.sections.push({id,front:inner,back:outer,trace:[],
         baseHeight,rowRise:rise,provenance:'synthetic-parametric/unverified'});
       for(let rowIndex=0;rowIndex<rows[tierIndex];rowIndex++){
         const row=String(rowIndex+1);
-        const perRow=Math.max(3,seats-((rowIndex%5===4)?1:0));
+        const t=(rowIndex+.5)/rows[tierIndex];
+        const width=frontLength+(backLength-frontLength)*t;
+        // Reserve a real empty center aisle on wider banks. Wider rear
+        // rows gain seats from actual available geometry, not a fixed quota.
+        const aisle=width>12&&spec.shape!=='ends'?.95:0;
+        const perRow=Math.max(3,Math.min(200,
+          Math.floor((width-.45-aisle)/seatWidth)));
+        const gaps=aisle&&perRow>=12?
+          [{after:Math.floor(perRow/2),width:aisle}]:[];
         v.rows.push({section:id,row,seats:perRow,first:1,tier:'T'+(tierIndex+1),
           seatType:template==='school-end-stands'?'bleacher':'chair',
-          sourceSeats:null,operatorEdited:true,operatorAdded:true});
+          gaps,sourceSeats:null,operatorEdited:true,operatorAdded:true});
       }
     }
     radialOffset+=depth+(spec.tierGap??1.8);
