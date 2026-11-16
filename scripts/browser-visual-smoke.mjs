@@ -321,9 +321,9 @@ async function main(){
       const state=await evaluate(
         "({cards:document.querySelectorAll('#caseGrid a.case-card[href]').length,ready:document.documentElement.dataset.casesReady})"
       );
-      return state?.cards===10&&state.ready==='true'?state:null;
+      return state?.cards===16&&state.ready==='true'?state:null;
     },65);
-    if(library.cards!==10)
+    if(library.cards!==16)
       throw Error('Clickable case gallery is incomplete: '+JSON.stringify(library));
     await delay(260);
     const gallery=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
@@ -334,7 +334,7 @@ async function main(){
     if(searched!==1)throw Error('Case search failed for Aiken');
     const accurate=await evaluate("document.querySelector('#caseGrid .case-card')?.textContent.includes('Unverified staff draft')");
     if(!accurate)throw Error('Aiken catalog card lost its unverified status');
-    console.log('cases: ten cases listed, six real-school filters, search, evidence labels verified');
+    console.log('cases: sixteen cases listed, six real-school filters, search, evidence labels verified');
 
     // Real pointer click in the CENTER of a card, not merely its action label.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/?group=schools'});
@@ -364,7 +364,7 @@ async function main(){
 
     // Open 3D directly from its whole-case anchor.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/'});
-    await poll(async()=>await evaluate("document.querySelectorAll('#caseGrid .case-card').length===10"),50);
+    await poll(async()=>await evaluate("document.querySelectorAll('#caseGrid .case-card').length===16"),50);
     const directModel=await evaluate("document.querySelector('[data-case=\"aiken-high\"]')?.href");
     if(!directModel.includes('example=aiken'))throw Error('Aiken card has no model link');
     await evaluate("document.querySelector('[data-case=\"aiken-high\"]').click()");
