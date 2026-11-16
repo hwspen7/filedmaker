@@ -244,6 +244,55 @@ async function main(){
     if(!pdfFirst?.file.includes('fictional-school.pdf')||
       !pdfFirst.missing.includes('Trace each row-bearing section'))
       throw Error('PDF did not enter assisted manual review: '+JSON.stringify(pdfFirst));
+
+    // Staff-assisted workflow: after label suggestions, manually register
+    // the playing surface and trace all four actual seating-bank edges.
+    const traced=await evaluate(`(()=>{
+      const c=document.querySelector('#planCanvas');
+      const rect=c.getBoundingClientRect();
+      const pageW=1160,pageH=800;
+      const scale=Math.min((rect.width-64)/pageW,(rect.height-64)/pageH);
+      const ox=(rect.width-pageW*scale)/2,oy=(rect.height-pageH*scale)/2;
+      const click=(x,y)=>{
+        const sx=ox+2*x*scale,sy=oy+2*(400-y)*scale;
+        c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,
+          pointerId:7,clientX:rect.left+sx,clientY:rect.top+sy}));
+      };
+      document.querySelector('#calibrate').click();
+      for(const [x,y] of [[240,80],[290,80],[290,320],[240,320]])click(x,y);
+      const banks=[
+        ['WEST-1',230,60,60,160],['EAST-1',300,470,60,160],
+        ['WEST-2',230,60,205,305],['EAST-2',300,470,205,305]
+      ];
+      for(const [name,front,back,low,high] of banks){
+        document.querySelector('#newSectionId').value=name;
+        document.querySelector('#trace').click();
+        for(const [x,y] of [[front,high],[front,low],[back,low],[back,high]])click(x,y);
+      }
+      return {
+        modeled:document.querySelector('#mappedCount').textContent,
+        sections:document.querySelector('#sectionCount').textContent,
+        checklist:document.querySelector('#reviewChecklist').textContent,
+        status:document.querySelector('#workStatus').textContent
+      };
+    })()`);
+    if(traced.modeled!=='1,500'||traced.sections!=='4'||
+      !traced.checklist.includes('✓ Trace each row-bearing section'))
+      throw Error('PDF + staff tracing did not generate 1,500 original seats: '+
+        JSON.stringify(traced));
+    await evaluate("document.querySelector('#show3d').click()");
+    const pdfModel=await poll(async()=>await evaluate(
+      "(()=>{const c=document.querySelector('#modelCanvas');return !c.hidden && !!c.getContext('webgl2')})()"
+    ),45);
+    if(!pdfModel)throw Error('Staff-traced PDF did not reach the real 3D renderer');
+    await delay(300);
+    const traceFrame=await client.send('Page.captureScreenshot',
+      {format:'png',captureBeyondViewport:false});
+    writeFileSync(join(dir,'workbench-pdf-traced-3d.png'),
+      Buffer.from(traceFrame.data,'base64'));
+    console.log('pdf: manual four-corner calibration + four bank traces -> exact 1,500-seat 3D model');
+    await evaluate("document.querySelector('#showPlan').click()");
+
     await evaluate(`(()=>{
       document.querySelector('#pdfPage').value='2';
       document.querySelector('#pdfPage').dispatchEvent(new Event('change',{bubbles:true}));

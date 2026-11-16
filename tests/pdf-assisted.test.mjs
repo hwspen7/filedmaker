@@ -7,9 +7,11 @@ import {fictionalGym} from '../src/workbench/fixtures.mjs';
 test('synthetic multi-page PDF is structurally complete and has an indexed xref',()=>{
   const content=Buffer.from(makeSchoolPdf()).toString('latin1');
   assert.ok(content.startsWith('%PDF-1.4'));
-  assert.match(content,/xref\n0 8/);
+  assert.match(content,/xref\n0 9/);
   assert.match(content,/WEST-1/);
   assert.match(content,/\/Count 2/);
+  assert.match(content,/\/Subtype \/Image/);
+  assert.match(content,/\/FlateDecode/);
 });
 test('PDF text hint matching is strictly linked to imported real row labels',()=>{
   const labels=detectSectionLabels([

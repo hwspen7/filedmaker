@@ -496,6 +496,7 @@ async function adoptPdfPage(handle,page,source=null){
   next.calibration={corners:[],checkpoints:[]};
   next.sections=[];next.vectorCandidates=[];
   venue=normalizeVenue(next);image=loaded;registration=null;selectedSection='';
+  viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;tab('plan');
   selectedSeat=null;editorMode='calibrate';draftPoints=[];preview=null;
   recordEdit(before,'Review PDF page '+page+' of '+handle.name);
   sync();repaint();resize();
@@ -570,7 +571,8 @@ $('planFile').onchange=async event=>{
     venue.calibration.corners=[];venue.sections=[];selectedSection='';
     registration=null;preview=null;editorMode='calibrate';draftPoints=[];
     recordEdit(before,'Import raster drawing '+file.name);
-    sync();repaint();message('Source image loaded and hashed. Calibrate four court corners; then trace sections.');
+    viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;tab('plan');
+    sync();repaint();resize();message('Source image loaded and hashed. Calibrate four court corners; then trace sections.');
   }catch(e){message(e.message,true);}
   finally{event.target.value='';}
 };
@@ -733,7 +735,8 @@ $('vectorFile').onchange=async e=>{
     $('pdfPageWrap').hidden=true;
     selectedSection='';preview=null;editorMode='calibrate';draftPoints=[];
     recordEdit(before,'Import '+vectors.format+' vector plan '+file.name);
-    sync();repaint();
+    viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;tab('plan');
+    sync();repaint();resize();
     message(vectors.format+' contours imported ('+vectors.contours.length+
       '). Mark four court corners before reviewing section candidates.');
   }catch(err){message('Vector import rejected: '+err.message,true);}
