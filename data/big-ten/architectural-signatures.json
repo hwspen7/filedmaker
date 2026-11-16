@@ -51,7 +51,25 @@
       "roofRise": 8,
       "entryAngle": 1.57,
       "source": "https://sah-archipedia.org/buildings/IA-01-CE306",
-      "note": "Deep-set bowl below a low external roof of exposed steel trusses and curved glass-block walls"
+      "note": "Deep-set bowl below a low external roof of exposed steel trusses and curved glass-block walls",
+      "historicalClearspanMetres": {
+        "width": 91.44,
+        "length": 103.632
+      },
+      "measuredFacts": [
+        {
+          "key": "historicalClearspanMetres.width",
+          "value": 91.44,
+          "units": "m clearspan",
+          "source": "https://sah-archipedia.org/buildings/IA-01-CE306"
+        },
+        {
+          "key": "historicalClearspanMetres.length",
+          "value": 103.632,
+          "units": "m clearspan",
+          "source": "https://sah-archipedia.org/buildings/IA-01-CE306"
+        }
+      ]
     },
     "maryland": {
       "roof": "flat-broad",
@@ -95,7 +113,7 @@
       "feature": "multi-story-glass",
       "roofRise": 5,
       "entryAngle": 1.57,
-      "source": "https://sah-archipedia.org/buildings/NE-01-109-0042",
+      "source": "https://huskers.com/facilities/pinnacle-bank-arena",
       "note": "Oval metal/concrete mass and protruding multi-story glass lobby; split upper concourse"
     },
     "northwestern": {
@@ -122,7 +140,7 @@
       "feature": "brick-glass",
       "roofRise": 5,
       "entryAngle": 1.57,
-      "source": "https://static.gopsusports.com/bryce-jordan-center",
+      "source": "https://gopsusports.com/news/2018/08/08/bryce-jordan-center",
       "note": "Low-profile bi-level mass of brick and glass with broad curved roof"
     },
     "purdue": {
@@ -173,7 +191,26 @@
       "roofRise": 2,
       "entryAngle": 1.57,
       "source": "https://newsroom.ucla.edu/magazine/pauley-pavilion-renovation-bruin-athletics",
-      "note": "Broad low roof over terracotta/glass wraparound concourse"
+      "note": "Broad low roof over terracotta/glass wraparound concourse",
+      "asymmetricConcourseMetres": {
+        "north": 12.192,
+        "south": 6.096,
+        "east": 6.096,
+        "west": 2.7432
+      },
+      "measuredFacts": [
+        {
+          "key": "asymmetricConcourseMetres",
+          "value": {
+            "north": 12.192,
+            "south": 6.096,
+            "east": 6.096,
+            "west": 2.7432
+          },
+          "units": "m concourse addition",
+          "source": "https://newsroom.ucla.edu/magazine/pauley-pavilion-renovation-bruin-athletics"
+        }
+      ]
     },
     "usc": {
       "roof": "flat-broad",
