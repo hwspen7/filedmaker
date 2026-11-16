@@ -1,9 +1,9 @@
 // FiledMaker Venue Builder — interactive 3D scene canvas, no external libraries.
 // This builder models conceptual event layouts, not official ticket inventory.
 import {PARTS,ASSEMBLIES,SURFACES,createProject,addPart,placeAssembly,
-  updatePart,removePart,duplicatePart,validateProject,countSeats,
-  seatsForStand,rotatedPoint,curvedLocalPoint,importOBJAsset,
-  exportProject,importProject} from '../../src/builder/model.mjs';
+  updatePart,removePart,duplicatePart,arrayPart,resizeFloor,
+  validateProject,countSeats,seatsForStand,rotatedPoint,curvedLocalPoint,
+  importOBJAsset,exportProject,importProject} from '../../src/builder/model.mjs';
 
 const $=id=>document.getElementById(id);
 const canvas=$('scene'),frame=$('canvasFrame'),ctx=canvas.getContext('2d');
@@ -170,6 +170,8 @@ function renderObjectList(){
 function refresh(){
   $('projectName').value=project.name;
   $('activity').value=project.activity;
+  $('floorWidth').value=project.floor.width;
+  $('floorLength').value=project.floor.length;
   renderObjectList();
   renderProperties();
   updateStats();
@@ -795,6 +797,21 @@ $('fitView').onclick=()=>fitView();
 $('zoomIn').onclick=()=>{view.scale=clamp(view.scale*1.2,2.5,40);paintSoon();};
 $('zoomOut').onclick=()=>{view.scale=clamp(view.scale/1.2,2.5,40);paintSoon();};
 $('newProject').onclick=()=>setLayout($('activity').value);
+$('applyFloor').onclick=()=>{
+  const width=Number($('floorWidth').value),length=Number($('floorLength').value);
+  transact(()=>resizeFloor(project,width,length));fitView();
+};
+$('applyArray').onclick=()=>{
+  if(!selected)return;
+  const options={
+    columns:Number($('arrayColumns').value),rows:Number($('arrayRows').value),
+    stepX:Number($('arrayStepX').value),stepZ:Number($('arrayStepZ').value)
+  };
+  const before=project.parts.length;
+  transact(()=>arrayPart(project,selected,options));
+  if(project.parts.length>before)status('Created '+(project.parts.length-before)+
+    ' new objects in one undoable operation.');
+};
 $('undo').onclick=undo;
 $('redo').onclick=redo;
 $('duplicate').onclick=()=>{
