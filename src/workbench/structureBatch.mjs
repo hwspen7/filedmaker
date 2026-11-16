@@ -74,7 +74,7 @@ export function editVenueStructureBatch(input,command){
     const mid=(Math.min(...positions)+Math.max(...positions))/2;
     for(const s of selected){
       s[axis]=2*mid-s[axis];
-      s.yaw=-s.yaw;
+      s.yaw=s.yaw===0?0:-s.yaw;
     }
   }else if(action==='remove'){
     const doomed=new Set(ids);
