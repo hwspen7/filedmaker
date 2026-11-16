@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {GeometryEngine} from '../src/next/engines/geometry.mjs';
 import {generateVenuePackage} from '../src/next/engines/factory.mjs';
 import {validateBigTenCatalog,toProceduralSpec,generateBigTenBatch} from '../scripts/generate-big-ten.mjs';
+import {toBigTenProceduralSpec} from '../src/next/bigTenCatalog.mjs';
 
 const catalog=JSON.parse(readFileSync(new URL('../data/big-ten/arenas-2026-27.json',import.meta.url)));
 const schema=JSON.parse(readFileSync(new URL('../data/big-ten/venue-catalog.schema.json',import.meta.url)));
@@ -308,4 +309,32 @@ test('Pauley Pavilion varying-width exterior concourse is encoded in 3D perimete
   assert.ok(zNorth.length&&zSouth.length,'Missing Pauley roof sampling');
   assert.ok(Math.max(...zNorth)-Math.max(...zSouth)>5,
     'The north concourse must project farther than the south concourse');
+});
+
+test('the native Seat Studio sidebar exposes all 18 Big Ten basketball venues like OSU',()=>{
+  const page=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const program=readFileSync(new URL('../src/next/studio.js',import.meta.url),'utf8');
+  const ids=[...page.matchAll(/data-bigten="([a-z-]+)"/g)].map(item=>item[1]);
+  const expected=catalog.venues.map(v=>v.id).filter(id=>id!=='ohio-state');
+  assert.deepEqual(ids,expected,'Every Big Ten opponent must be a visible studio sidebar button');
+  assert.match(page,/data-preset="schott"/,'OSU keeps its specialist reference preset');
+  assert.match(page,/data-view="exterior"/,'Studio must expose building exterior alongside seat view');
+  assert.match(program,/setBigTenVenue\(b\.dataset\.bigten\)/,
+    'New venue buttons must trigger in-place selection');
+  assert.match(program,/createProceduralProject\(spec\)/,
+    'Selected venues must use the same native WebGL studio project pipeline');
+  assert.match(program,/loadBigTenCatalog\(/,
+    'Studio must load per-venue real source maps rather than demo presets');
+});
+
+test('Big Ten native browser and offline batch share exactly the same geometry specification',()=>{
+  const sectionProfiles=JSON.parse(readFileSync(
+    new URL('../data/big-ten/reference-section-layouts.json',import.meta.url))).layouts;
+  const architecture=JSON.parse(readFileSync(
+    new URL('../data/big-ten/architectural-signatures.json',import.meta.url))).venues;
+  for(const venue of catalog.venues){
+    const inStudio=toBigTenProceduralSpec(venue,sectionProfiles,architecture);
+    const inBatch=toProceduralSpec(venue);
+    assert.deepEqual(inStudio,inBatch,venue.id+' must not fall back to a different template');
+  }
 });
