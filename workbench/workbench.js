@@ -36,6 +36,7 @@ let preview=null,renderer=null,selectedSection='',selectedSeat=null,
   selectedStructure='',selectedStructureIds=new Set(),selectedZone='',activeModelTool='rows',
   activeStructureKind='platform',drag=null,viewMode='plan';
 let pendingRows=null,vectorDrawing=null,pdfHandle=null,workflowUI=null;
+let guideState=null,modelDrag=null;
 const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
 const safeName=()=>venue.venue.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'school-venue';
@@ -558,6 +559,71 @@ function resize(){
   draw();
   renderer?.resize();
 }
+function currentSnapStep(event){
+  // Shift allows fine placement. Alt bypasses automatic grid or magnet
+  // snapping for independent manual adjustments.
+  return event?.shiftKey?.1:Number($('gridStep').value);
+}
+function inferObjectPoint(point,excluded=[],event=null){
+  const step=currentSnapStep(event),enabled=$('snapEnabled').checked&&!event?.altKey;
+  const targets=objectGuideTargets(venue.structures,venue.sections,
+    venue.surfaceDesign,excluded);
+  const candidate=snapPosition(point,{grid:step,gridEnabled:enabled,
+    magnetEnabled:enabled,tolerance:Math.max(.08,8/Math.max(4,layout().scale)),
+    targets});
+  guideState={...candidate,origin:point};
+  return candidate;
+}
+function drawDraftingGrid(g){
+  if(!$('gridVisible').checked||(image&&!registration))return;
+  const desired=Number($('gridStep').value);
+  const halfX=Math.min(300,Math.max(45,g.w/Math.max(1,g.scale)/2+10));
+  const halfZ=Math.min(300,Math.max(45,g.h/Math.max(1,g.scale)/2+10));
+  const step=desired*Math.max(1,Math.ceil((halfX+halfZ)/(135*desired)));
+  ctx.save();
+  if(image&&g.imageRect){
+    const r=g.imageRect;ctx.beginPath();ctx.rect(r.x,r.y,r.width,r.height);ctx.clip();
+  }
+  ctx.lineWidth=1;
+  for(let x=Math.ceil(-halfX/step)*step;x<=halfX+.001;x+=step){
+    const a=worldToScreen({x,z:-halfZ},g),b=worldToScreen({x,z:halfZ},g);
+    if(!Number.isFinite(a.x+a.y+b.x+b.y))continue;
+    ctx.strokeStyle=Math.abs(x)<.001?'#3787a99c':'#6b99a82b';
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  for(let z=Math.ceil(-halfZ/step)*step;z<=halfZ+.001;z+=step){
+    const a=worldToScreen({x:-halfX,z},g),b=worldToScreen({x:halfX,z},g);
+    if(!Number.isFinite(a.x+a.y+b.x+b.y))continue;
+    ctx.strokeStyle=Math.abs(z)<.001?'#3787a99c':'#6b99a82b';
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawInferenceGuides(g){
+  if(!guideState||!$('guidesVisible').checked||!$('snapEnabled').checked)return;
+  ctx.save();
+  ctx.lineWidth=1.4;ctx.strokeStyle='#d74e59';
+  ctx.setLineDash([5,4]);
+  for(const guide of guideState.guides){
+    const a=worldToScreen(guide.axis==='x'?
+      {x:guide.value,z:-300}:{x:-300,z:guide.value},g);
+    const b=worldToScreen(guide.axis==='x'?
+      {x:guide.value,z:300}:{x:300,z:guide.value},g);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  const p=worldToScreen(guideState,g),label=
+    'X '+guideState.x.toFixed(2)+' m · Z '+guideState.z.toFixed(2)+' m';
+  ctx.font='600 11px system-ui';
+  const width=ctx.measureText(label).width+16;
+  ctx.fillStyle='#243d4deb';
+  ctx.fillRect(Math.min(g.w-width-5,Math.max(5,p.x+12)),
+    Math.max(50,Math.min(g.h-27,p.y-31)),width,22);
+  ctx.fillStyle='#fff';
+  ctx.fillText(label,Math.min(g.w-width-5,Math.max(5,p.x+12))+8,
+    Math.max(50,Math.min(g.h-27,p.y-31))+15);
+  ctx.restore();
+}
 function draw(){
   if(viewMode!=='plan')return;
   const g=layout(),{w,h}=g;
@@ -567,6 +633,7 @@ function draw(){
     ctx.drawImage(image,r.x,r.y,r.width,r.height);
     ctx.fillStyle='#ffffff27';ctx.fillRect(r.x,r.y,r.width,r.height);
   }
+  drawDraftingGrid(g);
   const surfaceStyle=venue.surfaceDesign;
   const court=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,z])=>
     worldToScreen(surfaceToWorld({x:x*venue.court.width/2,
@@ -704,6 +771,7 @@ function draw(){
     ctx.strokeStyle='#bf6f25';ctx.lineWidth=2;ctx.stroke();
     for(const p of points){ctx.beginPath();ctx.arc(p.x,p.y,4,0,2*Math.PI);ctx.fillStyle='#bf6f25';ctx.fill();}
   }
+  drawInferenceGuides(g);
   if(drag?.kind==='box'){
     const a=drag.start,b=drag.end;
     ctx.save();
@@ -892,14 +960,14 @@ canvas.addEventListener('pointerdown',event=>{
       repaint();return;
     }
     if(editorMode==='place-assembly'){
-      const world=screenToWorld(p,g);
+      const world=inferObjectPoint(screenToWorld(p,g),[],event);
       if(commitStructureAssembly(world.x,world.z)){
         editorMode='select';draw();
       }
       repaint();return;
     }
     if(editorMode==='place-structure'){
-      const world=screenToWorld(p,g);
+      const world=inferObjectPoint(screenToWorld(p,g),[],event);
       const values=structureFormValues();
       const success=commitStructure({action:'add',kind:activeStructureKind,
         ...values,x:world.x,z:world.z},
@@ -1019,7 +1087,8 @@ canvas.addEventListener('pointermove',event=>{
   }
   if(drag.kind==='structure-group'){
     try{
-      const position=screenToWorld(pointer(event),layout());
+      const raw=screenToWorld(pointer(event),layout());
+      const position=inferObjectPoint(raw,drag.ids,event);
       const anchor=drag.before.structures.find(s=>s.id===drag.id);
       if(!anchor)return;
       const step=event.shiftKey?.05:.25;
@@ -1064,7 +1133,8 @@ canvas.addEventListener('pointermove',event=>{
   }
   if(drag.kind==='structure'){
     try{
-      const position=screenToWorld(pointer(event),layout());
+      const raw=screenToWorld(pointer(event),layout());
+      const position=inferObjectPoint(raw,[drag.id],event);
       const step=event.shiftKey?.05:.25;
       const structure=venue.structures.find(s=>s.id===drag.id);
       if(structure&&Number.isFinite(position.x+position.z)){
@@ -1105,7 +1175,7 @@ canvas.addEventListener('pointermove',event=>{
 });
 function releasePointer(event){
   if(!drag)return;
-  const completed=drag;drag=null;
+  const completed=drag;drag=null;guideState=null;
   if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
   if(completed.kind==='box'){
     const a=completed.start,b=completed.end;
@@ -1175,6 +1245,18 @@ function releasePointer(event){
 }
 canvas.addEventListener('pointerup',releasePointer);
 canvas.addEventListener('pointercancel',releasePointer);
+for(const id of ['gridVisible','snapEnabled','guidesVisible','gridStep']){
+  $(id).addEventListener('change',()=>{
+    guideState=null;repaint();
+    if(id==='gridStep')message('Metric drafting step: '+$('gridStep').value+' m.');
+  });
+}
+function showStudioHelp(show){
+  $('studioHelp').hidden=!show;
+  $('studioHelpToggle').setAttribute('aria-expanded',String(show));
+}
+$('studioHelpToggle').onclick=()=>showStudioHelp($('studioHelp').hidden);
+$('studioHelpClose').onclick=()=>showStudioHelp(false);
 const fieldHandler=()=>{
   try{const before=structuredClone(venue);venue=validateFields();
     recordEdit(before,'Update venue metadata');
