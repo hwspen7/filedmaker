@@ -40,6 +40,49 @@ export const GeometryEngine={
         role:item.role==='primary'?'primary':'secondary'
       }))};
     })();
+    // Source-backed section identities and displayed rows are independent
+    // of an estimated, adjustable seat-center mesh. Missing angular survey
+    // data remain approximations even when section IDs are documented.
+    const sectionMap=input.sectionMap==null?null:(()=>{
+      const groupsByTier=input.sectionMap;
+      if(!Array.isArray(groupsByTier)||groupsByTier.length!==tiers.length)
+        throw Error('Section map must have one tier entry per seating level');
+      const keys=new Set();
+      return groupsByTier.map((groups,tierIndex)=>{
+        if(!Array.isArray(groups)||groups.length<1||groups.length>12)
+          throw Error('Section map tier requires 1 to 12 arc groups');
+        const occupied=[];
+        const output=groups.map(group=>{
+          const start=finite(group.startAngle,'Section arc start',0,TAU);
+          const span=finite(group.spanAngle,'Section arc span',.05,TAU);
+          const ids=group.sectionIds;
+          if(!Array.isArray(ids)||ids.length<1||ids.length>48)
+            throw Error('Invalid mapped section identifier list');
+          const weights=group.weights??ids.map(()=>1);
+          if(weights.length!==ids.length||weights.some(v=>!Number.isFinite(v)||v<=0||v>10))
+            throw Error('Invalid relative section widths');
+          const rowStart=integer(group.rowStart??1,'Displayed starting row',1,100);
+          const rowCount=integer(group.rowCount??tiers[tierIndex].rows,'Display row count',1,tiers[tierIndex].rows);
+          for(const id of ids){
+            if(typeof id!=='string'||!/^[A-Za-z0-9-]{1,12}$/.test(id))
+              throw Error('Invalid mapped section identifier '+id);
+            const key=tierIndex+':'+id;
+            if(keys.has(key))throw Error('Duplicate mapped section '+key);
+            keys.add(key);
+          }
+          const end=start+span;
+          occupied.push([start,Math.min(TAU,end)]);
+          if(end>TAU)occupied.push([0,end-TAU]);
+          return {startAngle:start,spanAngle:span,sectionIds:[...ids],
+            weights:[...weights],rowStart,rowCount};
+        });
+        occupied.sort((a,b)=>a[0]-b[0]);
+        for(let i=1;i<occupied.length;i++)
+          if(occupied[i][0]<occupied[i-1][1]-1e-7)
+            throw Error('Overlapping mapped section arcs in tier '+tierIndex);
+        return output;
+      });
+    })();
     const rawVoids=input.voids??[];
     if(!Array.isArray(rawVoids)||rawVoids.length>256)throw Error('Too many restricted seating regions');
     const voids=rawVoids.map(v=>{
@@ -54,7 +97,7 @@ export const GeometryEngine={
       clearance:tiers[0].frontRadiusOffset,aisleWidth,seatPitch:pitch,roundness:exponent,
       targetCapacity:capacity,capacityTolerance:finite(input.capacityTolerance??.02,'Capacity tolerance',0,.2),
       exterior,
-      template:input.template==='open-stadium'?'open-stadium':'indoor-arena',voids};
+      template:input.template==='open-stadium'?'open-stadium':'indoor-arena',voids,sectionMap};
   },
   create(input){
     const spec=this.normalize(input),{field,roundness}=spec;
