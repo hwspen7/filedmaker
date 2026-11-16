@@ -338,21 +338,33 @@ export class NativeVenueRenderer {
       minY=Math.min(minY,y-.5);maxY=Math.max(maxY,y+1);
       minZ=Math.min(minZ,z-1);maxZ=Math.max(maxZ,z+1);
     }
-    // Include actual visible architecture and pedestal extrema when fitting
-    // the camera. Seat-only bounds clipped the lower facade in overview.
-    const structureCorners=[];
-    for(const mesh of [...Object.values(plan.architectureGeometry||{}),
-      plan.pedestalGeometry,plan.pedestalTrimGeometry].filter(x=>x?.length)){
-      const vertexCount=mesh.length/6;
-      const stride=Math.max(1,Math.floor(vertexCount/550));
-      for(let i=0;i<vertexCount;i+=stride){
-        const j=i*6,x=mesh[j],y=mesh[j+1],z=mesh[j+2];
+    // Fit the overview to the architecture ACTUALLY drawn in that view.
+    // The former implementation included enormous hidden roof and facade
+    // meshes in fitDistance, shrinking the visible seats into a tiny patch
+    // despite fixing the gray ring. Track exterior-only bounds separately.
+    const structureCorners=[],exteriorOnlyCorners=[];
+    const useOverviewLayer=name=>
+      NativeVenueRenderer.architectureLayerVisibleInMode(plan,'overview',name);
+    const collect=(mesh,target,includeInOverview)=>{
+      const count=mesh.length/6,stride=Math.max(1,Math.floor(count/550));
+      for(let i=0;i<count;i+=stride){
+        const k=i*6,x=mesh[k],y=mesh[k+1],z=mesh[k+2];
         if(!Number.isFinite(x+y+z))continue;
-        minX=Math.min(minX,x);maxX=Math.max(maxX,x);
-        minY=Math.min(minY,y);maxY=Math.max(maxY,y);
-        minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
-        structureCorners.push([x,y,z]);
+        target.push([x,y,z]);
+        if(includeInOverview){
+          minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+          minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+          minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
+        }
       }
+    };
+    for(const [name,mesh] of Object.entries(plan.architectureGeometry||{})){
+      if(!mesh?.length)continue;
+      const visible=useOverviewLayer(name);
+      collect(mesh,visible?structureCorners:exteriorOnlyCorners,visible);
+    }
+    for(const mesh of [plan.pedestalGeometry,plan.pedestalTrimGeometry]){
+      if(mesh?.length)collect(mesh,structureCorners,true);
     }
     this.center=[(minX+maxX)/2,(minY+maxY)*.31,(minZ+maxZ)/2];
     this.corners=[minX,maxX].flatMap(x=>[minY,maxY].flatMap(y=>[minZ,maxZ].map(z=>[x,y,z])));
@@ -362,6 +374,7 @@ export class NativeVenueRenderer {
       this.corners.push([-w/2,0,-l/2],[w/2,0,l/2],[0,maxY,0]);
     }
     this.corners.push(...structureCorners);
+    this.exteriorCorners=[...this.corners,...exteriorOnlyCorners];
     const deck=plan.deckGeometry;
     for(let i=(deck?.length??0)-6;i>=0&&deck[i+1]<-.5;i-=18){
       this.corners.push([deck[i],deck[i+1],deck[i+2]]);
@@ -376,7 +389,7 @@ export class NativeVenueRenderer {
     const up=cross(toEye,right);
     const vertical=Math.tan(52*Math.PI/360)*.90;
     const horizontal=vertical*Math.max(.15,this.canvas.width/this.canvas.height);
-    const distances=this.corners.map(corner=>{
+    const distances=(this.mode==='exterior'?this.exteriorCorners:this.corners).map(corner=>{
       const p=corner.map((v,i)=>v-this.center[i]);
       return dot(p,toEye)+Math.max(Math.abs(dot(p,right))/horizontal,Math.abs(dot(p,up))/vertical);
     });
