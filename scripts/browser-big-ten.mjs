@@ -41,6 +41,16 @@ async function main(){
   let socket;const pending=new Map();let counter=0;
   try{
     await poll(async()=>{const r=await fetch('http://127.0.0.1:'+PORT+'/');return r.ok;});
+    const response=await fetch('http://127.0.0.1:'+PORT+'/__filedmaker/status');
+    if(!response.ok)throw Error('Filedmaker live branch check endpoint unavailable');
+    const status=await response.json();
+    if(!status.branch||!status.commit||!status.root)
+      throw Error('Unidentified website checkout');
+    if(process.env.GITHUB_REF_NAME&&status.branch!==process.env.GITHUB_REF_NAME)
+      throw Error('Website is serving the wrong Git branch: '+status.branch);
+    if(process.env.GITHUB_SHA&&status.commit!==process.env.GITHUB_SHA)
+      throw Error('Website is serving an old Git commit: '+status.commit);
+    console.log('Browser source integrity:',status.branch,status.commit.slice(0,12));
     const url=await poll(async()=>{
       const r=await fetch('http://127.0.0.1:'+DEBUG+'/json');
       const pages=await r.json();
@@ -211,6 +221,9 @@ async function main(){
     writeFileSync(osuMapImage,Buffer.from(osuMap.data,'base64'));
     if(statSync(osuMapImage).size<18000)throw Error('OSU section map screenshot is blank');
     console.log('All 17 Big Ten native website interiors and OSU smoothed bowl rendered');
+    const revision=await evalJs("document.querySelector('#runtimeBuild')?.textContent");
+    if(!revision||!revision.includes(status.commit.slice(0,9)))
+      throw Error('Homepage did not show its actual running source commit');
     console.log('Native studio: three Big Ten exterior previews and OSU preset verified');
     for(const venue of ARENAS){
       const path='http://127.0.0.1:'+PORT+'/build/big-ten-18/'+venue+'/venue-preview.html';
