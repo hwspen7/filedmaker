@@ -1813,6 +1813,11 @@ function updateBowlEstimate(){
 }
 function loadSyntheticBowl(options,{quiet=false}={}){
   try{
+    if($('bowlPreset').value!==options.template&&
+      Object.hasOwn(BOWL_STARTERS,options.template)){
+      $('bowlPreset').value=options.template;
+      updateBowlDefaults();
+    }
     if(venue.sources.length||venue.officialCapacity!==null)
       throw Error('This project contains source-backed records. Export it first, then open a new workspace before creating a fictional venue.');
     if(!quiet&&(venue.rows.length||venue.sections.length||venue.structures.length)&&
@@ -1828,6 +1833,10 @@ function loadSyntheticBowl(options,{quiet=false}={}){
     $('pdfStatus').textContent='Synthetic example. No source PDF or measured drawing is attached.';
     recordEdit(before,'Generate synthetic venue '+venue.venue);
     sync();tryPreview();
+    if(!preview){
+      venue=before;sync();tryPreview();
+      throw Error('The proposed synthetic bowl did not pass geometry validation. Original draft restored.');
+    }
     workflowUI?.go('model');
     activateModelTool('bowl');
     message('Created '+number(venue.sections.length)+
