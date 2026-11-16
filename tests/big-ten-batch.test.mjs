@@ -153,3 +153,19 @@ test('overlapping chart arc groups fail normalization',()=>{
   invalid.sectionMap[0][1].startAngle=3;
   assert.throws(()=>GeometryEngine.normalize(invalid),/Overlapping mapped section arcs/);
 });
+
+test('Indiana 3D structural treads do not bridge the empty side-stand gap',()=>{
+  const mapped=toProceduralSpec(get('indiana'));
+  const {plan}=generateVenuePackage(mapped);
+  const full=structuredClone(mapped);delete full.sectionMap;
+  const generic=generateVenuePackage(full);
+  assert.ok(plan.architectureGeometry.decks.length<
+    generic.plan.architectureGeometry.decks.length*.82,
+    'Mapped stands should contain less structural deck than a fully closed oval');
+  const points=plan.architectureGeometry.decks;
+  for(let i=0;i<points.length;i+=6){
+    const a=(Math.atan2(points[i+2],points[i])+Math.PI*2)%(Math.PI*2);
+    assert.ok(!(a>4.40&&a<4.95),
+      'Unoccupied side-stand gap must not have a gray structural floor');
+  }
+});
