@@ -46,12 +46,51 @@ export const SignatureArchitectureEngine={
     const {spec,point}=geometry,signature=spec.exterior?.signature;
     if(!signature)return null;
     const {roof,finish,feature,roofRise,entryAngle}=signature;
-    const last=spec.tiers.length-1,base=Number(roofY),rise=Number(roofRise);
+    const last=spec.tiers.length-1;
+    let base=Number(roofY),rise=Number(roofRise);
+    if(signature.apexHeightMetres!=null)rise=Math.max(1,signature.apexHeightMetres-base);
+    // The roof datum and court datum in the historical Purdue report are
+    // separate: the floor is below surrounding exterior grade.
+    if(signature.historicalDomeRiseMetres!=null&&signature.historicalApexAboveCourtMetres!=null){
+      rise=signature.historicalDomeRiseMetres;
+      base=signature.historicalApexAboveCourtMetres-rise;
+    }
     const output=Object.fromEntries(['roofWhite','roofCopper','roofSlate','roofPale','radialBeams',
       'entryMasonry','entryGlass','entryFrames','entryCanopy','entryDoors',
-      'towerBrick','towerWindows','brickPiers'].map(name=>[name,[]]));
-    const perimeter=a=>point(last,a,1,galleryWidth+.1);
+      'towerBrick','towerWindows','brickPiers',
+      'facade','glazing','brickBase'].map(name=>[name,[]]));
+    const perimeter=a=>{
+      const {outerDiameterMetres,historicalBuildingWidthMetres:w,
+        historicalBuildingLengthMetres:l}=signature;
+      if(outerDiameterMetres!=null){
+        const radius=outerDiameterMetres/2;
+        return {x:radius*Math.cos(a),z:radius*Math.sin(a)};
+      }
+      if(w!=null&&l!=null){
+        const c=Math.cos(a),d=Math.sin(a);
+        const dist=Math.min(w/2/Math.max(Math.abs(c),1e-9),
+          l/2/Math.max(Math.abs(d),1e-9));
+        return {x:dist*c,z:dist*d};
+      }
+      const p=point(last,a,1,galleryWidth+.1);
+      if(roof==='copper-dome'){
+        // A circular wall and dome, not the previous elongated oval.
+        const r=Math.max(...Array.from({length:32},(_,i)=>{
+          const q=point(last,i*TAU/32,1,galleryWidth+.1);
+          return Math.hypot(q.x,q.z);
+        }));
+        return {x:r*Math.cos(a),z:r*Math.sin(a)};
+      }
+      return p;
+    };
     const sample=(t,a)=>{const p=perimeter(a);
+      if(roof==='gable-skylight'&&signature.historicalBuildingWidthMetres!=null){
+        // Genuine ridge roof: east/west gables and a level ridge along
+        // the long building axis; a radial bowl has no such ridge.
+        const x=p.x*t;
+        const h=rise*(1-Math.abs(x)/(signature.historicalBuildingWidthMetres/2));
+        return v(x,base+h,p.z*t);
+      }
       return v(p.x*t,base+roofHeight(roof,rise,t,a),p.z*t);
     };
     const roofTarget=output[rooffinish[finish]??'roofSlate'],rings=22;
@@ -64,7 +103,7 @@ export const SignatureArchitectureEngine={
     }
     const edgeColor=output.radialBeams;
     if(['folded-dome','truss-arch','barrel','saddle','gable-skylight'].includes(roof)){
-      const count=roof==='folded-dome'?32:roof==='truss-arch'?22:roof==='barrel'?18:roof==='saddle'?14:12;
+      const count=roof==='folded-dome'?(signature.radialButtresses??48):roof==='truss-arch'?22:roof==='barrel'?18:roof==='saddle'?14:12;
       for(let i=0;i<count;i++){
         const a=i*TAU/count;
         for(let j=0;j<18;j++){
@@ -145,8 +184,8 @@ export const SignatureArchitectureEngine={
       }
     }
     if(feature==='ring-glass-and-radial-pylons'){
-      for(let i=0;i<24;i++){
-        const a=i*TAU/24,{center:c,out:o,tan:t}=frame(a,-.8);
+      for(let i=0;i<(signature.radialButtresses??48);i++){
+        const a=i*TAU/(signature.radialButtresses??48),{center:c,out:o,tan:t}=frame(a,-.8);
         box(output.entryMasonry,c,t,o,2.2,4.6,0,Math.min(base,11.3));
       }
     }
@@ -164,6 +203,45 @@ export const SignatureArchitectureEngine={
         quad(output.radialBeams,P,Q,v(Q[0]+.28,Q[1],Q[2]),v(P[0]+.28,P[1],P[2]),[0,1,0]);
       }
     }
+
+    // Venue-specific measured perimeter walls replace the previous generic
+    // facades on the best-documented historic buildings.
+    const measuredRing=roof==='folded-dome'||roof==='copper-dome';
+    const rectangular=roof==='gable-skylight'&&signature.historicalBuildingWidthMetres!=null;
+    if(measuredRing||rectangular){
+      const wallTop=base-.12,glassLow=measuredRing?6.2:11.2;
+      const glassHigh=Math.min(wallTop-1,measuredRing?15:17.5);
+      for(let i=0;i<segments;i++){
+        const a=i*TAU/segments,b=(i+1)*TAU/segments;
+        const p=perimeter(a),q=perimeter(b),mid=(a+b)/2;
+        const n=[Math.cos(mid),0,Math.sin(mid)];
+        const plane=(p,y)=>v(p.x,y,p.z);
+        const vertical=(target,lo,hi)=>{
+          if(hi>lo)quad(target,plane(p,lo),plane(q,lo),plane(q,hi),plane(p,hi),n);
+        };
+        const hasWindow=measuredRing
+          ?roof==='folded-dome'||i%5===2
+          :i%12>2&&i%12<9;
+        const front=Math.cos(mid-entryAngle)>.80;
+        const breakIn=rectangular&&front&&glassLow>0;
+        vertical(output.brickBase,0,Math.max(.1,glassLow));
+        if(hasWindow)vertical(output.glazing,glassLow,glassHigh);
+        else vertical(output.brickBase,glassLow,glassHigh);
+        vertical(output.brickBase,glassHigh,wallTop);
+        if(!rectangular&&i%8===0){
+          const {center:c,out:o,tan:t}=frame(mid,0);
+          box(output.brickPiers,c,t,o,.52,.55,0,Math.min(base,12));
+        }
+      }
+      if(rectangular){
+        // Original building ridge skylight, long axis runs north/south.
+        const w=signature.historicalBuildingWidthMetres,l=signature.historicalBuildingLengthMetres;
+        const top=base+rise;
+        quad(output.glazing,v(-2.65,top+.08,-l*.37),v(2.65,top+.08,-l*.37),
+          v(2.65,top+.08,l*.37),v(-2.65,top+.08,l*.37),[0,1,0]);
+      }
+    }
+
     return Object.fromEntries(Object.entries(output).map(([k,a])=>[k,new Float32Array(a)]));
   }
 };
