@@ -132,6 +132,14 @@ async function main(){
     const assembled=await evaluate("(()=>{const before=document.querySelectorAll('.object-button').length;document.querySelectorAll('.assembly')[0].click();return {before,after:document.querySelectorAll('.object-button').length}})()");
     if(assembled.after-assembled.before!==3)
       throw Error('Basketball assembly did not insert court and two hoops: '+JSON.stringify(assembled));
+
+    // Hall footprint and multi-row arrays are editable in a live project.
+    const floor=await evaluate("(()=>{document.querySelector('#floorWidth').value='100';document.querySelector('#floorLength').value='70';document.querySelector('#applyFloor').click();return {width:document.querySelector('#floorWidth').value,length:document.querySelector('#floorLength').value,error:document.querySelector('#status').textContent}})()");
+    if(floor.width!=='100'||floor.length!=='70'||/must be|invalid/i.test(floor.error))
+      throw Error('Hall resizing failed: '+JSON.stringify(floor));
+    const arrayResult=await evaluate("(()=>{const before=document.querySelectorAll('.object-button').length;document.querySelector('#arrayColumns').value='3';document.querySelector('#arrayRows').value='2';document.querySelector('#applyArray').click();return {before,after:document.querySelectorAll('.object-button').length,status:document.querySelector('#status').textContent}})()");
+    if(arrayResult.after-arrayResult.before!==5)
+      throw Error('Court duplication grid failed: '+JSON.stringify(arrayResult));
     // Switching a stand to arc must regenerate its real seat inventory.
     await evaluate("(()=>{document.querySelector('#activity').value='basketball';document.querySelector('#newProject').click();document.querySelector('.object-button').click();const shape=document.querySelector('#fieldList select');shape.value='arc';shape.dispatchEvent(new Event('change',{bubbles:true}));})()");
     const arc=await evaluate("({seats:document.querySelector('#seatCount').textContent,shape:document.querySelector('#fieldList select')?.value,arcField:[...document.querySelectorAll('#fieldList label')].some(x=>x.textContent.includes('Total arc angle'))})");
