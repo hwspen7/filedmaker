@@ -277,7 +277,7 @@ function selectSeat(seat){
   $('seatDetails').replaceChildren();
   const title=document.createElement('strong');title.textContent=seat?`${seat.sectionId} · Row ${seat.row} · Seat ${seat.number}`:'No seat selected';$('seatDetails').append(title);
   const note=document.createElement('p');note.textContent=seat?(plan.hasRoster?`Imported seat ID: ${seat.uid}. Coordinates ${project.ticketing.coordinates==='estimated'?'estimated, not measured':'supplied but not verified'}.`:`${seat.uid} — synthetic position. This is not an actual ticketed seat.`):'Click a seat or find its ID. Views are approximate until validated against a real seat map.';$('seatDetails').append(note);
-  const section=model.seatingRows&&model.sectionFootprints.find(item=>item.id===seat?.sectionId);
+  const section=seat&&model.sectionFootprints?.find(item=>item.id===seat.sectionId);
   if(section){
     const rows=seatsBySection.get(section.id);
     const count=[...rows.values()].reduce((sum,items)=>sum+items.length,0);
@@ -297,7 +297,8 @@ function selectSeat(seat){
   }
 }
 function updateReferencePhoto(seat){
-  const reference=SCHOTTENSTEIN_REFERENCE_VIEWS.find(item=>item.section===seat?.sectionId);
+  const reference=model.sectionFootprints?
+    SCHOTTENSTEIN_REFERENCE_VIEWS.find(item=>item.section===seat?.sectionId):null;
   const target=$('referenceSource');
   if(!model.seatingRows||!reference){
     target.textContent='Choose a reference position to compare with a published photo.';
