@@ -31,7 +31,7 @@ of its contour, row mesh, or seating identifiers.
 | --- | --- | --- | --- |
 | Indiana | Opposing detached main stands and separately clipped balcony banks | A–F and G–M lower stands, AA–FF and GG–MM balcony sections | Curved side-edge endpoints, internal portal sizes and rake |
 | Purdue | Circular 18-section lower/18-section upper bowl | Lower **1–18** (no leading zeros) and upper 101–118, premium blocks 8–11 remain occupied | Exact curvature and inner/outer accessible entrances |
-| Illinois | Three radially separate rings including 48-sector upper gallery | 101–120; 121–129 and 134–143 with a suite-space interruption; 201–248 | Courtside 9–13 and exact suite/ADA boundaries are deliberately **unmodeled** |
+| Illinois | Three radially separate rings including 48-sector upper gallery | 101–120; 121–129 and 134–143 with a suite-space interruption; 201–248 | Court-level 9–13 are reconstructed using published student-section row labels; exact individual seat XY and suite/ADA geometry remain estimated |
 | Iowa | Compact sunken ring with **28 contiguous full-height section columns** | A, AA, BB, ... NN, N, M, ... B in clockwise order. Both modeled row-depth bands use these same labels, with students in G–I and lower E/K | Verified section-specific row depths, courtside ECS/SCS/NCS and ADA positions remain unmodeled |
 | Michigan State | Lower/upper different shapes and material by row | Lower bench 1–9, no 10–12, lower chairs 13–28; upper chairs 1–13 and benches 14–19 | Exact student bench boundary and aisle portal widths |
 | Wisconsin | Angular 3-level bowl with staggered/overhanging balcony fronts | 101–128, 201–228, 301–328; south student sections | Source-labeled N128/N101/N102, SC114–116, CCN/CCS premium blocks remain **unmodeled**, as do cantilever survey dimensions |
@@ -103,3 +103,20 @@ unmodeled documented section remains listed as missing rather than being
 silently approximated into a different section.
 
 The original Ohio State preset is unchanged.
+
+### Illinois State Farm Center visual correction
+
+The earlier 3D overview displayed a thick gray ring even after the exterior
+facade was hidden. That ring came from the generic concourse, gallery soffit,
+roofDeck and backWall layers. The interior renderer now displays only the
+seat-row treads, fascias, aisle edges and actual seat instances for non-OSU
+bowl interiors. The *Building exterior* mode continues to show the shell.
+
+The Illinois 100 lower deck now uses a court-oriented rounded-rectangle
+contour rather than the same circular curve as its 200-level upper gallery.
+Published section-specific row spans are applied to 101, 102, 110, 119, 121,
+125, 127 and 201, including the A/B/C lettered courtside-leading rows and
+the 201 first present row 6. Documented east-side student seating sections
+9–13 are now represented as separate court-edge seating banks with authentic
+row labels. Their specific chair coordinates, platform edges and row widths
+remain *diagram-derived estimates*, not authoritative seat inventory.
