@@ -89,8 +89,9 @@ const letterRows = letters => [...letters];
 const rowsAtoU=letterRows('ABCDEFGHIJKLMNOPQRSTU');
 const accessibleTerrace=new Set([304,307,314,331]);
 const clubWithPublishedCounts = new Set(['204','205','206','207','221','222','223','224']);
-// Published row labels from the section pages linked below. The slots keep
-// the documented wheelchair landings and press-side breaks between rows open.
+// Illustrated row labels for the preview model. Keep the documented access
+// landings; the former Press Box cutout is intentionally filled through row U.
+// These newly filled upper seats are estimates, not verified ticket inventory.
 const rowDetails = new Map([
   ...['104','107','121','122','123','124'].map(id=>[id,{labels:['AA',...rowsAtoU]}]),
   ...['105','106','111','117','128','134'].map(id=>[id,{labels:rowsAtoU}]),
