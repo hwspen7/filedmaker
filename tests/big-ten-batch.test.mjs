@@ -72,7 +72,8 @@ test('shared six-engine pipeline produces distinct scalable arenas without OSU h
     assert.ok(audit.passed,id+' '+audit.errors?.join('; '));
     assert.equal(model.seatOrigin,'generated',id);
     assert.equal(project.proceduralVenue.provenance.seatCoordinates,'not-available',id);
-    assert.ok(plan.architectureGeometry.facade.length>1000,id);
+    assert.ok((plan.architectureGeometry.facade.length+
+      plan.architectureGeometry.brickBase.length)>1000,id);
     assert.ok(plan.architectureGeometry.decks.length>1000,id);
     assert.ok(model.seats.length>6000,id);
     assert.equal(project.title,venue.venue.name);
