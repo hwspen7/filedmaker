@@ -608,3 +608,26 @@ $('capture').onclick=()=>{
 };
 window.addEventListener('resize',()=>{renderer?.resize();if(mode==='top')drawMap();});
 setPreset('schott');
+async function showRunningBuild(){
+  const node=$('runtimeBuild');
+  if(!node)return;
+  try{
+    const response=await fetch('/__filedmaker/status',{cache:'no-store'});
+    if(!response.ok)throw Error('Build verification endpoint unavailable');
+    const info=await response.json();
+    const short=String(info.commit||'unknown').slice(0,9);
+    node.textContent=info.branch+' @ '+short;
+    node.title='This web page is served by '+info.branch+' at '+info.commit+
+      ' from '+info.root;
+    if(info.branch!=='feature/big-ten-arena-parity'){
+      node.textContent='Wrong branch: '+info.branch+' @ '+short;
+      node.style.color='#ac2525';
+      error('This server is not using the Big Ten development branch. Run scripts/launch-big-ten.ps1 from the FiledMaker repository.');
+    }
+  }catch(e){
+    node.textContent='Version unverified';
+    node.title=e.message;
+    node.style.color='#ac2525';
+  }
+}
+showRunningBuild();
