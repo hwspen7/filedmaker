@@ -107,6 +107,8 @@ function renderProperties(){
   if(!part)return;
   fields.append(makeField('label','Component name',part.label,{type:'text'}));
   for(const [key,caption,min,max,step] of numericFields){
+    // A stand's effective top elevation follows its base height, rows and rise.
+    if(part.kind==='stand'&&key==='height')continue;
     fields.append(makeField(key,caption,part[key],{min,max,step}));
   }
   if(part.kind==='stand'){
@@ -304,6 +306,10 @@ function drawScene(){
   ctx.fillStyle='#edf2f4';ctx.fillRect(0,0,size.w,size.h);
   drawGrid();drawFloor();
   const primitives=[];
+  // Keep editing responsive for large arena drafts without changing the true
+  // modeled seat count. Dense scenes display a representative seat subset.
+  const totalSeats=countSeats(project);
+  const renderEvery=Math.max(1,Math.ceil(totalSeats/6500));
   hitRegions=[];
   for(const part of project.parts){
     const isStand=part.kind==='stand';
@@ -323,7 +329,8 @@ function drawScene(){
         const height=part.baseHeight+(row+1)*part.rise;
         addBlock(primitives,part,-part.width/2,part.width/2,z0,z1,height);
       }
-      for(const seat of seatsForStand(part))addSeat(primitives,seat,part);
+      const seats=seatsForStand(part);
+      for(let i=0;i<seats.length;i+=renderEvery)addSeat(primitives,seats[i],part);
     }else{
       addBlock(primitives,part,-part.width/2,part.width/2,
         -part.depth/2,part.depth/2,part.height);
