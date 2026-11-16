@@ -602,7 +602,8 @@ export class NativeVenueRenderer {
   bind(){
     let start=null,changed=false,editing=null;
     this.canvas.addEventListener('pointerdown',e=>{
-      const structure=e.shiftKey?this.pickStructureAt(e):null;
+      const structure=e.button===0&&this.onStructureDragStart?
+        this.pickStructureAt(e):null;
       if(structure&&this.onStructureDragStart){
         const origin=this.unprojectToPlane(e.clientX,e.clientY,structure.y);
         if(origin&&this.onStructureDragStart(structure,origin,e)!==false){
