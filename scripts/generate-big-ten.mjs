@@ -9,6 +9,8 @@ import {GeometryEngine} from '../src/next/engines/geometry.mjs';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
 
 const DEFAULT_CATALOG=fileURLToPath(new URL('../data/big-ten/arenas-2026-27.json',import.meta.url));
+const SECTION_PROFILES=JSON.parse(readFileSync(
+  new URL('../data/big-ten/reference-section-layouts.json',import.meta.url),'utf8')).layouts;
 const DEFAULT_OUT='build/big-ten-18';
 const DEFAULT_MAX_ERROR=.035;
 const fail=message=>{throw Error(message);};
@@ -76,7 +78,15 @@ export function toProceduralSpec(venue){
   if(!venue?.model||!venue.venue||!venue.capacity||!venue.id)
     fail('Cannot generate a venue without identity, capacity and geometry');
   const {evidenceLevel,...model}=venue.model;
-  return {...structuredClone(model),
+  const layout=SECTION_PROFILES[venue.id]??null;
+  const base=structuredClone(model);
+  if(layout){
+    base.tiers=structuredClone(layout.tiersOverride);
+    base.sectionMap=structuredClone(layout.tiers);
+    base.sections=Math.max(...layout.tiers.map(groups=>
+      groups.reduce((sum,group)=>sum+group.sectionIds.length,0)));
+  }
+  return {...base,
     id:'big-ten-'+venue.id,
     name:venue.venue.name,
     targetCapacity:venue.capacity.published,
@@ -88,7 +98,10 @@ export function toProceduralSpec(venue){
       publishedCapacitySourceId:venue.capacity.sourceId,
       seatMap:venue.evidence.seatMap,
       seatCoordinates:venue.evidence.seatRoster,
-      notice:'Synthetic rows and seats. Published capacity is not a digitized ticket manifest.'
+      sectionLabels:layout?.chartIds??'estimated',
+      sourceSectionMap:layout?.source??null,
+      sectionOutlineProvenance:layout?'estimated-arc':'estimated-uniform',
+      notice:'Seats and section boundaries are estimated even when school chart section IDs and row-label ranges are sourced.'
     }
   };
 }
@@ -101,6 +114,10 @@ function reportFor(venue,packageResult){
     schoolId:venue.id,school:venue.school.name,
     arena:venue.venue.name,city:venue.venue.city,state:venue.venue.state,
     modelStatus:'estimated-parametric',
+    sectionMapStatus:model.proceduralSpec.sectionMap?'official-section-ids/estimated-angles':'uniform-estimate',
+    modeledSectionIdCount:model.proceduralSpec.sectionMap
+      ?model.proceduralSpec.sectionMap.flatMap(groups=>groups.flatMap(group=>group.sectionIds)).length
+      :model.proceduralSpec.sections,
     publishedCapacity:{value:target,configuration:venue.capacity.configuration,
       notes:venue.capacity.notes,sourceId:venue.capacity.sourceId,
       alternates:venue.capacity.alternates??[]},
@@ -113,10 +130,18 @@ function reportFor(venue,packageResult){
     modeledSections:model.proceduralSpec.sections,
     sources:venue.sources,
     evidence:venue.evidence,
+    sectionReference:SECTION_PROFILES[venue.id]?{
+      url:SECTION_PROFILES[venue.id].source,
+      chartStatus:SECTION_PROFILES[venue.id].chartIds,
+      rowLabelStatus:SECTION_PROFILES[venue.id].rowLabels,
+      geometryStatus:SECTION_PROFILES[venue.id].geometry,
+      layoutType:SECTION_PROFILES[venue.id].layout,
+      notes:SECTION_PROFILES[venue.id].notes
+    }:null,
     reference,verification:audit,
     warnings:[...new Set([...audit.warnings,
       ...(relativeError>venue.model.capacityTolerance?['Generated capacity exceeds the 3.5% tolerance']:[])])],
-    notice:'Capacity cited from source; individual seat coordinates, row numbers and section boundaries remain generated estimates.'
+    notice:'Published capacity is sourced. Section IDs may be chart-derived; individual XYZ, angular section boundaries, actual row availability and architectural details remain estimated.'
   };
 }
 
