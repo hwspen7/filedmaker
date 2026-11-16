@@ -2,6 +2,7 @@
 import { GeometryEngine } from './geometry.mjs';
 import { addRoundVolume } from '../structuralMesh.mjs';
 import { ExteriorEngine } from './exterior.mjs';
+import { SignatureArchitectureEngine } from './signatureArchitecture.mjs';
 const TAU=Math.PI*2;
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
@@ -173,6 +174,14 @@ export const ArchitectureEngine={
         'entryCurtain','entryFrames','entryCanopy','entryDoors']){
         layers[key]=[...generated[key]];
       }
+    }
+    // Distinct roof envelopes, signature entry forms and landmark structures.
+    // They never reuse the generic rotunda used by the earlier placeholders.
+    const signatureMesh=SignatureArchitectureEngine.build(geometry,
+      {segments,galleryWidth,roofY});
+    if(signatureMesh)for(const [key,mesh] of Object.entries(signatureMesh)){
+      if(!layers[key])layers[key]=[];
+      for(const value of mesh)layers[key].push(value);
     }
     return Object.fromEntries(Object.entries(layers).map(([key,data])=>[key,new Float32Array(data)]));
   }
