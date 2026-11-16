@@ -572,6 +572,16 @@ export class NativeVenueRenderer {
     },{passive:false});
   }
   pick(e){if(!this.plan)return;const rect=this.canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*this.canvas.width/rect.width,y=(e.clientY-rect.top)*this.canvas.height/rect.height;
+    if(this.mode!=='human'&&this.onStructurePick&&this.plan.operatorStructures?.length){
+      let object=null,dist=(25*this.canvas.width/rect.width)**2;
+      for(const structure of this.plan.operatorStructures){
+        const p=this.projectPoint([structure.x,structure.y+structure.height*.5,structure.z]);
+        if(!p)continue;
+        const value=(p[0]-x)**2+(p[1]-y)**2;
+        if(value<dist){dist=value;object=structure;}
+      }
+      if(object){this.onStructurePick(object);return;}
+    }
     let best=-1,depth=Infinity,dist=13*13*(this.canvas.width/rect.width)**2;
     for(let i=0;i<this.plan.seats.length;i++){
       const s=this.plan.seats[i],p=this.projectPoint([s.x,s.y+.5,s.z]);if(!p)continue;

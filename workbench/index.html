@@ -3,29 +3,33 @@
 <title>Venue Workbench · FiledMaker</title><meta name="description" content="Import, calibrate, preview and review a school venue in four clear steps.">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./workbench.css"></head>
 <body>
-<header class="topbar">
-  <a class="brand" href="../cases/"><span class="logo">F</span><strong>FiledMaker</strong></a>
-  <nav class="global-links" aria-label="Primary"><a href="../cases/">Cases</a><a href="./" aria-current="page">Workbench</a><a href="../">OSU viewer</a></nav>
-  <details class="top-tools"><summary>More</summary>
-    <a href="../school/">School data tools</a><a href="../legacy/">Advanced editor</a><small id="buildTag" class="build">Local workbench</small>
-  </details>
-</header>
-<div class="layout">
-
-<main class="main">
-<header class="workspace-top">
+<header class="topbar studio-header">
+<a class="brand" href="../cases/" aria-label="FiledMaker cases"><span class="logo">F</span><strong>FiledMaker</strong></a>
 <div class="workspace-ident"><div class="eyebrow">SCHOOL VENUE PROJECT <span id="stageCounter">· STEP 1 OF 4</span></div>
 <h1 id="workspaceName">Untitled school venue</h1>
 <p id="workStatus" class="muted" role="status" aria-live="polite">Upload a plan and row inventory to begin.</p></div>
-<div class="workspace-actions"><button id="undo" type="button">Undo</button><button id="redo" type="button">Redo</button>
-<button id="detailsToggle" type="button" aria-controls="projectInspector" aria-expanded="false">Project details</button></div>
-</header>
-<div class="steps-strip"><nav class="step-nav" aria-label="Venue workflow">
+
+<nav class="step-nav" aria-label="Venue workflow">
 <button data-open-stage="source" aria-current="step"><span class="step-num">1</span><span><strong>Import data</strong><small>Plans & seat rows</small></span></button>
 <button data-open-stage="calibrate"><span class="step-num">2</span><span><strong>Calibrate</strong><small>Trace & adjust</small></span></button>
 <button data-open-stage="model"><span class="step-num">3</span><span><strong>3D preview</strong><small>Generate & inspect</small></span></button>
 <button data-open-stage="review"><span class="step-num">4</span><span><strong>Review & export</strong><small>Evidence & delivery</small></span></button>
-</nav></div>
+</nav>
+<div class="workspace-actions"><button id="undo" type="button">Undo</button><button id="redo" type="button">Redo</button>
+<button id="detailsToggle" type="button" aria-controls="projectInspector" aria-expanded="false">Project details</button></div>
+
+<details class="top-tools"><summary title="Project links and source version">Menu</summary>
+<div class="top-menu-content">
+<a href="../cases/">Case library</a><a href="./">Workbench</a>
+<a href="../">OSU viewer</a><a href="../school/">School data tools</a>
+<a href="../legacy/">Advanced editor</a>
+<small id="buildTag" class="build">Local workbench</small>
+</div></details>
+</header>
+<div class="layout">
+
+<main class="main">
+
 <div id="caseContext" class="case-context" hidden><div><strong id="caseContextTitle"></strong><p id="caseContextText"></p></div>
 <a id="caseContextSource" target="_blank" rel="noopener noreferrer" hidden>View source document</a>
 <button id="caseContextDismiss" aria-label="Dismiss case instructions" type="button">×</button></div>
@@ -109,6 +113,7 @@
     <button type="button" data-model-tool="rows" aria-pressed="true">Rows</button>
     <button type="button" data-model-tool="seats" aria-pressed="false">Seats</button>
     <button type="button" data-model-tool="batch" aria-pressed="false">Batch</button>
+<button type="button" data-model-tool="structures" aria-pressed="false">Build</button>
     <button type="button" data-model-tool="preview" aria-pressed="false">Scene</button>
   </div>
   <div data-model-tool-pane="rows"><div class="section row-edit-panel">
@@ -178,6 +183,52 @@
       <p class="hint">Applies in one undoable transaction. Never invents extra seats or aisle measurements.</p>
     </div>
   </div>
+  <div data-model-tool-pane="structures" hidden>
+    <div class="section component-editor">
+      <div class="small-title">Venue component library</div>
+      <p class="hint">Use generic elements, then position them from the plan. These are estimates, not official measurements.</p>
+      <div class="component-kinds" role="group" aria-label="Select a reusable component">
+        <button data-structure-kind="platform" type="button">▣ Platform</button>
+        <button data-structure-kind="stairs" type="button">▤ Stairs</button>
+        <button data-structure-kind="rail" type="button">╏ Railing</button>
+        <button data-structure-kind="wall" type="button">▥ Wall</button>
+        <button data-structure-kind="portal" type="button">⌑ Entrance</button>
+        <button data-structure-kind="scoreboard" type="button">▦ Scoreboard</button>
+        <button data-structure-kind="table" type="button">▱ Desk</button>
+      </div>
+      <label>Selected component<select id="structureSelect"></select></label>
+      <div class="row-actions">
+        <button class="primary" id="structureAdd" type="button">Add component</button>
+        <button id="structurePickOnPlan" type="button">Place on 2D plan</button>
+      </div>
+      <div class="row-edit-status" id="structureStatus" aria-live="polite">Choose a component type or select an existing item.</div>
+      <details class="disclosure" id="structureTransform" open>
+        <summary>Position, dimensions and orientation</summary>
+        <label>Component label<input id="structureLabel" maxlength="80" placeholder="Operator label"></label>
+        <div class="pair">
+          <label>X position (m)<input id="structureX" type="number" step=".1" min="-2000" max="2000" value="0"></label>
+          <label>Z position (m)<input id="structureZ" type="number" step=".1" min="-2000" max="2000" value="0"></label>
+        </div>
+        <div class="pair">
+          <label>Base height (m)<input id="structureY" type="number" step=".1" min="0" max="85" value="0"></label>
+          <label>Rotation (°)<input id="structureYaw" type="number" step="15" min="-180" max="180" value="0"></label>
+        </div>
+        <div class="pair">
+          <label>Width (m)<input id="structureWidth" type="number" step=".1" min=".4" max="30" value="3"></label>
+          <label>Depth (m)<input id="structureDepth" type="number" step=".1" min=".08" max="24" value="2"></label>
+        </div>
+        <label>Height (m)<input id="structureHeight" type="number" step=".1" min=".08" max="12" value="1"></label>
+        <label>Reference note<input id="structureNote" maxlength="200" placeholder="Source or field-check note"></label>
+        <button id="structureApply" class="primary full" type="button">Apply dimensions</button>
+      </details>
+      <div class="row-actions">
+        <button id="structureDuplicate" type="button">Duplicate</button>
+        <button id="structureRotate" type="button">Rotate 90°</button>
+        <button id="structureRemove" type="button">Remove</button>
+      </div>
+      <p class="hint">Each component is editable in the project file. Intersection with seat positions blocks placement. Other safety and access checks still need staff review.</p>
+    </div>
+  </div>
   <div data-model-tool-pane="preview" hidden>
     <div class="section">
       <div class="small-title">Scene &amp; presentation</div>
@@ -214,14 +265,14 @@
 <section class="canvas-area" aria-label="Venue drawing and model">
 <div class="canvas-header"><div><strong id="canvasTitle">Drawing workspace</strong><small id="canvasDescription">Manual inspection and geometry editing</small><small id="quickStats">No seats generated</small></div>
 <div class="tabs" role="group" aria-label="View mode"><button id="showPlan" class="active" type="button">2D</button>
-<button id="show3d" type="button">3D</button><button id="showEye" type="button">Seat view</button></div></div>
-<div class="model-toolbar" aria-label="3D navigation tools">
+<button id="show3d" type="button">3D</button><button id="showEye" type="button">Seat view</button></div><div class="model-toolbar" aria-label="3D navigation tools">
 <div class="model-camera-tools"><button id="cameraFit" type="button" title="Fit the model to view">Fit</button>
 <button id="cameraTop" type="button" title="Look straight down">Top</button>
 <button id="cameraFocus" type="button" title="Focus selected section">Focus section</button>
 <label class="zoom-tool">Zoom <input id="cameraZoom" type="range" min="60" max="200" step="5" value="120"><span id="cameraZoomLabel">120%</span></label></div>
 <div class="model-actions"><button id="cameraCapture" type="button" title="Save a screenshot of the current canvas">Save image</button>
 <button id="toggleTools" type="button" aria-pressed="false" title="Hide or show editing tools">Hide tools</button></div></div>
+</div>
 <div class="visual"><canvas id="planCanvas" aria-label="Editable plan and section contours"></canvas>
 <canvas id="modelCanvas" aria-label="3D school venue preview" hidden></canvas>
 <div id="emptyCanvas" class="empty-canvas">

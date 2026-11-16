@@ -1,6 +1,7 @@
 // Independent, repeatable geometry/data checks. Gates prevent publishing a
 // seemingly certified result from an unverified source-derived draft.
 import {assessSources} from './sources.mjs';
+import {structureSeatInterference} from './structures.mjs';
 const positiveArea=points=>{
   let area=0;
   for(let i=0;i<points.length;i++){
@@ -39,6 +40,13 @@ export function assessVenueGeometry(traced){
     if(topology.crossed)
       add('blocking','CROSSED_SECTION','Section footprint is self-intersecting',section.id);
   }
+  const structures=venue.structures??[];
+  if(structures.length)add('review','OPERATOR_STRUCTURES_UNVERIFIED',
+    structures.length+' staff-placed venue structures require source and accessibility review');
+  const blockedByStructures=structureSeatInterference(structures,seats);
+  if(blockedByStructures.length)add('blocking','STRUCTURE_INTERSECTS_SEATING',
+    blockedByStructures.length+' structure-seat footprint overlaps (first: '+
+    blockedByStructures[0].structure+' / '+blockedByStructures[0].seat+')');
   const staffRows=venue.rows.filter(r=>r.operatorEdited);
   const adjustedSeats=venue.rows.reduce((n,r)=>n+(r.seatOverrides?.length??0),0);
   if(adjustedSeats)add('review','INDIVIDUAL_SEAT_OFFSETS',

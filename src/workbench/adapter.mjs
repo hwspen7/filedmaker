@@ -5,6 +5,7 @@ import {generateSeats,validateProject} from '../model.mjs';
 import {buildVenuePlan} from '../next/venuePlan.mjs';
 import {SPORT_DEFAULTS} from './contract.mjs';
 import {generateTracedVenue} from './generator.mjs';
+import {buildStructureInstances} from './structures.mjs';
 export function buildWorkbenchPreview(input){
   const traced=generateTracedVenue(input),v=traced.venue;
   if(!traced.seats.length)throw Error('Import rows and trace sections before generating the 3D preview');
@@ -30,5 +31,14 @@ export function buildWorkbenchPreview(input){
   // Fit the editing camera to actual staff-traced seats, not optional
   // oversized architectural or invisible reference mesh bounds.
   plan.operatorWorkspace=true;
+  plan.operatorStructures=v.structures??[];
+  const furniture=buildStructureInstances(plan.operatorStructures);
+  if(furniture.length){
+    const merged=new Float32Array(plan.instanceData.length+furniture.length);
+    merged.set(plan.instanceData,0);
+    merged.set(furniture,plan.instanceData.length);
+    plan.instanceData=merged;
+    plan.instanceCount=merged.length/11;
+  }
   return {...traced,project:validated,model,plan};
 }

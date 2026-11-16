@@ -98,7 +98,8 @@ test('workbench is two-column with a closable details drawer',()=>{
   const view=read('workbench/index.html'),style=read('workbench/workbench.css');
   assert.match(view,/id="detailsToggle"/);
   assert.match(view,/id="detailsClose"/);
-  assert.match(view,/class="steps-strip"/);
+  assert.match(view,/class="topbar studio-header"/);
+  assert.doesNotMatch(view,/class="steps-strip"/);
   assert.doesNotMatch(view,/aside class="sidebar"/);
   assert.match(style,/\.layout\.details-open \.inspector/);
 });
@@ -130,4 +131,26 @@ test('model tool modes and 3D navigation remain compact and operable',()=>{
   assert.match(script,/applyVenueBatchEdit/);
   assert.match(script,/cameraFit/);
   assert.match(style,/\.content-grid\.tools-collapsed/);
+});
+
+test('single command bar owns workflow, project status and navigation',()=>{
+  const html=read('workbench/index.html'),css=read('workbench/workbench.css');
+  assert.match(html,/class="topbar studio-header"/);
+  assert.match(html,/id="workspaceName"/);
+  assert.match(html,/id="stageCounter"/);
+  assert.match(html,/data-open-stage="model"/);
+  assert.match(html,/id="buildTag"/);
+  assert.doesNotMatch(html,/class="workspace-top"/);
+  assert.doesNotMatch(html,/class="steps-strip"/);
+  assert.match(css,/\.topbar\.studio-header/);
+});
+test('modeling supports a real seven-kind component library',()=>{
+  const html=read('workbench/index.html'),js=read('workbench/workbench.js');
+  const kinds=['platform','stairs','rail','wall','portal','scoreboard','table'];
+  for(const kind of kinds)assert.match(html,new RegExp('data-structure-kind="'+kind+'"'));
+  for(const id of ['structureSelect','structureAdd','structurePickOnPlan',
+    'structureApply','structureDuplicate','structureRotate','structureRemove'])
+    assert.match(html,new RegExp('id="'+id+'"'));
+  assert.match(js,/editVenueStructure/);
+  assert.match(js,/activateModelTool\('structures'\)/);
 });

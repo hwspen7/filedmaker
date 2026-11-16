@@ -80,3 +80,19 @@ branch and verifies that the localhost server is serving the same commit,
 rather than reusing an older tab. Local working-tree changes are allowed
 and reported as a warning. The launcher never fetches, pulls, stashes,
 resets or overwrites Git files; update the branch explicitly when desired.
+
+## Generic venue structures
+
+The Build tool has seven reusable component templates: platform,
+stairs, rail, wall, entrance frame, scoreboard and desk. Select a type,
+then create it using the current dimensions or click **Place on 2D plan**
+to position it at a calibrated point. Existing components may be selected
+and their X/Z, base elevation, width, depth, height and rotation adjusted.
+2D dragging, duplication, 90-degree rotation and removal are available.
+
+These components use estimated generic geometry. They have source notes
+and form part of the editable project JSON. WebGL2 preview is updated
+without altering any seat IDs or original row counts. A proposed
+structure/seat overlap blocks the edit rather than silently deleting a
+seat. Structural compliance, safe egress and accessible clearances are
+not certified by this editor.

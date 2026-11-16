@@ -3,6 +3,8 @@ import {registerCourt} from '../src/workbench/registration.mjs';
 import {fictionalGym} from '../src/workbench/fixtures.mjs';
 import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
 import {applyVenueEdit,applyVenueBatchEdit} from '../src/workbench/editing.mjs';
+import {editVenueStructure} from '../src/workbench/structureEditor.mjs';
+import {STRUCTURE_CATALOG} from '../src/workbench/structures.mjs';
 import {generateTracedVenue} from '../src/workbench/generator.mjs';
 import {NativeVenueRenderer} from '../src/next/webgl.js';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
@@ -23,7 +25,7 @@ const canvas=$('planCanvas'),modelCanvas=$('modelCanvas'),ctx=canvas.getContext(
 let venue=newVenue(),registration=null,image=null,editorMode='select',draftPoints=[];
 let lastMeasurement=null;
 const measurementKey=()=>JSON.stringify([venue.plan.name,venue.court,venue.calibration.corners]);
-let preview=null,renderer=null,selectedSection='',selectedSeat=null,drag=null,viewMode='plan';
+let preview=null,renderer=null,selectedSection='',selectedSeat=null,selectedStructure='',activeStructureKind='platform',drag=null,viewMode='plan';
 let pendingRows=null,vectorDrawing=null,pdfHandle=null,workflowUI=null;
 const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
@@ -122,6 +124,7 @@ function sync(){
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   refreshSections();
   refreshRowControls();
+  refreshStructureControls();
 }
 function renderPdfSuggestions(){
   const root=$('pdfLabels');root.replaceChildren();
@@ -200,7 +203,7 @@ function updateBatchPreview(){
     'Choose a section with source rows.';
 }
 function activateModelTool(tool){
-  const permitted=new Set(['rows','seats','batch','preview']);
+  const permitted=new Set(['rows','seats','batch','structures','preview']);
   if(!permitted.has(tool))return;
   document.querySelectorAll('[data-model-tool]').forEach(btn=>
     btn.setAttribute('aria-pressed',String(btn.dataset.modelTool===tool)));
@@ -218,6 +221,63 @@ function commitBatch(edit,summary){
     message(summary+' · '+result.rowsAffected+' rows modified; capacity preserved. '+
       'Source review still required.');
   }catch(e){message('Batch rejected: '+e.message,true);}
+}
+
+function fillStructureFields(s){
+  const preset=STRUCTURE_CATALOG[s?.kind??activeStructureKind];
+  $('structureLabel').value=s?.label??preset.label;
+  for(const [id,prop,defaultValue] of [
+    ['structureX','x',0],['structureY','y',0],['structureZ','z',0],
+    ['structureYaw','yaw',0],['structureWidth','width',preset.width],
+    ['structureDepth','depth',preset.depth],['structureHeight','height',preset.height]
+  ])$(id).value=s?.[prop]??defaultValue;
+  $('structureNote').value=s?.note??'';
+}
+function refreshStructureControls(preferred=null){
+  const structures=venue.structures??[];
+  const select=$('structureSelect');
+  const id=preferred??selectedStructure??select.value;
+  select.replaceChildren(...structures.map(s=>
+    new Option(s.label+' · '+s.id,s.id)));
+  const current=structures.find(s=>s.id===id)||structures[0];
+  selectedStructure=current?.id??'';
+  if(current){
+    select.value=current.id;activeStructureKind=current.kind;
+    fillStructureFields(current);
+  }else fillStructureFields(null);
+  document.querySelectorAll('[data-structure-kind]').forEach(button=>
+    button.setAttribute('aria-pressed',
+      String(button.dataset.structureKind===activeStructureKind)));
+  $('structureStatus').textContent=structures.length?
+    structures.length+' component(s) · selected '+(current?.label||'none')+
+      ' · provisional geometry':
+    'No components yet. Choose a type, then add or place it.';
+}
+function structureFormValues(){
+  return {x:$('structureX').value,z:$('structureZ').value,
+    y:$('structureY').value,yaw:$('structureYaw').value,
+    width:$('structureWidth').value,depth:$('structureDepth').value,
+    height:$('structureHeight').value,label:$('structureLabel').value,
+    note:$('structureNote').value};
+}
+function commitStructure(command,title){
+  try{
+    const before=structuredClone(venue);
+    const result=editVenueStructure(venue,command);
+    venue=result.venue;selectedStructure=result.action==='remove'?'':result.id;
+    recordEdit(before,title+' · '+result.id);
+    sync();tryPreview();refreshStructureControls(selectedStructure);
+    message(title+' saved. '+result.count+' components · seat count unchanged · source review required.');
+    return true;
+  }catch(e){message('Component rejected: '+e.message,true);return false;}
+}
+function selectStructure(id){
+  if(!(venue.structures??[]).some(s=>s.id===id))return;
+  selectedStructure=id;
+  refreshStructureControls(id);
+  activateModelTool('structures');
+  message('Selected '+id+' · adjust its position, dimensions or orientation.');
+  repaint();
 }
 function fillRowFields(){
   const section=$('rowEditSection').value,label=$('rowEditRow').value;
@@ -361,6 +421,27 @@ function draw(){
       }
     }
   }
+
+  // Source-derived components are drawn above seating plans for reliable
+  // selection, but never change the official aisle or row inventory.
+  for(const s of venue.structures??[]){
+    const angle=s.yaw*Math.PI/180,c=Math.cos(angle),sn=Math.sin(angle);
+    const half=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]];
+    const boundary=half.map(([x,z])=>worldToScreen({
+      x:s.x+c*x*s.width+sn*z*s.depth,
+      z:s.z-sn*x*s.width+c*z*s.depth
+    },g));
+    const chosen=s.id===selectedStructure;
+    outline(boundary,chosen?'#8cb9c088':'#668b9766',
+      chosen?'#276d8c':'#56717e',chosen?3:1.5);
+    const center=worldToScreen(s,g);
+    ctx.fillStyle='#193c50';ctx.font='700 10px system-ui';
+    ctx.textAlign='center';ctx.fillText(s.id,center.x,center.y);
+    if(chosen){
+      ctx.beginPath();ctx.arc(center.x,center.y,5,0,2*Math.PI);
+      ctx.fillStyle='#ffc16a';ctx.fill();
+    }
+  }
   if(lastMeasurement&&lastMeasurement.key===measurementKey()){
     const a=worldToScreen(lastMeasurement.start,g),b=worldToScreen(lastMeasurement.end,g);
     ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
@@ -417,20 +498,26 @@ function repaint(){
     staffEdits+' rows changed by staff; original evidence needs reconciliation':
     'Source and elevation verification required';
   $('quickStats').textContent=preview?
-    number(preview.seats.length)+' modeled positions · '+number(venue.sections.length)+' sections · needs review':
+    number(preview.seats.length)+' seats · '+number(venue.sections.length)+
+      ' sections · '+(venue.structures?.length??0)+' components · needs review':
     venue.rows.length?number(venue.rows.length)+' source rows · not yet modeled':
     'No seats generated';
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   $('evidenceStatus').textContent=preview?.quality?.blockingCount?'Geometry blocked':
     preview?'Unverified model · human review required':
     venue.plan.name||venue.rows.length?'Import / calibration in progress':'Awaiting source files';
-  $('modeLabel').textContent=editorMode==='select'?'Select · drag a section corner to adjust':
+  $('modeLabel').textContent=editorMode==='place-structure'?
+    'Place component · click a point on the calibrated 2D plan':
+    editorMode==='select'?'Select · drag a section corner to adjust':
     editorMode==='calibrate'?'Calibration · mark all four court corners':
     editorMode==='measure'?'Ruler · select two plan points':
     'Tracing · front left → front right → rear right → rear left';
   $('emptyCanvas').hidden=!!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
   $('canvasOverlay').hidden=!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
-  $('canvasOverlay').textContent=editorMode==='measure'?'Select two points on the plan for a provisional distance.':
+  $('canvasOverlay').textContent=editorMode==='place-structure'?
+    'Click on the plan to place '+STRUCTURE_CATALOG[activeStructureKind].label+
+    '. This will not alter source seat counts.':
+    editorMode==='measure'?'Select two points on the plan for a provisional distance.':
     editorMode==='calibrate'?'Click the four court corners in order: near left, near right, far right, far left.':
     editorMode==='trace'?'Trace '+(draftPoints.length+1)+'/4: '+['front left','front right','rear right','rear left'][draftPoints.length]:
     image&&!registration?'Image loaded. Mark four court corners before tracing sections.':
@@ -545,6 +632,15 @@ canvas.addEventListener('pointerdown',event=>{
       }else message('Measure a second point on the drawing.');
       repaint();return;
     }
+    if(editorMode==='place-structure'){
+      const world=screenToWorld(p,g);
+      const values=structureFormValues();
+      const success=commitStructure({action:'add',kind:activeStructureKind,
+        ...values,x:world.x,z:world.z},
+        'Place '+STRUCTURE_CATALOG[activeStructureKind].label);
+      if(success){editorMode='select';selectedSection='';draw();}
+      repaint();return;
+    }
     if(editorMode==='trace'){
       const world=screenToWorld(p,g),pixel=image?sourcePixel(p,g):null;
       draftPoints.push({world,pixel});
@@ -553,6 +649,19 @@ canvas.addEventListener('pointerdown',event=>{
         commitSection(next);editorMode='select';tryPreview();
       }
       repaint();return;
+    }
+    if(workflowUI?.current==='model'&&(venue.structures?.length??0)){
+      let closest=null,distance=18;
+      for(const structure of venue.structures){
+        const q=worldToScreen(structure,g),d=Math.hypot(q.x-p.x,q.y-p.y);
+        if(d<distance){closest=structure;distance=d;}
+      }
+      if(closest){
+        selectStructure(closest.id);
+        drag={kind:'structure',id:closest.id,before:structuredClone(venue)};
+        canvas.setPointerCapture(event.pointerId);
+        return;
+      }
     }
     if(preview&&workflowUI?.current==='model'){
       let nearest=null,distance=10;
@@ -585,6 +694,18 @@ canvas.addEventListener('pointerdown',event=>{
 });
 canvas.addEventListener('pointermove',event=>{
   if(!drag)return;
+  if(drag.kind==='structure'){
+    try{
+      const position=screenToWorld(pointer(event),layout());
+      if(event.shiftKey){position.x=Math.round(position.x*10)/10;
+        position.z=Math.round(position.z*10)/10;}
+      const structure=venue.structures.find(s=>s.id===drag.id);
+      if(structure&&Number.isFinite(position.x+position.z)){
+        structure.x=position.x;structure.z=position.z;draw();
+      }
+    }catch{}
+    return;
+  }
   const section=venue.sections.find(s=>s.id===drag.id);
   if(!section)return;
   try{
@@ -614,7 +735,7 @@ function releasePointer(event){
         throw Error('Dragged contour causes '+geometry.quality.blockingCount+' blocking geometry issues');
     }
     venue=candidate;
-    recordEdit(completed.before,'Adjust traced section '+completed.id);
+    recordEdit(completed.before,(completed.kind==='structure'?'Move component ':'Adjust traced section ')+completed.id);
     sync();tryPreview();
   }catch(e){
     venue=completed.before;sync();tryPreview();
@@ -635,7 +756,7 @@ for(const id of ['school','venue','courtWidth','courtLength','capacity','capacit
 }
 $('sport').onchange=()=>{
   const old=venue;
-  if((old.sections.length||old.rows.length)&&!confirm('Changing venue type will reset the traced sections and rows. Continue?')){
+  if((old.sections.length||old.rows.length||old.structures?.length)&&!confirm('Changing venue type will reset the traced sections, rows and draft components. Continue?')){
     $('sport').value=old.sport;return;
   }
   venue=newVenue($('sport').value);venue.school=old.school;venue.venue=old.venue;
@@ -693,6 +814,56 @@ $('batchApplyInsets').onclick=()=>commitBatch({section:$('batchSection').value,
 document.querySelectorAll('[data-model-tool]').forEach(button=>
   button.onclick=()=>activateModelTool(button.dataset.modelTool));
 $('openReviewFromScene').onclick=()=>workflowUI?.go('review');
+
+function setStructureKind(kind){
+  if(!Object.hasOwn(STRUCTURE_CATALOG,kind))return;
+  activeStructureKind=kind;
+  fillStructureFields(null);
+  document.querySelectorAll('[data-structure-kind]').forEach(button=>
+    button.setAttribute('aria-pressed',
+      String(button.dataset.structureKind===kind)));
+  $('structureStatus').textContent='Ready to create '+STRUCTURE_CATALOG[kind].label+
+    '. Set the dimensions, then add or place on the 2D plan.';
+}
+document.querySelectorAll('[data-structure-kind]').forEach(button=>
+  button.onclick=()=>setStructureKind(button.dataset.structureKind));
+$('structureSelect').onchange=()=>selectStructure($('structureSelect').value);
+$('structureAdd').onclick=()=>{
+  commitStructure({action:'add',kind:activeStructureKind,
+    ...structureFormValues()},'Add '+STRUCTURE_CATALOG[activeStructureKind].label);
+};
+$('structureApply').onclick=()=>{
+  if(!selectedStructure)return message('Select or create a component first.',true);
+  commitStructure({action:'update',id:selectedStructure,
+    changes:structureFormValues()},'Edit venue component');
+};
+$('structurePickOnPlan').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the source drawing before placing components on the plan.',true);
+    return;
+  }
+  $('showPlan').click();
+  editorMode='place-structure';
+  draftPoints=[];
+  repaint();
+  message('Click the 2D plan to place '+STRUCTURE_CATALOG[activeStructureKind].label+
+    '. Hold Shift while dragging to snap to a 10 cm grid.');
+};
+$('structureDuplicate').onclick=()=>{
+  if(!selectedStructure)return message('Select a component first.',true);
+  commitStructure({action:'duplicate',id:selectedStructure},'Duplicate venue component');
+};
+$('structureRotate').onclick=()=>{
+  const s=venue.structures.find(s=>s.id===selectedStructure);
+  if(!s)return message('Select a component first.',true);
+  const next=((s.yaw+90+180)%360)-180;
+  commitStructure({action:'update',id:s.id,changes:{yaw:next}},'Rotate venue component');
+};
+$('structureRemove').onclick=()=>{
+  if(!selectedStructure)return message('Select a component first.',true);
+  if(!confirm('Remove '+selectedStructure+' from this editable draft?'))return;
+  commitStructure({action:'remove',id:selectedStructure},'Remove venue component');
+};
 $('seatEditNumber').onchange=()=>fillSeatOffsetFields();
 $('seatApplyOffset').onclick=()=>{
   const section=$('rowEditSection').value,row=$('rowEditRow').value;
@@ -917,6 +1088,7 @@ function open3d(mode){
     });}
     catch(e){message('WebGL2 unavailable: '+e.message,true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
   }
+  renderer.onStructurePick=structure=>selectStructure(structure.id);
   renderer.onFrame=current=>{
     const metrics=current.framingMetrics();
     modelCanvas.dataset.seatingWidth=(metrics.seatWidth*100).toFixed(1);

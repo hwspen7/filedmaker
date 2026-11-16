@@ -421,6 +421,12 @@ async function main(){
       throw Error('Fictional demo deep link is not interactive: '+JSON.stringify(synthetic));
     console.log('workbench UI: four-stage navigation and Aiken/fictional/source-only case deep links verified');
 
+
+    const compact=await evaluate("(()=>{const top=document.querySelector('.studio-header').getBoundingClientRect();const view=document.querySelector('.visual').getBoundingClientRect();const single=document.querySelector('.canvas-header').getBoundingClientRect();return {header:top.height,canvas:view.height,canvasHeader:single.height,workflowInside:!!document.querySelector('.studio-header .step-nav'),titleInside:!!document.querySelector('.studio-header #workspaceName'),extraBars:document.querySelectorAll('.workspace-top,.steps-strip').length}})()");
+    if(compact.header>80||compact.canvas<300||compact.canvasHeader>63||
+      !compact.workflowInside||!compact.titleInside||compact.extraBars)
+      throw Error('The viewport is still squeezed by redundant header rows: '+JSON.stringify(compact));
+
     // Phase two: operate the actual row editor, verify 3D reacts, then undo/redo.
 
     const initialFrame=await poll(async()=>{
@@ -489,6 +495,37 @@ async function main(){
     await evaluate("document.querySelector('#measureClear').click()");
     const clearedRuler=await evaluate("document.querySelector('#measureResult').textContent");
     if(clearedRuler!=='No plan measurement yet.')throw Error('Plan ruler did not reset');
+
+
+    // Real operator component placement, modification, duplication and 2D
+    // point placement are tested on the actual initialized WebGL2 workbench.
+    await evaluate("document.querySelector('[data-open-stage=\"model\"]').click()");
+    const made=await evaluate("(()=>{document.querySelector('[data-model-tool=\"structures\"]').click();document.querySelector('[data-structure-kind=\"platform\"]').click();document.querySelector('#structureAdd').click();return {count:document.querySelector('#mappedCount').textContent,items:document.querySelector('#structureSelect').options.length,qa:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent,active:!document.querySelector('[data-model-tool-pane=\"structures\"]').hidden}})()");
+    if(made.count!=='1,499'||made.items!==1||!made.active||
+      !made.qa.includes('OPERATOR_STRUCTURES_UNVERIFIED')||
+      made.status.includes('Component rejected'))
+      throw Error('Platform component is not attached to the live model: '+JSON.stringify(made));
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'component-library-3d.png'),Buffer.from(frame.data,'base64')));
+    const transformed=await evaluate("(()=>{document.querySelector('#structureX').value='2';document.querySelector('#structureApply').click();document.querySelector('#structureDuplicate').click();document.querySelector('#structureRotate').click();return {items:document.querySelector('#structureSelect').options.length,count:document.querySelector('#mappedCount').textContent,status:document.querySelector('#workStatus').textContent}})()");
+    if(transformed.items!==2||transformed.count!=='1,499'||
+      transformed.status.includes('Component rejected'))
+      throw Error('Structure transform / duplicate failed: '+JSON.stringify(transformed));
+    await evaluate("document.querySelector('[data-structure-kind=\"portal\"]').click()");
+    await evaluate("document.querySelector('#structurePickOnPlan').click()");
+    const placed=await evaluate("(()=>{const c=document.querySelector('#planCanvas'),r=c.getBoundingClientRect();c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:80,clientX:r.left+r.width*.5,clientY:r.top+r.height*.5}));return {items:document.querySelector('#structureSelect').options.length,count:document.querySelector('#mappedCount').textContent,status:document.querySelector('#workStatus').textContent,planVisible:!c.hidden}})()");
+    if(placed.items!==3||placed.count!=='1,499'||!placed.planVisible||
+      placed.status.includes('Component rejected'))
+      throw Error('Direct 2D component placement failed: '+JSON.stringify(placed));
+    await delay(180);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'component-plan-placement.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#show3d').click()");
+    const rendered=await poll(async()=>await evaluate("(()=>{const c=document.querySelector('#modelCanvas');return {visible:!c.hidden,hasContext:!!c.getContext('webgl2'),n:document.querySelector('#structureSelect').options.length}})()"),35);
+    if(!rendered.visible||!rendered.hasContext||rendered.n!==3)
+      throw Error('3D component preview failed after 2D placement');
+    console.log('studio: compact header, seven reusable components, live WebGL2 geometry, transform, duplicate and 2D placement verified');
 
     console.log('operator editing: source counts adjusted with review flags, 3D updated, invalid edit rejected, undo/redo and section translation verified');
 
