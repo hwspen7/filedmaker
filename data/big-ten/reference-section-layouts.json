@@ -110,7 +110,7 @@
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Official 2026–27 map: main A–F west, G–M east (no I); balconies AA–FF and GG–MM. Side-stand arc ends remain estimated; actual loges and lobbies are not yet digitized.",
+      "notes": "Official 2026–27 map: main A–F west, G–M east (no I); balconies AA–FF and GG–MM. Side-stand arc ends remain estimated; actual loges and lobbies are not yet digitized. Estimated depth increased to preserve published capacity while keeping genuine empty arc sectors.",
       "tiers": [
         [
           {
@@ -125,7 +125,7 @@
               "F"
             ],
             "rowStart": 1,
-            "rowCount": 24
+            "rowCount": 29
           },
           {
             "startAngle": 5.19,
@@ -139,7 +139,7 @@
               "M"
             ],
             "rowStart": 1,
-            "rowCount": 24
+            "rowCount": 29
           }
         ],
         [
@@ -155,7 +155,7 @@
               "FF"
             ],
             "rowStart": 1,
-            "rowCount": 17
+            "rowCount": 19
           },
           {
             "startAngle": 5.23,
@@ -169,20 +169,20 @@
               "MM"
             ],
             "rowStart": 1,
-            "rowCount": 17
+            "rowCount": 19
           }
         ]
       ],
       "tiersOverride": [
         {
-          "rows": 24,
+          "rows": 29,
           "depth": 0.82,
           "rise": 0.34,
           "gap": 3.3,
           "elevationGap": 2
         },
         {
-          "rows": 17,
+          "rows": 19,
           "depth": 0.84,
           "rise": 0.46,
           "gap": 0,
@@ -724,7 +724,7 @@
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Bryce Jordan Center 2026 guide identifies the 100/200 seating banks, with 214 and 231 absent from shown upper sections, plus C-series boxes. Suite voids require separate shapes.",
+      "notes": "Bryce Jordan Center 2026 guide identifies the 100/200 seating banks, with 214 and 231 absent from shown upper sections, plus C-series boxes. Suite voids require separate shapes. Row counts are preliminary and scaled to compensate for modeled circulation losses.",
       "tiers": [
         [
           {
@@ -767,7 +767,7 @@
               "134"
             ],
             "rowStart": 1,
-            "rowCount": 16
+            "rowCount": 20
           }
         ],
         [
@@ -809,20 +809,20 @@
               "234"
             ],
             "rowStart": 1,
-            "rowCount": 16
+            "rowCount": 20
           }
         ]
       ],
       "tiersOverride": [
         {
-          "rows": 16,
+          "rows": 20,
           "depth": 0.84,
           "rise": 0.32,
           "gap": 2.9,
           "elevationGap": 2
         },
         {
-          "rows": 16,
+          "rows": 20,
           "depth": 0.85,
           "rise": 0.44,
           "gap": 0,
