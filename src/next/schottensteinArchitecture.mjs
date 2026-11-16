@@ -147,7 +147,11 @@ export function buildSchottensteinArchitecture(model){
   // radial surface. The old whole-bowl mesh crossed chart aisle boundaries
   // and made chairs appear detached from irregular section elevations.
   // Treads are individual horizontal landings with a proper inward riser.
-  const treadRows=model.seatingRows.filter(row=>row.tier===1||row.tier===2);
+  // One mesh construction path for all three occupied tiers. The lower
+  // bowl formerly used per-row box primitives with exposed seams, while
+  // club and upper levels used triangles. All tiers now share their actual
+  // row supports, including chart-traced accessible cutouts.
+  const treadRows=model.seatingRows.filter(row=>row.tier>=0&&row.tier<=2);
   const heightBySlot=new Map(treadRows.map(row=>[row.sectionId+':'+row.slot,row.y]));
   const rowPoint=(row,t)=>{
     const x=row.left.x+(row.right.x-row.left.x)*t;
