@@ -54,7 +54,7 @@
         "template": "indoor-arena",
         "sections": 22,
         "roundness": 2.9,
-        "clearance": 4.5,
+        "clearance": 5.45,
         "aisleWidth": 1.2,
         "seatPitch": 0.54,
         "capacityTolerance": 0.035,
@@ -87,7 +87,8 @@
               "role": "secondary"
             }
           ]
-        }
+        },
+        "geometryNotes": "Slightly increased first-bowl clearance to prevent collisions with real source-documented court-level section 9-13 chairs; physical coordinates remain unsurveyed."
       }
     },
     {
