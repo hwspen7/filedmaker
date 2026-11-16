@@ -8,6 +8,8 @@ on:
     paths:
       - 'data/big-ten/**'
       - 'scripts/generate-big-ten.mjs'
+      - 'scripts/browser-big-ten.mjs'
+      - 'src/schoolPublisher.mjs'
       - 'scripts/generate-venue.mjs'
       - 'src/next/engines/**'
       - 'src/model.mjs'
@@ -49,6 +51,16 @@ jobs:
             }
             console.log('Verified '+m.venues.length+' independently generated arenas');
           "
+      - name: Capture genuine WebGL2 previews for documented arena layouts
+        run: npm run test:big-ten-browser
+      - name: Publish 3D/seat-view acceptance screenshots
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: big-ten-arena-browser-visual-review
+          path: artifacts/big-ten-visual/
+          retention-days: 14
+          if-no-files-found: error
       - name: Publish all 18 offline preview pages and capacity reports
         if: success()
         uses: actions/upload-artifact@v4
