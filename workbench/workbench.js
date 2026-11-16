@@ -1311,7 +1311,8 @@ for(const [button,action] of [
       distribute:'Space selected components evenly',
       mirror:'Mirror selected component layout',
       translate:'Move selected components',
-      duplicate:'Duplicate selected components'
+      duplicate:'Duplicate selected components',
+      array:'Create repeated component array'
     }[action]);
   };
 }
