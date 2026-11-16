@@ -217,3 +217,21 @@ test('floor dimensions are independent from sport surface components',()=>{
   assert.throws(()=>resizeFloor(original,-1,75),/Floor width/);
   assert.throws(()=>resizeFloor(original,105,500),/Floor length/);
 });
+
+test('Creative Commons attribution is enforced for imported OBJ models',()=>{
+  const obj='v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3';
+  const model=createProject();
+  assert.throws(()=>importOBJAsset(model,obj,{
+    sourceName:'example.obj',sourceLicense:'CC-BY'
+  }),/requires creator and source URL/);
+  const cited=importOBJAsset(model,obj,{
+    sourceName:'example.obj',sourceLicense:'CC-BY',sourceAuthor:'Asset creator',
+    sourceUrl:'https://example.org/asset'
+  });
+  assert.equal(cited.parts.at(-1).sourceAuthor,'Asset creator');
+  assert.equal(cited.parts.at(-1).sourceUrl,'https://example.org/asset');
+  assert.deepEqual(importProject(exportProject(cited)),cited);
+  assert.throws(()=>importOBJAsset(model,obj,{
+    sourceName:'bad.obj',sourceLicense:'CC0',sourceUrl:'javascript:alert(1)'
+  }),/HTTPS/);
+});
