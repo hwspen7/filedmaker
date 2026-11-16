@@ -399,3 +399,5 @@ html,body{height:100%;overflow:hidden}
   .precision-bar button{font-size:9px;padding:4px}
   .three-d-editor-hint{font-size:9px;bottom:22px;left:6px}
 }
+
+.precision-bar[hidden],.studio-help[hidden],.three-d-editor-hint[hidden]{display:none!important}
