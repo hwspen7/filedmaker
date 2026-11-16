@@ -1,0 +1,445 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hwspen7/filedmaker/blob/feature/big-ten-18-arenas/data/big-ten/venue-catalog.schema.json",
+  "title": "FiledMaker Big Ten men's basketball arena catalog",
+  "description": "Machine-readable source facts and separately labeled estimated geometry for an 18-member conference.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "conference",
+    "generatedFrom",
+    "venues"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "conference": {
+      "type": "object",
+      "required": [
+        "name",
+        "season",
+        "sport",
+        "membershipSource"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "const": "Big Ten Conference"
+        },
+        "season": {
+          "const": "2026-27"
+        },
+        "sport": {
+          "const": "men-basketball"
+        },
+        "membershipSource": {
+          "$ref": "#/$defs/sourceBase"
+        }
+      }
+    },
+    "generatedFrom": {
+      "type": "string",
+      "minLength": 16
+    },
+    "venues": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "items": {
+        "$ref": "#/$defs/venue"
+      }
+    }
+  },
+  "$defs": {
+    "sourceBase": {
+      "type": "object",
+      "required": [
+        "url",
+        "title",
+        "verifiedOn"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/sourceBase"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "url",
+        "verifiedOn"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "university-athletics",
+            "conference",
+            "facility",
+            "external-reference"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "title": {
+          "type": "string"
+        },
+        "verifiedOn": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "venue": {
+      "type": "object",
+      "required": [
+        "id",
+        "school",
+        "venue",
+        "capacity",
+        "evidence",
+        "sources",
+        "model"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "school": {
+          "type": "object",
+          "required": [
+            "name",
+            "team"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 5
+            },
+            "team": {
+              "type": "string",
+              "minLength": 2
+            }
+          }
+        },
+        "venue": {
+          "type": "object",
+          "required": [
+            "name",
+            "city",
+            "state",
+            "country",
+            "sport"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 4
+            },
+            "city": {
+              "type": "string",
+              "minLength": 2
+            },
+            "state": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
+            "country": {
+              "const": "USA"
+            },
+            "sport": {
+              "const": "men-basketball"
+            }
+          }
+        },
+        "capacity": {
+          "type": "object",
+          "required": [
+            "published",
+            "configuration",
+            "notes",
+            "sourceId"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "published": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 100000
+            },
+            "configuration": {
+              "const": "men-basketball"
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 15
+            },
+            "sourceId": {
+              "type": "string",
+              "minLength": 3
+            },
+            "alternates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "published",
+                  "configuration",
+                  "sourceId"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "published": {
+                    "type": "integer",
+                    "minimum": 1000
+                  },
+                  "configuration": {
+                    "type": "string"
+                  },
+                  "sourceId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "required": [
+            "seatMap",
+            "sectionCoordinates",
+            "seatRoster",
+            "buildingDimensions"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "seatMap": {
+              "enum": [
+                "not-digitized",
+                "digitized"
+              ]
+            },
+            "sectionCoordinates": {
+              "enum": [
+                "not-available",
+                "estimated",
+                "verified"
+              ]
+            },
+            "seatRoster": {
+              "enum": [
+                "not-available",
+                "estimated",
+                "verified"
+              ]
+            },
+            "buildingDimensions": {
+              "enum": [
+                "not-surveyed",
+                "estimated",
+                "verified"
+              ]
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "model": {
+          "$ref": "#/$defs/model"
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "evidenceLevel",
+        "surface",
+        "template",
+        "sections",
+        "roundness",
+        "clearance",
+        "aisleWidth",
+        "seatPitch",
+        "capacityTolerance",
+        "tiers",
+        "voids",
+        "exterior"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "evidenceLevel": {
+          "const": "estimated-parametric"
+        },
+        "surface": {
+          "const": "ncaa"
+        },
+        "template": {
+          "const": "indoor-arena"
+        },
+        "sections": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 36
+        },
+        "roundness": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 8
+        },
+        "clearance": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "aisleWidth": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 5
+        },
+        "seatPitch": {
+          "type": "number",
+          "minimum": 0.43,
+          "maximum": 0.9
+        },
+        "capacityTolerance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.05
+        },
+        "tiers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/tier"
+          }
+        },
+        "voids": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object"
+          }
+        },
+        "exterior": {
+          "type": "object",
+          "required": [
+            "profile",
+            "entrances"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "profile": {
+              "enum": [
+                "metal-and-brick",
+                "modern-glass",
+                "masonry"
+              ]
+            },
+            "entrances": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "object",
+                "required": [
+                  "angle",
+                  "role"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "angle": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 6.283185307179586
+                  },
+                  "role": {
+                    "enum": [
+                      "primary",
+                      "secondary"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tier": {
+      "type": "object",
+      "required": [
+        "rows",
+        "depth",
+        "rise",
+        "gap",
+        "elevationGap"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 75
+        },
+        "depth": {
+          "type": "number",
+          "minimum": 0.65,
+          "maximum": 1.8
+        },
+        "rise": {
+          "type": "number",
+          "minimum": 0.12,
+          "maximum": 0.75
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 25
+        },
+        "elevationGap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 12
+        }
+      }
+    }
+  }
+}
