@@ -255,7 +255,29 @@
               "120"
             ],
             "rowStart": 1,
-            "rowCount": 14
+            "rowCount": 14,
+            "weights": [
+              1.62,
+              1.5,
+              1.06,
+              0.96,
+              0.92,
+              1,
+              1.12,
+              0.93,
+              0.91,
+              0.95,
+              1.65,
+              0.97,
+              0.9,
+              0.99,
+              1.08,
+              1.4,
+              1.17,
+              1.05,
+              1,
+              1.48
+            ]
           }
         ],
         [
@@ -441,21 +463,21 @@
         "245",
         "246",
         "247",
-        "248"
-      ],
-      "unmodeledSections": [
+        "248",
         "9",
         "10",
         "11",
         "12",
         "13"
       ],
+      "unmodeledSections": [],
       "unmodeledFeatures": [
         "Suite and patio occupied 130–133 positions",
         "Three east-side suite boxes",
         "Wheelchair platforms"
       ],
-      "notes": "Basketball configuration labels 101–120, 121–129, 134–143, 201–248, and separate court-level 9–13. Sections 130–133 are not presented as occupied spectator arcs on this source and are not fabricated. Lower court-level 9–13 require another non-overlapping strip."
+      "notes": "Basketball configuration labels 101–120, 121–129, 134–143, 201–248, and separate court-level 9–13. Sections 130–133 are not presented as occupied spectator arcs on this source and are not fabricated. Lower court-level 9–13 require another non-overlapping strip. Sections 9–13 on the east court sideline are modeled from published student-section row labels; seat centers and five strip widths are visually estimated. Lower 101–120 widths manually estimated from seating-map polygons rather than uniform circular wedges.",
+      "angularGeometryPrecision": "estimated-manual-sketch-from-published-plan"
     },
     "iowa": {
       "source": "https://hawkeyesports.com/mbbgameday",
