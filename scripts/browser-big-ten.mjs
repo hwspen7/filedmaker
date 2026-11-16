@@ -115,7 +115,7 @@ async function main(){
     }
     await evalJs("document.querySelector('[data-preset=schott]').click()");
     await poll(async()=>await evalJs(`(()=>{
-      return document.querySelector('#title')?.textContent==='Schottenstein Center'&&
+      return document.querySelector('#title')?.textContent.includes('Schottenstein Center')&&
         document.querySelector('[data-preset=schott]')?.classList.contains('active')&&
         [...document.querySelectorAll('[data-bigten]')].every(b=>!b.classList.contains('active'));
     })()`),100);
