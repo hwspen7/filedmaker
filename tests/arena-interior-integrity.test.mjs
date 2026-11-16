@@ -47,6 +47,9 @@ test('unsurveyed outer arena facades are excluded from 3D interior, never from t
   const shell={arenaInterior:true,architectureGeometry:{facade:new Float32Array(18),decks:new Float32Array(18)},
     proceduralSpec:{interior:{outline:'rectangle'}}};
   assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'overview','facade'),false);
+  for(const layer of ['concourse','soffit','roofDeck','backWall','pilasters','trim'])
+    assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'overview',layer),false,
+      'Do not show the gray exterior/gallery ring over any reconstructed seat bowl: '+layer);
   assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'overview','decks'),true);
   assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'exterior','facade'),true);
   assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'exterior','decks'),false);
