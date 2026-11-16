@@ -113,6 +113,59 @@ async function main(){
       writeFileSync(file,Buffer.from(snapshot.data,'base64'));
       if(statSync(file).size<18000)throw Error('Native studio 3D exterior view is blank: '+id);
     }
+    // All eight first-wave interiors must be accessible as section diagrams,
+    // 3D seating bowls and eye-level views from the existing OSU homepage.
+    const firstWave=['indiana','purdue','illinois','iowa','michigan-state',
+      'wisconsin','ucla','washington'];
+    const currentCatalog=JSON.parse(readFileSync('data/big-ten/arenas-2026-27.json'));
+    for(const id of firstWave){
+      const arena=currentCatalog.venues.find(v=>v.id===id).venue.name;
+      await evalJs(`document.querySelector('[data-bigten="${id}"]').click()`);
+      await poll(async()=>await evalJs(`(()=>{
+        const title=document.querySelector('#title')?.textContent;
+        const active=document.querySelector('[data-bigten="${id}"]')?.classList.contains('active');
+        const options=[...document.querySelector('#sectionPicker')?.options||[]].map(o=>o.value);
+        return title===${JSON.stringify(arena)}&&active&&options.length>=12;
+      })()`),95);
+      const required={ucla:['206A','206B','224C'],
+        illinois:['101','121','248'],indiana:['A','M','AA','MM'],
+        wisconsin:['101','215','328'],washington:['1','14']};
+      const labels=await evalJs(`[...document.querySelector('#sectionPicker').options].map(o=>o.value)`);
+      for(const name of required[id]||[])
+        if(!labels.includes(name))throw Error('Missing real '+id+' section '+name);
+      await evalJs("document.querySelector('[data-view=top]').click()");
+      await poll(async()=>await evalJs("document.querySelector('#viewport2d')?.width>300"));
+      await delay(320);
+      const map=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      const mapPath=join(out,'studio-'+id+'-sections.png');
+      writeFileSync(mapPath,Buffer.from(map.data,'base64'));
+      if(statSync(mapPath).size<18000)throw Error('Blank native section map '+id);
+      await evalJs("document.querySelector('[data-view=overview]').click()");
+      await poll(async()=>await evalJs(`(()=>{
+        const c=document.querySelector('#viewport3d');
+        return document.querySelector('[data-view=overview]')?.classList.contains('current')&&
+          c?.width>300 && !c.hidden && !!c.getContext('webgl2');
+      })()`));
+      await delay(450);
+      const render=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      const renderPath=join(out,'studio-'+id+'-interior.png');
+      writeFileSync(renderPath,Buffer.from(render.data,'base64'));
+      if(statSync(renderPath).size<18000)throw Error('Blank first-wave interior '+id);
+      await evalJs(`(()=>{
+        const selector=document.querySelector('#sectionPicker');
+        const value=[...selector.options].map(o=>o.value).find(Boolean);
+        selector.value=value;
+        selector.dispatchEvent(new Event('change',{bubbles:true}));
+        document.querySelector('[data-view=human]').click();
+      })()`);
+      await poll(async()=>await evalJs("document.querySelector('[data-view=human]')?.classList.contains('current')"));
+      await delay(280);
+      const view=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      const viewPath=join(out,'studio-'+id+'-seat-eye.png');
+      writeFileSync(viewPath,Buffer.from(view.data,'base64'));
+      if(statSync(viewPath).size<18000)throw Error('Blank school-native seat view '+id);
+      console.log('First-wave interior '+id+': section plan, full bowl, and seat-eye render verified');
+    }
     await evalJs("document.querySelector('[data-preset=schott]').click()");
     await poll(async()=>await evalJs(`(()=>{
       return document.querySelector('#title')?.textContent.includes('Schottenstein Center')&&
