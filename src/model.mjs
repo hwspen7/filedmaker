@@ -497,6 +497,7 @@ export function generateSeats(input, { audienceLayout = true } = {}) {
       interiorSectionFootprints:output.interiorSectionFootprints,
       proceduralGeometry:output.geometry,
       proceduralSpec:output.spec,optimization:output.optimization,
+      sectionCoverage:output.coverage,
       capacity:output.seats.length,seatOrigin:'generated',registration:null,
       elevationCount:output.seats.length};
   }
