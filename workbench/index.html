@@ -18,16 +18,19 @@
 <label>Surface length (m)<input id="courtLength" type="number" step=".01" min="15" max="200"></label></div>
 </div>
 <div class="section"><div class="eyebrow">Source drawings</div>
-<label class="upload">Upload plan image<input id="planFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" hidden></label>
-<p class="hint">PNG, JPEG or WebP. For PDF drawings, export the relevant page as an image first. No automatic PDF recognition is claimed.</p>
+<label class="upload">Upload raster plan<input id="planFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" hidden></label>
+<label class="upload">Import SVG / ASCII DXF contours<input id="vectorFile" type="file" accept=".svg,.dxf,image/svg+xml" hidden></label>
+<button id="matchVectors" type="button">Review and import labeled vector sections</button>
+<p class="hint">PNG/JPEG/WebP overlays and SVG/DXF vector contours. Vector sections are suggestions only and must have labels matching the imported rows. PDF pages require a local image export; no PDF recognition is claimed.</p>
 <div id="sourceName" class="file-meta">No drawing attached</div>
 <div class="actions"><button type="button" id="calibrate">Mark court corners</button><button type="button" id="trace">Trace section</button></div>
 <p id="traceInstructions" class="hint">For a plan image, first select the four court corners in order, then trace each section's four corners: front left, front right, rear right, rear left.</p>
 </div>
 <div class="section"><div class="eyebrow">Seat records</div>
-<label class="upload">Import row counts CSV<input id="rowsFile" type="file" accept=".csv,text/csv" hidden></label>
+<label class="upload">Import row counts CSV / TSV / JSON / XLSX<input id="rowsFile" type="file" accept=".csv,.tsv,.json,.xlsx" hidden></label>
+<label id="sheetWrap" hidden>Excel worksheet<select id="sheetSelect"></select></label>
 <div class="actions"><button id="csvExample" type="button">CSV example</button><button id="fixture" type="button">Fictional 1,500-seat example</button></div>
-<p class="hint">Required CSV columns: section, row, seats. Optional: seat_start, tier, seat_type. The exact row counts are preserved without adjusting them to match capacity.</p>
+<p class="hint">Required columns: section, row, seats. Optional: seat_start, tier, seat_type. Excel formulas are never executed. The selected sheet's counts are preserved.</p>
 <label>Published capacity (optional)<input id="capacity" type="number" min="1" max="150000" placeholder="Only if sourced"></label>
 <label>Published capacity HTTPS source<input id="capacitySource" type="url" placeholder="https://school.example.edu/venue"></label>
 </div>
@@ -36,12 +39,18 @@
 <div class="pair"><label>First-row height (m)<input id="baseHeight" type="number" step=".05" min="0" max="80"></label>
 <label>Rise per row (m)<input id="rowRise" type="number" step=".01" min=".05" max="1.5"></label></div>
 <div class="actions"><button type="button" id="applySection">Apply geometry</button><button type="button" id="removeSection">Remove section</button></div>
-<p class="hint">Drag section corner handles on the drawing to adjust their positions. Elevations remain estimated until measured.</p>
+<p class="hint">Drag section corners to adjust. Elevations remain estimated. The four calibration anchors fit exactly and are not an accuracy proof.</p>
+<div class="eyebrow">Independent check point (optional)</div>
+<div class="pair"><label>Image pixel X<input id="checkPX" type="number" step="any"></label><label>Image pixel Y<input id="checkPY" type="number" step="any"></label></div>
+<div class="pair"><label>Measured X (m)<input id="checkX" type="number" step="any"></label><label>Measured Z (m)<input id="checkZ" type="number" step="any"></label></div>
+<button id="addCheck" type="button">Add independent check point</button>
 </div>
 <div class="section"><div class="eyebrow">Publish &amp; exchange</div>
+<div class="actions"><button id="undo" type="button">Undo</button><button id="redo" type="button">Redo</button></div>
 <div class="actions stack"><button id="generate" class="primary" type="button">Generate / update model</button>
 <button id="saveProject" type="button">Export editable project</button>
 <label class="upload secondary">Open editable project<input id="openProject" type="file" accept=".json,application/json" hidden></label>
+<label class="upload secondary">Compare a prior project<input id="compareProject" type="file" accept=".json,application/json" hidden></label>
 <button id="saveSeats" type="button">Export seat coordinates CSV</button>
 <button id="saveReport" type="button">Export validation report</button>
 <button id="publish" type="button">Export offline 3D preview</button></div>
@@ -58,6 +67,8 @@
 <div class="metric"><strong id="mappedCount">0</strong><span>Modeled seat positions</span></div>
 <div class="two"><div><strong id="sectionCount">0</strong><span>Sections</span></div><div><strong id="rowCount">0</strong><span>Source rows</span></div></div>
 <div class="metric"><strong id="publishedCount">—</strong><span>Published capacity</span></div>
+<h3>Source provenance</h3><div id="sourceLedger" class="qa">No hashed source files</div>
+<h3>Project changes</h3><div id="delta" class="qa">Import a previous editable project to compare seating and geometry changes.</div>
 <h3>Quality review</h3><div id="qa" class="qa">No model generated. Source data and geometry require review.</div>
 <h3>Selected seat</h3><div id="seatDetails" class="qa">Click a seat in the 3D view.</div>
 <div class="notice">This is a geometry preview, not a certified survey, evacuation model, accessibility review, or live ticketing service. The school must approve layouts and sightlines before publication.</div>

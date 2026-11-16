@@ -28,7 +28,8 @@ export function newVenue(sport='nfhs-basketball'){
     school:'Example school',venue:'Untitled school venue',sport,
     court:{width:d.width,length:d.length},officialCapacity:null,
     capacitySource:'',plan:{name:'',mime:'',width:0,height:0,imageData:''},
-    calibration:{corners:[]},sections:[],rows:[],notes:[]};
+    calibration:{corners:[],checkpoints:[]},sections:[],rows:[],notes:[],
+    sources:[],rowSourceId:null,planSourceId:null,changeLog:[],vectorCandidates:[]};
 }
 export function parseVenueRows(csv){
   const raw=parseCSV(csv,16000),seen=new Set();
@@ -71,7 +72,14 @@ export function normalizeVenue(input){
     imageData:typeof plan.imageData==='string'&&/^data:image\/(png|jpeg|webp);base64,/.test(plan.imageData)&&plan.imageData.length<6000000?plan.imageData:''};
   const corners=v.calibration?.corners??[];
   if(!Array.isArray(corners)||![0,4].includes(corners.length))throw Error('Calibration needs exactly four playing-surface corners');
-  v.calibration={corners:corners.map(p=>({x:finite(p.x,'Anchor pixel X',0,20000),y:finite(p.y,'Anchor pixel Y',0,20000)}))};
+  v.calibration={corners:corners.map(p=>({x:finite(p.x,'Anchor pixel X',0,20000),y:finite(p.y,'Anchor pixel Y',0,20000)})),
+    checkpoints:(v.calibration?.checkpoints??[]).map(p=>({
+      pixelX:finite(p.pixelX,'Check pixel X',0,20000),
+      pixelY:finite(p.pixelY,'Check pixel Y',0,20000),
+      actualX:finite(p.actualX,'Check X metres',-2000,2000),
+      actualZ:finite(p.actualZ,'Check Z metres',-2000,2000)
+    }))};
+  if(v.calibration.checkpoints.length>100)throw Error('Too many independent calibration checks');
   if(!Array.isArray(v.sections)||v.sections.length>160)throw Error('Maximum 160 traced sections');
   const names=new Set();
   v.sections=v.sections.map((s,i)=>{
@@ -104,5 +112,35 @@ export function normalizeVenue(input){
   });
   if(v.rows.reduce((n,r)=>n+r.seats,0)>40000)throw Error('Seat count exceeds the 40,000-seat preview limit');
   v.notes=Array.isArray(v.notes)?v.notes.map(s=>String(s).slice(0,250)).slice(0,50):[];
+  if(!Array.isArray(v.vectorCandidates||[])||(v.vectorCandidates||[]).length>500)
+    throw Error('Invalid vector candidate collection');
+  let totalVectorPoints=0;
+  v.vectorCandidates=(v.vectorCandidates||[]).map(item=>{
+    if(!item||!Array.isArray(item.points)||item.points.length<3||item.points.length>256)
+      throw Error('Invalid vector candidate');
+    totalVectorPoints+=item.points.length;
+    if(totalVectorPoints>12000)throw Error('Too many vector drawing points');
+    return {id:String(item.id||'').slice(0,50),
+      kind:String(item.kind||'polygon').slice(0,30),
+      points:item.points.map(p=>({x:finite(p.x,'Vector X',0,20000),y:finite(p.y,'Vector Y',0,20000)}))};
+  });
+  if(!Array.isArray(v.sources||[])||(v.sources||[]).length>100)throw Error('Too many source files');
+  v.sources=(v.sources||[]).map(s=>{
+    if(!s||typeof s!=='object'||!/^sha256:[0-9a-f]{64}$/.test(s.id||'')||
+      s.sha256!==s.id.slice(7)||!Number.isInteger(s.size)||s.size<1||s.size>32000000)
+      throw Error('Invalid source manifest record');
+    return {id:s.id,sha256:s.sha256,name:String(s.name||'').slice(0,160),size:s.size,
+      mime:String(s.mime||'').slice(0,80),role:String(s.role||'').slice(0,40),
+      origin:String(s.origin||'operator').slice(0,40),url:String(s.url||'').slice(0,500),
+      review:s.review==='verified'?'verified':'unverified',
+      verifiedBy:s.review==='verified'?String(s.verifiedBy||'').slice(0,100):''};
+  });
+  v.rowSourceId=v.rowSourceId==null?null:String(v.rowSourceId).slice(0,72);
+  v.planSourceId=v.planSourceId==null?null:String(v.planSourceId).slice(0,72);
+  for(const id of [v.rowSourceId,v.planSourceId])
+    if(id&&!v.sources.some(s=>s.id===id))throw Error('Active source does not appear in the source manifest');
+  v.changeLog=Array.isArray(v.changeLog)?v.changeLog.slice(-200).map(a=>({
+    event:String(a.event||'').slice(0,100),at:String(a.at||'').slice(0,40)
+  })):[];
   return v;
 }

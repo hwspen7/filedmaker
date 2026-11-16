@@ -99,3 +99,64 @@ only, not official dimensions or sightline quality.
 17 other Big Ten arenas are removed from the production interface. Previous
 research and batch outputs remain recoverable through Git history. Automatic
 conference builds are retired.
+
+
+## Additional input pathways and quality gates
+
+The primary workbench accepts **CSV, TSV, JSON, and XLSX row inventories**.
+XLSX worksheets can be selected independently. Only cached values are read;
+spreadsheet formulas, external workbook links, executable macros, pivot tables,
+and embedded objects are never executed. XLSX archives are bounded, verified
+against central-directory sizes and CRC32, and never extracted to disk.
+Encrypted archives and unsupported compression fail closed.
+
+**SVG and ASCII DXF** are imported as untrusted contour candidates.
+SVG accepts viewBox-aligned rectangles, polygons, polylines and straight-line
+paths without unsupported transforms. DXF accepts flat LWPOLYLINE entities.
+Curved shapes, bulge arcs, drawings with transforms, layouts without a
+supported coordinate system, and damaged or encrypted files require conversion
+or manual tracing. All drawing units are aligned through playing-surface
+calibration. Candidates need exact labels matching school row sections and
+explicit operator review before creating a geometry bank. No invented seat IDs
+are sourced from the drawing.
+
+Each file imported into the main workbench now produces a local SHA-256
+fingerprint and a manifest entry. A digest identifies input bytes, but is not
+authentication or proof that the information is correct. Source rows and
+drawing entries retain their active source association. Operators can also add
+an independent point with actual X/Z measurements to assess registration
+residuals; the four calibration anchors alone give zero *training* error and
+must never be used as an accuracy claim.
+
+Geometry QA reports blocking violations, including self-intersecting sections,
+degenerate footprints and nearly coincident seats, separately from review
+findings such as implausible pitch, unverified positions and seat-capacity
+differences. Blocking geometry errors prevent exporting an offline preview.
+All unsigned estimates remain **review-required** even when calculations pass.
+
+A bounded undo/redo journal supports section corrections, plan calibration,
+file import and metadata changes. Project JSON contains the source manifest
+and change trail; it does not contain private school ticketing credentials.
+Large raster attachments omitted from exports must be reattached by a human.
+Published capacity and imported seat identities remain distinct.
+
+Projects may be audited outside the browser with:
+
+    npm run audit:workbench -- path/to/school.filedmaker-workbench.json
+
+Use --strict for a deliberately conservative gate: it will reject a project
+whose geometry or source review is incomplete, even if all seats render.
+Tests cover archive integrity, four-way tabular convergence, SVG/DXF contours,
+data provenance, independent calibration checks, undo/redo, geometric
+violations, and native WebGL2 browser rendering.
+
+## What is deliberately not certified yet
+
+Direct PDF/DWG ingestion, extracting text or structured seats from scans,
+automatic OCR/CV section detection, curves/bulges in CAD files, complex
+multilevel accessible seating, clash-tested egress and automated external
+ticketing are separate engineering efforts. There is no claim that a school
+can upload arbitrary drawings and automatically obtain an exact model.
+Before commercial launch, repeat the pipeline with independently measured
+real-world venues and recorded staff review, benchmark large examples on
+low-end devices, and commission privacy, accessibility and security review.

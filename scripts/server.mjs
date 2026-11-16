@@ -15,7 +15,7 @@ function gitValue(...args){
 const buildInfo={
   branch:process.env.GITHUB_REF_NAME||gitValue('branch','--show-current')||'unknown',
   commit:process.env.GITHUB_SHA||gitValue('rev-parse','HEAD')||'unknown',
-  root,venueCount:18,source:'local-checkout'
+  root,venueCount:2,source:'local-checkout'
 };
 const server = http.createServer(async (req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
@@ -43,7 +43,7 @@ server.listen(port, '127.0.0.1', () => {
 server.on('error',error=>{
   if(error.code==='EADDRINUSE'){
     console.error(`Port ${port} is already occupied. That may be an OLD FiledMaker
-server serving another checkout or branch. Use scripts/launch-big-ten.ps1
+server serving another checkout or branch. Use scripts/launch-workbench.ps1
 to start the verified development branch on a fresh port.`);
     process.exitCode=1;
     return;

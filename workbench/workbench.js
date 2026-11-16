@@ -4,14 +4,63 @@ import {fictionalGym} from '../src/workbench/fixtures.mjs';
 import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
 import {NativeVenueRenderer} from '../src/next/webgl.js';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
+import {importRowFile} from '../src/workbench/imports/tabular.mjs';
+import {parseVectorFile,vectorToImage} from '../src/workbench/imports/vector.mjs';
+import {describeFile,appendSource,assessSources} from '../src/workbench/sources.mjs';
+import {createHistory} from '../src/workbench/history.mjs';
+import {assessRegistration} from '../src/workbench/registration-audit.mjs';
+import {compareVenueProjects} from '../src/workbench/diff.mjs';
 
 const $=id=>document.getElementById(id);
 const canvas=$('planCanvas'),modelCanvas=$('modelCanvas'),ctx=canvas.getContext('2d');
 let venue=newVenue(),registration=null,image=null,editorMode='select',draftPoints=[];
 let preview=null,renderer=null,selectedSection='',selectedSeat=null,drag=null,viewMode='plan';
+let pendingRows=null,vectorDrawing=null;
+const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
 const safeName=()=>venue.venue.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'school-venue';
 const mimeCSV='text/csv;charset=utf-8';
+function recordEdit(before,action){
+  if(JSON.stringify(before)===JSON.stringify(venue))return;
+  history.record(before,action);
+  venue.changeLog=[...(venue.changeLog||[]),{event:action,at:new Date().toISOString()}].slice(-200);
+  $('undo').disabled=!history.canUndo;
+  $('redo').disabled=!history.canRedo;
+}
+async function restoreDocument(next){
+  const oldImage=image,oldFile=venue.plan.name;
+  const checked=normalizeVenue(next);
+  let restoredImage=null;
+  if(checked.plan.imageData){
+    restoredImage=new Image();restoredImage.src=checked.plan.imageData;
+    await restoredImage.decode();
+  }else if(checked.plan.name===oldFile)restoredImage=oldImage;
+  venue=checked;image=restoredImage;selectedSeat=null;selectedSection='';
+  registration=image&&venue.calibration.corners.length===4?
+    registerCourt(venue.calibration.corners,venue.court.width,venue.court.length):null;
+  preview=null;vectorDrawing=null;editorMode='select';draftPoints=[];
+  sync();tryPreview();
+  if(venue.plan.name&&!image)message('Geometry restored. Reattach the source image for overlay editing.',true);
+}
+async function stepHistory(direction){
+  const state=direction==='back'?history.undo(venue):history.redo(venue);
+  if(!state)return;
+  try{await restoreDocument(state.venue);message(state.action+' restored');}
+  catch(e){message('Cannot restore edit: '+e.message,true);}
+  $('undo').disabled=!history.canUndo;$('redo').disabled=!history.canRedo;
+}
+$('undo').onclick=()=>stepHistory('back');
+$('redo').onclick=()=>stepHistory('forward');
+window.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='z'){
+    if(e.target.matches('input,textarea,[contenteditable]'))return;
+    e.preventDefault();stepHistory(e.shiftKey?'forward':'back');
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'&&
+      !e.target.matches('input,textarea,[contenteditable]')){
+    e.preventDefault();stepHistory('forward');
+  }
+});
 function message(text,bad=false){
   $('workStatus').textContent=text;
   $('workStatus').style.color=bad?'#ac3e37':'#71808c';
@@ -41,6 +90,7 @@ function sync(){
   $('capacitySource').value=venue.capacitySource;
   $('workspaceName').textContent=venue.venue;
   $('sourceName').textContent=venue.plan.name||'No drawing attached';
+  $('undo').disabled=!history.canUndo;$('redo').disabled=!history.canRedo;
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   refreshSections();
 }
@@ -173,13 +223,31 @@ function repaint(){
     editorMode==='trace'?'Trace '+(draftPoints.length+1)+'/4: '+['front left','front right','rear right','rear left'][draftPoints.length]:
     image&&!registration?'Image loaded. Mark four court corners before tracing sections.':
     'Drag section corners to correct the footprint. Imported row counts are never changed to match a target capacity.';
+  const sourceStatus=assessSources(venue);
+  $('sourceLedger').textContent=venue.sources?.length?
+    venue.sources.map(item=>item.role+' · '+item.name+' · SHA-256 '+item.sha256.slice(0,12)+
+      ' · '+item.review).join('\n'):
+      'No hashed source files. The fixture is synthetic.';
+  let calibrationNote='';
+  if(venue.calibration.corners.length===4){
+    const state=assessRegistration(venue.calibration.corners,venue.court.width,
+      venue.court.length,venue.calibration.checkpoints||[]);
+    calibrationNote='Plan calibration: '+state.status+
+      (state.rmsErrorM===null?' (no independent check points)':
+       ' (independent RMS '+state.rmsErrorM.toFixed(3)+' m)');
+  }
   $('qa').textContent=preview?[
     'Source seats: '+number(preview.audit.declaredSeats),
     'Generated positions: '+number(preview.audit.mappedSeats),
     'Geometry: '+preview.audit.coordinateStatus,
-    ...preview.warnings].join('\n'):
-    venue.rows.length?'Import completed. Trace each row-bearing section and generate a model.':
-    'Awaiting source rows and traced sections.';
+    'QA status: '+preview.quality.status+'; '+preview.quality.blockingCount+' blocking / '+
+      preview.quality.reviewCount+' review findings',
+    ...preview.quality.issues.slice(0,16).map(i=>i.severity.toUpperCase()+' '+i.code+' · '+i.detail),
+    ...preview.warnings.slice(0,5),
+    ...sourceStatus.issues,calibrationNote
+  ].filter(Boolean).join('\n'):
+    [venue.rows.length?'Import completed. Trace each row-bearing section and generate a model.':
+    'Awaiting source rows and traced sections.',...sourceStatus.issues,calibrationNote].filter(Boolean).join('\n');
   draw();
 }
 function tryPreview(){
@@ -211,6 +279,7 @@ function pickSection(point,g){
   return '';
 }
 function commitSection(points){
+  const before=structuredClone(venue);
   const id=$('newSectionId').value.trim();
   if(!/^[a-z0-9][a-z0-9 _-]{0,29}$/i.test(id))throw Error('Enter a section ID (letters, numbers, spaces, hyphen)');
   if(venue.sections.some(s=>s.id.toLowerCase()===id.toLowerCase()))throw Error('This section ID already exists');
@@ -218,6 +287,7 @@ function commitSection(points){
   venue.sections.push({id,front:[world[0],world[1]],back:[world[3],world[2]],
     trace,baseHeight:.45,rowRise:.28,provenance:'operator-traced/estimated'});
   selectedSection=id;
+  recordEdit(before,'Trace section '+id);
   $('newSectionId').value='SECTION-'+(venue.sections.length+1);
   refreshSections();
 }
@@ -232,7 +302,9 @@ canvas.addEventListener('pointerdown',event=>{
       draftPoints.push(px);
       if(draftPoints.length===4){
         const attempt=registerCourt(draftPoints,venue.court.width,venue.court.length);
+        const before=structuredClone(venue);
         venue.calibration.corners=structuredClone(draftPoints);
+        recordEdit(before,'Calibrate drawing against playing surface');
         registration=attempt;draftPoints=[];editorMode='select';
         for(const s of venue.sections)if(s.trace.length===4){
           const ps=s.trace.map(q=>registration.toWorld(q));
@@ -257,7 +329,8 @@ canvas.addEventListener('pointerdown',event=>{
       const pos=worldToScreen(q,g);return Math.hypot(pos.x-p.x,pos.y-p.y)<14;
     });
     if(handle>=0){
-      drag={id:selectedSection,handle};canvas.setPointerCapture(event.pointerId);return;
+      drag={id:selectedSection,handle,before:structuredClone(venue)};
+      canvas.setPointerCapture(event.pointerId);return;
     }
     selectedSection=pickSection(p,g);
     $('sectionSelect').value=selectedSection;updateSectionFields();repaint();
@@ -279,14 +352,17 @@ canvas.addEventListener('pointermove',event=>{
 });
 function releasePointer(event){
   if(!drag)return;
-  drag=null;
+  const completed=drag;drag=null;
   if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
+  recordEdit(completed.before,'Adjust traced section '+completed.id);
   tryPreview();
 }
 canvas.addEventListener('pointerup',releasePointer);
 canvas.addEventListener('pointercancel',releasePointer);
 const fieldHandler=()=>{
-  try{venue=validateFields();registration=venue.calibration.corners.length===4&&image?
+  try{const before=structuredClone(venue);venue=validateFields();
+    recordEdit(before,'Update venue metadata');
+    registration=venue.calibration.corners.length===4&&image?
     registerCourt(venue.calibration.corners,venue.court.width,venue.court.length):null;tryPreview();}
   catch(e){message(e.message,true);}
 };
@@ -299,6 +375,7 @@ $('sport').onchange=()=>{
     $('sport').value=old.sport;return;
   }
   venue=newVenue($('sport').value);venue.school=old.school;venue.venue=old.venue;
+  recordEdit(old,'Change playing-surface type');
   image=null;registration=null;selectedSection='';preview=null;sync();repaint();
 };
 $('calibrate').onclick=()=>{
@@ -313,25 +390,48 @@ $('sectionSelect').onchange=()=>{selectedSection=$('sectionSelect').value;update
 $('applySection').onclick=()=>{
   const s=venue.sections.find(s=>s.id===$('sectionSelect').value);
   if(!s){message('Select a section first.',true);return;}
+  const before=structuredClone(venue);
   s.baseHeight=Number($('baseHeight').value);s.rowRise=Number($('rowRise').value);
+  recordEdit(before,'Adjust section elevation '+s.id);
   tryPreview();
 };
 $('removeSection').onclick=()=>{
   const id=selectedSection;
   if(!id)return;
   if(!confirm('Remove section '+id+'? Imported row records will be retained until corrected.'))return;
+  const before=structuredClone(venue);
   venue.sections=venue.sections.filter(s=>s.id!==id);
+  recordEdit(before,'Remove section '+id);
   selectedSection='';refreshSections();tryPreview();
 };
+async function installRows(file,index=0){
+  if(file.size>16_000_000)throw Error('Row inventory exceeds 16 MB');
+  const imported=await importRowFile(file,{sheetIndex:index});
+  const source=await describeFile(file,{role:'seat-rows',origin:'school-supplied'});
+  const before=structuredClone(venue);
+  const next=appendSource(venue,source);
+  next.rows=imported.rows;next.rowSourceId=source.id;
+  venue=normalizeVenue(next);
+  recordEdit(before,'Import '+imported.format+' row inventory: '+file.name);
+  tryPreview();
+  message('Imported '+number(imported.rows.length)+' rows from '+file.name+
+    ' ('+imported.format+'). Original counts preserved.');
+  if(imported.sheets.length){
+    $('sheetWrap').hidden=imported.sheets.length<=1;
+    $('sheetSelect').replaceChildren(...imported.sheets.map((name,i)=>new Option(name,String(i))));
+    $('sheetSelect').value=String(index);
+  }else $('sheetWrap').hidden=true;
+}
 $('rowsFile').onchange=async event=>{
   const file=event.target.files?.[0];if(!file)return;
-  try{
-    if(file.size>8_000_000)throw Error('Row CSV exceeds 8 MB');
-    const rows=parseVenueRows(await file.text());
-    venue.rows=rows;tryPreview();
-    message('Imported '+number(rows.length)+' source rows; geometries remain provisional.');
-  }catch(e){message(e.message,true);}
+  try{pendingRows=file;await installRows(file);}
+  catch(e){message('Row import rejected: '+e.message,true);}
   finally{event.target.value='';}
+};
+$('sheetSelect').onchange=async()=>{
+  if(!pendingRows)return;
+  try{await installRows(pendingRows,Number($('sheetSelect').value));}
+  catch(e){message('Worksheet import rejected: '+e.message,true);}
 };
 $('planFile').onchange=async event=>{
   const file=event.target.files?.[0];if(!file)return;
@@ -344,6 +444,10 @@ $('planFile').onchange=async event=>{
       if(loaded.width>20000||loaded.height>20000)throw Error('Image dimensions exceed 20,000 pixels');
       image=loaded;
     }finally{URL.revokeObjectURL(url);}
+    const source=await describeFile(file,{role:'reference-plan',origin:'school-supplied'});
+    const before=structuredClone(venue);
+    venue=appendSource(venue,source);
+    venue.planSourceId=source.id;venue.vectorCandidates=[];
     venue.plan={name:file.name,mime:file.type,width:image.width,height:image.height,imageData:''};
     if(file.size<3_500_000){
       venue.plan.imageData=await new Promise((resolve,reject)=>{
@@ -353,14 +457,17 @@ $('planFile').onchange=async event=>{
     }
     venue.calibration.corners=[];venue.sections=[];selectedSection='';
     registration=null;preview=null;editorMode='calibrate';draftPoints=[];
-    sync();repaint();message('Source image loaded. Calibrate four court corners; then trace sections.');
+    recordEdit(before,'Import raster drawing '+file.name);
+    sync();repaint();message('Source image loaded and hashed. Calibrate four court corners; then trace sections.');
   }catch(e){message(e.message,true);}
   finally{event.target.value='';}
 };
 $('csvExample').onclick=()=>save('example-rows.csv',
   'section,row,seats,seat_start,tier,seat_type\r\nHOME,A,12,1,T1,bleacher\r\nHOME,B,12,1,T1,bleacher\r\nAWAY,A,10,1,T1,chair\r\n',mimeCSV);
 $('fixture').onclick=()=>{
+  const before=structuredClone(venue);
   venue=fictionalGym();registration=null;image=null;preview=null;selectedSection='';
+  recordEdit(before,'Load fictional geometry fixture');
   editorMode='select';draftPoints=[];sync();tryPreview();
   message('Loaded an explicitly fictional 1,500-seat geometry exercise.');
 };
@@ -398,6 +505,7 @@ $('openProject').onchange=async event=>{
   try{
     if(file.size>12_000_000)throw Error('Project file exceeds 12 MB');
     const next=normalizeVenue(JSON.parse(await file.text()));
+    const before=structuredClone(venue);
     let loadedImage=null;
     if(next.plan.imageData){
       loadedImage=new Image();loadedImage.src=next.plan.imageData;
@@ -406,9 +514,28 @@ $('openProject').onchange=async event=>{
     venue=next;image=loadedImage;registration=image&&next.calibration.corners.length===4?
       registerCourt(next.calibration.corners,next.court.width,next.court.length):null;
     preview=null;selectedSeat=null;selectedSection='';editorMode='select';draftPoints=[];
+    recordEdit(before,'Import editable project');
     sync();tryPreview();message('Editable venue project opened.');
   }catch(e){message('Invalid project: '+e.message,true);}
   finally{event.target.value='';}
+};
+$('compareProject').onchange=async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    if(file.size>12_000_000)throw Error('Previous project exceeds 12 MB');
+    const prior=normalizeVenue(JSON.parse(await file.text()));
+    const comparison=compareVenueProjects(prior,validateFields());
+    $('delta').textContent=[
+      'Seat-count delta: '+(comparison.seatDelta>0?'+':'')+comparison.seatDelta,
+      'Section edits: '+comparison.sectionChanges.length,
+      'Row edits: '+comparison.rowChanges.length,
+      'New source files: '+comparison.sourceChanges.length,
+      'Venue or sport changed: '+(comparison.venueChanged||comparison.sportChanged)
+    ].join('\n');
+    save(safeName()+'-project-diff.json',JSON.stringify(comparison,null,2));
+    message('Project difference report created without overwriting the active project.');
+  }catch(e){message('Compare failed: '+e.message,true);}
+  finally{e.target.value='';}
 };
 $('saveSeats').onclick=()=>{
   if(!preview){message('Generate a model first.',true);return;}
@@ -426,10 +553,18 @@ $('saveReport').onclick=()=>{
   if(!preview){message('Generate a model first.',true);return;}
   save(safeName()+'-audit.json',JSON.stringify({venue:preview.venue.venue,
     sourceDrawing:preview.venue.plan.name,calibrated:preview.venue.calibration.corners.length===4,
+    independentRegistration:preview.venue.calibration.corners.length===4?
+      assessRegistration(preview.venue.calibration.corners,preview.venue.court.width,
+      preview.venue.court.length,preview.venue.calibration.checkpoints||[]):null,
+    sourceManifest:preview.venue.sources,sourceReview:assessSources(preview.venue),
+    quality:preview.quality,changeLog:preview.venue.changeLog,
     ...preview.audit,rowRuns:preview.rowRuns,warnings:preview.warnings},null,2));
 };
 $('publish').onclick=async()=>{
   if(!preview){message('Generate a model first.',true);return;}
+  if(preview.quality.blockingCount){
+    message('Fix '+preview.quality.blockingCount+' blocking geometry issues before exporting.',true);return;
+  }
   try{
     const response=await fetch('../src/next/webgl.js',{cache:'no-store'});
     if(!response.ok)throw Error('Offline WebGL source missing');
@@ -443,6 +578,85 @@ newId.textContent='New section ID';
 const newInput=document.createElement('input');
 newInput.id='newSectionId';newInput.maxLength=30;newInput.value='SECTION-1';
 newId.append(newInput);$('trace').parentElement.before(newId);
+
+$('addCheck').onclick=()=>{
+  try{
+    if(venue.calibration.corners.length!==4)throw Error('Calibrate the court first');
+    const values=['checkPX','checkPY','checkX','checkZ'].map(id=>Number($(id).value));
+    if(values.some((n,i)=>!$( ['checkPX','checkPY','checkX','checkZ'][i]).value.trim()||!Number.isFinite(n)))
+      throw Error('Enter four valid calibration check coordinates');
+    const [pixelX,pixelY,actualX,actualZ]=values;
+    const before=structuredClone(venue);
+    venue.calibration.checkpoints.push({pixelX,pixelY,actualX,actualZ});
+    venue=normalizeVenue(venue);
+    recordEdit(before,'Add independent calibration checkpoint');
+    repaint();message('Independent plan registration check point added.');
+  }catch(e){message(e.message,true);}
+};
+$('vectorFile').onchange=async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    if(file.size>4_000_000)throw Error('Vector file exceeds 4 MB');
+    const vectors=parseVectorFile(await file.text(),file.name);
+    const raster=vectorToImage(vectors.contours,vectors.width,vectors.height);
+    const loaded=new Image();loaded.src=raster.url;await loaded.decode();
+    const source=await describeFile(file,{role:'reference-plan',origin:'school-supplied'});
+    const before=structuredClone(venue);
+    const next=appendSource(venue,source);
+    next.planSourceId=source.id;
+    next.plan={name:file.name,mime:file.type||'image/svg+xml',width:loaded.width,
+      height:loaded.height,imageData:raster.url};
+    next.calibration={corners:[],checkpoints:[]};
+    next.sections=[];
+    next.vectorCandidates=vectors.contours.map(item=>({
+      id:item.id,kind:item.kind,
+      points:item.points.map(p=>({x:p.x*raster.scale,y:p.y*raster.scale}))
+    }));
+    venue=normalizeVenue(next);image=loaded;vectorDrawing=vectors;registration=null;
+    selectedSection='';preview=null;editorMode='calibrate';draftPoints=[];
+    recordEdit(before,'Import '+vectors.format+' vector plan '+file.name);
+    sync();repaint();
+    message(vectors.format+' contours imported ('+vectors.contours.length+
+      '). Mark four court corners before reviewing section candidates.');
+  }catch(err){message('Vector import rejected: '+err.message,true);}
+  finally{e.target.value='';}
+};
+$('matchVectors').onclick=()=>{
+  try{
+    if(!registration)throw Error('Calibrate the drawing before matching vector sections');
+    const names=new Set(venue.rows.map(r=>r.section.toLowerCase()));
+    const candidates=venue.vectorCandidates.filter(c=>
+      c.points.length===4&&names.has(c.id.toLowerCase())&&
+      !venue.sections.some(s=>s.id.toLowerCase()===c.id.toLowerCase()));
+    const counts=new Map();
+    for(const c of candidates)counts.set(c.id.toLowerCase(),(counts.get(c.id.toLowerCase())||0)+1);
+    const unique=candidates.filter(c=>counts.get(c.id.toLowerCase())===1);
+    if(!unique.length)throw Error('No unique four-corner SVG/DXF labels match imported row section IDs');
+    if(!confirm('Review '+unique.length+' labeled vector section candidates and import them as estimated contours?'))return;
+    const before=structuredClone(venue);
+    for(const item of unique){
+      const p=item.points.map(q=>registration.toWorld(q));
+      // Four-point contours have two candidate opposite edge pairs.
+      // Select the closer edge as the inner front boundary.
+      const edges=[[0,1,2,3],[1,2,3,0]];
+      const center=(a,b)=>Math.hypot((p[a].x+p[b].x)/2,(p[a].z+p[b].z)/2);
+      const front=edges.map(pair=>({pair,near:Math.min(center(pair[0],pair[1]),
+        center(pair[2],pair[3]))})).sort((a,b)=>a.near-b.near)[0].pair;
+      const nearA=center(front[0],front[1]),nearB=center(front[2],front[3]);
+      const order=nearA<=nearB?front:[front[3],front[2],front[1],front[0]];
+      venue.sections.push({
+        id:item.id,front:[p[order[0]],p[order[1]]],
+        back:[p[order[3]],p[order[2]]],trace:item.points,
+        baseHeight:.45,rowRise:.28,provenance:'vector-label/operator-review'
+      });
+    }
+    venue=normalizeVenue(venue);
+    recordEdit(before,'Review and import '+unique.length+' vector section candidates');
+    selectedSection=unique[0].id;refreshSections();tryPreview();
+    message('Imported '+unique.length+' labeled contour candidates. Check their orientation and geometry.');
+  }catch(err){message(err.message,true);}
+};
+
 const observer=new ResizeObserver(()=>resize());observer.observe(canvas.parentElement);
 sync();repaint();resize();
 document.documentElement.dataset.workbenchReady="true";

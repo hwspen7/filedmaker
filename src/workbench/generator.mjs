@@ -1,6 +1,7 @@
 // Deterministic source-row placement into operator-traced front/rear contours.
 // Seat identities are preserved. Missing precision is never filled with invented ticket IDs.
 import {normalizeVenue} from './contract.mjs';
+import {assessVenueGeometry} from './quality.mjs';
 const length=path=>path.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p.x-path[i].x,p.z-path[i].z),0);
 function sample(path,t){
   let remain=length(path)*t;
@@ -70,8 +71,9 @@ export function generateTracedVenue(input){
   if(!venue.calibration.corners.length)
     warnings.push('No image calibration; all traced positions are provisional');
   warnings.push('Section bounds, row elevations and sightlines require school review');
-  return {venue,seats,rowRuns,warnings,
+  const output={venue,seats,rowRuns,warnings,
     audit:{mappedSeats:seats.length,declaredSeats:declared,publishedCapacity:venue.officialCapacity,
       sourceRows:venue.rows.length,modeledSections:venue.sections.length,
       independentSurvey:false,coordinateStatus:'operator-traced/estimated'}};
+  return {...output,quality:assessVenueGeometry(output)};
 }

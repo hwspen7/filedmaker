@@ -196,6 +196,29 @@ async function main(){
     writeFileSync(workbenchImage,Buffer.from(workbenchShot.data,'base64'));
     if(statSync(workbenchImage).size<14000)throw Error('Workbench screenshot is blank');
     console.log('workbench: 1,500 seats preserved, 4 independent banks, native WebGL2 verified');
+    const workbook=await evaluate(`(async()=>{
+      const base64=(await (await fetch('/tests/fixtures/row-workbook.base64.txt')).text()).trim();
+      const bytes=Uint8Array.from(atob(base64),x=>x.charCodeAt(0));
+      const f=new File([bytes],'test.xlsx',{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const {importRowFile}=await import('/src/workbench/imports/tabular.mjs');
+      const home=await importRowFile(f,{sheetIndex:0});
+      const away=await importRowFile(f,{sheetIndex:1});
+      return {sheets:home.sheets,home:home.rows[0],away:away.rows[0]};
+    })()`);
+    if(workbook?.sheets?.length!==2||workbook.home?.seats!==18||
+      workbook.away?.seats!==12||workbook.away?.section!=='AWAY')
+      throw Error('Offline XLSX parsing failed in browser: '+JSON.stringify(workbook));
+    const vector=await evaluate(`(async()=>{
+      const {parseVectorFile,vectorToImage}=await import('/src/workbench/imports/vector.mjs');
+      const xml='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'+
+        '<rect id="HOME" x="10" y="10" width="80" height="30"/>'+
+        '<polygon id="AWAY" points="110,10 190,10 190,40 110,40"/></svg>';
+      const d=parseVectorFile(xml,'layout.svg');
+      return {names:d.contours.map(s=>s.id),png:vectorToImage(d.contours,d.width,d.height).url.startsWith('data:image/png')};
+    })()`);
+    if(vector?.names?.join(',')!=='HOME,AWAY'||!vector.png)
+      throw Error('Safe SVG contour import failed: '+JSON.stringify(vector));
+    console.log('imports: XLSX dual worksheets, SVG vector contours and raster preview verified');
 
   } finally {
     client?.close();chrome.kill('SIGKILL');server.kill('SIGTERM');
