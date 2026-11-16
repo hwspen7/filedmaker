@@ -339,6 +339,10 @@
   <div class="row-actions group-actions">
     <button id="structureGroupMove" type="button">Move group</button>
     <button id="structureGroupCopy" type="button">Duplicate group</button>
+  </div>
+  <label>Repeat copies <input id="structureGroupCopies" type="number" min="1" max="20" step="1" value="4"></label>
+  <div class="row-actions group-actions">
+    <button id="structureGroupArray" type="button">Create linear array</button>
     <button id="structureGroupRemove" type="button">Remove selected</button>
   </div>
   <p class="hint">All group edits are one undoable transaction. Objects that intersect existing seats are rejected together.</p>
