@@ -74,8 +74,8 @@ async function main(){
     await send('Page.navigate',{url:'http://127.0.0.1:'+PORT+'/'});
     await poll(async()=>await evalJs(`(()=>{
       const ids=[...document.querySelectorAll('[data-bigten]')].map(b=>b.dataset.bigten);
-      return ids.length===17 && document.querySelector('[data-preset="schott"]') &&
-        document.querySelector('[data-view="exterior"]') && document.querySelector('#title');
+      return ids.length===17 && !!document.querySelector('[data-preset="schott"]') &&
+        !!document.querySelector('[data-view="exterior"]') && !!document.querySelector('#title');
     })()`),75);
     for(const [id,arena] of [['illinois','State Farm Center'],
       ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena']]){
