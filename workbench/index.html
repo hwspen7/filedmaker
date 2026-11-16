@@ -495,6 +495,7 @@
       <option value="2">2 m</option><option value="5">5 m</option>
       <option value="10">10 m</option>
     </select></label>
+    <button id="objectPropertiesToggle" type="button" title="Show selected-object editing">Properties</button>
     <button id="studioHelpToggle" type="button" aria-expanded="false">? How to use</button>
   </div>
   <div id="studioHelp" class="studio-help" hidden>
@@ -510,6 +511,28 @@
   <div class="three-d-editor-hint" id="threeDHint" hidden>
     <label><input type="checkbox" id="threeDEditEnabled" checked> Edit objects in 3D</label>
     <span id="threeDEditReadout">Drag objects to move · Alt-drag to raise/lower · empty-space drag orbits.</span>
+  </div>
+  <div id="quickObjectInspector" class="canvas-inspector" hidden>
+    <div class="canvas-inspector-head">
+      <strong>Selected object</strong>
+      <button id="quickClose" type="button" aria-label="Close object properties">×</button>
+    </div>
+    <div id="quickObjectName" class="object-name">Select an object in 2D or 3D</div>
+    <div class="canvas-inspector-fields">
+      <label>X (m)<input id="quickX" type="number" step=".1"></label>
+      <label>Y (m)<input id="quickY" type="number" step=".1"></label>
+      <label>Z (m)<input id="quickZ" type="number" step=".1"></label>
+      <label>Angle (°)<input id="quickYaw" type="number" step="5"></label>
+      <label>Width (m)<input id="quickWidth" type="number" step=".1"></label>
+      <label>Depth (m)<input id="quickDepth" type="number" step=".1"></label>
+      <label>Height (m)<input id="quickHeight" type="number" step=".1"></label>
+    </div>
+    <div class="canvas-inspector-actions">
+      <button id="quickApply" type="button" class="primary">Apply</button>
+      <button id="quickCopy" type="button">Copy</button>
+      <button id="quickDelete" type="button">Delete</button>
+    </div>
+    <small>Edits are reversible and checked against source seats.</small>
   </div>
 <div id="emptyCanvas" class="empty-canvas">
 <span class="empty-icon">✦</span><h2>Your next venue starts here</h2>
