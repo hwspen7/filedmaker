@@ -176,6 +176,31 @@ async function main(){
         await evaluate("document.querySelector('[data-view=overview]').click()");
       }
     }
+    // Verify the live experience uses real reference seats and the WebGL2
+    // renderer, not a static picture of the source website.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/experience/?venue=schott&layout=concert'});
+    const live = await poll(async()=>{
+      const state=await evaluate("(()=>({ready:!!window.filedmakerExperience,count:window.filedmakerExperience?.seats().length||0,venue:document.querySelector('#name')?.textContent,canvas:document.querySelector('#scene')?.width||0,map:!!document.querySelector('#seatmap'),view:document.querySelector('[data-view=orbit]')?.classList.contains('active')}))()");
+      return state.ready && state.count>1000 && state.canvas>100 && state.view ? state : null;
+    },60);
+    if(!live.map||!live.venue?.includes('Schottenstein'))
+      throw Error('Live venue view did not load reference metadata: '+JSON.stringify(live));
+    const liveSelection=await evaluate("(()=>{const api=window.filedmakerExperience;const before=api.selected();const slider=document.querySelector('#depthRange');slider.value='85';slider.dispatchEvent(new Event('change',{bubbles:true}));const after=api.selected();document.querySelector('#compareA').click();return {before:before?.uid,after:after?.uid,comparison:document.querySelector('#compareLeft')?.textContent};})()");
+    if(!liveSelection.after || liveSelection.before===liveSelection.after ||
+       !liveSelection.comparison?.includes('A ·'))
+      throw Error('Live seat slider/comparison not interactive: '+JSON.stringify(liveSelection));
+    await evaluate("document.querySelector('[data-view=seat]').click()");
+    await poll(async()=>await evaluate("document.querySelector('[data-view=seat]').classList.contains('active') && !document.querySelector('#scene').hidden"),30);
+    await delay(850);
+    const liveShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const liveFile=join(dir,'live-seat-experience.png');
+    writeFileSync(liveFile,Buffer.from(liveShot.data,'base64'));
+    if(statSync(liveFile).size<12000)throw Error('Live seat experience WebGL screenshot missing');
+    await evaluate("document.querySelector('[data-view=map]').click()");
+    const liveMap=await evaluate("!document.querySelector('#seatmap').hidden && document.querySelector('#scene').hidden");
+    if(!liveMap)throw Error('Live seat map toggle did not return to native 2D');
+    console.log('live-seat-experience: reference model, 2D/3D, slider and comparison verified');
+
     // Verify the new end-to-end school workbench in a real browser.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/'});
     await poll(async()=>await evaluate("document.documentElement.dataset.workbenchReady==='true'"),60);
