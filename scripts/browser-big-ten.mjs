@@ -7,9 +7,13 @@ import {tmpdir} from 'node:os';
 import {resolve,join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 
-const PORT=5294,DEBUG=9294,ARENAS=['illinois','indiana','iowa','maryland','michigan','michigan-state',
+const PORT=5294,DEBUG=9294;
+const ALL_ARENAS=['illinois','indiana','iowa','maryland','michigan','michigan-state',
   'minnesota','nebraska','northwestern','oregon','penn-state','purdue',
   'rutgers','ucla','usc','washington','wisconsin'];
+const FOCUS=process.env.BIG_TEN_FOCUS??null;
+if(FOCUS&&!ALL_ARENAS.includes(FOCUS))throw Error('Unknown focused arena: '+FOCUS);
+const ARENAS=FOCUS?[FOCUS]:ALL_ARENAS;
 const out=resolve(process.env.VISUAL_OUTPUT??'artifacts/big-ten-visual');
 function chromeBinary(){
   if(process.env.CHROME_BIN)return process.env.CHROME_BIN;
@@ -106,8 +110,9 @@ async function main(){
         typeof document.querySelector('[data-bigten="illinois"]')?.onclick==='function' &&
         !!document.querySelector('#title');
     })()`),75);
-    for(const [id,arena] of [['illinois','State Farm Center'],
-      ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena at Hec Edmundson Pavilion']]){
+    const featured=[['illinois','State Farm Center'],
+      ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena at Hec Edmundson Pavilion']];
+    for(const [id,arena] of featured.filter(([id])=>!FOCUS||id===FOCUS)){
       await evalJs(`document.querySelector('[data-bigten="${id}"]').click()`);
       let probes=0;
       await poll(async()=>{
@@ -220,11 +225,11 @@ async function main(){
     const osuMapImage=join(out,'studio-ohio-state-sections.png');
     writeFileSync(osuMapImage,Buffer.from(osuMap.data,'base64'));
     if(statSync(osuMapImage).size<18000)throw Error('OSU section map screenshot is blank');
-    console.log('All 17 Big Ten native website interiors and OSU smoothed bowl rendered');
+    console.log('Native venue interiors rendered: '+ARENAS.length+' school(s), plus Ohio State');
     const revision=await evalJs("document.querySelector('#runtimeBuild')?.textContent");
     if(!revision||!revision.includes(status.commit.slice(0,9)))
       throw Error('Homepage did not show its actual running source commit');
-    console.log('Native studio: three Big Ten exterior previews and OSU preset verified');
+    console.log('Native studio: exterior examples and Ohio State preset verified');
     for(const venue of ARENAS){
       const path='http://127.0.0.1:'+PORT+'/build/big-ten-18/'+venue+'/venue-preview.html';
       await send('Page.navigate',{url:path});
