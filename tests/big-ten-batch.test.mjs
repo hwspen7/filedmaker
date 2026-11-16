@@ -100,3 +100,55 @@ test('batch generator exports a source-backed venue package and manifest',()=>{
     assert.equal(report.modelStatus,'estimated-parametric');
   }finally{rmSync(out,{recursive:true,force:true});}
 });
+
+
+test('Crisler Center uses documented 100/200 identifiers and row-label ranges',()=>{
+  const spec=toProceduralSpec(get('michigan'));
+  assert.equal(spec.sectionMap[0][0].sectionIds.length,19);
+  assert.equal(spec.sectionMap[1][0].sectionIds.length,36);
+  const {model,audit}=generateVenuePackage(spec);
+  assert.ok(audit.passed,audit.errors.join('; '));
+  const ids=new Set(model.seats.map(seat=>seat.sectionId));
+  for(const id of ['101','105','130','136','201','205','221','236'])
+    assert.ok(ids.has(id),'Missing authentic Crisler section '+id);
+  assert.ok(model.seats.some(seat=>seat.sectionId==='205'&&seat.row==='22'));
+  assert.ok(model.seats.some(seat=>seat.sectionId==='205'&&seat.row==='41'));
+  assert.ok(!ids.has('1')&&!ids.has('2'));
+  assert.ok(model.seats.every(seat=>seat.uid.startsWith('EST-')));
+});
+
+test('Indiana Assembly Hall has separated opposing stands, not a continuous uniform oval',()=>{
+  const spec=toProceduralSpec(get('indiana'));
+  assert.equal(spec.sectionMap.length,2);
+  assert.equal(spec.sectionMap[0].length,2);
+  assert.equal(spec.sectionMap[1].length,2);
+  const {model,audit}=generateVenuePackage(spec);
+  assert.ok(audit.passed,audit.errors.join('; '));
+  const ids=new Set(model.seats.map(s=>s.sectionId));
+  for(const id of ['A','F','G','M','AA','FF','GG','MM'])assert.ok(ids.has(id),id);
+  const inMissingArc=model.seats.filter(s=>s.tier===0&&(()=>{
+    const a=(Math.atan2(s.z,s.x)+Math.PI*2)%(Math.PI*2);
+    return a>4.28&&a<5.05;
+  })());
+  assert.equal(inMissingArc.length,0,'No seats should fill the structural side-stand gap');
+});
+
+test('unverified geometry cannot claim OSU-quality chart calibration by seat-count matching',()=>{
+  for(const id of ['michigan','indiana','iowa','rutgers','ucla','usc','wisconsin','penn-state']){
+    const spec=toProceduralSpec(get(id));
+    const normalized=GeometryEngine.normalize(spec);
+    assert.ok(normalized.sectionMap,id);
+    assert.equal(spec.provenance.sectionOutlineProvenance,'estimated-arc',id);
+    assert.equal(spec.provenance.seatCoordinates,'not-available',id);
+  }
+  for(const id of ['illinois','northwestern']){
+    assert.equal(toProceduralSpec(get(id)).sectionMap,undefined,id);
+  }
+});
+
+test('overlapping chart arc groups fail normalization',()=>{
+  const mapped=toProceduralSpec(get('indiana'));
+  const invalid=structuredClone(mapped);
+  invalid.sectionMap[0][1].startAngle=3;
+  assert.throws(()=>GeometryEngine.normalize(invalid),/Overlapping mapped section arcs/);
+});
