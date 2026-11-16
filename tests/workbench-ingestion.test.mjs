@@ -109,3 +109,23 @@ test('row importer rejects unknown tier and seat furniture rather than silently 
   assert.throws(()=>parseVenueRows('section,row,seats,tier\nHOME,A,5,T9\n'),/Unsupported seating tier/);
   assert.throws(()=>parseVenueRows('section,row,seats,seat_type\nHOME,A,5,standing\n'),/Unsupported seat type/);
 });
+
+test('aisle gaps remain real voids while preserving all source seat identities',()=>{
+  const v=fictionalGym(),row=v.rows[0];
+  row.gaps=[{after:10,width:1.2},{after:18,width:.8}];
+  row.seatNumbers=Array.from({length:25},(_,i)=>'A'+(i+1));
+  row.seatDirection='reverse';row.elevation=2.5;
+  const result=generateTracedVenue(v);
+  assert.equal(result.seats.length,1500);
+  const seats=result.seats.filter(s=>s.section===row.section&&s.row===row.row);
+  assert.equal(seats[0].number,'A25');assert.equal(seats[0].y,2.5);
+  const jumps=seats.slice(1).map((s,i)=>Math.hypot(s.x-seats[i].x,s.z-seats[i].z));
+  assert.equal(jumps.filter(j=>j>1).length,2);
+  assert.equal(result.rowRuns[0].aisleGaps.length,2);
+});
+test('structured row metadata rejects duplicate gap indices and mismatched IDs',()=>{
+  assert.throws(()=>parseVenueRows('section,row,seats,gaps\nHOME,A,3,1:1.2|1:0.8\n'),/Duplicate aisle/);
+  assert.throws(()=>parseVenueRows('section,row,seats,seat_numbers\nHOME,A,3,A1|A2\n'),/match the row seat count/);
+  assert.throws(()=>parseVenueRows('section,row,seats,seat_direction\nHOME,A,3,diagonal\n'),/forward or reverse/);
+  assert.throws(()=>parseVenueRows('section,row,seats,gaps\nHOME,A,3,2:9\n'),/aisle width/);
+});

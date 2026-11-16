@@ -160,3 +160,14 @@ can upload arbitrary drawings and automatically obtain an exact model.
 Before commercial launch, repeat the pipeline with independently measured
 real-world venues and recorded staff review, benchmark large examples on
 low-end devices, and commission privacy, accessibility and security review.
+
+## Aisle and numbering-aware source rows
+
+Rows support optional gaps, seat_numbers, seat_direction and elevation_m.
+gaps uses ordinal:width pairs separated by pipes, such as 10:1.2|18:0.8.
+seat_numbers preserves explicit identifiers, such as A1|A2|A3.
+seat_direction is forward or reverse relative to the section front edge.
+elevation_m is an unverified row-height override.
+Rows preserve exact seat counts, subtract reserved aisle widths from the
+usable footprint and place seats only in remaining continuous spans.
+Unreasonable or impossible placements fail closed rather than erasing aisles.

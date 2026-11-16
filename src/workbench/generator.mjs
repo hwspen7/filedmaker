@@ -2,6 +2,7 @@
 // Seat identities are preserved. Missing precision is never filled with invented ticket IDs.
 import {normalizeVenue} from './contract.mjs';
 import {assessVenueGeometry,inspectSectionTopology} from './quality.mjs';
+import {rowStations} from './rowLayout.mjs';
 const length=path=>path.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p.x-path[i].x,p.z-path[i].z),0);
 function sample(path,t){
   let remain=length(path)*t;
@@ -42,13 +43,14 @@ export function generateTracedVenue(input){
       });
       const samples=along(48);
       const segments=samples.slice(1).map((p,j)=>Math.hypot(p.x-samples[j].x,p.z-samples[j].z));
-      const width=segments.reduce((a,b)=>a+b,0),pitch=width/row.seats;
+      const width=segments.reduce((a,b)=>a+b,0);
+      const station=rowStations(row,width),pitch=station.pitch;
       if(width<.4)throw Error('Section '+s.id+' row '+row.row+' has no usable width');
       if(pitch<.43)warnings.push(s.id+' row '+row.row+' has '+pitch.toFixed(2)+' m average seat pitch: verify layout');
-      const heights=s.baseHeight+i*s.rowRise;
+      const heights=row.elevation??(s.baseHeight+i*s.rowRise);
       const seatPositions=[],start=seats.length;
       for(let n=0;n<row.seats;n++){
-        let target=(n+.5)*width/row.seats,at=samples[0];
+        let target=station.positions[n].distance,at=samples[0];
         for(let j=0;j<segments.length;j++){
           if(target<=segments[j]||j===segments.length-1){
             const f=segments[j]?Math.max(0,Math.min(1,target/segments[j])):0;
@@ -58,15 +60,17 @@ export function generateTracedVenue(input){
           }
           target-=segments[j];
         }
-        const number=String(row.first+n),id=s.id+'-'+row.row+'-'+number;
+        const number=station.positions[n].label,id=s.id+'-'+row.row+'-'+number;
         if(ids.has(id))throw Error('Duplicate seat identity '+id);
         ids.add(id);
         const seat={id,section:s.id,row:row.row,number,tier:row.tier,x:at.x,y:heights,z:at.z,
-          seatType:row.seatType,provenance:'plan-trace/estimated-elevation'};
+          seatType:row.seatType,
+          provenance:row.elevation===null?'plan-trace/estimated-elevation':
+            'plan-trace/provided-elevation-unverified'};
         seats.push(seat);seatPositions.push(seat);
       }
       rowRuns.push({section:s.id,row:row.row,count:row.seats,width,seatPitch:pitch,
-        height:heights,seatType:row.seatType,start});
+        aisleGaps:row.gaps,height:heights,seatType:row.seatType,start});
     }
   }
   const declared=venue.rows.reduce((a,r)=>a+r.seats,0);

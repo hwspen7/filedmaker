@@ -29,7 +29,7 @@ test('static server serves the app and module with correct MIME types', async t 
   assert.equal(module.status, 200);
   assert.match(module.headers.get('content-type'), /javascript/);
   assert.match(await module.text(), /generateSeats/);
-  const missing = await fetch(`http://127.0.0.1:${port}/missing.js`);
+  const missing = await fetch(`http://127.0.0.1:${port}/src/missing.js`);
   assert.equal(missing.status, 404);
   const workbench=await fetch(`http://127.0.0.1:${port}/workbench/`);
   assert.equal(workbench.status,200);

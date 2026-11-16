@@ -22,11 +22,15 @@ const requireRows=(rows)=>{
   return rows;
 };
 const toCSV=records=>{
-  const required=['section','row','seats','seat_start','tier','seat_type'];
+  const required=['section','row','seats','seat_start','tier','seat_type','gaps','seat_numbers','seat_direction','elevation_m'];
   const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   return [required.join(','),...records.map(r=>{
     const mapped={...r,seat_start:r.seat_start??r.first,
-      seat_type:r.seat_type??r.seatType};
+      seat_type:r.seat_type??r.seatType,
+      gaps:Array.isArray(r.gaps)?r.gaps.map(g=>g.after+':'+g.width).join('|'):r.gaps,
+      seat_numbers:Array.isArray(r.seatNumbers)?r.seatNumbers.join('|'):r.seat_numbers,
+      seat_direction:r.seat_direction??r.seatDirection,
+      elevation_m:r.elevation_m??r.elevation};
     return required.map(k=>quote(mapped[k])).join(',');
   })].join('\r\n');
 };

@@ -1,5 +1,6 @@
 // Data contract for the custom venue workbench. No renderer or DOM dependencies.
 import {parseCSV} from '../survey.mjs';
+import {rowAttributes} from './rowLayout.mjs';
 export const SPORT_DEFAULTS=Object.freeze({
   'nfhs-basketball':{width:15.24,length:25.6032,profile:'high-basketball'},
   ncaa:{width:15.24,length:28.6512,profile:'college-basketball'},
@@ -48,7 +49,7 @@ export function parseVenueRows(csv){
     if(!/^T[1-4]$/.test(tier))throw Error('Unsupported seating tier: '+tier);
     const kind=String(r.seat_type||'chair').trim().toLowerCase();
     if(!['chair','bleacher'].includes(kind))throw Error('Unsupported seat type: '+kind);
-    return {section,row,seats,first,tier,seatType:kind};
+    return {section,row,seats,first,tier,seatType:kind,...rowAttributes(r,seats)};
   });
   if(rows.reduce((n,r)=>n+r.seats,0)>40000)
     throw Error('Workbench preview is limited to 40,000 seats; use the survey import for larger projects');
@@ -114,7 +115,7 @@ export function normalizeVenue(input){
     if(!/^T[1-4]$/.test(tier))throw Error('Unsupported seating tier: '+tier);
     const kind=String(r.seatType||'chair').trim().toLowerCase();
     if(!['chair','bleacher'].includes(kind))throw Error('Unsupported seat type: '+kind);
-    return {section,row,seats,first,tier,seatType:kind};
+    return {section,row,seats,first,tier,seatType:kind,...rowAttributes(r,seats)};
   });
   if(v.rows.reduce((n,r)=>n+r.seats,0)>40000)throw Error('Seat count exceeds the 40,000-seat preview limit');
   v.notes=Array.isArray(v.notes)?v.notes.map(s=>String(s).slice(0,250)).slice(0,50):[];
