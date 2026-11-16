@@ -7,7 +7,9 @@ import {tmpdir} from 'node:os';
 import {resolve,join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 
-const PORT=5294,DEBUG=9294,ARENAS=['michigan','indiana','rutgers','wisconsin'];
+const PORT=5294,DEBUG=9294,ARENAS=['illinois','indiana','iowa','maryland','michigan','michigan-state',
+  'minnesota','nebraska','northwestern','oregon','penn-state','purdue',
+  'rutgers','ucla','usc','washington','wisconsin'];
 const out=resolve(process.env.VISUAL_OUTPUT??'artifacts/big-ten-visual');
 function chromeBinary(){
   if(process.env.CHROME_BIN)return process.env.CHROME_BIN;
@@ -93,22 +95,21 @@ async function main(){
       const target=join(out,venue+'-3d.png');
       writeFileSync(target,Buffer.from(image.data,'base64'));
       if(statSync(target).size<18000)throw Error('Empty 3D WebGL screenshot '+venue);
-      if(venue==='michigan'){
-        await evalJs(`(()=>{
-          const payload=JSON.parse(document.querySelector('#payload').textContent);
-          const seat=payload.seats.find(s=>s.sectionId==='205'&&s.row==='22');
-          if(!seat)throw Error('Crisler source-mapped section 205 row 22 missing');
-          document.querySelector('#search').value=seat.uid;
-          document.querySelector('#find').click();
-          document.querySelector('#eye').click();
-        })()`);
-        await poll(async()=>await evalJs("document.querySelector('#eye').classList.contains('active')"));
-        await delay(700);
-        const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
-        const file=join(out,'michigan-seat-view.png');
-        writeFileSync(file,Buffer.from(shot.data,'base64'));
-        if(statSync(file).size<18000)throw Error('Crisler 3D seat screenshot empty');
-      }
+      await evalJs(`(()=>{
+        const payload=JSON.parse(document.querySelector('#payload').textContent);
+        const seat=${venue==='michigan'?"payload.seats.find(s=>s.sectionId==='205'&&s.row==='22')":"null"} ||
+          payload.seats.find(s=>s.tier===0&&s.number===4)||payload.seats[0];
+        if(!seat)throw Error('No representative seat');
+        document.querySelector('#search').value=seat.uid;
+        document.querySelector('#find').click();
+        document.querySelector('#eye').click();
+      })()`);
+      await poll(async()=>await evalJs("document.querySelector('#eye').classList.contains('active')"));
+      await delay(700);
+      const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      const file=join(out,venue+'-seat-view.png');
+      writeFileSync(file,Buffer.from(shot.data,'base64'));
+      if(statSync(file).size<18000)throw Error('Empty 3D seat screenshot '+venue);
       console.log(venue+': '+model.seats+' source-mapped seats, WebGL2 screenshot verified');
     }
   }finally{
