@@ -82,7 +82,7 @@ export function validateBigTenCatalog(catalog,{require18=true}={}){
 }
 
 export function toProceduralSpec(venue){
-  return toBigTenProceduralSpec(venue,SECTION_PROFILES,ARCH_SIGNATURES,INTERIOR_PROFILES);
+  return toBigTenProceduralSpec(venue,SECTION_PROFILES,ARCH_SIGNATURES,INTERIOR_PROFILES,VERIFIED_CHARTS);
 }
 
 function reportFor(venue,packageResult){
