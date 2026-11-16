@@ -5,6 +5,7 @@ import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
 import {applyVenueEdit,applyVenueBatchEdit} from '../src/workbench/editing.mjs';
 import {editVenueStructure} from '../src/workbench/structureEditor.mjs';
 import {editVenueStructureBatch} from '../src/workbench/structureBatch.mjs';
+import {addVenueAssembly,VENUE_ASSEMBLIES} from '../src/workbench/structureAssemblies.mjs';
 import {STRUCTURE_CATALOG} from '../src/workbench/structures.mjs';
 import {editPlayingSurface} from '../src/workbench/surfaceEditor.mjs';
 import {SURFACE_PRESETS,SURFACE_ZONE_KINDS,
@@ -401,6 +402,23 @@ function commitStructureBatch(command,title){
     return true;
   }catch(e){message('Group operation rejected: '+e.message,true);return false;}
 }
+function commitStructureAssembly(x,z){
+  try{
+    const before=structuredClone(venue),preset=$('structureAssemblyPreset').value;
+    const result=addVenueAssembly(venue,{preset,x,z,
+      yaw:$('structureAssemblyYaw').value,
+      scale:$('structureAssemblyScale').value});
+    venue=result.venue;
+    selectedStructureIds=new Set(result.ids);
+    selectedStructure=result.ids[0]||'';
+    recordEdit(before,'Add '+VENUE_ASSEMBLIES[preset].label+' assembly');
+    sync();tryPreview();refreshStructureControls(selectedStructure);
+    $('structureGroupTools').open=result.ids.length>1;
+    message('Placed '+VENUE_ASSEMBLIES[preset].label+' · '+
+      result.ids.length+' editable components · one undo step · source seats unchanged.');
+    return true;
+  }catch(e){message('Assembly rejected: '+e.message,true);return false;}
+}
 function selectStructure(id,additive=false){
   if(!(venue.structures??[]).some(s=>s.id===id))return;
   if(additive){
@@ -721,7 +739,9 @@ function repaint(){
   $('evidenceStatus').textContent=preview?.quality?.blockingCount?'Geometry blocked':
     preview?'Unverified model · human review required':
     venue.plan.name||venue.rows.length?'Import / calibration in progress':'Awaiting source files';
-  $('modeLabel').textContent=editorMode==='place-structure'?
+  $('modeLabel').textContent=editorMode==='place-assembly'?
+    'Quick-build · choose an assembly position on the 2D plan':
+    editorMode==='place-structure'?
     'Place component · click a point on the calibrated 2D plan':
     editorMode==='place-zone'?'Paint zone · click a point on the calibrated 2D plan':
     editorMode==='select'&&activeModelTool==='surface'?
@@ -734,7 +754,9 @@ function repaint(){
     'Tracing · front left → front right → rear right → rear left';
   $('emptyCanvas').hidden=!!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
   $('canvasOverlay').hidden=!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
-  $('canvasOverlay').textContent=editorMode==='place-structure'?
+  $('canvasOverlay').textContent=editorMode==='place-assembly'?
+    'Click to place the chosen assembly. Original source seats are preserved.':
+    editorMode==='place-structure'?
     'Click on the plan to place '+STRUCTURE_CATALOG[activeStructureKind].label+
     '. This will not alter source seat counts.':
     editorMode==='place-zone'?
@@ -865,6 +887,13 @@ canvas.addEventListener('pointerdown',event=>{
         depth:$('zoneDepth').value,color:$('zoneColor').value},
         'Place custom surface marking');
       if(ok){editorMode='select';activateModelTool('surface');}
+      repaint();return;
+    }
+    if(editorMode==='place-assembly'){
+      const world=screenToWorld(p,g);
+      if(commitStructureAssembly(world.x,world.z)){
+        editorMode='select';draw();
+      }
       repaint();return;
     }
     if(editorMode==='place-structure'){
@@ -1352,6 +1381,19 @@ document.querySelectorAll('[data-structure-nudge]').forEach(button=>
         z:Math.round((s.z+delta[1])*100)/100}},'Nudge venue component');
   });
 $('structureSelect').onchange=()=>selectStructure($('structureSelect').value);
+$('structureAssemblyAdd').onclick=()=>commitStructureAssembly(
+  $('structureAssemblyX').value,$('structureAssemblyZ').value);
+$('structureAssemblyPlace').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the source drawing before placing an assembly.',true);return;
+  }
+  $('showPlan').click();
+  activateModelTool('structures');
+  editorMode='place-assembly';
+  repaint();
+  message('Click the 2D plan to position the complete '+VENUE_ASSEMBLIES[
+    $('structureAssemblyPreset').value].label+' assembly.');
+};
 $('structureAdd').onclick=()=>{
   commitStructure({action:'add',kind:activeStructureKind,
     ...structureFormValues()},'Add '+STRUCTURE_CATALOG[activeStructureKind].label);
