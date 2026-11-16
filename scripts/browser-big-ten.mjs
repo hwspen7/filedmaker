@@ -115,10 +115,11 @@ async function main(){
     }
     // All eight first-wave interiors must be accessible as section diagrams,
     // 3D seating bowls and eye-level views from the existing OSU homepage.
-    const firstWave=['indiana','purdue','illinois','iowa','michigan-state',
-      'wisconsin','ucla','washington'];
+    // Every school now has a dedicated interior scene. Verify each one
+    // through the actual main website, not only a standalone offline export.
+    const allBigTen=ARENAS;
     const currentCatalog=JSON.parse(readFileSync('data/big-ten/arenas-2026-27.json'));
-    for(const id of firstWave){
+    for(const id of allBigTen){
       const arena=currentCatalog.venues.find(v=>v.id===id).venue.name;
       await evalJs(`document.querySelector('[data-bigten="${id}"]').click()`);
       await poll(async()=>await evalJs(`(()=>{
@@ -164,7 +165,7 @@ async function main(){
       const viewPath=join(out,'studio-'+id+'-seat-eye.png');
       writeFileSync(viewPath,Buffer.from(view.data,'base64'));
       if(statSync(viewPath).size<18000)throw Error('Blank school-native seat view '+id);
-      console.log('First-wave interior '+id+': section plan, full bowl, and seat-eye render verified');
+      console.log('Main-page arena interior '+id+': section plan, full bowl, and seat-eye render verified');
     }
     await evalJs("document.querySelector('[data-preset=schott]').click()");
     await poll(async()=>await evalJs(`(()=>{
@@ -172,6 +173,25 @@ async function main(){
         document.querySelector('[data-preset=schott]')?.classList.contains('active')&&
         [...document.querySelectorAll('[data-bigten]')].every(b=>!b.classList.contains('active'));
     })()`),100);
+    await evalJs("document.querySelector('[data-view=overview]').click()");
+    await poll(async()=>await evalJs(`(()=>{
+      const c=document.querySelector('#viewport3d');
+      return document.querySelector('[data-view=overview]')?.classList.contains('current')&&
+        c?.width>300&&!c.hidden&&!!c.getContext('webgl2');
+    })()`));
+    await delay(450);
+    const osuOverview=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const osuImage=join(out,'studio-ohio-state-smoothed-interior.png');
+    writeFileSync(osuImage,Buffer.from(osuOverview.data,'base64'));
+    if(statSync(osuImage).size<18000)throw Error('OSU three-tier smoothed interior screenshot is blank');
+    await evalJs("document.querySelector('[data-view=top]').click()");
+    await poll(async()=>await evalJs("document.querySelector('[data-view=top]')?.classList.contains('current')"));
+    await delay(250);
+    const osuMap=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const osuMapImage=join(out,'studio-ohio-state-sections.png');
+    writeFileSync(osuMapImage,Buffer.from(osuMap.data,'base64'));
+    if(statSync(osuMapImage).size<18000)throw Error('OSU section map screenshot is blank');
+    console.log('All 17 Big Ten native website interiors and OSU smoothed bowl rendered');
     console.log('Native studio: three Big Ten exterior previews and OSU preset verified');
     for(const venue of ARENAS){
       const path='http://127.0.0.1:'+PORT+'/build/big-ten-18/'+venue+'/venue-preview.html';
