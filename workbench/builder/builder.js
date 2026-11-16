@@ -326,6 +326,17 @@ function corners(part,xMin=-part.width/2,xMax=part.width/2,
   return [[xMin,zMin],[xMax,zMin],[xMax,zMax],[xMin,zMax]]
     .map(([x,z])=>rotatedPoint(part,x,z,height));
 }
+// Curved stands expose resize handles on the actual curved terrace perimeter,
+// rather than on the rectangular parameter bounds used by box components.
+function editHandles(part,height){
+  if(part.kind==='stand'&&(part.shape??'straight')==='arc'){
+    return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sz])=>{
+      const local=curvedLocalPoint(part,sx*part.width/2,sz*part.depth/2);
+      return rotatedPoint(part,local.x,local.z,height);
+    });
+  }
+  return corners(part,-part.width/2,part.width/2,-part.depth/2,part.depth/2,height);
+}
 function worldToPixels(points){return points.map(p=>screenPoint(p.x,p.y,p.z));}
 function addFace(primitives,vertices,color){
   const projected=worldToPixels(vertices);
@@ -609,8 +620,7 @@ function drawScene(){
     ctx.beginPath();ctx.arc(point.x,point.y,5.2,0,Math.PI*2);
     ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#0791a5';ctx.lineWidth=2;ctx.stroke();
     // Corner handles resize an entire component directly in the scene.
-    const handles=worldToPixels(corners(part,-part.width/2,part.width/2,
-      -part.depth/2,part.depth/2,
+    const handles=worldToPixels(editHandles(part,
       part.kind==='stand'?part.baseHeight+part.rows*part.rise:part.height));
     for(const handle of handles){
       ctx.fillStyle='#fff';ctx.strokeStyle='#078b9b';ctx.lineWidth=1.5;
@@ -649,8 +659,9 @@ function fitView(){
   points.push({x:project.floor.width/2,y:0,z:project.floor.length/2});
   for(const part of project.parts){
     const h=part.kind==='stand'?part.baseHeight+part.rows*part.rise:part.height;
-    points.push(...corners(part),...corners(part,-part.width/2,part.width/2,
-      -part.depth/2,part.depth/2,h));
+    points.push(...corners(part),...editHandles(part,h));
+    if(part.kind==='stand'&&(part.shape??'straight')==='arc')
+      points.push(...curvedHullPoints(part,h));
   }
   const transformed=points.map(p=>{
     const c=Math.cos(view.yaw),s=Math.sin(view.yaw);
@@ -685,8 +696,7 @@ canvas.addEventListener('pointerdown',event=>{
       pointer={...start,action:'rotate',yaw:active.yaw};
       canvas.setPointerCapture(event.pointerId);return;
     }
-    const handles=worldToPixels(corners(active,-active.width/2,active.width/2,
-      -active.depth/2,active.depth/2,height));
+    const handles=worldToPixels(editHandles(active,height));
     const index=handles.findIndex(p=>Math.hypot(point.x-p.x,point.y-p.y)<11);
     if(index>=0){
       pointer={...start,action:'resize',index,
