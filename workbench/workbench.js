@@ -436,7 +436,10 @@ function selectStructure(id,additive=false){
   activateModelTool('structures');
   if(selectedStructureIds.size>1)$('structureGroupTools').open=true;
   message(selectedStructureIds.size+' selected · drag to move, or use Arrange multiple components.');
+  $('threeDEditReadout').textContent=selectedStructureIds.size+
+    ' object(s) selected · Shift-drag to move · Alt+Shift-drag to raise';
   repaint();
+  if(viewMode!=='plan')renderer?.render();
 }
 function fillRowFields(){
   const section=$('rowEditSection').value,label=$('rowEditRow').value;
@@ -873,6 +876,12 @@ function repaint(){
   draw();
 }
 function tryPreview(){
+  // Maintain the chosen orbit camera after a small geometry edit. Loading an
+  // entirely new example clears preview first, so it gets a fresh fit.
+  const camera=renderer&&preview&&viewMode==='overview'?{
+    theta:renderer.theta,phi:renderer.phi,zoomFactor:renderer.zoomFactor,
+    distance:renderer.distance,pan:[...renderer.pan],mode:renderer.mode
+  }:null;
   try{
     venue=validateFields();
     if(!venue.rows.length||!venue.sections.length){preview=null;repaint();return;}
@@ -880,6 +889,11 @@ function tryPreview(){
     preview=next;
     if(renderer)renderer.load(preview.plan);
     if(viewMode!=='plan')open3d(viewMode);
+    if(camera&&renderer&&viewMode==='overview'){
+      renderer.theta=camera.theta;renderer.phi=camera.phi;
+      renderer.zoomFactor=camera.zoomFactor;renderer.distance=camera.distance;
+      renderer.pan=camera.pan;renderer.mode=camera.mode;renderer.render();
+    }
     message('Generated '+number(next.seats.length)+
       ' positions from current project rows. Source and elevation verification remain required.');
   }catch(e){preview=null;message(e.message,true);}
@@ -1836,6 +1850,9 @@ function render3dEditorOverlay(current){
   if(!selected||activeModelTool!=='structures'||current.mode==='human')return;
   const center=[selected.x,selected.y+selected.height/2,selected.z];
   const origin=screen(center);if(!origin)return;
+  modelCanvas.dataset.operatorScreenX=origin.x.toFixed(2);
+  modelCanvas.dataset.operatorScreenY=origin.y.toFixed(2);
+  modelCanvas.dataset.operatorId=selected.id;
   const axes=[
     ['X',[center[0]+2.5,center[1],center[2]],'#cb625c'],
     ['Y',[center[0],center[1]+2.5,center[2]],'#4d9974'],
