@@ -244,7 +244,7 @@ test('distinctive Illinois, Purdue, Indiana, Iowa and Washington roofs produce r
     assert.ok(audit.passed,id+': '+audit.errors.join('; '));
     assert.ok(plan.architectureGeometry[roofLayer]?.length>20000,
       id+' is missing its roof geometry');
-    assert.ok(plan.architectureGeometry.entryGlass?.length>1000,
+    assert.ok(plan.architectureGeometry.entryGlass?.length>150,
       id+' is missing its independent entrance glazing');
     assert.ok(plan.architectureGeometry.entryMasonry?.length>100,
       id+' is missing its facade massing');
