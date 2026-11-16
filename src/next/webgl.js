@@ -48,7 +48,9 @@ void main(){
     vNormal=aNormal;
     // Separate presentation pedestal from first-person deck geometry.
     // It remains a thin stand under the bowl, never a gray backing shell.
-    if(uDeck>43.5)vColor=vec3(.82,.83,.82); // Pale flat roof
+    if(uDeck>45.5)vColor=vec3(.28,.38,.42); // Signature landmark tower glazing
+    else if(uDeck>44.5)vColor=vec3(.55,.29,.25); // Signature brick corner towers
+    else if(uDeck>43.5)vColor=vec3(.82,.83,.82); // Pale flat roof
     else if(uDeck>42.5)vColor=vec3(.36,.39,.42); // Dark steel roof
     else if(uDeck>41.5)vColor=vec3(.66,.47,.27); // Mackey copper roof
     else if(uDeck>40.5)vColor=vec3(.94,.93,.89); // Illinois white shell
@@ -227,6 +229,7 @@ const structureLayers=[
   ['towerRibs',35],['entryBrick',36],['entryCurtain',37],
   ['entryFrames',38],['entryCanopy',39],['entryDoors',40],
   ['roofWhite',41],['roofCopper',42],['roofSlate',43],['roofPale',44],
+  ['towerBrick',45],['towerWindows',46],
 ];
 const interiorLayers=new Set(['decks','fascias','upperBowl','concourse','aisles','stepEdges',
   'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
