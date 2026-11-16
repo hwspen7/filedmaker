@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PARTS,ASSEMBLIES,SURFACES,createProject,validateProject,makePart,addPart,
-  updatePart,removePart,duplicatePart,placeAssembly,countSeats,seatsForStand,
+  updatePart,removePart,duplicatePart,arrayPart,resizeFloor,placeAssembly,countSeats,seatsForStand,
   curvedLocalPoint,parseOBJ,importOBJAsset,rotatedPoint,exportProject,
   importProject} from '../src/builder/model.mjs';
 
@@ -190,4 +190,30 @@ test('OBJ rejects malformed indices, oversized geometry and non-mesh text',()=>{
   const oversized=Array.from({length:2501},(_,i)=>'v '+i+' 0 0').join('\n');
   assert.throws(()=>parseOBJ(oversized),/2500/);
   assert.throws(()=>importOBJAsset(createProject(),'not an obj'),/vertices and faces/);
+});
+
+test('multi-court arrays reproduce source orientation with unique IDs',()=>{
+  const original=createProject('training');
+  const sample=original.parts.find(p=>p.kind==='basketball_court');
+  const repeated=arrayPart(original,sample.id,{
+    columns:3,rows:2,stepX:22,stepZ:33
+  });
+  assert.equal(repeated.parts.length,original.parts.length+5);
+  assert.equal(repeated.parts.filter(p=>p.kind==='basketball_court').length,8);
+  assert.equal(new Set(repeated.parts.map(p=>p.id)).size,repeated.parts.length);
+  assert.deepEqual(importProject(exportProject(repeated)),repeated);
+  assert.equal(original.parts.length,17,'the source is not mutated');
+  assert.throws(()=>arrayPart(original,sample.id,{columns:1,rows:1}),/more than one/);
+  assert.throws(()=>arrayPart(original,sample.id,{columns:11}),/Array columns/);
+});
+
+test('floor dimensions are independent from sport surface components',()=>{
+  const original=createProject('training');
+  const resized=resizeFloor(original,105,75);
+  assert.equal(resized.floor.width,105);
+  assert.equal(resized.floor.length,75);
+  assert.equal(original.floor.width,82);
+  assert.equal(resized.parts.filter(p=>p.kind==='basketball_court').length,3);
+  assert.throws(()=>resizeFloor(original,-1,75),/Floor width/);
+  assert.throws(()=>resizeFloor(original,105,500),/Floor length/);
 });
