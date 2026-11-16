@@ -426,6 +426,10 @@ async function main(){
     if(compact.header>80||compact.canvas<300||compact.canvasHeader>63||
       !compact.workflowInside||!compact.titleInside||compact.extraBars)
       throw Error('The viewport is still squeezed by redundant header rows: '+JSON.stringify(compact));
+    const cameraAccessible=await evaluate("(()=>{const button=document.querySelector('#cameraFit');const r=button.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.closest('button')?.id==='cameraFit'})()");
+    if(!cameraAccessible)
+      throw Error('The model camera tools are still covered by a case banner');
+
 
     // Phase two: operate the actual row editor, verify 3D reacts, then undo/redo.
 
