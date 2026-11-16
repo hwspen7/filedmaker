@@ -343,3 +343,90 @@ test('Big Ten native browser and offline batch share exactly the same geometry s
     assert.deepEqual(inStudio,inBatch,venue.id+' must not fall back to a different template');
   }
 });
+
+
+const FIRST_WAVE_INTERIORS=[
+  'indiana','purdue','illinois','iowa','michigan-state',
+  'wisconsin','ucla','washington'
+];
+
+test('each first-wave arena has independent chart-informed sections, 2D polygons and matching 3D treads',()=>{
+  const shapes=new Set();
+  for(const id of FIRST_WAVE_INTERIORS){
+    const input=toProceduralSpec(get(id)),{model,plan,audit}=generateVenuePackage(input);
+    assert.ok(input.interior,id+' must have its own interior reference');
+    assert.equal(input.interior.geometryStatus,undefined,
+      'Geometry status is set only after normalization, not faked in source data');
+    assert.ok(input.interior.source.startsWith('https://'),id);
+    assert.ok(audit.passed,id+': '+audit.errors.join('; '));
+    assert.ok(model.interiorSectionFootprints?.length>5,
+      id+' must have actual clickable per-row section polygons');
+    assert.ok(model.interiorSectionFootprints.every(s=>s.outlines.length>0),id);
+    assert.ok(plan.architectureGeometry.decks.length>1000,
+      id+' must have independently tessellated row-bounded treads');
+    assert.ok(plan.architectureGeometry.fascias.length>200,
+      id+' must have individual risers');
+    assert.ok(Math.abs(model.seats.length-get(id).capacity.published)/
+      get(id).capacity.published<=.035,id+' must stay within published capacity tolerance');
+    const outline=model.interiorSectionFootprints;
+    const low=outline.filter(s=>s.tier===0);
+    const stats=[low.length,outline.length,
+      Math.round(Math.max(...model.seats.map(s=>Math.abs(s.x)))),
+      Math.round(Math.max(...model.seats.map(s=>Math.abs(s.z)))),
+      model.proceduralSpec.interior.outline].join(':');
+    shapes.add(stats);
+  }
+  assert.equal(shapes.size,8,
+    'The eight arena seating footprints must not be the same transformed bowl');
+});
+
+test('Indiana, Purdue, Illinois and Iowa preserve characteristic independently modeled seating',()=>{
+  const iu=toProceduralSpec(get('indiana'));
+  assert.equal(iu.sectionMap[0].length,2,'IU must have separate facing lower stands');
+  assert.equal(iu.sectionMap[1].length,2,'IU balconies must remain split');
+  assert.equal(iu.interior.outline,'grandstands');
+  const pu=toProceduralSpec(get('purdue'));
+  assert.equal(pu.sectionMap[0][0].sectionIds.length,18);
+  assert.equal(pu.sectionMap[1][0].sectionIds.length,18);
+  const circular=GeometryEngine.create(pu);
+  const x=circular.point(0,0,.5),z=circular.point(0,Math.PI/2,.5);
+  assert.ok(Math.abs(Math.abs(x.x)-Math.abs(z.z))<1e-8,
+    'Mackey lower-bowl envelope must be circular rather than the generic oval');
+  const ill=toProceduralSpec(get('illinois'));
+  assert.equal(ill.sectionMap.length,3);
+  assert.equal(ill.sectionMap[2][0].sectionIds.length,48);
+  const iowa=generateVenuePackage(toProceduralSpec(get('iowa'))).model;
+  assert.ok(iowa.seats.some(s=>s.sectionId==='G'&&s.seatType==='bleacher'),
+    'Iowa official student bank must render as a bench section');
+  assert.ok(iowa.seats.some(s=>s.sectionId==='A'&&s.seatType==='chair'));
+});
+
+test('MSU rows, Wisconsin overhang, UCLA subsection IDs and Washington entries survive generation',()=>{
+  const msu=generateVenuePackage(toProceduralSpec(get('michigan-state'))).model;
+  for(const row of ['10','11','12'])
+    assert.ok(!msu.seats.some(s=>s.tier===0&&s.row===row),
+      'Breslin lower row '+row+' is a documented break');
+  assert.ok(msu.seats.some(s=>s.tier===0&&s.row==='9'&&s.seatType==='bleacher'));
+  assert.ok(msu.seats.some(s=>s.tier===0&&s.row==='13'&&s.seatType==='chair'));
+  assert.ok(msu.seats.some(s=>s.tier===1&&s.row==='14'&&s.seatType==='bleacher'));
+  const uw=GeometryEngine.create(toProceduralSpec(get('wisconsin')));
+  assert.equal(uw.spec.interior.outline,'octagon');
+  const r=(tier,frac)=>Math.hypot(...[
+    uw.point(tier,Math.PI/2,frac).x,uw.point(tier,Math.PI/2,frac).z]);
+  assert.ok(r(1,0)<r(0,1)+.8,'Kohl first balcony front projects toward lower bowl');
+  assert.ok(r(2,0)<r(1,1)+.8,'Kohl upper balcony is not the generic outer ring');
+  const ucla=toProceduralSpec(get('ucla'));
+  for(const id of ['206A','206B','206C','210A','210B','211C','219A',
+    '223B','224A','224B','224C'])
+    assert.ok(ucla.sectionMap[1][0].sectionIds.includes(id),'Missing official Pauley subdivision '+id);
+  assert.ok(!ucla.sectionMap[1][0].sectionIds.includes('215'),
+    'Pauley section 215 on the published map is a media block');
+  const was=GeometryEngine.create(toProceduralSpec(get('washington')));
+  assert.equal(was.spec.sectionMap[0][0].sectionIds.length,14);
+  const seat1=was.banksForTier(was.spec.tiers[0]).find(b=>b.sectionId==='1');
+  const full=seat1.hi-seat1.lo;
+  const entry=was.rowIntervals(was.spec.tiers[0],seat1,9);
+  assert.equal(entry.length,2,'Hec Edmundson section 1 row 10 must show the published entrance');
+  assert.ok(entry.reduce((sum,[a,b])=>sum+b-a,0)<full*.96,
+    'Entrances must remove actual model positions and tread geometry');
+});
