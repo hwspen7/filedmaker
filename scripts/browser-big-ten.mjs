@@ -70,6 +70,42 @@ async function main(){
       return result.result?.value;
     };
     await send('Page.enable');await send('Runtime.enable');
+    // The home page must offer the same one-click native studio workflow as OSU.
+    await send('Page.navigate',{url:'http://127.0.0.1:'+PORT+'/'});
+    await poll(async()=>await evalJs(`(()=>{
+      const ids=[...document.querySelectorAll('[data-bigten]')].map(b=>b.dataset.bigten);
+      return ids.length===17 && document.querySelector('[data-preset="schott"]') &&
+        document.querySelector('[data-view="exterior"]') && document.querySelector('#title');
+    })()`),75);
+    for(const [id,arena] of [['illinois','State Farm Center'],
+      ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena']]){
+      await evalJs(`document.querySelector('[data-bigten="${id}"]').click()`);
+      await poll(async()=>await evalJs(`(()=>{
+        const title=document.querySelector('#title')?.textContent;
+        const active=document.querySelector('[data-bigten="${id}"]')?.classList.contains('active');
+        const canvas=document.querySelector('#viewport3d');
+        return title===${JSON.stringify(arena)} && active &&
+          document.querySelector('#visualCount')?.textContent!=='—' &&
+          canvas?.width>200 && canvas?.height>200 && !!canvas.getContext('webgl2');
+      })()`),100);
+      await evalJs("document.querySelector('[data-view=exterior]').click()");
+      await poll(async()=>await evalJs(`(()=>{
+        const selected=document.querySelector('[data-view=exterior]')?.classList.contains('current');
+        return selected&&document.querySelector('#viewLabel')?.textContent.includes('Complete building');
+      })()`));
+      await delay(400);
+      const snapshot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      const file=join(out,'studio-'+id+'-exterior.png');
+      writeFileSync(file,Buffer.from(snapshot.data,'base64'));
+      if(statSync(file).size<18000)throw Error('Native studio 3D exterior view is blank: '+id);
+    }
+    await evalJs("document.querySelector('[data-preset=schott]').click()");
+    await poll(async()=>await evalJs(`(()=>{
+      return document.querySelector('#title')?.textContent==='Schottenstein Center'&&
+        document.querySelector('[data-preset=schott]')?.classList.contains('active')&&
+        [...document.querySelectorAll('[data-bigten]')].every(b=>!b.classList.contains('active'));
+    })()`),100);
+    console.log('Native studio: three Big Ten exterior previews and OSU preset verified');
     for(const venue of ARENAS){
       const path='http://127.0.0.1:'+PORT+'/build/big-ten-18/'+venue+'/venue-preview.html';
       await send('Page.navigate',{url:path});
