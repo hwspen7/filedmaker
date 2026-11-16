@@ -156,7 +156,7 @@ async function main(){
         return title===${JSON.stringify(arena)}&&active&&options.length>=12;
       })()`),95);
       const required={ucla:['206A','206B','224C'],
-        illinois:['101','121','248'],indiana:['A','M','AA','MM'],
+        illinois:['9','10','11','12','13','101','102','110','119','121','125','127','201','248'],indiana:['A','M','AA','MM'],
         wisconsin:['101','215','328'],washington:['1','14']};
       const labels=await evalJs(`[...document.querySelector('#sectionPicker').options].map(o=>o.value)`);
       for(const name of required[id]||[])
