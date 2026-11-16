@@ -21,7 +21,7 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
           throw Error('Unsupported upper subsection replacement for '+venue.id);
         base.sectionMap[1][0].sectionIds=[...interior.upperSubsections];
       }
-      for(let tier=0;t<base.sectionMap.length;t++){
+      for(let tier=0;tier<base.sectionMap.length;tier++){
         const groups=base.sectionMap[tier],sets=interior.sectionWeights?.[tier];
         if(!sets||sets.length!==groups.length)
           throw Error('Incomplete interior section-width map: '+venue.id+' tier '+tier);
@@ -32,7 +32,7 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
         }
       }
     }
-    base.sections=Math.max(...layout.tiers.map(groups=>
+    base.sections=Math.max(...base.sectionMap.map(groups=>
       groups.reduce((sum,group)=>sum+group.sectionIds.length,0)));
   }
   return {...base,
