@@ -32,7 +32,8 @@ export function createProceduralProject(input){
   const profile=GeometryEngine.normalize(input),project=createProject(profile.surface);
   project.title=profile.name;
   if(input.provenance?.school){
-    project.school={school:input.provenance.school,venue:profile.name};
+    project.school={school:input.provenance.school,venue:profile.name,
+      primaryColor:input.provenance.primaryColor??undefined};
     // Published capacity belongs to metadata, NOT to an imported ticket list.
     project.ticketing={
       officialCapacity:input.provenance.publishedCapacity,
