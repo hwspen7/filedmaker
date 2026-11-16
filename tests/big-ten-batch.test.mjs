@@ -214,3 +214,39 @@ test('mapped skipped rows are bounds-checked and cannot be repeated',()=>{
   spec.sectionMap[0][0].skipRows=[10,10];
   assert.throws(()=>GeometryEngine.normalize(spec),/skipped row/);
 });
+
+
+test('every non-OSU school carries an independently sourced architectural feature, not a generic entry rotunda',()=>{
+  const venueIds=catalog.venues.filter(v=>v.id!=='ohio-state').map(v=>v.id);
+  const signatures=new Map();
+  for(const id of venueIds){
+    const spec=toProceduralSpec(get(id));
+    const signature=spec.exterior?.signature;
+    assert.ok(signature,id+' has no venue architecture reference');
+    assert.ok(signature.source.startsWith('https://'),id+' lacks an architecture source');
+    assert.equal(spec.exterior.entrances.length,0,id+' still uses generic rotunda placeholders');
+    assert.equal(spec.provenance.buildingStatus,'landmarks-modeled/unsurveyed',id);
+    signatures.set(id,signature.roof+':'+signature.feature);
+  }
+  assert.equal(signatures.size,17);
+  assert.notEqual(signatures.get('illinois'),signatures.get('purdue'));
+  assert.notEqual(signatures.get('indiana'),signatures.get('iowa'));
+  assert.notEqual(signatures.get('rutgers'),signatures.get('washington'));
+});
+
+test('distinctive Illinois, Purdue, Indiana, Iowa and Washington roofs produce real validated 3D meshes',()=>{
+  const expected=new Map([
+    ['illinois','roofWhite'],['purdue','roofCopper'],
+    ['indiana','roofPale'],['iowa','roofSlate'],['washington','roofSlate']
+  ]);
+  for(const [id,roofLayer] of expected){
+    const {plan,audit}=generateVenuePackage(toProceduralSpec(get(id)));
+    assert.ok(audit.passed,id+': '+audit.errors.join('; '));
+    assert.ok(plan.architectureGeometry[roofLayer]?.length>20000,
+      id+' is missing its roof geometry');
+    assert.ok(plan.architectureGeometry.entryGlass?.length>1000,
+      id+' is missing its independent entrance glazing');
+    assert.ok(plan.architectureGeometry.entryMasonry?.length>100,
+      id+' is missing its facade massing');
+  }
+});
