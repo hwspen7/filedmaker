@@ -32,7 +32,10 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
       if(official.size!==chart.verifiedSections.length)
         throw Error('Official section list contains duplicates: '+venue.id);
       const mapped=chart.tierGroups.flatMap(groups=>groups.flatMap(g=>g.sectionIds));
-      const found=new Set(mapped);
+      // Courtside blocks are real ticket sections on the source chart, not
+      // another artificial circular seating tier. Validate them separately.
+      const courtside=interior?.courtside?.blocks.map(block=>block.id)??[];
+      const found=new Set([...mapped,...courtside]);
       if(found.size!==official.size||[...found].some(id=>!official.has(id)))
         throw Error('Chart section identity mismatch for '+venue.id);
       const omissions=new Set(chart.unmodeledSections??[]);
