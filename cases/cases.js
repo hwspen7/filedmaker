@@ -18,6 +18,7 @@ const caseTarget=c=>isModel(c)?c.action:'./?case='+encodeURIComponent(c.id);
 
 function graphic(c){
   const container=node('div','art art-'+c.preview);
+  if(c.id.startsWith('synthetic-'))container.dataset.layout=c.id.slice(10);
   container.setAttribute('aria-hidden','true');
   container.append(node('div','seating-ring'));
   if(c.preview==='auditorium')container.append(node('div','stage-shape'));
