@@ -34,7 +34,7 @@ of its contour, row mesh, or seating identifiers.
 | Illinois | Three radially separate rings including 48-sector upper gallery | 101–120; 121–129 and 134–143 with a suite-space interruption; 201–248 | Courtside 9–13 and exact suite/ADA boundaries are deliberately **unmodeled** |
 | Iowa | Compact sunken ring with **28 contiguous full-height section columns** | A, AA, BB, ... NN, N, M, ... B in clockwise order. Both modeled row-depth bands use these same labels, with students in G–I and lower E/K | Verified section-specific row depths, courtside ECS/SCS/NCS and ADA positions remain unmodeled |
 | Michigan State | Lower/upper different shapes and material by row | Lower bench 1–9, no 10–12, lower chairs 13–28; upper chairs 1–13 and benches 14–19 | Exact student bench boundary and aisle portal widths |
-| Wisconsin | Angular 3-level bowl with staggered/overhanging balcony fronts | 101–128, 201–228, 301–328; south student sections | Cantilever dimensions and Nicholas/South club boundaries |
+| Wisconsin | Angular 3-level bowl with staggered/overhanging balcony fronts | 101–128, 201–228, 301–328; south student sections | Source-labeled N128/N101/N102, SC114–116, CCN/CCS premium blocks remain **unmodeled**, as do cantilever survey dimensions |
 | UCLA | Angular/octagonal bowl with distinct sideline and corner banks | 101–126; individually placed 206A/B/C, 210A/B, 211A/B/C, 219A/B/C, 223A/B, 224A/B/C; **215 MEDIA**, no seats | Exact student/ADA polygons and Pauley Perch table locations not surveyed |
 | Washington | Compact long rectangular bowl with 14 matching section columns in each row band | Sections 1–14 across rows 1–31; section 1 row 10/14 entrances | Most section-specific row widths and row break depths |
 
