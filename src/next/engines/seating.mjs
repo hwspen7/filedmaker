@@ -63,7 +63,9 @@ export const SeatingEngine={
           const mapped=Boolean(spec.sectionMap);
           for(let slot=0;slot<rowCount;slot++){
             if(!mapped&&voidAt(tier.index,sectionIndex+1,slot+1))continue;
-            const fraction=(slot+.5)/tier.rows,rowLabel=String(rowStart+slot);
+            const physicalSlot=slot+(bank.physicalSlotStart??0);
+            const fraction=(physicalSlot+.5)/tier.rows;
+            const rowLabel=bank.rowLabels?.[slot]??String(rowStart+slot);
             let seatNumber=0;
             for(const [lo,hi] of rowIntervals(tier,bank,slot)){
               const divisions=24;
@@ -89,7 +91,7 @@ export const SeatingEngine={
               const first=locate(0).position,last=locate(length).position;
               const center=point(tier.index,(lo+hi)/2,fraction);
               seatingRows.push({left:first,right:last,width:length,depth:tier.depth,
-                y:center.y,tier:tier.index,sectionId,row:rowLabel,slot,lo,hi});
+                y:center.y,tier:tier.index,sectionId,row:rowLabel,slot:physicalSlot,lo,hi});
               for(let i=0;i<count;i++){
                 const {position}=locate((i+.5)*seatWidth),number=++seatNumber;
                 seats.push({...position,yaw:Math.atan2(-position.x,-position.z),
@@ -116,9 +118,11 @@ export const SeatingEngine={
       for(let slot=0;slot<bank.rowCount;slot++){
         if(rowIntervals(tier,bank,slot).some(([lo,hi])=>{
           const mid=(lo+hi)/2;
-          const f=(slot+.5)/tier.rows,pointMid=point(tier.index,mid,f);
+          const f=(slot+(bank.physicalSlotStart??0)+.5)/tier.rows;
+          const pointMid=point(tier.index,mid,f);
           return (hi-lo)*Math.hypot(pointMid.x,pointMid.z)>=.43;
-        }))eligibleRowKeys.add(tier.index+':'+bank.sectionId+':'+slot);
+        }))eligibleRowKeys.add(tier.index+':'+bank.sectionId+':'+
+          (slot+(bank.physicalSlotStart??0)));
       }
     }
     for(const row of seatingRows)actualRowKeys.add(row.tier+':'+row.sectionId+':'+row.slot);
