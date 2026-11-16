@@ -495,6 +495,17 @@ export function pointAtDistance(path, distance) {
   };
 }
 
+export function balancedReferenceSections(project, count, margin = 0) {
+  const source = makeSections(count);
+  const path = modelPerimeterPath(project, SURFACES[project.surface], margin, 1024);
+  const angleAt = d => pointAtDistance(path, Math.min(path.length, Math.max(0, d))).angle * 180 / Math.PI;
+  return source.map((section, i) => ({
+    ...section,
+    start: i === 0 ? 0 : angleAt(path.length * i / source.length),
+    end: i === source.length - 1 ? 360 : angleAt(path.length * (i + 1) / source.length)
+  }));
+}
+
 export function generateSeats(input, { audienceLayout = true } = {}) {
   const project = validateProject(input);
   const surface = SURFACES[project.surface];
