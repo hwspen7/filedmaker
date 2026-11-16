@@ -37,7 +37,7 @@ export function rowAttributes(record,count){
     throw Error('Invalid explicit seat identifier');
   if(new Set(seatNumbers).size!==seatNumbers.length)
     throw Error('Duplicate seat label in a row');
-  const direction=String(record.seat_direction??record.seatDirection??'forward').trim().toLowerCase();
+  const direction=String(record.seat_direction||record.seatDirection||'forward').trim().toLowerCase();
   if(!['forward','reverse'].includes(direction))throw Error('Seat direction must be forward or reverse');
   const rawElevation=record.elevation_m??record.elevation??null;
   const elevation=rawElevation==null||rawElevation===''?null:

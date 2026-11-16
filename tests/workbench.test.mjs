@@ -65,8 +65,8 @@ test('unknown sections are rejected instead of creating fictional seating banks'
 });
 test('crowded imported rows flag QA but preserve exact source counts',()=>{
   const v=fictionalGym(),s=v.sections[0];
-  s.front[1].z=s.front[0].z+4;
-  s.back[1].z=s.back[0].z+4;
+  s.front[1].z=s.front[0].z+8;
+  s.back[1].z=s.back[0].z+8;
   const r=generateTracedVenue(v);
   assert.equal(r.seats.length,1500);
   assert.ok(r.warnings.some(w=>w.includes('average seat pitch')));
