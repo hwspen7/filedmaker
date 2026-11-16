@@ -338,7 +338,8 @@ test('Big Ten native browser and offline batch share exactly the same geometry s
   const interior=JSON.parse(readFileSync(
     new URL('../data/big-ten/interior-reconstructions.json',import.meta.url))).venues;
   for(const venue of catalog.venues){
-    const inStudio=toBigTenProceduralSpec(venue,sectionProfiles,architecture,interior);
+    const charts=JSON.parse(readFileSync(new URL('../data/big-ten/section-chart-verified-order.json',import.meta.url))).venues;
+    const inStudio=toBigTenProceduralSpec(venue,sectionProfiles,architecture,interior,charts);
     const inBatch=toProceduralSpec(venue);
     assert.deepEqual(inStudio,inBatch,venue.id+' must not fall back to a different template');
   }
