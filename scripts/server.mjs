@@ -43,7 +43,7 @@ const server = http.createServer(async (req, res) => {
     // Do not expose private working-tree files, Git internals, workflows,
     // scripts or dependency folders through a local development web server.
     const parts=path.split('/').filter(Boolean);
-    const allowedDirs=new Set(['src','workbench','cases','school','viewer','legacy','examples','data']);
+    const allowedDirs=new Set(['src','workbench','cases','school','viewer','experience','legacy','examples','data']);
     const publicRoot=new Set(['index.html','studio.css','styles.css','favicon.svg']);
     const testFixture=process.env.FILEDMAKER_TEST_FIXTURES==='1'&&
       /^\/tests\/fixtures\/[A-Za-z0-9_.-]+\.base64\.txt$/.test(path);
