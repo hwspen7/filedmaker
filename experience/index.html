@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="FiledMaker Live — interactive 2D and 3D venue seat preview. All modeled seat positions require verification.">
+  <title>FiledMaker Live · 找到你的观演视角</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./experience.css">
+</head>
+<body>
+<div class="shell">
+  <header class="site-header">
+    <a class="brand" href="./"><span class="brand-symbol">F</span><span><strong>FiledMaker <em>Live</em></strong><small>场馆视角预览</small></span></a>
+    <span class="header-caption">在出发前，看看现场</span>
+    <nav><a href="../">场馆工作台</a><a href="../workbench/">编辑场馆</a></nav>
+  </header>
+  <section class="intro">
+    <div><p class="eyebrow">EXPLORE THE VENUE</p><h1>下一场，想坐在哪里？</h1><p>选择场馆与位置，在二维座位图和三维视角之间自由切换。</p></div>
+    <div class="intro-status"><span class="status-dot"></span> 交互式场馆预览 <small>示意模型 · 非官方票务座位</small></div>
+  </section>
+  <div class="page-layout">
+    <aside class="sidebar">
+      <div class="panel-heading"><span>场馆与场次</span><span>01 / 02</span></div>
+      <div class="field-group"><label for="venueChoice">01 / 选择场馆</label>
+        <select id="venueChoice">
+          <option value="schott">美国 · 哥伦布 · Schottenstein Center</option>
+          <option value="ohio">美国 · 哥伦布 · Ohio Stadium</option>
+        </select><p class="muted" id="venueDisclaimer">公开参考模型，分区、排座和三维视角均有估算</p>
+      </div>
+      <div class="field-group"><label for="eventChoice">选择场景</label>
+        <select id="eventChoice"><option value="sports">体育赛事 · 原场地配置</option><option value="concert">演出模式 · 舞台布局示意</option></select>
+        <p class="muted">演出舞台为自定义示意，并非某场演出的官方布置。</p>
+      </div>
+      <hr>
+      <div class="panel-heading"><span>02 / 选择预览位置</span><span>怎么看</span></div>
+      <div class="levels" aria-label="看台层级">
+        <button type="button" data-level="0">1F</button>
+        <button type="button" data-level="1">2F</button>
+        <button type="button" data-level="2">3F</button>
+        <button type="button" data-level="all" class="active">全馆</button>
+      </div>
+      <div class="field-group"><label for="section">分区</label><select id="section"><option value="all">全部分区</option></select></div>
+      <div class="two-fields">
+        <label>排 <input id="rowInput" placeholder="如 10 / A" autocomplete="off"></label>
+        <label>座 <input id="seatInput" placeholder="选填" autocomplete="off"></label>
+      </div>
+      <div class="find-actions"><button id="locatePosition" class="primary" type="button">定位排座</button><button id="clearBtn" type="button">重置</button></div>
+      <p class="muted" id="lookupNote">不知道座位号？可直接点击座位图或三维座椅。</p>
+      <button type="button" id="openMap" class="full-button">打开 2D 座位图与实拍 <span>↗</span></button>
+      <div class="legend"><p><i class="legend-blue"></i> 蓝色 · 当前选中位置</p><p><i class="legend-orange"></i> 橙色 · 位置选择提示</p></div>
+      <details class="technical"><summary>详细筛选与视角选项</summary>
+        <label for="tier">层级筛选</label><select id="tier"><option value="all">全部层级</option></select>
+        <label for="search">搜索座位编号</label><input id="search" placeholder="分区 / 排 / 座">
+        <button type="button" id="searchBtn">搜索</button>
+        <label for="target">视线方向</label><select id="target"><option value="center">场地中心</option><option value="near">近端</option><option value="far">远端</option><option value="left">左侧</option><option value="right">右侧</option><option value="scoreboard">计分牌</option></select>
+      </details>
+      <div class="side-footnote">本页面仅演示公开资料重建的场馆。并不连接真实售票、票价或剩余库存。</div>
+    </aside>
+    <main class="content">
+      <div class="viewer-panel">
+        <div class="viewer-heading"><div><p class="eyebrow" id="school">COLUMBUS, OHIO</p><h2 id="name">场馆视角</h2><p class="muted" id="topSub">交互式座位预览</p></div><span class="live-tag">3D 场馆</span></div>
+        <div class="view-switch" role="group" aria-label="视角切换">
+          <button type="button" data-view="map" class="active">2D 座位图</button>
+          <button type="button" data-view="orbit">3D 视角</button>
+          <button type="button" data-view="section">靠近分区</button>
+          <button type="button" data-view="seat">观众视角</button>
+        </div>
+        <div class="workspace">
+          <canvas id="seatmap" aria-label="可交互二维座位图"></canvas>
+          <canvas id="scene" aria-label="三维场馆观众视角" hidden></canvas>
+          <div class="scene-mark"><span>FiledMaker Live</span><span>参考模型 · 位置估算</span></div>
+          <div class="hoverInfo" id="hoverInfo" hidden></div>
+          <div id="phoneFrame" hidden><div class="phone-outline"><span>手机取景 · 示意</span></div></div>
+          <div class="viewerControl"><button type="button" id="zoomOut" aria-label="缩小">−</button><button type="button" id="zoomIn" aria-label="放大">+</button><button type="button" id="fit">全馆</button><button type="button" id="phone">手机</button></div>
+          <div class="canvasNote" id="canvasNote">拖动画布 · 滚轮缩放 · 点击分区或座位</div>
+          <div id="error" class="error" role="alert" hidden></div>
+        </div>
+        <div class="viewer-summary"><span id="topTitle">场馆总览</span><span id="bottom">模型示意 · 位置与高度未独立核验</span></div>
+      </div>
+      <section class="gallery-panel" id="photos">
+        <div class="section-header"><div><p class="eyebrow">VIEW FROM THE CROWD</p><h2>这里，看过的现场</h2><p>为选中的位置添加实拍，与模拟视角比较。</p></div><span class="photo-counter" id="photoCount">0 张实拍</span></div>
+        <div class="gallery-options"><button class="active" type="button" data-photo-filter="all">全部实拍</button><button type="button" data-photo-filter="section">本区</button><button type="button" id="uploadPhoto">分享现场</button></div>
+        <div class="gallery-list" id="galleryList"><div class="empty-gallery"><strong>还没有现场照片</strong><p>上传一张本地照片，即可在本次浏览中预览。没有捏造的观众照片。</p></div></div>
+        <p class="muted">本地上传图片不会发送到服务器，也不会自动发布到公共图库。</p>
+      </section>
+    </main>
+    <aside class="details">
+      <div class="details-caption">视角设置</div>
+      <div class="selected-area"><span>当前位置</span><div id="selected"><strong>请选择分区或座位</strong><p>在座位图选择一个位置，查看对应的三维视角。</p></div></div>
+      <div class="field-group"><label for="posture">观看姿态</label><select id="posture"><option value="seated">坐姿</option><option value="leaning">前倾</option><option value="standing">站姿</option></select></div>
+      <div class="position-control"><label for="depthRange">前后位置 <span id="depthValue">50%</span></label><input id="depthRange" type="range" min="0" max="100" value="50"><div class="range-ends"><span>靠前</span><span>靠后</span></div></div>
+      <div class="position-control"><label for="lateralRange">横向位置 <span id="lateralValue">50%</span></label><input id="lateralRange" type="range" min="0" max="100" value="50"><div class="range-ends"><span>一侧</span><span>另一侧</span></div></div>
+      <button id="seatView" class="primary full-button" type="button">从这里看场地</button>
+      <div class="detail-buttons"><button id="favorite" type="button">☆ 收藏位置</button><button id="share" type="button">复制位置链接</button></div>
+      <div class="detail-buttons"><button id="compareA" type="button">设为 A</button><button id="compareB" type="button">设为 B</button></div>
+      <section class="detail-section"><h3>位置比较</h3><div class="compare"><div id="compareLeft">A · 未选择</div><div id="compareRight">B · 未选择</div></div></section>
+      <section class="detail-section"><h3>查看其他位置</h3><div class="detail-buttons"><button id="previous" type="button">← 上一个</button><button id="next" type="button">下一个 →</button></div></section>
+      <section class="detail-section"><h3>已收藏的位置</h3><div id="favorites" class="favorites">暂无收藏</div></section>
+      <section class="detail-section"><h3>添加观众实拍</h3><label class="upload-label" for="photo">选择本地照片 <input id="photo" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><div id="photoPreview" class="photoPreview">尚未选择照片</div></section>
+      <section class="detail-section data-metrics"><div><span>模型座位</span><strong id="seatCount">—</strong></div><div><span>公布容量</span><strong id="capacity">—</strong></div><div><span>坐标来源</span><strong id="source">—</strong></div></section>
+      <p id="dataNote" class="muted">所有模拟观众视角均需核对场馆官方资料。</p>
+    </aside>
+  </div>
+  <footer class="site-footer">FiledMaker Live · 独立实现的场馆体验界面 · 与 shijiao.xingpaste.com 无关联 · 非官方票务服务</footer>
+</div>
+<script type="module" src="../viewer/viewer.js"></script>
+<script type="module" src="./experience.js"></script>
+</body>
+</html>
