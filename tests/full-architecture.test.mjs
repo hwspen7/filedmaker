@@ -46,9 +46,7 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.ok(g.externalTrim.length>1000,'Panel seams replace the old uniform gray facade');
   assert.equal(g.pressWalls.length,0,'No duplicate gray Press Box wall strip');
   assert.equal(g.pressGlass.length,0,'Existing upper-gallery windows serve Press Box');
-  const press=plan.features.find(feature=>feature.kind==='press');
-  assert.ok(!plan.seats.some(seat=>polygonSpans([press.outline],seat.x)
-    .some(([a,b])=>seat.z>a&&seat.z<b)),'Press enclosure does not replace any seat');
+  assert.ok(!plan.features.some(feature=>feature.kind==='press'),'Press Box has been removed');
 
   const galleryHeights=new Set();
   for(let i=1;i<g.galleryGlass.length;i+=6)galleryHeights.add(g.galleryGlass[i]);
@@ -65,10 +63,9 @@ test('OSU arena has a full-depth structural gallery, inset windows and no invent
   assert.equal(g.aisles.length+g.stepEdges.length,0,'No fabricated stair geometry');
 });
 
-test('Press Box label stays on the existing gallery; no floating gray strip can be generated',()=>{
+test('restored upper seating has no Press Box label, exclusion or floating gray strip',()=>{
   const plan=build(),g=plan.architectureGeometry;
-  const press=plan.features.find(f=>f.kind==='press');
-  assert.ok(press,'Press Box label remains in the venue plan');
+  assert.ok(!plan.features.some(f=>f.kind==='press'),'Press Box label is removed');
   assert.equal(g.pressWalls.length,0,'A detached Press Box gray wall has been removed');
   assert.equal(g.pressGlass.length,0,'No duplicated Press Box glass slab');
   assert.ok(g.galleryGlass.length>0,'Continuous arena-gallery glazing remains');
@@ -177,7 +174,8 @@ test('Schottenstein upper stand has a closed, continuously shaded structural bow
    }
  }
  assert.ok([...edges.values()].every(count=>count===2),'No open section seams or disconnected caps');
- assert.ok(peak>29&&pressPeak<26&&peak-pressPeak>3,'The rear parapet rises behind the last chairs while the press stand stays lower');
+ assert.ok(peak>29&&pressPeak>28&&Math.abs(peak-pressPeak)<1.5,
+    'Restored upper banks reach the same height as the neighbouring rear parapet');
 });
 
 test('rear architecture cannot cover upper seats with a continuous gray terrace',()=>{
