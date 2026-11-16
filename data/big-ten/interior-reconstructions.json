@@ -165,28 +165,7 @@
           ]
         ]
       ],
-      "sectionRules": [
-        {
-          "tier": 0,
-          "id": "09",
-          "frontRows": 6
-        },
-        {
-          "tier": 0,
-          "id": "10",
-          "frontRows": 6
-        },
-        {
-          "tier": 0,
-          "id": "08",
-          "frontRows": 4
-        },
-        {
-          "tier": 0,
-          "id": "11",
-          "frontRows": 4
-        }
-      ],
+      "sectionRules": [],
       "notches": [
         {
           "tier": 1,
@@ -207,7 +186,7 @@
       ],
       "seatTypes": [],
       "source": "https://purduesports.com/mens-basketball-ticket-information",
-      "notes": "Inner sections 01–18 and outer 101–118 form a near-round seating dish. Expanded upper student end positions and inner premium seating are chart-informed. Concourse breaks are estimated."
+      "notes": "Inner sections 01–18 and outer 101–118 form a near-round seating dish. Expanded upper student end positions and inner premium seating are chart-informed. Concourse breaks are estimated. All premium blocks remain seated; no front rows are removed solely because a pricing map marks them white."
     },
     "illinois": {
       "type": "three-concentric-rings",
@@ -660,14 +639,14 @@
         {
           "widthScale": 1.04,
           "lengthScale": 1.02,
-          "radialInset": -1.8,
+          "radialInset": -3.4,
           "rake": 0.68,
           "wave": 0
         },
         {
           "widthScale": 1.065,
           "lengthScale": 1.025,
-          "radialInset": -2.3,
+          "radialInset": -6.3,
           "rake": 1.05,
           "wave": 0
         }
@@ -860,7 +839,7 @@
         }
       ],
       "source": "https://uwbadgers.com/documents/download/2023/6/27/MBB_Kohl_Center_Seating_Map_2024.pdf",
-      "notes": "Official plan has 101–128 / 201–228 / 301–328, north Nicholas Club, south student sections, band and corner wedges. Overhang offsets are not surveyed."
+      "notes": "Official plan has 101–128 / 201–228 / 301–328, north Nicholas Club, south student sections, band and corner wedges. Overhang offsets are not surveyed. Upper tier decks intentionally cantilever into the radial envelope of the preceding tier; overhang offsets are visual estimates."
     },
     "ucla": {
       "type": "irregular-octagonal-two-level",
