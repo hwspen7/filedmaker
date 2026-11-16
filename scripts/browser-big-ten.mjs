@@ -80,7 +80,7 @@ async function main(){
         !!document.querySelector('#title');
     })()`),75);
     for(const [id,arena] of [['illinois','State Farm Center'],
-      ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena']]){
+      ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena at Hec Edmundson Pavilion']]){
       await evalJs(`document.querySelector('[data-bigten="${id}"]').click()`);
       let probes=0;
       await poll(async()=>{
