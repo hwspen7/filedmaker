@@ -84,7 +84,7 @@ export function buildVenuePlan(model,options={}) {
   let chairCount=0,benchCount=0;
   const roundSeats=seats.length<=30000 && options.detail!=='compact';
   for(let i=0;i<seats.length;i++){
-    const s=seats[i],kind=seatKind(project,s);
+    const s=seats[i],kind=s.seatType??seatKind(project,s);
     if(kind==='chair')chairCount++;else benchCount++;
     const key=[s.sectionId,s.tier,s.row].join('::');
     if(!rows.has(key))rows.set(key,[]);
