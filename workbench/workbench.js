@@ -1677,9 +1677,39 @@ $('toggleTools').onclick=()=>{
 };
 activateModelTool('rows');
 window.addEventListener('keydown',event=>{
-  if(event.ctrlKey||event.metaKey||event.altKey||
-    event.target?.closest?.('input,textarea,select,[contenteditable],button'))return;
+  if(event.target?.closest?.('input,textarea,select,[contenteditable],button'))return;
   const key=event.key.toLowerCase();
+  const building=workflowUI?.current==='model'&&activeModelTool==='structures';
+  if(building&&selectedStructureIds.size&&
+      (event.ctrlKey||event.metaKey)&&!event.altKey&&key==='d'){
+    event.preventDefault();
+    if(selectedStructureIds.size>1)commitStructureBatch({
+      action:'duplicate',ids:[...selectedStructureIds],dx:1,dz:0
+    },'Duplicate selected components');
+    else $('structureDuplicate').click();
+    return;
+  }
+  if(event.ctrlKey||event.metaKey||event.altKey)return;
+  if(building&&selectedStructureIds.size&&
+      ['arrowleft','arrowright','arrowup','arrowdown'].includes(key)){
+    event.preventDefault();
+    const step=event.shiftKey?.05:.25;
+    const dx=key==='arrowleft'?-step:key==='arrowright'?step:0;
+    const dz=key==='arrowup'?-step:key==='arrowdown'?step:0;
+    if(selectedStructureIds.size>1)commitStructureBatch({
+      action:'translate',ids:[...selectedStructureIds],dx,dz
+    },'Nudge selected components');
+    else{
+      const s=venue.structures.find(s=>s.id===selectedStructure);
+      if(s)commitStructure({action:'update',id:s.id,changes:{
+        x:Math.round((s.x+dx)*100)/100,z:Math.round((s.z+dz)*100)/100
+      }},'Nudge venue component');
+    }
+    return;
+  }
+  if(building&&selectedStructureIds.size&&key==='delete'){
+    event.preventDefault();$('structureGroupRemove').click();return;
+  }
   if(key==='f'){$('cameraFit').click();}
   else if(key==='t'){$('cameraTop').click();}
   else if(key==='v'){$('showPlan').click();}
