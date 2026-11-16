@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "note": "Authentic section identifiers and reported row numbering are source-backed where stated; all geometric arcs and widths remain modeler estimates, never digitized survey contours.",
+  "note": "Section identifiers and specified row ranges are linked to actual published venue diagrams. Every section angle, relative width, synthetic chair coordinate, row depth, building dimension and unsurveyed accessible/premium void is an estimate. These models must not be presented as verified ticket inventories.",
   "layouts": {
     "michigan": {
       "source": "https://mgoblue.com/sports/2026/9/22/mens-basketball-crisler-center-seating-chart-text-alternative",
@@ -927,7 +927,7 @@
       "chartIds": "historical-checked-current-page",
       "rowLabels": "documented",
       "geometry": "estimated",
-      "notes": "Official 2026–27 page documents lower rows 1–9 bench and 13–28 chairs and upper rows 1–13 chairs, 14–19 benches. 2023 seating chart confirms actual section IDs; 10–12 lower aisle/row handling requires separate geometry validation.",
+      "notes": "Official 2026–27 page documents lower rows 1–9 bench and 13–28 chairs and upper rows 1–13 chairs, 14–19 benches. 2023 seating chart confirms actual section IDs; 10–12 lower aisle/row handling requires separate geometry validation. Lower seating rows 10–12 are explicitly omitted in the schematic to preserve the published break between 9 and 13.",
       "tiers": [
         [
           {
@@ -958,7 +958,12 @@
               "135"
             ],
             "rowStart": 1,
-            "rowCount": 28
+            "rowCount": 28,
+            "skipRows": [
+              10,
+              11,
+              12
+            ]
           }
         ],
         [
@@ -1020,6 +1025,760 @@
           "rows": 19,
           "depth": 0.84,
           "rise": 0.42,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "illinois": {
+      "source": "https://app.fightingillini.com/2025Reseat",
+      "layout": "circular-three-ring-with-48-outer-sections",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Illinois Athletics 2025 seating map identifies 101–120 lower, 121–143 club/middle, 201–248 outer. Courtside 9–13, box footprints and aisle contours are untraced and excluded from verified geometry.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120"
+            ],
+            "rowStart": 1,
+            "rowCount": 14
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "121",
+              "122",
+              "123",
+              "124",
+              "125",
+              "126",
+              "127",
+              "128",
+              "129",
+              "130",
+              "131",
+              "132",
+              "133",
+              "134",
+              "135",
+              "136",
+              "137",
+              "138",
+              "139",
+              "140",
+              "141",
+              "142",
+              "143"
+            ],
+            "rowStart": 1,
+            "rowCount": 9
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224",
+              "225",
+              "226",
+              "227",
+              "228",
+              "229",
+              "230",
+              "231",
+              "232",
+              "233",
+              "234",
+              "235",
+              "236",
+              "237",
+              "238",
+              "239",
+              "240",
+              "241",
+              "242",
+              "243",
+              "244",
+              "245",
+              "246",
+              "247",
+              "248"
+            ],
+            "rowStart": 1,
+            "rowCount": 21
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 14,
+          "depth": 0.81,
+          "rise": 0.34,
+          "gap": 1.45,
+          "elevationGap": 1.4
+        },
+        {
+          "rows": 9,
+          "depth": 0.84,
+          "rise": 0.38,
+          "gap": 3.1,
+          "elevationGap": 2
+        },
+        {
+          "rows": 21,
+          "depth": 0.84,
+          "rise": 0.45,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "maryland": {
+      "source": "https://umterps.com/sports/2019/8/19/seating-charts",
+      "layout": "rectangular-student-wall-and-separated-upper-bowl",
+      "chartIds": "documented",
+      "rowLabels": "partially-documented",
+      "geometry": "estimated",
+      "notes": "Maryland Athletics 2025–26 chart identifies lower 101–126 and upper 201–226. The steeper student end-wall and suite ring are confirmed at venue level; tier breaks and all angular widths are estimated. 100-level numbers repeat in a modeled lower/club segment, not an additional ticket inventory.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121",
+              "122",
+              "123",
+              "124",
+              "125",
+              "126"
+            ],
+            "rowStart": 1,
+            "rowCount": 17
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121",
+              "122",
+              "123",
+              "124",
+              "125",
+              "126"
+            ],
+            "rowStart": 18,
+            "rowCount": 8
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224",
+              "225",
+              "226"
+            ],
+            "rowStart": 1,
+            "rowCount": 19
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 17,
+          "depth": 0.82,
+          "rise": 0.34,
+          "gap": 2.4,
+          "elevationGap": 2
+        },
+        {
+          "rows": 8,
+          "depth": 0.83,
+          "rise": 0.42,
+          "gap": 2.1,
+          "elevationGap": 1.4
+        },
+        {
+          "rows": 19,
+          "depth": 0.84,
+          "rise": 0.49,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ],
+      "originalChart": "https://umterps.com/sports/2025/5/14/2025-26-mens-basketball-ticket-sales-page"
+    },
+    "nebraska": {
+      "source": "https://huskers.com/basketball-game-day",
+      "layout": "three-tier-faceted-bowl-with-100-200-300",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Official Nebraska men's seating diagram shows numbered 101–122, 201–222 and 301–322 rings with suites between lower and upper tiers. Suite envelopes and actual row counts remain estimated.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121",
+              "122"
+            ],
+            "rowStart": 1,
+            "rowCount": 16
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222"
+            ],
+            "rowStart": 1,
+            "rowCount": 8
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "301",
+              "302",
+              "303",
+              "304",
+              "305",
+              "306",
+              "307",
+              "308",
+              "309",
+              "310",
+              "311",
+              "312",
+              "313",
+              "314",
+              "315",
+              "316",
+              "317",
+              "318",
+              "319",
+              "320",
+              "321",
+              "322"
+            ],
+            "rowStart": 1,
+            "rowCount": 15
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 16,
+          "depth": 0.82,
+          "rise": 0.32,
+          "gap": 2.8,
+          "elevationGap": 1.8
+        },
+        {
+          "rows": 8,
+          "depth": 0.82,
+          "rise": 0.37,
+          "gap": 2.6,
+          "elevationGap": 1.7
+        },
+        {
+          "rows": 15,
+          "depth": 0.84,
+          "rise": 0.43,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ],
+      "originalChart": "https://storage.googleapis.com/huskers-com-prod/2025/04/07/NHL8lMNofupSNIJJjNCEWNp2HY9oSKq8PhuJTq7p.pdf"
+    },
+    "northwestern": {
+      "source": "https://nusports.com/facilities/welsh-ryan-arena",
+      "layout": "small-rectangular-100-200-bowl-with-club-cutout",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Northwestern's official venue chart identifies 101–115 lower and 201–220 upper. A small lower-level gap approximates Wilson Club circulation; section widths, inaccessible ends and offsets are not yet traced.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.28,
+            "spanAngle": 5.963185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115"
+            ],
+            "rowStart": 1,
+            "rowCount": 12
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220"
+            ],
+            "rowStart": 1,
+            "rowCount": 14
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 12,
+          "depth": 0.8,
+          "rise": 0.3,
+          "gap": 1.5,
+          "elevationGap": 1.5
+        },
+        {
+          "rows": 14,
+          "depth": 0.83,
+          "rise": 0.38,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ],
+      "originalChart": "https://nusports.com/welsh-ryan-accessibility-information"
+    },
+    "oregon": {
+      "source": "https://www.ticketmaster.com/matthew-knight-arena-tickets-eugene/venue/123791",
+      "layout": "angular-eight-sided-court-bowl",
+      "chartIds": "documented-ticketing-map",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Basketball-specific ticketing diagram identifies inner 101–121 and outer 201–221. Distinctly steep end-zone seating is represented schematically. Section subdivisions and inaccessible rows await physical verification.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121"
+            ],
+            "rowStart": 1,
+            "rowCount": 16
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221"
+            ],
+            "rowStart": 1,
+            "rowCount": 18
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 16,
+          "depth": 0.83,
+          "rise": 0.36,
+          "gap": 2.7,
+          "elevationGap": 1.8
+        },
+        {
+          "rows": 18,
+          "depth": 0.84,
+          "rise": 0.45,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ],
+      "originalChart": "https://goducks.com/sports/2016/9/21/210388387"
+    },
+    "purdue": {
+      "source": "https://purduesports.com/mens-basketball-game-day-information",
+      "layout": "circular-18-section-inner-and-outer",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Purdue's 2026 seating diagram confirms inner 01–18 and outer 101–118. Circulation notches, chair rows and premium seat additions have not been surveyed.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.07,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "01",
+              "02",
+              "03",
+              "04",
+              "05",
+              "06",
+              "07",
+              "08",
+              "09",
+              "10",
+              "11",
+              "12",
+              "13",
+              "14",
+              "15",
+              "16",
+              "17",
+              "18"
+            ],
+            "rowStart": 1,
+            "rowCount": 19
+          }
+        ],
+        [
+          {
+            "startAngle": 0.07,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118"
+            ],
+            "rowStart": 1,
+            "rowCount": 22
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 19,
+          "depth": 0.83,
+          "rise": 0.35,
+          "gap": 2.3,
+          "elevationGap": 1.7
+        },
+        {
+          "rows": 22,
+          "depth": 0.83,
+          "rise": 0.43,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ],
+      "originalChart": "https://purduesports.com/mens-basketball-ticket-information"
+    },
+    "washington": {
+      "source": "https://gohuskies.evenue.net/list/MB",
+      "layout": "historic-octagon-with-fourteen-continuous-section-columns",
+      "chartIds": "documented",
+      "rowLabels": "partially-documented",
+      "geometry": "estimated",
+      "notes": "Washington official 2025–26 men's ticket map shows sections 1–14 and tiered row bands 1–13 and 14–31, rather than invented 100/200 identifiers. Dawg Pack and ADA recesses have not been traced.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.39,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10",
+              "11",
+              "12",
+              "13",
+              "14"
+            ],
+            "rowStart": 1,
+            "rowCount": 13
+          }
+        ],
+        [
+          {
+            "startAngle": 0.39,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10",
+              "11",
+              "12",
+              "13",
+              "14"
+            ],
+            "rowStart": 14,
+            "rowCount": 18
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 13,
+          "depth": 0.82,
+          "rise": 0.33,
+          "gap": 2.2,
+          "elevationGap": 1.6
+        },
+        {
+          "rows": 18,
+          "depth": 0.84,
+          "rise": 0.41,
           "gap": 0,
           "elevationGap": 0
         }
