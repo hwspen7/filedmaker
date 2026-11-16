@@ -96,14 +96,16 @@ function reportFor(venue,packageResult){
     interiorProfile:INTERIOR_PROFILES[venue.id]?{type:INTERIOR_PROFILES[venue.id].type,
       outline:INTERIOR_PROFILES[venue.id].outline,
       source:INTERIOR_PROFILES[venue.id].source,
-      status:'chart-informed-unsurveyed'}:null,
+      status:VERIFIED_CHARTS[venue.id]?'official-label-order/unsurveyed-geometry':'source-linked-schematic/unsurveyed-geometry'}:null,
     sectionMapStatus:model.proceduralSpec.sectionMap?'official-section-ids/estimated-angles':'uniform-estimate',
     architectureSignature:ARCH_SIGNATURES[venue.id]?{roof:ARCH_SIGNATURES[venue.id].roof,
       feature:ARCH_SIGNATURES[venue.id].feature,source:ARCH_SIGNATURES[venue.id].source,
       evidence:'profile-not-surveyed'}:null,
     modeledSectionIdCount:model.proceduralSpec.sectionMap
-      ?model.proceduralSpec.sectionMap.flatMap(groups=>groups.flatMap(group=>group.sectionIds)).length
+      ?new Set(model.proceduralSpec.sectionMap.flatMap(groups=>
+        groups.flatMap(group=>group.sectionIds))).size
       :model.proceduralSpec.sections,
+    mappedSeatCoverage:model.sectionCoverage??null,
     osuVisualParity:{
       complete:false,
       chartSectionIdsVerified:Boolean(SECTION_PROFILES[venue.id]?.chartIds==='documented'),
@@ -135,6 +137,8 @@ function reportFor(venue,packageResult){
     }:null,
     reference,verification:audit,
     warnings:[...new Set([...audit.warnings,
+      ...(model.sectionCoverage&&!model.sectionCoverage.completeness?
+        ['Documented sections or eligible seating rows are missing from generated geometry']:[]),
       ...(relativeError>venue.model.capacityTolerance?['Generated capacity exceeds the 3.5% tolerance']:[])])],
     notice:'Published capacity is sourced. Section IDs may be chart-derived; individual XYZ, angular section boundaries, actual row availability and architectural details remain estimated.'
   };
