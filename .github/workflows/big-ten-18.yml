@@ -1,0 +1,58 @@
+name: Big Ten 18 Arena Batch
+
+on:
+  push:
+    branches:
+      - feature/big-ten-18-arenas
+    paths:
+      - 'data/big-ten/**'
+      - 'scripts/generate-big-ten.mjs'
+      - 'scripts/generate-venue.mjs'
+      - 'src/next/engines/**'
+      - 'src/model.mjs'
+      - 'src/next/venuePlan.mjs'
+      - 'src/schoolPublisher.mjs'
+      - 'tests/big-ten-batch.test.mjs'
+      - 'package.json'
+      - '.github/workflows/big-ten-18.yml'
+  workflow_dispatch:
+
+jobs:
+  build-big-ten:
+    name: Generate and audit all 18 arena models
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify shared geometry and batch data
+        run: npm run verify
+      - name: Generate all 18 source-linked arena models and offline 3D viewers
+        run: npm run generate:big-ten -- --out build/big-ten-18 --html --strict --max-error 0.035
+      - name: Validate the complete output manifest
+        run: |
+          node --input-type=module -e "
+            import {readFileSync,existsSync} from 'node:fs';
+            const m=JSON.parse(readFileSync('build/big-ten-18/manifest.json'));
+            if(m.schoolCount!==18||m.venues.length!==18||!m.withinTolerance)
+              throw Error('Big Ten batch is incomplete or exceeds capacity error');
+            for(const v of m.venues){
+              if(v.capacityErrorPct>3.5)throw Error(v.schoolId+': deviation > 3.5%');
+              for(const p of [v.report,v.html,v.schoolId+'/project.filedmaker.json']){
+                if(!existsSync('build/big-ten-18/'+p))throw Error('Missing '+p);
+              }
+            }
+            console.log('Verified '+m.venues.length+' independently generated arenas');
+          "
+      - name: Publish all 18 offline preview pages and capacity reports
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: big-ten-18-arenas-3d-previews
+          path: build/big-ten-18/
+          retention-days: 14
+          if-no-files-found: error
