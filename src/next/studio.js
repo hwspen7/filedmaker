@@ -550,7 +550,8 @@ $('capture').onclick=()=>{
   if(renderer){const a=document.createElement('a');a.href=captureVenue();a.download='venue-view.png';a.click();}
 };
 window.addEventListener('resize',()=>{renderer?.resize();if(mode==='top')drawMap();});
-setPreset('schott');
+const requestedVenue=new URLSearchParams(location.search).get('venue');
+setPreset(requestedVenue==='ohio'?'ohio':'schott');
 async function showRunningBuild(){
   const node=$('runtimeBuild');
   if(!node)return;

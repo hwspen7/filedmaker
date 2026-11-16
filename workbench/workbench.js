@@ -12,12 +12,15 @@ import {assessRegistration} from '../src/workbench/registration-audit.mjs';
 import {compareVenueProjects} from '../src/workbench/diff.mjs';
 import {openPdfFile,renderPdfPage,closePdfFile} from '../src/workbench/imports/pdf.mjs';
 import {reviewReadiness,suggestionQueue} from '../src/workbench/review.mjs';
+import {setupWorkflow} from './workflow.js';
+import {getVenueCase} from '../src/workbench/caseCatalog.mjs';
+import {makeAikenUnverifiedOperatorDraft} from '../src/workbench/qa/aiken-operator-draft.mjs';
 
 const $=id=>document.getElementById(id);
 const canvas=$('planCanvas'),modelCanvas=$('modelCanvas'),ctx=canvas.getContext('2d');
 let venue=newVenue(),registration=null,image=null,editorMode='select',draftPoints=[];
 let preview=null,renderer=null,selectedSection='',selectedSeat=null,drag=null,viewMode='plan';
-let pendingRows=null,vectorDrawing=null,pdfHandle=null;
+let pendingRows=null,vectorDrawing=null,pdfHandle=null,workflowUI=null;
 const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
 const safeName=()=>venue.venue.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'school-venue';
@@ -115,6 +118,7 @@ function renderPdfSuggestions(){
     b.title='Text from PDF only. The section outline must be traced manually.';
     b.onclick=()=>{
       $('newSectionId').value=hint.id;
+      workflowUI?.go('calibrate');
       if(registration){editorMode='trace';draftPoints=[];repaint();}
       message('Suggested '+hint.id+'. Confirm this label, then trace its four actual section corners.');
     };
@@ -251,6 +255,9 @@ function repaint(){
   $('rowCount').textContent=number(venue.rows.length);
   $('mappedCount').textContent=number(preview?.seats.length??0);
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
+  $('evidenceStatus').textContent=preview?.quality?.blockingCount?'Geometry blocked':
+    preview?'Unverified model · human review required':
+    venue.plan.name||venue.rows.length?'Import / calibration in progress':'Awaiting source files';
   $('modeLabel').textContent=editorMode==='select'?'Select · drag a section corner to adjust':
     editorMode==='calibrate'?'Calibration · mark all four court corners':
     'Tracing · front left → front right → rear right → rear left';
@@ -592,6 +599,7 @@ $('fixture').onclick=()=>{
   $('pdfStatus').textContent='No active PDF. Import a source drawing for manual review.';
   recordEdit(before,'Load fictional geometry fixture');
   editorMode='select';draftPoints=[];sync();tryPreview();
+  workflowUI?.go('model');
   message('Loaded an explicitly fictional 1,500-seat geometry exercise.');
 };
 function open3d(mode){
@@ -788,6 +796,52 @@ $('matchVectors').onclick=()=>{
 
 const observer=new ResizeObserver(()=>resize());observer.observe(canvas.parentElement);
 sync();repaint();resize();
+
+workflowUI=setupWorkflow({onStageChange:stage=>{
+  if(stage==='source'||stage==='calibrate')$('showPlan').click();
+  if(stage==='model'&&preview)$('show3d').click();
+  if(stage==='review'&&preview&&viewMode==='plan')$('show3d').click();
+  requestAnimationFrame(()=>resize());
+}});
+function showCaseContext(c){
+  $('caseContext').hidden=false;
+  $('caseContextTitle').textContent=c.title+' · '+c.subtitle;
+  $('caseContextText').textContent=c.description+
+    (c.id==='aiken-high'?' All 30 displayed model rows and dimensions are assumed for QA.':'');
+  $('caseContextSource').hidden=!c.source;
+  if(c.source)$('caseContextSource').href=c.source;
+}
+$('caseContextDismiss').onclick=()=>{$('caseContext').hidden=true;};
+async function openRequestedCase(){
+  const params=new URLSearchParams(location.search);
+  const example=params.get('example'),caseId=params.get('case');
+  if(example==='fictional'){
+    const c=getVenueCase('fictional-gym');showCaseContext(c);
+    $('fixture').click();
+  }else if(example==='aiken'){
+    const c=getVenueCase('aiken-high');showCaseContext(c);
+    try{
+      const before=structuredClone(venue);
+      venue=makeAikenUnverifiedOperatorDraft();
+      image=null;registration=null;selectedSeat=null;selectedSection='';
+      preview=null;editorMode='select';draftPoints=[];
+      if(pdfHandle){await closePdfFile(pdfHandle);pdfHandle=null;}
+      $('pdfPageWrap').hidden=true;
+      $('pdfStatus').textContent='No PDF is attached to this demonstration. Open the real source document separately.';
+      recordEdit(before,'Open Aiken operator-estimated example');
+      sync();tryPreview();workflowUI.go('model');
+      message('Aiken demo: published bank totals, assumed 30 rows and section geometry. NOT an official model.');
+    }catch(e){message('Could not open the Aiken example: '+e.message,true);}
+  }else if(caseId){
+    const c=getVenueCase(caseId);
+    if(c){
+      showCaseContext(c);
+      workflowUI.go('source');
+      message('Download the referenced source document and import it locally. No seats or geometry were fabricated.');
+    }
+  }
+}
+openRequestedCase();
 document.documentElement.dataset.workbenchReady="true";
 (async()=>{
   const el=$('buildTag');

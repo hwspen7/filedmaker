@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Library · FiledMaker</title><meta name="description" content="Browse real school evidence, Ohio State references and an editable synthetic venue demo.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./cases.css"></head>
+<body><header class="topbar"><a class="brand" href="../"><span class="mark">F</span><span><strong>FiledMaker</strong><small>Venue modeling workspace</small></span></a>
+<nav aria-label="Primary"><a href="../">OSU references</a><a href="../workbench/">Workbench</a><a href="./" aria-current="page">Case Library</a></nav>
+<a class="primary-btn" href="../workbench/">+ New venue</a></header>
+<div class="shell"><aside class="sidebar"><div class="eyebrow">EXPLORE</div>
+<nav aria-label="Case categories" class="side-filters">
+<button data-filter="all" aria-pressed="true">All cases</button>
+<button data-filter="references" aria-pressed="false">Ohio State</button>
+<button data-filter="schools" aria-pressed="false">Real schools</button>
+<button data-filter="demos" aria-pressed="false">Training demo</button>
+<button data-filter="extended" aria-pressed="false">Extended tests</button></nav>
+<div class="separator"></div><a class="side-link" href="../workbench/">Open workbench</a>
+<p class="footnote">Source-backed does not mean geometry certified. Every case clearly states what remains for human review.</p></aside>
+<main class="main"><section class="hero"><div class="eyebrow">FIELDMAKER · CASE LIBRARY</div>
+<h1>Explore the work.</h1>
+<p>Ohio State references, real school documents and interactive drafts, all in one place. The next step is always clear.</p>
+<div class="hero-actions"><a href="../workbench/" class="primary-btn">Start with a drawing</a><a class="subtle-btn" href="../workbench/?example=fictional">Try the 1,500-seat demo</a></div></section>
+<div class="toolbar"><div><h2>Case library <span id="caseCount"></span></h2><p>Reference geometry and evidence-led school projects.</p></div>
+<input id="searchCases" type="search" placeholder="Search schools or venues" aria-label="Search cases"></div>
+<div class="chips" role="group" aria-label="Filter cases"><button data-filter="all" aria-pressed="true">All</button><button data-filter="references" aria-pressed="false">OSU</button><button data-filter="schools" aria-pressed="false">Real schools</button><button data-filter="demos" aria-pressed="false">Demo</button><button data-filter="extended" aria-pressed="false">Extended</button></div>
+<div id="caseGrid" class="case-grid" aria-live="polite"></div><p id="emptyCases" hidden>No cases match this search.</p>
+<section class="reading"><h2>Understanding the status</h2><div class="read-grid">
+<div><strong>Reference preview</strong><p>Interactive illustrative models, not verified ticket inventories.</p></div>
+<div><strong>Unverified staff draft</strong><p>Published capacity may coexist with operator-assumed rows and elevations.</p></div>
+<div><strong>Source review</strong><p>Original school documents are available. Import the PDF and complete the missing rows and boundaries manually.</p></div></div></section></main></div>
+<script type="module" src="./cases.js"></script></body></html>

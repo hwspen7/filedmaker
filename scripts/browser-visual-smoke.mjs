@@ -315,6 +315,64 @@ async function main(){
     writeFileSync(join(dir,'workbench-pdf-review.png'),Buffer.from(pdfFrame.data,'base64'));
     console.log('pdf: real local two-page PDF parsed, four row-label hints found, zero-text page required manual tracing');
 
+    // New GPT-style case library: actual browse, category filter, and search.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/'});
+    const library=await poll(async()=>await evaluate(
+      "({cards:document.querySelectorAll('#caseGrid .case-card').length,count:document.querySelector('#caseCount')?.textContent})"
+    ),50);
+    if(library.cards!==10||library.count!=='10')
+      throw Error('New case library does not show all ten cases: '+JSON.stringify(library));
+    await delay(260);
+    const gallery=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    writeFileSync(join(dir,'case-library.png'),Buffer.from(gallery.data,'base64'));
+    const filtered=await evaluate("(()=>{document.querySelector('[data-filter=\"schools\"]').click();return document.querySelectorAll('#caseGrid .case-card').length})()");
+    if(filtered!==6)throw Error('Real-school filter should show 6 schools, got '+filtered);
+    const searched=await evaluate("(()=>{const input=document.querySelector('#searchCases');input.value='aiken';input.dispatchEvent(new Event('input',{bubbles:true}));return document.querySelectorAll('#caseGrid .case-card').length})()");
+    if(searched!==1)throw Error('Case search failed for Aiken');
+    const accurate=await evaluate("document.querySelector('#caseGrid .case-card')?.textContent.includes('assumed rows')");
+    if(!accurate)throw Error('Aiken catalog card lost estimation disclaimer');
+    console.log('cases: ten cases listed, six real-school filters, search, evidence labels verified');
+
+    // Real school Aiken: launch a *provisional* interactive model from the case library.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?example=aiken'});
+    const aiken=await poll(async()=>await evaluate(
+      "({ready:document.documentElement.dataset.workbenchReady,count:document.querySelector('#mappedCount')?.textContent,sections:document.querySelector('#sectionCount')?.textContent,stage:document.documentElement.dataset.activeStage,context:document.querySelector('#caseContextText')?.textContent,qa:document.querySelector('#qa')?.textContent})"
+    ),70);
+    if(aiken.count!=='1,418'||aiken.sections!=='4'||aiken.stage!=='model'||
+       !aiken.context.includes('assumed')||!aiken.qa.includes('PROJECT NOTE'))
+      throw Error('Aiken unverified 3D example lost its data and disclaimer: '+JSON.stringify(aiken));
+    const aiken3d=await poll(async()=>await evaluate(
+      "(()=>{const c=document.querySelector('#modelCanvas');return !c.hidden&&c.width>200&&!!c.getContext('webgl2')})()"
+    ),50);
+    if(!aiken3d)throw Error('Aiken example failed to open a genuine WebGL model');
+    await delay(500);
+    const aikenShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    writeFileSync(join(dir,'case-aiken-estimated-3d.png'),Buffer.from(aikenShot.data,'base64'));
+    const navigation=await evaluate("(()=>{document.querySelector('[data-open-stage=\"review\"]').click();const a=document.documentElement.dataset.activeStage;const b=document.querySelector('[data-stage-panel=\"review\"]').hidden;document.querySelector('[data-open-stage=\"source\"]').click();return {a,b,source:!document.querySelector('[data-stage-panel=\"source\"]').hidden}})()");
+    if(navigation.a!=='review'||navigation.b||!navigation.source)
+      throw Error('Four-step workbench navigation is broken: '+JSON.stringify(navigation));
+
+    // Real source-only case should never manufacture a model.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?case=wills-point'});
+    const sourceCase=await poll(async()=>await evaluate(
+      "({ready:document.documentElement.dataset.workbenchReady,text:document.querySelector('#caseContextText')?.textContent,source:document.querySelector('#caseContextSource')?.href,seats:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage})"
+    ),50);
+    if(!sourceCase.text.includes('no complete seat inventory')||sourceCase.seats!=='0'||
+       sourceCase.stage!=='source'||!sourceCase.source.includes('wills-point'))
+      throw Error('Source-only case has invented geometry: '+JSON.stringify(sourceCase));
+    await delay(200);
+    const noSeats=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    writeFileSync(join(dir,'case-real-source-review.png'),Buffer.from(noSeats.data,'base64'));
+
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?example=fictional'});
+    const synthetic=await poll(async()=>await evaluate(
+      "({count:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage})"
+    ),60);
+    if(synthetic.count!=='1,500'||synthetic.stage!=='model')
+      throw Error('Fictional demo deep link is not interactive: '+JSON.stringify(synthetic));
+    console.log('workbench UI: four-stage navigation and Aiken/fictional/source-only case deep links verified');
+
+
 
   } finally {
     client?.close();chrome.kill('SIGKILL');server.kill('SIGTERM');

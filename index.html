@@ -3,21 +3,29 @@
 <title>FiledMaker — Seat Studio</title><meta name="description" content="Ohio State venue references and source-driven school venue workbench.">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./studio.css"></head>
 <body><div id="app">
-<header class="topbar"><div class="brand"><div class="brandmark">F</div><div><strong>FiledMaker</strong><small>Seat Studio</small></div></div><div class="top-meta"><span class="tag">NCAA / Schools</span><span id="sourceTag" class="tag amber">Illustrative geometry</span><span id="runtimeBuild" class="tag" title="The Git branch and commit actually running on this web server">Checking running version...</span></div><div class="top-actions"><a href="./workbench/">Venue Workbench</a><a href="./school/">School data tools</a><a href="./legacy/">Legacy editor</a><label class="btn secondary" style="cursor:pointer">Open JSON<input id="openProject" type="file" accept="application/json,.json" hidden></label><button id="exportProject" class="btn secondary">Export JSON</button><button id="capture" class="btn dark">Save image</button></div></header>
+<header class="topbar"><div class="brand"><div class="brandmark">F</div><div><strong>FiledMaker</strong><small>Seat Studio</small></div></div><div class="top-meta"><span class="tag">NCAA / Schools</span><span id="sourceTag" class="tag amber">Illustrative geometry</span><span id="runtimeBuild" class="tag" title="The Git branch and commit actually running on this web server">Checking running version...</span></div><div class="top-actions"><a href="./cases/">Case Library</a><a class="btn dark" href="./workbench/">Build a venue</a>
+<button id="capture" class="btn secondary">Save image</button><details class="top-more"><summary>More</summary>
+<a href="./school/">Seat data importer</a><a href="./legacy/">Advanced editor</a>
+<label class="btn secondary" style="cursor:pointer">Open JSON<input id="openProject" type="file" accept="application/json,.json" hidden></label>
+<button id="exportProject" class="btn secondary">Export JSON</button></details></div></header>
 <div class="body-layout"><aside class="sidebar"><div class="side-scroll">
 <div class="section-head"><span>VENUE</span><small>Choose a reference</small></div>
 <div class="venue-list"><div class="venue-group-label">OHIO STATE · REFERENCE VENUES</div>
 <button class="venue-option active" data-preset="schott"><span class="venue-symbol">◈</span><span><strong>Schottenstein Center</strong><small>Basketball · Ohio State</small></span></button>
 <button class="venue-option" data-preset="ohio"><span class="venue-symbol">▤</span><span><strong>Ohio Stadium</strong><small>Football · Ohio State</small></span></button></div>
-<div class="section-head"><span>BUILD A SCHOOL VENUE</span><small>Source driven</small></div>
-<div class="import-panel"><div class="small-title">Venue Workbench</div><p>Import a school plan and row counts. Calibrate section contours, generate the model, and export an editable or standalone preview.</p>
-<a href="./workbench/" class="btn dark fill" style="display:block;text-align:center;text-decoration:none">Open Venue Workbench</a>
-<p class="muted">Missing dimensions remain estimates. The Ohio State venues are reference studies.</p></div>
+<div class="section-head"><span>YOUR NEXT PROJECT</span><small>Get started</small></div>
+<div class="import-panel quick-panel"><strong>Build a school venue</strong><p>Import source plans, review sections, then generate a 3D draft in four clear steps.</p>
+<a href="./workbench/" class="btn dark fill">Open Workbench</a></div>
+<div class="section-head"><span>EXPLORE CASES</span><small>10 cases</small></div>
+<div class="quick-cases"><a href="./cases/">View the entire case library <span>↗</span></a>
+<a href="./workbench/?example=aiken">Aiken · Unverified 3D draft</a>
+<a href="./workbench/?example=fictional">1,500-seat demo</a></div>
+<details class="studio-settings"><summary>Data &amp; display settings</summary>
 <div class="section-head"><span>REAL TICKET DATA</span><small>Optional</small></div>
 <div class="import-panel"><div class="small-title">Import seat inventory</div><p id="rosterRequirements">CSV with section, row, seat and optional measured x/y/z. Original identifiers are preserved.</p><label class="btn import-btn">Select CSV file<input type="file" id="csv" accept=".csv,text/csv" hidden></label><p class="muted">No roster means no verified selectable seats.</p><a id="rosterExample" href="./examples/fictional-ticket-roster.csv" download>Example CSV format</a></div>
 <div class="section-head"><span>DISPLAY</span><small>Context only</small></div><div class="control-stack"><label>Seat color scheme<select id="palette"><option value="venue">Venue colors</option><option value="navy">Layered blue</option><option value="slate">Neutral slate</option><option value="scarlet">Scarlet accents</option></select></label><label>Display detail<select id="detail"><option value="standard">Detailed seating</option><option value="compact">Performance</option></select></label></div>
 <div class="system-note"><strong>Data integrity</strong><p>Venue names, capacity and sports surface are sourced separately. Generated positions remain illustrative unless a school supplies a seat roster and validates its geometry.</p></div>
-</div></aside>
+</details></div></aside>
 <main class="main"><div class="viewport-top"><div><div id="title" class="venue-title">Schottenstein Center</div><div id="subtitle" class="venue-subtitle">Ohio State University · NCAA Basketball</div></div><div id="modelStatus" class="status"><span class="pulse"></span> Schematic preview</div></div>
 <div class="view-tabs"><button data-view="overview" class="current">3D overview</button><button data-view="exterior">Building exterior</button><button data-view="top">2D map</button><button data-view="section">Section</button><button data-view="human">Seat view</button></div>
 <div class="viewport"><canvas id="viewport3d" aria-label="3D venue seat model"></canvas><canvas id="viewport2d" aria-label="2D venue seating overview" hidden></canvas><div id="areaLabels" class="area-labels" role="group" aria-label="Venue area labels" hidden></div><div class="viewport-float top"><div class="status-pill"><span id="viewLabel">Overall bowl</span><small id="viewHint">Drag to orbit · Scroll to zoom · Click a seat</small></div></div><div class="viewport-float bottom"><span id="selectedPreview">Select a section or seat</span><span id="renderInfo">WebGL2 · offline</span></div><div id="loading" class="loading">Preparing venue geometry…</div></div>
@@ -39,6 +47,7 @@
 <p id="referenceSource" class="reference-source">Choose a position to compare against a published seat view.</p>
 <div id="arenaSources" class="reference-source"></div>
 </section>
+<details class="quality-details"><summary>Geometry &amp; QA details</summary>
 <div class="section-head"><span>GEOMETRY CHECK</span><small id="geometryQuality">AUTO</small></div><div class="quality-grid"><div><strong id="rowsCount">—</strong><small>Row runs</small></div><div><strong id="gapCount">—</strong><small>Aisle breaks</small></div><div><strong id="kindCount">—</strong><small>Seat style</small></div></div><div id="warnings" class="warning-box">Preview generated from estimated positions. Confirm the real seat layout before deployment.</div>
-<div class="inspector-bottom"><a href="./viewer/">Existing viewer</a><span>Seat geometry / data QA</span></div>
+</details><div class="inspector-bottom"><a href="./viewer/">Existing viewer</a><span>Seat geometry / data QA</span></div>
 </aside></div></div><script type="module" src="./src/next/studio.js"></script></body></html>

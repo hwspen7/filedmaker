@@ -31,6 +31,13 @@ test('static server serves the app and module with correct MIME types', async t 
   assert.match(await module.text(), /generateSeats/);
   const missing = await fetch(`http://127.0.0.1:${port}/src/missing.js`);
   assert.equal(missing.status, 404);
+  const cases=await fetch(`http://127.0.0.1:${port}/cases/`);
+  assert.equal(cases.status,200);
+  assert.match(await cases.text(),/Case Library/);
+  const caseScript=await fetch(`http://127.0.0.1:${port}/cases/cases.js`);
+  assert.equal(caseScript.status,200);
+  const caseCatalog=await fetch(`http://127.0.0.1:${port}/src/workbench/caseCatalog.mjs`);
+  assert.equal(caseCatalog.status,200);
   const workbench=await fetch(`http://127.0.0.1:${port}/workbench/`);
   assert.equal(workbench.status,200);
   assert.match(await workbench.text(),/Venue Workbench/);
