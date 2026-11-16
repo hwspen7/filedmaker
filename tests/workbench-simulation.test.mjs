@@ -49,7 +49,7 @@ function syntheticVenue(seed){
   }
   return venue;
 }
-test('property benchmark: 75 unrelated synthetic seating layouts preserve source counts',()=>{
+test('property benchmark: 75 unrelated synthetic seating layouts preserve source counts',t=>{
   let total=0,sections=0,aisles=0;
   const begun=performance.now();
   for(let seed=1;seed<=75;seed++){
@@ -71,7 +71,7 @@ test('property benchmark: 75 unrelated synthetic seating layouts preserve source
   assert.ok(total>35000);
   assert.ok(sections>=250);
   assert.ok(aisles>=100);
-  test.diagnostic('Synthetic property cases: 75; positions: '+total+
+  t.diagnostic('Synthetic property cases: 75; positions: '+total+
     '; distinct section footprints: '+sections+'; source aisle declarations: '+aisles+
     '; elapsed ms: '+Math.round(performance.now()-begun));
 });
