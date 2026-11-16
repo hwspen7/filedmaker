@@ -35,7 +35,22 @@ export const GeometryEngine={
       if(!['metal-and-brick','modern-glass','masonry'].includes(profile))throw Error('Unsupported facade material profile');
       const entrances=input.exterior.entrances??[];
       if(!Array.isArray(entrances)||entrances.length>12)throw Error('Maximum twelve entrance volumes');
-      return {profile,entrances:entrances.map((item,index)=>({
+      const signature=input.exterior.signature??null;
+      if(signature){
+        if(!signature||typeof signature!=='object'||Array.isArray(signature))throw Error('Invalid architecture signature');
+        if(!['folded-dome','copper-dome','saddle','truss-arch','barrel','gable',
+          'gable-skylight','trapezoid','swept','oval-low','low-crown','flat-broad'].includes(signature.roof))
+          throw Error('Unsupported architecture roof silhouette');
+        if(!['white','copper','slate','pale'].includes(signature.finish))
+          throw Error('Unsupported architecture roofing material');
+      }
+      return {profile,signature:signature?{
+        roof:signature.roof,finish:signature.finish,feature:String(signature.feature??'').slice(0,60),
+        roofRise:finite(signature.roofRise,'Signature roof rise',0,30),
+        entryAngle:finite(signature.entryAngle,'Signature entrance direction',0,TAU),
+        source:String(signature.source??'').slice(0,512),
+        note:String(signature.note??'').slice(0,300)
+      }:null,entrances:entrances.map((item,index)=>({
         angle:finite(item.angle,'Entrance angle '+index,0,Math.PI*2),
         role:item.role==='primary'?'primary':'secondary'
       }))};
