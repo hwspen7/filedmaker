@@ -75,7 +75,7 @@ function prepareAreaLabels(){
     rowCenters.get(row.sectionId).push(row);
   }
   const labels=[];
-  const sectionsToLabel=model.sectionFootprints??(
+  const sectionsToLabel=model.sectionFootprints??model.interiorSectionFootprints??(
     model.proceduralSpec?.sectionMap?[...rowCenters].map(([id,rows])=>({
       id,depthRows:Math.max(...rows.map(row=>row.slot))+1
     })):[]
