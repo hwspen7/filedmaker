@@ -13,7 +13,10 @@ export const ValidationEngine={
     let collisions={collisionCount:0,uniqueSeats:0};
     try{collisions=OptimizationEngine.seatDiagnostics(seats);}
     catch(e){errors.push(e.message);}
-    if(collisions.collisionCount)errors.push('Seat collisions: '+collisions.collisionCount);
+    if(collisions.collisionCount){
+      const samples=collisions.collisions.slice(0,3).map(([a,b])=>a+' ↔ '+b).join(' | ');
+      errors.push('Seat collisions: '+collisions.collisionCount+(samples?' ('+samples+')':''));
+    }
     let triangles=0;
     for(const [name,mesh] of Object.entries(architectureGeometry??{})){
       if(!(mesh instanceof Float32Array)||mesh.length%18){errors.push('Invalid mesh layer: '+name);continue;}
