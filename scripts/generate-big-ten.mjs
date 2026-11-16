@@ -16,6 +16,8 @@ const ARCH_SIGNATURES=JSON.parse(readFileSync(
   new URL('../data/big-ten/architectural-signatures.json',import.meta.url),'utf8')).venues;
 const INTERIOR_PROFILES=JSON.parse(readFileSync(
   new URL('../data/big-ten/interior-reconstructions.json',import.meta.url),'utf8')).venues;
+const VERIFIED_CHARTS=JSON.parse(readFileSync(
+  new URL('../data/big-ten/section-chart-verified-order.json',import.meta.url),'utf8')).venues;
 const DEFAULT_OUT='build/big-ten-18';
 const DEFAULT_MAX_ERROR=.035;
 const fail=message=>{throw Error(message);};
