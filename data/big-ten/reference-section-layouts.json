@@ -141,12 +141,12 @@
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Official 2026–27 map: main A–F west, G–M east (no I); balconies AA–FF and GG–MM. Side-stand arc ends remain estimated; actual loges and lobbies are not yet digitized. Estimated depth increased to preserve published capacity while keeping genuine empty arc sectors.",
+      "notes": "Official 2026–27 map places A–F along the west stand from south to north, G/H/J/K/L/M on east from north to south, and pairs of separate balcony arcs. Row and radial edges are not available as CAD. Official ticket inventory exposes main-stand rows through 43, and published balcony diagram shows around 16 rows. These maximum row bands still require per-section verification. Exact section taper and 3D seat XYZ remain estimated.",
       "tiers": [
         [
           {
-            "startAngle": 1.91,
-            "spanAngle": 2.34,
+            "startAngle": 0.72,
+            "spanAngle": 1.71,
             "sectionIds": [
               "A",
               "B",
@@ -156,11 +156,11 @@
               "F"
             ],
             "rowStart": 1,
-            "rowCount": 29
+            "rowCount": 43
           },
           {
-            "startAngle": 5.19,
-            "spanAngle": 2.31,
+            "startAngle": 3.81,
+            "spanAngle": 1.71,
             "sectionIds": [
               "G",
               "H",
@@ -170,13 +170,13 @@
               "M"
             ],
             "rowStart": 1,
-            "rowCount": 29
+            "rowCount": 43
           }
         ],
         [
           {
-            "startAngle": 1.95,
-            "spanAngle": 2.22,
+            "startAngle": 0.76,
+            "spanAngle": 1.65,
             "sectionIds": [
               "AA",
               "BB",
@@ -186,11 +186,11 @@
               "FF"
             ],
             "rowStart": 1,
-            "rowCount": 19
+            "rowCount": 16
           },
           {
-            "startAngle": 5.23,
-            "spanAngle": 2.18,
+            "startAngle": 3.84,
+            "spanAngle": 1.65,
             "sectionIds": [
               "GG",
               "HH",
@@ -200,13 +200,13 @@
               "MM"
             ],
             "rowStart": 1,
-            "rowCount": 19
+            "rowCount": 16
           }
         ]
       ],
       "tiersOverride": [
         {
-          "rows": 29,
+          "rows": 43,
           "depth": 0.82,
           "rise": 0.34,
           "gap": 3.3,
@@ -219,45 +219,24 @@
           "gap": 0,
           "elevationGap": 0
         }
-      ]
+      ],
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     },
     "iowa": {
-      "source": "https://storage.googleapis.com/hawkeyesports-prod/2025/05/20/4FY3mLURtjTLeVfpBxPqO8U6pD3rHEl1UDrn7kgo.pdf",
+      "source": "https://hawkeyesports.com/mbbgameday",
       "layout": "circular-pit-with-lower-and-upper-lettered-sections",
       "chartIds": "documented",
       "rowLabels": "partially-documented",
       "geometry": "estimated",
-      "notes": "2025 Iowa men's chart has inner A–N and outer AA–NN labels; actual row 42 and ADA landings require local notch geometry.",
+      "notes": "A, AA, BB,...NN, N, M,... B are 28 consecutively adjacent full-height section columns around Carver-Hawkeye Arena, not lower/upper disjoint sets. The two engine bands represent row-depth zones of these same sectors, with provisional 1–19 / 20–42 division. Two contiguous row bands are retained for mesh management, not because single- versus double-letter sections occupy different physical tiers. Exact section taper and 3D seat XYZ remain estimated.",
       "tiers": [
         [
           {
-            "startAngle": 0.36,
+            "startAngle": 3.04,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "A",
-              "B",
-              "C",
-              "D",
-              "E",
-              "F",
-              "G",
-              "H",
-              "I",
-              "J",
-              "K",
-              "L",
-              "M",
-              "N"
-            ],
-            "rowStart": 1,
-            "rowCount": 19
-          }
-        ],
-        [
-          {
-            "startAngle": 0.36,
-            "spanAngle": 6.283185307179586,
-            "sectionIds": [
               "AA",
               "BB",
               "CC",
@@ -271,10 +250,61 @@
               "KK",
               "LL",
               "MM",
-              "NN"
+              "NN",
+              "N",
+              "M",
+              "L",
+              "K",
+              "J",
+              "I",
+              "H",
+              "G",
+              "F",
+              "E",
+              "D",
+              "C",
+              "B"
+            ],
+            "rowStart": 1,
+            "rowCount": 19
+          }
+        ],
+        [
+          {
+            "startAngle": 3.04,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "A",
+              "AA",
+              "BB",
+              "CC",
+              "DD",
+              "EE",
+              "FF",
+              "GG",
+              "HH",
+              "II",
+              "JJ",
+              "KK",
+              "LL",
+              "MM",
+              "NN",
+              "N",
+              "M",
+              "L",
+              "K",
+              "J",
+              "I",
+              "H",
+              "G",
+              "F",
+              "E",
+              "D",
+              "C",
+              "B"
             ],
             "rowStart": 20,
-            "rowCount": 22
+            "rowCount": 23
           }
         ]
       ],
@@ -287,13 +317,15 @@
           "elevationGap": 2
         },
         {
-          "rows": 22,
+          "rows": 23,
           "depth": 0.84,
           "rise": 0.43,
           "gap": 0,
           "elevationGap": 0
         }
-      ]
+      ],
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     },
     "rutgers": {
       "source": "https://scarletknights.com/sports/2017/6/11/tickets-rac-seating-html",
@@ -417,11 +449,11 @@
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Official 2026–27 map gives 100– and 200-level section IDs 101–126 and 201–226. A/B/C sub-sections in 200 level and media voids not yet separately traced.",
+      "notes": "Official 2026–27 plan puts 101 near north center; numbers increase clockwise east, south, west. 200 level 201–214 wraps east/south-east, 215 is MEDIA (no audience section), 216–226 wraps south-west/west/north. Exact section taper and 3D seat XYZ remain estimated.",
       "tiers": [
         [
           {
-            "startAngle": 0.32,
+            "startAngle": 3.05,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
@@ -457,33 +489,50 @@
         ],
         [
           {
-            "startAngle": 0.32,
-            "spanAngle": 6.283185307179586,
+            "startAngle": 3.04,
+            "spanAngle": 3.08,
             "sectionIds": [
               "201",
               "202",
               "203",
               "204",
               "205",
-              "206",
+              "206A",
+              "206B",
+              "206C",
               "207",
               "208",
               "209",
-              "210",
-              "211",
+              "210A",
+              "210B",
+              "211A",
+              "211B",
+              "211C",
               "212",
               "213",
-              "214",
-              "215",
+              "214"
+            ],
+            "rowStart": 1,
+            "rowCount": 18
+          },
+          {
+            "startAngle": 0.17,
+            "spanAngle": 2.8,
+            "sectionIds": [
               "216",
               "217",
               "218",
-              "219",
+              "219A",
+              "219B",
+              "219C",
               "220",
               "221",
               "222",
-              "223",
-              "224",
+              "223A",
+              "223B",
+              "224A",
+              "224B",
+              "224C",
               "225",
               "226"
             ],
@@ -507,7 +556,9 @@
           "gap": 0,
           "elevationGap": 0
         }
-      ]
+      ],
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     },
     "usc": {
       "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/uscdev.sidearmsports.com/documents/2026/6/29/2026-27_MBB_PSM_pricing_-_For_Print.pdf",
@@ -607,11 +658,11 @@
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Official Kohl Center basketball charts identify 101–128, 201–228, 301–328. Distinct overhang geometry is still pending.",
+      "notes": "Official Kohl map places 101,201,301 north-center, numbers advancing clockwise down the east wall through 108,208,308, south student sections 114–117,214–216,314–316, then west 122s. Exact section taper and 3D seat XYZ remain estimated.",
       "tiers": [
         [
           {
-            "startAngle": 0.22,
+            "startAngle": 2.94,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
@@ -649,7 +700,7 @@
         ],
         [
           {
-            "startAngle": 0.22,
+            "startAngle": 2.94,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "201",
@@ -687,7 +738,7 @@
         ],
         [
           {
-            "startAngle": 0.22,
+            "startAngle": 2.94,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "301",
@@ -746,7 +797,9 @@
           "gap": 0,
           "elevationGap": 0
         }
-      ]
+      ],
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     },
     "penn-state": {
       "source": "https://bjc.psu.edu/events/seating-charts",
@@ -958,11 +1011,11 @@
       "chartIds": "historical-checked-current-page",
       "rowLabels": "documented",
       "geometry": "estimated",
-      "notes": "Official 2026–27 page documents lower rows 1–9 bench and 13–28 chairs and upper rows 1–13 chairs, 14–19 benches. 2023 seating chart confirms actual section IDs; 10–12 lower aisle/row handling requires separate geometry validation. Lower seating row labels 10–12 are excluded from synthetic placement, preserving the documented 9→13 transition.",
+      "notes": "The map shows section 101 on west, upper 109–113 across the north upper sidelines, and 201–236 outside. Lower 10–12 skip is documented by current seating policy. Exact section taper and 3D seat XYZ remain estimated.",
       "tiers": [
         [
           {
-            "startAngle": 0.34,
+            "startAngle": 1.52,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
@@ -999,7 +1052,7 @@
         ],
         [
           {
-            "startAngle": 0.34,
+            "startAngle": 1.52,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "201",
@@ -1059,19 +1112,21 @@
           "gap": 0,
           "elevationGap": 0
         }
-      ]
+      ],
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     },
     "illinois": {
-      "source": "https://app.fightingillini.com/2025Reseat",
+      "source": "https://www.statefarmcenter.com/assets/doc/production_guide_19-4d1fa8277a.pdf",
       "layout": "circular-three-ring-with-48-outer-sections",
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Illinois Athletics 2025 seating map identifies 101–120 lower, 121–143 club/middle, 201–248 outer. Courtside 9–13, box footprints and aisle contours are untraced and excluded from verified geometry.",
+      "notes": "Basketball configuration labels 101–120, 121–129, 134–143, 201–248, and separate court-level 9–13. Sections 130–133 are not presented as occupied spectator arcs on this source and are not fabricated. Lower court-level 9–13 require another non-overlapping strip. Exact section taper and 3D seat XYZ remain estimated.",
       "tiers": [
         [
           {
-            "startAngle": 0.22,
+            "startAngle": 1.5,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
@@ -1101,8 +1156,8 @@
         ],
         [
           {
-            "startAngle": 0.22,
-            "spanAngle": 6.283185307179586,
+            "startAngle": 1.62,
+            "spanAngle": 2.5,
             "sectionIds": [
               "121",
               "122",
@@ -1112,11 +1167,15 @@
               "126",
               "127",
               "128",
-              "129",
-              "130",
-              "131",
-              "132",
-              "133",
+              "129"
+            ],
+            "rowStart": 1,
+            "rowCount": 9
+          },
+          {
+            "startAngle": 5.05,
+            "spanAngle": 2.75,
+            "sectionIds": [
               "134",
               "135",
               "136",
@@ -1134,7 +1193,7 @@
         ],
         [
           {
-            "startAngle": 0.22,
+            "startAngle": 1.45,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "201",
@@ -1213,7 +1272,9 @@
           "gap": 0,
           "elevationGap": 0
         }
-      ]
+      ],
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     },
     "maryland": {
       "source": "https://umterps.com/sports/2019/8/19/seating-charts",
@@ -1659,27 +1720,27 @@
       "originalChart": "https://goducks.com/sports/2016/9/21/210388387"
     },
     "purdue": {
-      "source": "https://purduesports.com/mens-basketball-game-day-information",
+      "source": "https://purduesports.com/mens-basketball-ticket-information",
       "layout": "circular-18-section-inner-and-outer",
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Purdue's 2026 seating diagram confirms inner 01–18 and outer 101–118. Circulation notches, chair rows and premium seat additions have not been surveyed.",
+      "notes": "Official Mackey chart prints section numbers 1–18 (no leading zero) with 101–118 outer. Clockwise orientation anchored at section 1 on the lower-left/baseline. Exact section taper and 3D seat XYZ remain estimated. 1–18 is not 01–18.",
       "tiers": [
         [
           {
-            "startAngle": 0.07,
+            "startAngle": 0.08,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
-              "01",
-              "02",
-              "03",
-              "04",
-              "05",
-              "06",
-              "07",
-              "08",
-              "09",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
               "10",
               "11",
               "12",
@@ -1696,7 +1757,7 @@
         ],
         [
           {
-            "startAngle": 0.07,
+            "startAngle": 0.08,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
@@ -1739,7 +1800,9 @@
           "elevationGap": 0
         }
       ],
-      "originalChart": "https://purduesports.com/mens-basketball-ticket-information"
+      "originalChart": "https://purduesports.com/mens-basketball-ticket-information",
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     },
     "washington": {
       "source": "https://gohuskies.evenue.net/list/MB",
@@ -1747,11 +1810,11 @@
       "chartIds": "documented",
       "rowLabels": "partially-documented",
       "geometry": "estimated",
-      "notes": "Washington official 2025–26 men's ticket map shows sections 1–14 and tiered row bands 1–13 and 14–31, rather than invented 100/200 identifiers. Dawg Pack and ADA recesses have not been traced.",
+      "notes": "Official floor map places section 1 top-center, 2 to its right, then 3–6 east, 7–9 south and 10–14 west/north. Both row bands use the same section IDs. Exact section taper and 3D seat XYZ remain estimated.",
       "tiers": [
         [
           {
-            "startAngle": 0.39,
+            "startAngle": 3,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "1",
@@ -1775,7 +1838,7 @@
         ],
         [
           {
-            "startAngle": 0.39,
+            "startAngle": 3,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "1",
@@ -1813,7 +1876,9 @@
           "gap": 0,
           "elevationGap": 0
         }
-      ]
+      ],
+      "spatialLabelStatus": "official-section-labels-and-neighbors",
+      "sectionCoordinateStatus": "angular-boundaries-and-row-widths-are-unverified"
     }
   }
 }
