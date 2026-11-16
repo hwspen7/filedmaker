@@ -8,10 +8,12 @@ import { seatColor } from '../seatPresentation.mjs';
 import { SCHOTTENSTEIN_CHART_URL, SCHOTTENSTEIN_REFERENCE_VIEWS, SCHOTTENSTEIN_COURT_SOURCE, SCHOTTENSTEIN_BOARD_SOURCE } from '../schottensteinSeating.mjs';
 import { NativeVenueRenderer } from './webgl.js';
 import { createProceduralProject, PROCEDURAL_DEMOS } from './engines/factory.mjs';
+import {loadBigTenCatalog,toBigTenProceduralSpec} from './bigTenCatalog.mjs';
 const $=id=>document.getElementById(id);
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
 let seatsBySection=new Map();
 let areaLabels=[],visibleAreaLabels=[];
+let bigTenCatalogRequest=null,bigTenRequestId=0;
 const palettePresets={
   slate:['#5e747e','#7b9099','#97aab2','#bacbd1'],
   navy:['#255583','#3f79a6','#76a7cd','#aacbe2'],
@@ -24,7 +26,38 @@ function download(filename,content,type='application/json'){
   a.href=u;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);
 }
 function error(message){$('warnings').textContent=limited(message);$('warnings').style.color='#a04444';}
+async function setBigTenVenue(id){
+  const request=++bigTenRequestId;
+  try{
+    $('loading').hidden=false;
+    if(!bigTenCatalogRequest){
+      bigTenCatalogRequest=loadBigTenCatalog().catch(e=>{
+        bigTenCatalogRequest=null;
+        throw e;
+      });
+    }
+    const {venues,sectionProfiles,architecturalSignatures}=await bigTenCatalogRequest;
+    if(request!==bigTenRequestId)return;
+    const venue=venues.find(item=>item.id===id&&item.id!=='ohio-state');
+    if(!venue)throw Error('Big Ten school not found: '+id);
+    const spec=toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures);
+    project=createProceduralProject(spec);
+    selected=null;
+    mode='overview';
+    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('[data-bigten]').forEach(b=>
+      b.classList.toggle('active',b.dataset.bigten===id));
+    renderProject();
+  }catch(e){
+    if(request===bigTenRequestId)error('Unable to open '+id+': '+e.message);
+  }finally{
+    if(request===bigTenRequestId)$('loading').hidden=true;
+  }
+}
+
 function setPreset(name){
+  ++bigTenRequestId;
+  document.querySelectorAll('[data-bigten]').forEach(b=>b.classList.remove('active'));
   try{
     if(name==='ohio')project=createOhioStadiumProject();
     else if(name==='schott')project={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
@@ -147,8 +180,12 @@ function renderProject(){
     renderer?.setViewOptions({target:'center',zoom:1});
     const name=project.school?.venue||project.title;
     $('title').textContent=name.replace(/ — .*/, '');
-    const seating=plan.hasRoster?'ticket roster loaded':model.proceduralGeometry?'six-engine procedural demonstration':model.seatingRows?'capacity-matched reconstruction':'estimated seating arrangement';
-    $('subtitle').textContent=`${project.city||'United States'} · ${model.surface.label} · ${seating}`;
+    const bigTenReference=project.proceduralVenue?.provenance?.category==='estimated-parametric';
+    const seating=plan.hasRoster?'ticket roster loaded':
+      bigTenReference?'chart-mapped study, geometry unverified':
+      model.proceduralGeometry?'six-engine procedural demonstration':
+      model.seatingRows?'capacity-matched reconstruction':'estimated seating arrangement';
+    $('subtitle').textContent=`${project.school?.school||project.city||'United States'} · ${model.surface.label} · ${seating}`;
     $('officialCapacity').textContent=plan.official.officialCapacity===null?'Not published':fmt(plan.official.officialCapacity);
     const capacitySource=$('capacitySource');
     capacitySource.textContent='No verified capacity supplied';
@@ -166,7 +203,9 @@ function renderProject(){
     $('capacityNote').textContent=plan.hasRoster
       ?`Imported ${fmt(plan.official.inventoryCount)} ticket IDs. ${plan.official.officialCapacity===null?'Official capacity not supplied.':`Published capacity ${fmt(plan.official.officialCapacity)}. Inventory difference ${fmt(plan.official.inventoryVsOfficial)}.`} Coordinates remain ${project.ticketing.coordinates==='estimated'?'estimated':'unverified'} until validated.`
       :model.proceduralGeometry
-        ?`This is a synthetic venue, not a real stadium. ${fmt(model.seats.length)} estimated seats. Target ${fmt(model.proceduralSpec.targetCapacity??0)} is illustrative and not a published capacity.`
+        ?bigTenReference
+          ?`School-published capacity: ${fmt(model.proceduralSpec.targetCapacity)}. ${fmt(model.seats.length)} generated seat locations. Exact row geometry, accessibility, sightlines and exterior details remain unverified; no official seat inventory is provided.`
+          :`This is a synthetic venue, not a real stadium. ${fmt(model.seats.length)} estimated seats. Target ${fmt(model.proceduralSpec.targetCapacity??0)} is illustrative and not a published capacity.`
         :model.seatingRows
           ?`The model contains ${fmt(model.seats.length)} seats. The section chart and published rows guide their placement. Individual seat positions and sightlines are approximate.`
         :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
@@ -179,7 +218,7 @@ function renderProject(){
     }
     $('rowsCount').textContent=fmt(plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
     $('kindCount').textContent=plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
-    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':model.proceduralGeometry?'Procedural 3D preview':model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
+    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':bigTenReference?'Source-mapped · estimated':model.proceduralGeometry?'Procedural 3D preview':model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
     $('modelStatus').innerHTML='<span class="pulse"></span> '+(plan.hasRoster?'Roster / geometry unverified':'Schematic preview');
     $('reviewFlag').textContent=plan.hasRoster?'ROSTER':'REFERENCE';
     $('warnings').style.color='';$('warnings').textContent=plan.engineAudit&&!plan.engineAudit.passed
@@ -274,7 +313,7 @@ function updateReferencePhoto(seat){
 function view(which){
   if(which!=='top'&&!renderer)return;
   if(which==='building')which='overview'; // Compatibility with older URLs.
-  if(which==='human'&&!selected&&model.seatingRows)pickReferenceSeat(SCHOTTENSTEIN_REFERENCE_VIEWS[0]);
+  if(which==='human'&&!selected&&model.sectionFootprints)pickReferenceSeat(SCHOTTENSTEIN_REFERENCE_VIEWS[0]);
   if(which==='human'&&!selected){error('Choose a seat to enter seat view.');return;}
   if(which==='section'&&!selected){error('Choose a seat or search an identifier before focusing a section.');return;}
   mode=which;
@@ -285,7 +324,7 @@ function view(which){
   const basketball=plan.surface.sport==='basketball';
   for(const option of $('cameraTarget').options)if(option.value!=='center')option.hidden=!basketball;
   $('viewport3d').hidden=which==='top';$('viewport2d').hidden=which!=='top';
-  $('viewLabel').textContent=({overview:'Whole arena / building and seating',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
+  $('viewLabel').textContent=({overview:'Whole arena / building and seating',exterior:'Complete building exterior and roof',top:'2D seating map',section:'Selected section / close-up',human:'View from selected seat'})[which];
   $('viewHint').textContent=which==='top'
     ?(plan.features.length?'Select a section · Gold dots mark venue features':model.sectionFootprints?'Select a numbered section':'Select a seat on the map')
     :which==='human'?'Drag to look around · Scroll to change field of view':'Drag to orbit · Scroll to zoom · Click a seat';
@@ -452,6 +491,7 @@ for(const reference of SCHOTTENSTEIN_REFERENCE_VIEWS){
   $('referenceButtons').append(button);
 }
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>setPreset(b.dataset.preset));
+document.querySelectorAll('[data-bigten]').forEach(b=>b.onclick=()=>setBigTenVenue(b.dataset.bigten));
 $('generateVenue').onclick=()=>{
   try{
     const sport=$('generateSurface').value;
