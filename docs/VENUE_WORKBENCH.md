@@ -195,3 +195,42 @@ size limit. Reopening large projects without embedded pages requires the
 original PDF attachment and staff review. Synthetic PDF fixtures verify
 actual browser rendering, page selection, label suggestions, and the deliberate
 absence of claims for text-free pages.
+
+
+## Real public school document acceptance (separate evidence track)
+
+The real-world test track uses publicly published school and architectural
+documents, unlike the separately labeled 1,500-seat synthetic gym fixture.
+It reads only facts actually printed in the sources:
+
+- Aiken High School Taylor Gym: banks A/B/C/D = 284/431/431/272,
+  published 1,418 bleacher positions.
+- Sanderson High School: 461 and 468 NET seats in two banks; 592 GROSS
+  per bank is **not** an additional ticket inventory. The plan also
+  identifies 12 accessible positions that require a separate review.
+- Hatton School: three seating banks = 485/180/653, total 1,318.
+- Howard County Middle School No. 20: drawing says 180 seats plus
+  1 wheelchair position; source count groups are NOT row inventories.
+- Northview Junior Academy: vendor reports approximately 534, which is
+  never represented as an exact ticketed capacity.
+- Wills Point High School: seating sectors 1/2/3 are labeled, but the
+  published venue document does not supply detailed row counts.
+
+For all such cases the software MUST report missing independently verified
+row inventories and calibrated section geometry. It MUST NOT turn bank totals
+into fabricated row configurations and pass the resulting 3D scene off as an
+official model. A small Bay Port High School Performing Arts Center row-label
+sample tests the generic parser's odd/even and reverse numbering; it is an
+**out-of-scope auditorium** and is not reclassified as a basketball court.
+
+The separate GitHub Actions workflow 'Real School PDF Acceptance' downloads
+live public PDFs, fingerprints the actual bytes, opens them in the real
+operator workbench through headless Chrome, checks PDF page navigation, and
+verifies that no sections or seats appear without staff tracing and real row
+data. Public sources or their host servers may go offline. Such failures
+are explicitly reported; synthetic PDFs are never substituted as a false
+positive. Source PDFs are kept in the temporary CI workspace only. Reports
+and browser screenshots can be retained as ephemeral test artifacts.
+
+This track proves import and honest handling of incomplete documents.
+It does not certify the real-world seat map or architectural accuracy.
