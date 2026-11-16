@@ -41,7 +41,7 @@ every seat or section polygon has been verified.
 | Ohio State — Schottenstein Center | Specialized traced OSU chart contours | Row-aligned three-level concrete mesh | Survey-grade seats, full ADA and authoritative building CAD |
 | Indiana — Assembly Hall | Official opposing stand and balcony labels | Independent two-side bank geometry | Main/balcony outer limits and courtside SEC 1–10 |
 | Purdue — Mackey Arena | Verified 1–18 and 101–118 labels | Circular two-ring bowl | Premium/courtside seat inventory and physical portals |
-| Illinois — State Farm Center | Verified three-ring numbering | Three-ring individual bowl with club gap | Courtside blocks and suite/accessible footprints |
+| Illinois — State Farm Center | Verified three-ring numbering | Three-ring individual bowl with club gap | Courtside 9–13 modeled from published row labels; suite/accessible footprints remain estimated |
 | Iowa — Carver-Hawkeye Arena | 28 full-height continuous lettered sections | Connected row bands without fake level | Section row extents and ADA platform coordinates |
 | Michigan State — Breslin Center | Real 100/200 IDs and documented row 9→13 | Separately shaped levels | Section-specific portals and seating widths |
 | Wisconsin — Kohl Center | Three 100/200/300 chart rings | Three-tier faceted overhang model | N/SC/CC premium blocks and exact offset |
@@ -93,3 +93,20 @@ ticketing images, validating rows and portal polygons, comparing multiple
 camera elevations, and separately inspecting the resulting scene. Until
 those tasks are supported by evidence, a visually attractive schematic
 must not be called a fully verified arena.
+
+### Illinois State Farm Center visual correction
+
+The earlier 3D overview displayed a thick gray ring even after the exterior
+facade was hidden. That ring came from the generic concourse, gallery soffit,
+roofDeck and backWall layers. The interior renderer now displays only the
+seat-row treads, fascias, aisle edges and actual seat instances for non-OSU
+bowl interiors. The *Building exterior* mode continues to show the shell.
+
+The Illinois 100 lower deck now uses a court-oriented rounded-rectangle
+contour rather than the same circular curve as its 200-level upper gallery.
+Published section-specific row spans are applied to 101, 102, 110, 119, 121,
+125, 127 and 201, including the A/B/C lettered courtside-leading rows and
+the 201 first present row 6. Documented east-side student seating sections
+9–13 are now represented as separate court-edge seating banks with authentic
+row labels. Their specific chair coordinates, platform edges and row widths
+remain *diagram-derived estimates*, not authoritative seat inventory.
