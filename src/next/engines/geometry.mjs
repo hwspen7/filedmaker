@@ -128,6 +128,58 @@ export const GeometryEngine={
         return output;
       });
     })();
+    // First-wave school interiors are independently profiled. Reference
+    // section numbers are sourced, but contours and notch footprints remain
+    // visually interpreted rather than measured survey coordinates.
+    const interior=input.interior==null?null:(()=>{
+      const raw=input.interior;
+      if(!raw||typeof raw!=='object'||Array.isArray(raw))
+        throw Error('Invalid school interior profile');
+      const outlines=new Set(['grandstands','circle','ellipse','rounded-rectangle','octagon','rectangle']);
+      if(!outlines.has(raw.outline))throw Error('Unsupported interior outline');
+      if(!Array.isArray(raw.tierProfiles)||raw.tierProfiles.length!==tiers.length)
+        throw Error('Interior must have an independent geometry profile for every tier');
+      const tierProfiles=raw.tierProfiles.map((t,i)=>({
+        widthScale:finite(t.widthScale,'Interior tier width '+i,.88,1.2),
+        lengthScale:finite(t.lengthScale,'Interior tier length '+i,.88,1.2),
+        radialInset:finite(t.radialInset,'Interior tier radial inset '+i,-3.5,3.5),
+        rake:finite(t.rake,'Interior tier rake '+i,-2,2),
+        wave:finite(t.wave,'Interior tier wave '+i,0,1.5)
+      }));
+      const sectionExists=(id,tier)=>sectionMap?.[tier]?.some(group=>group.sectionIds.includes(id));
+      const sectionRules=(raw.sectionRules??[]).map(rule=>{
+        const tier=integer(rule.tier,'Interior rule tier',0,tiers.length-1);
+        const id=String(rule.id);
+        if(!sectionExists(id,tier))throw Error('Unknown interior section '+id+' in tier '+tier);
+        return {tier,id,
+          frontRows:integer(rule.frontRows??0,'Interior front trim',0,tiers[tier].rows),
+          rearRows:integer(rule.rearRows??0,'Interior rear trim',0,tiers[tier].rows)};
+      });
+      const notches=(raw.notches??[]).map(notch=>{
+        const tier=integer(notch.tier,'Notch tier',0,tiers.length-1),id=String(notch.id);
+        if(!sectionExists(id,tier))throw Error('Unknown interior notch section '+id);
+        return {tier,id,
+          fromRow:integer(notch.fromRow,'Notch first row',1,100),
+          toRow:integer(notch.toRow,'Notch final row',1,100),
+          at:finite(notch.at,'Notch location',.05,.95),
+          span:finite(notch.span,'Notch section fraction',.025,.4)};
+      });
+      const seatTypes=(raw.seatTypes??[]).map(type=>{
+        const tier=integer(type.tier,'Seat material tier',0,tiers.length-1);
+        const sections=type.sections??null;
+        if(sections&&(!Array.isArray(sections)||sections.some(id=>!sectionExists(id,tier))))
+          throw Error('Unknown bleacher section in interior profile');
+        if(!['chair','bleacher'].includes(type.kind))throw Error('Unknown interior seat material');
+        return {tier,fromRow:integer(type.fromRow,'Seat material first row',1,100),
+          toRow:integer(type.toRow,'Seat material last row',1,100),
+          sections:sections?[...sections]:null,kind:type.kind};
+      });
+      return {type:String(raw.type??'').slice(0,80),outline:raw.outline,
+        tierProfiles,sectionRules,notches,seatTypes,
+        source:String(raw.source??'').slice(0,512),
+        notes:String(raw.notes??'').slice(0,600),
+        geometryStatus:'chart-informed-unsurveyed'};
+    })();
     const rawVoids=input.voids??[];
     if(!Array.isArray(rawVoids)||rawVoids.length>256)throw Error('Too many restricted seating regions');
     const voids=rawVoids.map(v=>{
@@ -141,7 +193,7 @@ export const GeometryEngine={
       name:String(input.name??'Procedural venue').slice(0,100),surface,field,tiers,sections,
       clearance:tiers[0].frontRadiusOffset,aisleWidth,seatPitch:pitch,roundness:exponent,
       targetCapacity:capacity,capacityTolerance:finite(input.capacityTolerance??.02,'Capacity tolerance',0,.2),
-      exterior,
+      exterior,interior,
       template:input.template==='open-stadium'?'open-stadium':'indoor-arena',voids,sectionMap};
   },
   create(input){
@@ -154,8 +206,80 @@ export const GeometryEngine={
       const t=spec.tiers[tier];if(!t)throw Error('Invalid tier index');
       if(!Number.isFinite(angle)||!Number.isFinite(fraction))throw Error('Non-finite sampling coordinates');
       const d=t.frontRadiusOffset+t.rows*t.depth*fraction+offset;
-      const r=radial(angle,field.width/2+d,field.length/2+d);
-      return {x:r*Math.cos(angle),y:t.baseY+t.rows*t.rise*fraction,z:r*Math.sin(angle)};
+      const p=spec.interior?.tierProfiles[tier];
+      let r;
+      if(p){
+        const rx=Math.max(field.width/2+2,(field.width/2+d+p.radialInset)*p.widthScale);
+        const rz=Math.max(field.length/2+2,(field.length/2+d+p.radialInset)*p.lengthScale);
+        const c=Math.abs(Math.cos(angle)),z=Math.abs(Math.sin(angle));
+        switch(spec.interior.outline){
+          case 'circle':
+            r=Math.max(field.length/2+2,field.length/2+d+p.radialInset);
+            break;
+          case 'ellipse':
+            r=1/Math.hypot(c/rx,z/rz);
+            break;
+          case 'octagon':
+            r=1/Math.max(c/rx,z/rz,(c/rx+z/rz)/Math.SQRT2);
+            break;
+          case 'rectangle':{
+            const box=1/Math.max(c/rx,z/rz);
+            r=box*.77+radial(angle,rx,rz)*.23;
+            break;
+          }
+          case 'grandstands':{
+            const box=1/Math.max(c/rx,z/rz);
+            r=box*.58+radial(angle,rx,rz)*.42;
+            break;
+          }
+          default:r=radial(angle,rx,rz);
+        }
+        r+=p.wave*Math.cos(4*angle)*(0.25+fraction*.75);
+      }else r=radial(angle,field.width/2+d,field.length/2+d);
+      return {x:r*Math.cos(angle),
+        y:t.baseY+t.rows*t.rise*fraction+(p?.rake??0)*fraction*(1-fraction),
+        z:r*Math.sin(angle)};
+    };
+    const banksForTier=tier=>{
+      const groups=spec.sectionMap?.[tier.index];
+      if(!groups)return Array.from({length:spec.sections},(_,i)=>({
+        sectionId:String(i+1),sectionIndex:i,lo:i*TAU/spec.sections,
+        hi:(i+1)*TAU/spec.sections,rowStart:1,rowCount:tier.rows,skipRows:[]
+      }));
+      const result=[];
+      for(const group of groups){
+        const total=group.weights.reduce((sum,w)=>sum+w,0);
+        let covered=0;
+        for(let k=0;k<group.sectionIds.length;k++){
+          const lo=group.startAngle+group.spanAngle*covered/total;
+          covered+=group.weights[k];
+          const hi=group.startAngle+group.spanAngle*covered/total;
+          result.push({sectionId:group.sectionIds[k],sectionIndex:result.length,
+            lo,hi,rowStart:group.rowStart,rowCount:group.rowCount,
+            skipRows:group.skipRows});
+        }
+      }
+      return result;
+    };
+    const rowIntervals=(tier,bank,slot)=>{
+      const {sectionId,lo:start,hi:end,rowStart,rowCount,skipRows=[]}=bank;
+      if(slot<0||slot>=rowCount||skipRows.includes(rowStart+slot))return [];
+      const rule=spec.interior?.sectionRules.find(r=>
+        r.tier===tier.index&&r.id===sectionId);
+      if(rule&&(slot<rule.frontRows||slot>=rowCount-rule.rearRows))return [];
+      const center=point(tier.index,(start+end)/2,(slot+.5)/tier.rows);
+      const margin=spec.aisleWidth/Math.max(1,Math.hypot(center.x,center.z))*.5;
+      let intervals=[[start+margin,end-margin]].filter(([a,b])=>b>a+1e-5);
+      for(const notch of spec.interior?.notches??[]){
+        if(notch.tier!==tier.index||notch.id!==sectionId||
+          rowStart+slot<notch.fromRow||rowStart+slot>notch.toRow)continue;
+        const mid=start+(end-start)*notch.at,half=(end-start)*notch.span*.5;
+        const low=mid-half,high=mid+half;
+        intervals=intervals.flatMap(([a,b])=>[
+          [a,Math.min(b,low)],[Math.max(a,high),b]
+        ].filter(([p,q])=>q>p+1e-5));
+      }
+      return intervals;
     };
     const voidAt=(tier,section,row)=>spec.voids.some(v=>v.tier===tier&&v.section===section&&row>=v.firstRow&&row<=v.lastRow);
     const aisleAt=(angle,tier,sectionWidth=spec.aisleWidth)=>{
@@ -164,7 +288,8 @@ export const GeometryEngine={
       const local=((angle%sector)+sector)%sector;
       return Math.min(local,sector-local)<half;
     };
-    return {spec,point,voidAt,aisleAt,sectorAngle:TAU/spec.sections,turn:TAU};
+    return {spec,point,voidAt,aisleAt,banksForTier,rowIntervals,
+      sectorAngle:TAU/spec.sections,turn:TAU};
   }
 };
 export default GeometryEngine;
