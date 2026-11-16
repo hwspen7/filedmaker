@@ -437,3 +437,70 @@ test('MSU rows, Wisconsin overhang, UCLA subsection IDs and Washington entries s
   assert.ok(entry.reduce((sum,[a,b])=>sum+b-a,0)<full*.96,
     'Entrances must remove actual model positions and tread geometry');
 });
+
+
+test('eight school section sets and clockwise positions are exactly chart-backed without invented IDs',()=>{
+  const chart=JSON.parse(readFileSync(
+    new URL('../data/big-ten/section-chart-verified-order.json',import.meta.url)));
+  const ids=['indiana','purdue','illinois','iowa','michigan-state','wisconsin','ucla','washington'];
+  for(const id of ids){
+    const spec=toProceduralSpec(get(id));
+    const expected=chart.venues[id];
+    const actual=new Set(spec.sectionMap.flatMap(level=>level.flatMap(group=>group.sectionIds)));
+    assert.deepEqual([...actual].sort(),[...expected.verifiedSections].sort(),
+      id+' must contain exactly the official diagram section IDs');
+    assert.equal(spec.provenance.verifiedChartSource,expected.source);
+    assert.equal(spec.provenance.sectionOutlineProvenance,'official-adjacency-estimated-shape');
+    assert.ok(spec.provenance.notice.includes('unverified'),id);
+    for(const missing of expected.unmodeledSections??[])
+      assert.ok(!actual.has(missing),id+' fabricated still-unmapped official section '+missing);
+    for(const level of spec.sectionMap){
+      for(const group of level)assert.ok(group.sectionIds.length,
+        id+' must not include empty synthetic chart blocks');
+    }
+  }
+  const purdue=toProceduralSpec(get('purdue'));
+  assert.deepEqual(purdue.sectionMap[0][0].sectionIds,
+    Array.from({length:18},(_,i)=>String(i+1)));
+  assert.ok(!purdue.sectionMap[0][0].sectionIds.includes('01'));
+  const iowa=toProceduralSpec(get('iowa'));
+  const first=iowa.sectionMap[0][0].sectionIds,second=iowa.sectionMap[1][0].sectionIds;
+  assert.equal(first.length,28);
+  assert.deepEqual(first,second,'Iowa has 28 continuous section columns, not separate lettered floors');
+  assert.deepEqual(first.slice(0,5),['A','AA','BB','CC','DD']);
+  assert.deepEqual(first.slice(-4),['E','D','C','B']);
+  const illinois=toProceduralSpec(get('illinois'));
+  assert.equal(illinois.sectionMap[1].length,2,
+    'Documented east-side Illinois suites separate its middle seating banks');
+  assert.ok(!illinois.sectionMap[1].some(g=>g.sectionIds.includes('130')));
+  assert.deepEqual(illinois.provenance.unmodeledDocumentedSections,['9','10','11','12','13']);
+  const ucla=toProceduralSpec(get('ucla'));
+  assert.equal(ucla.sectionMap[1].length,2,
+    'UCLA 215 is a source-verified media interruption, not a spectator section');
+  assert.ok(!ucla.sectionMap[1].some(g=>g.sectionIds.includes('215')));
+  for(const tier of ucla.sectionMap[1])assert.ok(tier.sectionIds.length>0);
+  for(const id of ['indiana','purdue','illinois','iowa','michigan-state','wisconsin','ucla']){
+    assert.equal(toProceduralSpec(get(id)).interior.notches.length,0,
+      id+' must not insert undocumented hand-drawn portal holes');
+  }
+  const washington=toProceduralSpec(get('washington'));
+  assert.equal(washington.interior.notches.length,2,
+    'Washington row 10 and 14 documented portals may remain');
+  assert.ok(washington.interior.notches.every(x=>x.id==='1'));
+});
+
+test('source verification guard rejects a fabricated section not present on official chart',()=>{
+  const chart=JSON.parse(readFileSync(
+    new URL('../data/big-ten/section-chart-verified-order.json',import.meta.url))).venues;
+  const sections=JSON.parse(readFileSync(
+    new URL('../data/big-ten/reference-section-layouts.json',import.meta.url))).layouts;
+  const architecture=JSON.parse(readFileSync(
+    new URL('../data/big-ten/architectural-signatures.json',import.meta.url))).venues;
+  const interior=JSON.parse(readFileSync(
+    new URL('../data/big-ten/interior-reconstructions.json',import.meta.url))).venues;
+  const fake=structuredClone(chart);
+  fake.purdue.tierGroups[0][0].sectionIds[2]='FAKE';
+  assert.throws(()=>toBigTenProceduralSpec(get('purdue'),sections,architecture,interior,fake),
+    /Chart section identity mismatch/,
+    'Unknown section IDs must never silently become 3D seating');
+});
