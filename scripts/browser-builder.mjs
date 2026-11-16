@@ -119,6 +119,35 @@ async function main(){
     writeFileSync(filepath,Buffer.from(frame.data,'base64'));
     if(statSync(filepath).size<12000)throw Error('Builder canvas screenshot is suspiciously small');
     console.log('Builder browser acceptance passed; screenshot '+filepath);
+    // A single training hall must show three distinct basketball surfaces.
+    await evaluate("(()=>{window.confirm=()=>true;const a=document.querySelector('#activity');a.value='training';document.querySelector('#newProject').click();})()");
+    const training=await poll(async()=>await evaluate("({courts:[...document.querySelectorAll('.object-button')].filter(x=>x.textContent.includes('Basketball court')).length,hoops:[...document.querySelectorAll('.object-button')].filter(x=>x.textContent.includes('Basketball hoop')).length,parts:document.querySelectorAll('.object-button').length})"));
+    if(training.courts!==3||training.hoops!==6||training.parts<15)
+      throw Error('Three-court training layout is incomplete: '+JSON.stringify(training));
+    await delay(450);
+    const trainingShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    writeFileSync(join(output,'venue-builder-three-courts.png'),
+      Buffer.from(trainingShot.data,'base64'));
+    // Assemblies are user-inserted groups, not background sample geometry.
+    const assembled=await evaluate("(()=>{const before=document.querySelectorAll('.object-button').length;document.querySelectorAll('.assembly')[0].click();return {before,after:document.querySelectorAll('.object-button').length}})()");
+    if(assembled.after-assembled.before!==3)
+      throw Error('Basketball assembly did not insert court and two hoops: '+JSON.stringify(assembled));
+    // Switching a stand to arc must regenerate its real seat inventory.
+    await evaluate("(()=>{document.querySelector('#activity').value='basketball';document.querySelector('#newProject').click();document.querySelector('.object-button').click();const shape=document.querySelector('#fieldList select');shape.value='arc';shape.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    const arc=await evaluate("({seats:document.querySelector('#seatCount').textContent,shape:document.querySelector('#fieldList select')?.value,arcField:[...document.querySelectorAll('#fieldList label')].some(x=>x.textContent.includes('Total arc angle'))})");
+    if(arc.shape!=='arc'||!arc.arcField||arc.seats===initial.seats)
+      throw Error('Curved seating did not regenerate: '+JSON.stringify(arc));
+    await delay(400);
+    const arcShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    writeFileSync(join(output,'venue-builder-curved-seating.png'),
+      Buffer.from(arcShot.data,'base64'));
+    // Import a tiny offline OBJ asset and ensure provenance stays attached.
+    await evaluate("(()=>{const file=new File(['v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3'],'cube.obj',{type:'text/plain'});const dt=new DataTransfer();dt.items.add(file);const input=document.querySelector('#assetFile');input.files=dt.files;document.querySelector('#assetLicense').value='CC0';input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    const imported=await poll(async()=>await evaluate("({selected:document.querySelector('#selectionType')?.textContent,provenance:document.querySelector('#fieldList')?.textContent})"));
+    if(imported.selected!=='Imported OBJ model'||!imported.provenance.includes('CC0'))
+      throw Error('OBJ import did not preserve provenance: '+JSON.stringify(imported));
+    console.log('Extended builder acceptance passed: 3 courts, assembly, arc seating, OBJ import');
+
   }finally{
     client?.close();chrome.kill('SIGTERM');server.kill('SIGTERM');
     await delay(150);rmSync(folder,{recursive:true,force:true});
