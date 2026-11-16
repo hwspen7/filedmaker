@@ -1,12 +1,13 @@
 // The Big Ten batch generator and Seat Studio use the same venue conversion.
 // Building and section provenance stay separate from unsurveyed seat XYZ.
-export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures,interiorProfiles={}){
+export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures,interiorProfiles={},verifiedChartPlacements={}){
   if(!venue?.model||!venue.venue||!venue.capacity||!venue.id)
     throw Error('Cannot generate a venue without identity, capacity and geometry');
   const {evidenceLevel,...model}=venue.model;
   const layout=sectionProfiles?.[venue.id]??null;
   const signature=architecturalSignatures?.[venue.id]??null;
   const interior=interiorProfiles?.[venue.id]??null;
+  const chart=verifiedChartPlacements?.[venue.id]??null;
   const base=structuredClone(model);
   if(interior)base.interior=structuredClone(interior);
   if(signature){
@@ -32,6 +33,30 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
         }
       }
     }
+    if(interior&&!chart)throw Error('First-wave interior requires a verified section-chart order: '+venue.id);
+    if(chart){
+      if(!/^https:\/\//.test(chart.source)||chart.spatialPrecision!=='section-label-order-only')
+        throw Error('Chart placement source or evidence precision missing for '+venue.id);
+      if(!Array.isArray(chart.tierGroups)||chart.tierGroups.length!==base.tiers.length)
+        throw Error('Official chart tier count mismatch for '+venue.id);
+      const weights=new Map();
+      for(const groups of base.sectionMap)for(const group of groups)
+        group.sectionIds.forEach((id,i)=>weights.set(id,group.weights?.[i]??1));
+      const official=new Set(chart.verifiedSections);
+      const found=new Set(chart.tierGroups.flatMap(groups=>groups.flatMap(g=>g.sectionIds)));
+      if(found.size!==official.size||[...found].some(id=>!official.has(id)))
+        throw Error('Chart section identity mismatch for '+venue.id);
+      const omissions=new Set(chart.unmodeledSections??[]);
+      if([...omissions].some(id=>found.has(id)))
+        throw Error('A documented missing section was fabricated for '+venue.id);
+      base.sectionMap=chart.tierGroups.map((groups,tierIndex)=>{
+        const maxRows=Math.max(...groups.map(g=>g.rowCount));
+        if(base.tiers[tierIndex].rows<maxRows)
+          base.tiers[tierIndex].rows=maxRows;
+        return groups.map(g=>({...structuredClone(g),
+          weights:g.sectionIds.map(id=>weights.get(id)??1)}));
+      });
+    }
     base.sections=Math.max(...base.sectionMap.map(groups=>
       groups.reduce((sum,group)=>sum+group.sectionIds.length,0)));
   }
@@ -52,27 +77,33 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
       sourceSectionMap:layout?.source??null,
       buildingReference:signature?.source??null,
       buildingStatus:signature?'landmarks-modeled/unsurveyed':'unmodeled',
-      sectionOutlineProvenance:layout?'estimated-arc':'estimated-uniform',
+      sectionOutlineProvenance:chart?'official-adjacency-estimated-shape':layout?'estimated-arc':'estimated-uniform',
       interiorReference:interior?.source??null,
+      verifiedChartSource:chart?.source??null,
+      verifiedChartSectionIds:chart?.verifiedSections??null,
+      unmodeledDocumentedSections:chart?.unmodeledSections??[],
+      nonSeatChartLabels:chart?.nonSeatLabels??[],
       interiorStatus:interior?'chart-informed-unsurveyed':'unmodeled',
-      notice:'Seats and section boundaries are estimated even when school chart section IDs and row-label ranges are sourced.'
+      notice:chart?'Section labels and circular neighbor order are source backed. Precise outlines, angles, row counts and individual seat coordinates are unverified. Omitted chart areas are intentionally not fabricated.':'Seats and section boundaries are estimated even when school chart section IDs and row-label ranges are sourced.'
     }
   };
 }
 
 export async function loadBigTenCatalog(fetcher=fetch){
   const names=['arenas-2026-27.json','reference-section-layouts.json',
-    'architectural-signatures.json','interior-reconstructions.json'];
+    'architectural-signatures.json','interior-reconstructions.json',
+    'section-chart-verified-order.json'];
   const urls=names.map(name=>new URL('../../data/big-ten/'+name,import.meta.url));
   const data=await Promise.all(urls.map(async url=>{
     const response=await fetcher(url);
     if(!response.ok)throw Error('Cannot load Big Ten venue data: '+response.status);
     return response.json();
   }));
-  const [catalog,sectionFile,architectureFile,interiorFile]=data;
+  const [catalog,sectionFile,architectureFile,interiorFile,chartFile]=data;
   if(catalog.venues?.length!==18)throw Error('Big Ten catalog is incomplete');
   return {venues:catalog.venues,
     sectionProfiles:sectionFile.layouts,
     architecturalSignatures:architectureFile.venues,
-    interiorProfiles:interiorFile.venues};
+    interiorProfiles:interiorFile.venues,
+    verifiedChartPlacements:chartFile.venues};
 }
