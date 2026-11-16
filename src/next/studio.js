@@ -209,6 +209,19 @@ function renderProject(){
         :model.seatingRows
           ?`The model contains ${fmt(model.seats.length)} seats. The section chart and published rows guide their placement. Individual seat positions and sightlines are approximate.`
         :`${fmt(model.seats.length)} modeled positions. Seat coordinates and sightlines are estimated.`;
+    const chartSource=project.proceduralVenue?.provenance?.verifiedChartSource;
+    if(chartSource){
+      const link=document.createElement('a');
+      link.href=chartSource;link.target='_blank';link.rel='noopener';
+      link.textContent='Official seating diagram';
+      link.dataset.role='official-section-chart';
+      $('capacityNote').append(' ',link);
+      const omitted=project.proceduralVenue.provenance.unmodeledDocumentedSections??[];
+      $('capacityNote').append(document.createTextNode(
+        ' · Verified: section labels and order only. Section boundaries, rows and seats remain estimated.'+
+        (omitted.length?' Not yet modeled: '+omitted.join(', ')+'.':'')
+      ));
+    }
     $('referenceViews').hidden=!model.sectionFootprints;
     if(model.sectionFootprints){
       const source=document.createElement('a');
