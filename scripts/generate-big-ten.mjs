@@ -94,6 +94,7 @@ export function toProceduralSpec(venue){
     provenance:{
       category:'estimated-parametric',
       school:venue.school.name,
+      primaryColor:venue.school.primaryColor??null,
       publishedCapacity:venue.capacity.published,
       publishedCapacitySourceId:venue.capacity.sourceId,
       seatMap:venue.evidence.seatMap,
