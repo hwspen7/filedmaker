@@ -7,7 +7,7 @@ import {REAL_SCHOOL_CASES} from './fixtures/actual-school-cases.mjs';
 const source=new URL('../',import.meta.url);
 const read=path=>readFileSync(new URL(path,source),'utf8');
 test('case library includes all documented live cases, two OSU refs and fictional demo',()=>{
-  assert.equal(VENUE_CASES.length,10);
+  assert.equal(VENUE_CASES.length,16);
   assert.equal(VENUE_CASES.filter(c=>c.group==='references').length,2);
   assert.equal(VENUE_CASES.filter(c=>c.group==='schools').length,6);
   assert.equal(VENUE_CASES.filter(c=>c.group==='extended').length,1);
