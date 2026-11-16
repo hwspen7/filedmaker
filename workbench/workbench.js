@@ -1304,6 +1304,7 @@ for(const [button,action] of [
     else{
       command.dx=$('structureGroupDx').value;
       command.dz=$('structureGroupDz').value;
+      if(action==='array')command.copies=$('structureGroupCopies').value;
     }
     commitStructureBatch(command,{
       align:'Align selected component centers',
