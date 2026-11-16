@@ -104,7 +104,8 @@ test('batch generator exports a source-backed venue package and manifest',()=>{
 
 test('Crisler Center uses documented 100/200 identifiers and row-label ranges',()=>{
   const spec=toProceduralSpec(get('michigan'));
-  assert.equal(spec.sectionMap[0][0].sectionIds.length,19);
+  assert.equal(spec.sectionMap[0].reduce((sum,g)=>sum+g.sectionIds.length,0),19);
+  assert.equal(spec.sectionMap[0].length,2,'Actual chart contains a lower-band void');
   assert.equal(spec.sectionMap[1][0].sectionIds.length,36);
   const {model,audit}=generateVenuePackage(spec);
   assert.ok(audit.passed,audit.errors.join('; '));
