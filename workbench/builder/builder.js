@@ -1,13 +1,20 @@
 // FiledMaker Venue Builder — interactive 3D scene canvas, no external libraries.
 // This builder models conceptual event layouts, not official ticket inventory.
-import {PARTS,createProject,addPart,updatePart,removePart,duplicatePart,
-  validateProject,countSeats,seatsForStand,rotatedPoint,
+import {PARTS,ASSEMBLIES,SURFACES,createProject,addPart,placeAssembly,
+  updatePart,removePart,duplicatePart,validateProject,countSeats,
+  seatsForStand,rotatedPoint,curvedLocalPoint,importOBJAsset,
   exportProject,importProject} from '../../src/builder/model.mjs';
 
 const $=id=>document.getElementById(id);
 const canvas=$('scene'),frame=$('canvasFrame'),ctx=canvas.getContext('2d');
-const icons={stand:'▥',stage:'▰',platform:'▭',table:'▣',
-  barrier:'━',tower:'♢',booth:'▤',entrance:'⌂'};
+const icons={
+  stand:'▥',stage:'▰',platform:'▭',table:'▣',barrier:'━',tower:'♢',
+  booth:'▤',entrance:'⌂',basketball_court:'▧',volleyball_court:'▦',
+  badminton_court:'▤',pickleball_court:'▧',futsal_court:'▥',
+  hoop:'♙',net:'━',goal:'▥',ball_rack:'▣',training_bench:'▰',
+  squat_rack:'▥',treadmill:'▤',bike:'♧',mat:'▭',cone:'△',
+  divider:'┃',bleacher:'▤',scoreboard:'▣',speaker:'◈',tent:'⌂'
+};
 const numericFields=[
   ['x','Position X (m)',-200,200,.5],
   ['z','Position Z (m)',-200,200,.5],
@@ -112,6 +119,20 @@ function renderProperties(){
     fields.append(makeField(key,caption,part[key],{min,max,step}));
   }
   if(part.kind==='stand'){
+    const shapeLabel=document.createElement('label');
+    shapeLabel.textContent='Stand geometry';
+    const shape=document.createElement('select');
+    for(const [value,text] of [['straight','Straight stand'],['arc','Curved / arc stand']]){
+      const option=document.createElement('option');
+      option.value=value;option.textContent=text;shape.append(option);
+    }
+    shape.value=part.shape??'straight';
+    shape.addEventListener('change',()=>transact(()=>
+      updatePart(project,selected,{shape:shape.value})));
+    shapeLabel.append(shape);fields.append(shapeLabel);
+    if((part.shape??'straight')==='arc')
+      fields.append(makeField('arcAngle','Total arc angle (degrees)',
+        part.arcAngle??90,{min:15,max:220,step:5}));
     for(const [key,caption,min,max,step] of standFields){
       fields.append(makeField(key,caption,part[key],{min,max,step}));
     }
@@ -122,6 +143,12 @@ function renderProperties(){
     fields.append(total);
   }
   fields.append(makeField('color','Component color',part.color,{type:'color'}));
+  if(part.kind==='custom_model'){
+    const notice=document.createElement('p');notice.className='hint';
+    notice.textContent='Source: '+part.sourceName+' · License: '+part.sourceLicense+
+      '. Check the original asset license before publishing.';
+    fields.append(notice);
+  }
 }
 function renderObjectList(){
   const target=$('objectList');
@@ -157,12 +184,15 @@ function setLayout(activity){
 }
 function installLibrary(){
   const root=$('library');
+  const groups=new Map();
   for(const [kind,item] of Object.entries(PARTS)){
+    if(kind==='custom_model')continue;
+    if(!groups.has(item.group))groups.set(item.group,[]);
     const element=document.createElement('button');
     element.type='button';element.className='part';element.draggable=true;
     element.dataset.kind=kind;
     const symbol=document.createElement('span');
-    symbol.className='part-symbol';symbol.textContent=icons[kind];
+    symbol.className='part-symbol';symbol.textContent=icons[kind]??'◇';
     const name=document.createElement('span');
     name.className='part-name';name.textContent=item.label;
     element.append(symbol,name);
@@ -171,9 +201,54 @@ function installLibrary(){
       event.dataTransfer.effectAllowed='copy';
       event.dataTransfer.setData('text/plain',kind);
     });
-    root.append(element);
+    groups.get(item.group).push(element);
+  }
+  for(const [group,items] of groups){
+    const container=document.createElement('div');
+    container.className='part-group';
+    const heading=document.createElement('h3');
+    heading.textContent=group;container.append(heading);
+    const list=document.createElement('div');
+    list.className='part-grid';
+    list.append(...items);container.append(list);root.append(container);
+  }
+  $('componentSearch').addEventListener('input',event=>{
+    const query=event.target.value.trim().toLowerCase();
+    for(const group of root.querySelectorAll('.part-group')){
+      let found=false;
+      for(const element of group.querySelectorAll('.part')){
+        const visible=!query||element.textContent.toLowerCase().includes(query);
+        element.hidden=!visible;if(visible)found=true;
+      }
+      group.hidden=!found;
+    }
+  });
+  const assemblyRoot=$('assemblies');
+  for(const [key,assembly] of Object.entries(ASSEMBLIES)){
+    const button=document.createElement('button');
+    button.type='button';button.className='assembly';
+    button.textContent=assembly.label;
+    button.onclick=()=>addAssembly(key,0,0);
+    button.draggable=true;
+    button.addEventListener('dragstart',event=>{
+      event.dataTransfer.effectAllowed='copy';
+      event.dataTransfer.setData('text/plain','assembly:'+key);
+    });
+    assemblyRoot.append(button);
   }
 }
+
+function addAssembly(key,x,z){
+  try{
+    const before=new Set(project.parts.map(p=>p.id));
+    const next=placeAssembly(project,key,Math.round(x*2)/2,Math.round(z*2)/2);
+    const added=next.parts.filter(p=>!before.has(p.id));
+    commit(next);choose(added[0]?.id??null);
+    status(ASSEMBLIES[key].label+' added as '+added.length+
+      ' independently editable components.');
+  }catch(error){status(error.message,true);}
+}
+
 function addComponent(kind,x,z){
   try{
     const next=addPart(project,kind,{x:Math.round(x*2)/2,z:Math.round(z*2)/2});
@@ -521,9 +596,13 @@ frame.addEventListener('dragleave',event=>{
 frame.addEventListener('drop',event=>{
   event.preventDefault();$('dropHelp').hidden=true;
   const kind=event.dataTransfer.getData('text/plain');
-  if(!PARTS[kind])return;
   const p=coords(event),ground=groundPosition(p.x,p.y);
-  addComponent(kind,clamp(ground.x,-200,200),clamp(ground.z,-200,200));
+  const x=clamp(ground.x,-140,140),z=clamp(ground.z,-140,140);
+  if(kind.startsWith('assembly:')&&ASSEMBLIES[kind.slice(9)]){
+    addAssembly(kind.slice(9),x,z);
+  }else if(PARTS[kind]&&kind!=='custom_model'){
+    addComponent(kind,x,z);
+  }
 });
 function syncViewButtons(){
   $('orbitView').classList.toggle('active',view.mode==='3d');
@@ -589,6 +668,22 @@ $('export').onclick=()=>{
     status('JSON export requested. The file preserves all editable components.');
   }catch(error){status(error.message,true);}
 };
+$('assetFile').addEventListener('change',async event=>{
+  const file=event.target.files?.[0];
+  if(!file)return;
+  try{
+    if(!/\.obj$/i.test(file.name))throw Error('Select a .obj file');
+    if(file.size>1_000_000)throw Error('OBJ files must be under 1 MB');
+    const next=importOBJAsset(project,await file.text(),{
+      sourceName:file.name,sourceLicense:$('assetLicense').value
+    });
+    const old=new Set(project.parts.map(p=>p.id));
+    const added=next.parts.find(p=>!old.has(p.id));
+    commit(next);choose(added.id);
+    status('Imported '+file.name+' as an editable object. Verify source permissions.');
+  }catch(error){status('Could not import 3D model: '+error.message,true);}
+  finally{event.target.value='';}
+});
 $('importFile').addEventListener('change',async event=>{
   const file=event.target.files?.[0];
   if(!file)return;
