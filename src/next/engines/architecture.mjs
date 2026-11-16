@@ -184,7 +184,8 @@ export const ArchitectureEngine={
       // glazing and masonry supersede the generic continuous oval facade.
       const hasMeasuredPerimeter=Boolean(spec.exterior?.signature?.outerDiameterMetres||
         spec.exterior?.signature?.historicalBuildingWidthMetres||
-        spec.exterior?.signature?.historicalDomeRiseMetres);
+        spec.exterior?.signature?.historicalDomeRiseMetres||
+        spec.exterior?.signature?.asymmetricConcourseMetres);
       if(hasMeasuredPerimeter)for(const key of ['facade','glazing','brickBase','brickPiers'])
         layers[key]=[];
       for(const [key,mesh] of Object.entries(signatureMesh)){
