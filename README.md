@@ -16,6 +16,8 @@ Open `build/big-ten-18/index.html` to browse 18 separate standalone 3D / 2D / se
 
 [Big Ten 18 data specification, capacities, commands and fidelity milestones](docs/BIG_TEN_18.md).
 
+[OSU-level visual-parity acceptance and per-school chart reconstruction status](docs/BIG_TEN_PARITY.md). The upgraded generator now supports authentic section IDs, per-tier row labels, separated side stands, and per-school illustrative seat colors. **Do not equate chart-ID import with fully traced stadium geometry.**
+
 ## Reusable six-engine venue generator (full-architecture branch)
 
 This development branch now includes six independent, data-driven modules: Geometry, Seating, Architecture, Optimization, Reference and Validation. The same algorithms generate **two distinct fictional venue previews** (an indoor basketball arena and an outdoor American-football stadium) without calling Schottenstein-specific building code. The existing OSU reconstruction is preserved separately. New **Procedural arena** and **Procedural stadium** presets and a **Generate a venue** form are available on the studio home page.
