@@ -186,8 +186,8 @@ function fillRowFields(){
   $('rowEditSeats').value=r.seats;$('rowEditFirst').value=r.first;
   $('rowEditNumbers').value=(r.seatNumbers??[]).join('|');
   $('rowEditGaps').value=(r.gaps??[]).map(g=>g.after+':'+g.width).join('|');
-  $('rowEditDirection').value=r.seatDirection;
-  $('rowEditType').value=r.seatType;
+  $('rowEditDirection').value=r.seatDirection??'forward';
+  $('rowEditType').value=r.seatType??'chair';
   $('rowInsetStart').value=r.insetStartM??0;
   $('rowInsetEnd').value=r.insetEndM??0;
   $('rowDepthOffset').value=r.depthOffsetM??0;
@@ -196,10 +196,10 @@ function fillRowFields(){
     'Staff-edited · original count '+(r.sourceSeats??'not supplied')+
       ' · pending source verification':
     'Imported/fixture row · '+r.seats+' modeled seats · unverified geometry';
-  const valid=new Set(r.seatNumbers.length?r.seatNumbers:
+  const valid=new Set((r.seatNumbers??[]).length?r.seatNumbers:
     Array.from({length:r.seats},(_,i)=>String(r.first+i)));
   if(!valid.has($('seatEditNumber').value))
-    $('seatEditNumber').value=r.seatNumbers[0]??String(r.first);
+    $('seatEditNumber').value=r.seatNumbers?.[0]??String(r.first);
   fillSeatOffsetFields();
 }
 function fillSeatOffsetFields(){
