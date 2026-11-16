@@ -1,0 +1,924 @@
+{
+  "schemaVersion": "1.0.0",
+  "note": "Authentic section identifiers and reported row numbering are source-backed where stated; all geometric arcs and widths remain modeler estimates, never digitized survey contours.",
+  "layouts": {
+    "michigan": {
+      "source": "https://mgoblue.com/sports/2026/9/22/mens-basketball-crisler-center-seating-chart-text-alternative",
+      "originalChart": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/mgoblue.com/documents/2024/10/18/crisler-seating-bkm.pdf?timestamp=20241018115311",
+      "layout": "radial-oval-with-club-offset",
+      "chartIds": "documented",
+      "rowLabels": "documented",
+      "geometry": "estimated",
+      "notes": "Inner 19 section labels and outer 36 labels from Crisler official men's chart. Outer displayed rows 22–41; section-specific actual row presence varies. Excluded suite/band/club footprints still need surveying.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.34,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "104",
+              "105",
+              "106",
+              "108",
+              "110",
+              "112",
+              "114",
+              "116",
+              "118",
+              "120",
+              "122",
+              "123",
+              "124",
+              "126",
+              "128",
+              "130",
+              "134",
+              "136"
+            ],
+            "rowStart": 1,
+            "rowCount": 20
+          }
+        ],
+        [
+          {
+            "startAngle": 0.51,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224",
+              "225",
+              "226",
+              "227",
+              "228",
+              "229",
+              "230",
+              "231",
+              "232",
+              "233",
+              "234",
+              "235",
+              "236"
+            ],
+            "rowStart": 22,
+            "rowCount": 20
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 20,
+          "depth": 0.82,
+          "rise": 0.31,
+          "gap": 2.4,
+          "elevationGap": 2.2
+        },
+        {
+          "rows": 20,
+          "depth": 0.83,
+          "rise": 0.41,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "indiana": {
+      "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019",
+      "layout": "two-opposing-main-stands-and-isolated-balconies",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Official 2026–27 map: main A–F west, G–M east (no I); balconies AA–FF and GG–MM. Side-stand arc ends remain estimated; actual loges and lobbies are not yet digitized.",
+      "tiers": [
+        [
+          {
+            "startAngle": 1.91,
+            "spanAngle": 2.34,
+            "sectionIds": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ],
+            "rowStart": 1,
+            "rowCount": 24
+          },
+          {
+            "startAngle": 5.19,
+            "spanAngle": 2.31,
+            "sectionIds": [
+              "G",
+              "H",
+              "J",
+              "K",
+              "L",
+              "M"
+            ],
+            "rowStart": 1,
+            "rowCount": 24
+          }
+        ],
+        [
+          {
+            "startAngle": 1.95,
+            "spanAngle": 2.22,
+            "sectionIds": [
+              "AA",
+              "BB",
+              "CC",
+              "DD",
+              "EE",
+              "FF"
+            ],
+            "rowStart": 1,
+            "rowCount": 17
+          },
+          {
+            "startAngle": 5.23,
+            "spanAngle": 2.18,
+            "sectionIds": [
+              "GG",
+              "HH",
+              "JJ",
+              "KK",
+              "LL",
+              "MM"
+            ],
+            "rowStart": 1,
+            "rowCount": 17
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 24,
+          "depth": 0.82,
+          "rise": 0.34,
+          "gap": 3.3,
+          "elevationGap": 2
+        },
+        {
+          "rows": 17,
+          "depth": 0.84,
+          "rise": 0.46,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "iowa": {
+      "source": "https://storage.googleapis.com/hawkeyesports-prod/2025/05/20/4FY3mLURtjTLeVfpBxPqO8U6pD3rHEl1UDrn7kgo.pdf",
+      "layout": "circular-pit-with-lower-and-upper-lettered-sections",
+      "chartIds": "documented",
+      "rowLabels": "partially-documented",
+      "geometry": "estimated",
+      "notes": "2025 Iowa men's chart has inner A–N and outer AA–NN labels; actual row 42 and ADA landings require local notch geometry.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.36,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H",
+              "I",
+              "J",
+              "K",
+              "L",
+              "M",
+              "N"
+            ],
+            "rowStart": 1,
+            "rowCount": 19
+          }
+        ],
+        [
+          {
+            "startAngle": 0.36,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "AA",
+              "BB",
+              "CC",
+              "DD",
+              "EE",
+              "FF",
+              "GG",
+              "HH",
+              "II",
+              "JJ",
+              "KK",
+              "LL",
+              "MM",
+              "NN"
+            ],
+            "rowStart": 20,
+            "rowCount": 22
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 19,
+          "depth": 0.84,
+          "rise": 0.34,
+          "gap": 2.6,
+          "elevationGap": 2
+        },
+        {
+          "rows": 22,
+          "depth": 0.84,
+          "rise": 0.43,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "rutgers": {
+      "source": "https://scarletknights.com/sports/2017/6/11/tickets-rac-seating-html",
+      "originalChart": "https://scarletknights.com/documents/download/2026/10/28/Rutgers_MBB_2026-27_Media_Guide_FINAL.pdf",
+      "layout": "rectangular-bowl-with-three-separated-levels",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Official 2026 media guide: 100 courtside, 200 mezzanine, 300 promenade sections; north student area and lobby loges not yet geometrically cut out.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.18,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118"
+            ],
+            "rowStart": 1,
+            "rowCount": 12
+          }
+        ],
+        [
+          {
+            "startAngle": 0.15,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217"
+            ],
+            "rowStart": 1,
+            "rowCount": 12
+          }
+        ],
+        [
+          {
+            "startAngle": 0.15,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "301",
+              "302",
+              "303",
+              "304",
+              "305",
+              "306",
+              "307",
+              "308",
+              "309",
+              "310",
+              "311",
+              "312",
+              "313",
+              "314",
+              "315",
+              "316",
+              "317"
+            ],
+            "rowStart": 1,
+            "rowCount": 13
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 12,
+          "depth": 0.8,
+          "rise": 0.31,
+          "gap": 2,
+          "elevationGap": 1.6
+        },
+        {
+          "rows": 12,
+          "depth": 0.82,
+          "rise": 0.37,
+          "gap": 2.4,
+          "elevationGap": 1.3
+        },
+        {
+          "rows": 13,
+          "depth": 0.82,
+          "rise": 0.42,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "ucla": {
+      "source": "https://www.woodenathleticfund.com/assets/media/tickets-and-parking/2026-27-mbb-seating-map.pdf",
+      "layout": "angular-octagon-with-court-side-and-student-ends",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Official 2026–27 map gives 100– and 200-level section IDs 101–126 and 201–226. A/B/C sub-sections in 200 level and media voids not yet separately traced.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.32,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121",
+              "122",
+              "123",
+              "124",
+              "125",
+              "126"
+            ],
+            "rowStart": 1,
+            "rowCount": 18
+          }
+        ],
+        [
+          {
+            "startAngle": 0.32,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224",
+              "225",
+              "226"
+            ],
+            "rowStart": 1,
+            "rowCount": 18
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 18,
+          "depth": 0.84,
+          "rise": 0.33,
+          "gap": 3.1,
+          "elevationGap": 2.2
+        },
+        {
+          "rows": 18,
+          "depth": 0.85,
+          "rise": 0.43,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "usc": {
+      "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/uscdev.sidearmsports.com/documents/2026/6/29/2026-27_MBB_PSM_pricing_-_For_Print.pdf",
+      "layout": "angular-three-sided-rectangular-bowl",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "USC 2026–27 seats 101–124 and 201–222. Split corners/club seats need manual chart tracing.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.18,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121",
+              "122",
+              "123",
+              "124"
+            ],
+            "rowStart": 1,
+            "rowCount": 15
+          }
+        ],
+        [
+          {
+            "startAngle": 0.18,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222"
+            ],
+            "rowStart": 1,
+            "rowCount": 16
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 15,
+          "depth": 0.82,
+          "rise": 0.32,
+          "gap": 2.3,
+          "elevationGap": 1.6
+        },
+        {
+          "rows": 16,
+          "depth": 0.84,
+          "rise": 0.41,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "wisconsin": {
+      "source": "https://uwbadgers.com/documents/download/2023/6/27/MBB_Kohl_Center_Seating_Map_2024.pdf",
+      "layout": "octagon-with-two-overhanging-balconies",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Official Kohl Center basketball charts identify 101–128, 201–228, 301–328. Distinct overhang geometry is still pending.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121",
+              "122",
+              "123",
+              "124",
+              "125",
+              "126",
+              "127",
+              "128"
+            ],
+            "rowStart": 1,
+            "rowCount": 18
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224",
+              "225",
+              "226",
+              "227",
+              "228"
+            ],
+            "rowStart": 1,
+            "rowCount": 8
+          }
+        ],
+        [
+          {
+            "startAngle": 0.22,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "301",
+              "302",
+              "303",
+              "304",
+              "305",
+              "306",
+              "307",
+              "308",
+              "309",
+              "310",
+              "311",
+              "312",
+              "313",
+              "314",
+              "315",
+              "316",
+              "317",
+              "318",
+              "319",
+              "320",
+              "321",
+              "322",
+              "323",
+              "324",
+              "325",
+              "326",
+              "327",
+              "328"
+            ],
+            "rowStart": 1,
+            "rowCount": 18
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 18,
+          "depth": 0.83,
+          "rise": 0.33,
+          "gap": 2.9,
+          "elevationGap": 2.1
+        },
+        {
+          "rows": 8,
+          "depth": 0.83,
+          "rise": 0.4,
+          "gap": 2.4,
+          "elevationGap": 1.8
+        },
+        {
+          "rows": 18,
+          "depth": 0.84,
+          "rise": 0.44,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "penn-state": {
+      "source": "https://bjc.psu.edu/events/seating-charts",
+      "originalChart": "https://venuecoalition.com/wp-content/uploads/2026/02/Production-Guide_BJC_2026.pdf",
+      "layout": "oval-with-club-box-ring",
+      "chartIds": "documented",
+      "rowLabels": "estimated",
+      "geometry": "estimated",
+      "notes": "Bryce Jordan Center 2026 guide identifies the 100/200 seating banks, with 214 and 231 absent from shown upper sections, plus C-series boxes. Suite voids require separate shapes.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.18,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120",
+              "121",
+              "122",
+              "123",
+              "124",
+              "125",
+              "126",
+              "127",
+              "128",
+              "129",
+              "130",
+              "131",
+              "132",
+              "133",
+              "134"
+            ],
+            "rowStart": 1,
+            "rowCount": 16
+          }
+        ],
+        [
+          {
+            "startAngle": 0.18,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224",
+              "225",
+              "226",
+              "227",
+              "228",
+              "229",
+              "230",
+              "232",
+              "233",
+              "234"
+            ],
+            "rowStart": 1,
+            "rowCount": 16
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 16,
+          "depth": 0.84,
+          "rise": 0.32,
+          "gap": 2.9,
+          "elevationGap": 2
+        },
+        {
+          "rows": 16,
+          "depth": 0.85,
+          "rise": 0.44,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    },
+    "minnesota": {
+      "source": "https://gophersports.com/documents/download/2011/7/13/_minn_m_baskbl_2007_8_misc_non_event__m-baskbl-media-guide-0708-sec9.pdf",
+      "layout": "rectangular-elevated-floor-with-side-bank-lofts",
+      "chartIds": "historical-only",
+      "rowLabels": "historical-only",
+      "geometry": "estimated",
+      "notes": "Published 2007–08 seating plan identifies sections 101–120 and 201–224. This is a HISTORICAL reference and cannot certify 2026–27 labels. Must check latest map before parity QA.",
+      "tiers": [
+        [
+          {
+            "startAngle": 0.34,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "101",
+              "102",
+              "103",
+              "104",
+              "105",
+              "106",
+              "107",
+              "108",
+              "109",
+              "110",
+              "111",
+              "112",
+              "113",
+              "114",
+              "115",
+              "116",
+              "117",
+              "118",
+              "119",
+              "120"
+            ],
+            "rowStart": 1,
+            "rowCount": 19
+          }
+        ],
+        [
+          {
+            "startAngle": 0.34,
+            "spanAngle": 6.283185307179586,
+            "sectionIds": [
+              "201",
+              "202",
+              "203",
+              "204",
+              "205",
+              "206",
+              "207",
+              "208",
+              "209",
+              "210",
+              "211",
+              "212",
+              "213",
+              "214",
+              "215",
+              "216",
+              "217",
+              "218",
+              "219",
+              "220",
+              "221",
+              "222",
+              "223",
+              "224"
+            ],
+            "rowStart": 1,
+            "rowCount": 20
+          }
+        ]
+      ],
+      "tiersOverride": [
+        {
+          "rows": 19,
+          "depth": 0.82,
+          "rise": 0.34,
+          "gap": 2,
+          "elevationGap": 1.7
+        },
+        {
+          "rows": 20,
+          "depth": 0.82,
+          "rise": 0.42,
+          "gap": 0,
+          "elevationGap": 0
+        }
+      ]
+    }
+  }
+}
