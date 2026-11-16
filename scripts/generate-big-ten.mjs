@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {generateVenuePackage} from '../src/next/engines/factory.mjs';
 import {GeometryEngine} from '../src/next/engines/geometry.mjs';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
+import {toBigTenProceduralSpec} from '../src/next/bigTenCatalog.mjs';
 
 const DEFAULT_CATALOG=fileURLToPath(new URL('../data/big-ten/arenas-2026-27.json',import.meta.url));
 const SECTION_PROFILES=JSON.parse(readFileSync(
@@ -77,42 +78,7 @@ export function validateBigTenCatalog(catalog,{require18=true}={}){
 }
 
 export function toProceduralSpec(venue){
-  if(!venue?.model||!venue.venue||!venue.capacity||!venue.id)
-    fail('Cannot generate a venue without identity, capacity and geometry');
-  const {evidenceLevel,...model}=venue.model;
-  const layout=SECTION_PROFILES[venue.id]??null;
-  const base=structuredClone(model);
-  const signature=ARCH_SIGNATURES[venue.id]??null;
-  if(signature){
-    base.exterior={...base.exterior,entrances:[],signature:structuredClone(signature)};
-  }
-  if(layout){
-    base.tiers=structuredClone(layout.tiersOverride);
-    base.sectionMap=structuredClone(layout.tiers);
-    base.sections=Math.max(...layout.tiers.map(groups=>
-      groups.reduce((sum,group)=>sum+group.sectionIds.length,0)));
-  }
-  return {...base,
-    id:'big-ten-'+venue.id,
-    name:venue.venue.name,
-    targetCapacity:venue.capacity.published,
-    sources:venue.sources.map(s=>({url:s.url,title:s.title,date:s.verifiedOn})),
-    provenance:{
-      category:'estimated-parametric',
-      school:venue.school.name,
-      primaryColor:venue.school.primaryColor??null,
-      publishedCapacity:venue.capacity.published,
-      publishedCapacitySourceId:venue.capacity.sourceId,
-      seatMap:venue.evidence.seatMap,
-      seatCoordinates:venue.evidence.seatRoster,
-      sectionLabels:layout?.chartIds??'estimated',
-      sourceSectionMap:layout?.source??null,
-      buildingReference:signature?.source??null,
-      buildingStatus:signature?'landmarks-modeled/unsurveyed':'unmodeled',
-      sectionOutlineProvenance:layout?'estimated-arc':'estimated-uniform',
-      notice:'Seats and section boundaries are estimated even when school chart section IDs and row-label ranges are sourced.'
-    }
-  };
+  return toBigTenProceduralSpec(venue,SECTION_PROFILES,ARCH_SIGNATURES);
 }
 
 function reportFor(venue,packageResult){
