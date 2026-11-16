@@ -446,7 +446,10 @@ test('eight school section sets and clockwise positions are exactly chart-backed
   for(const id of ids){
     const spec=toProceduralSpec(get(id));
     const expected=chart.venues[id];
-    const actual=new Set(spec.sectionMap.flatMap(level=>level.flatMap(group=>group.sectionIds)));
+    const actual=new Set([
+      ...spec.sectionMap.flatMap(level=>level.flatMap(group=>group.sectionIds)),
+      ...(spec.interior?.courtside?.blocks??[]).map(block=>block.id)
+    ]);
     assert.deepEqual([...actual].sort(),[...expected.verifiedSections].sort(),
       id+' must contain exactly the official diagram section IDs');
     assert.equal(spec.provenance.verifiedChartSource,expected.source);
@@ -479,7 +482,8 @@ test('eight school section sets and clockwise positions are exactly chart-backed
   assert.equal(illinois.sectionMap[1].length,2,
     'Documented east-side Illinois suites separate its middle seating banks');
   assert.ok(!illinois.sectionMap[1].some(g=>g.sectionIds.includes('130')));
-  assert.deepEqual(illinois.provenance.unmodeledDocumentedSections,['9','10','11','12','13']);
+  assert.deepEqual(illinois.provenance.unmodeledDocumentedSections,[],
+    'Illinois 9–13 have source-backed row labels and are no longer omitted');
   const ucla=toProceduralSpec(get('ucla'));
   assert.equal(ucla.sectionMap[1].length,2,
     'UCLA 215 is a source-verified media interruption, not a spectator section');
@@ -581,4 +585,41 @@ test('all seventeen Big Ten interiors have venue-specific actual seat geometry, 
       id+' has fabricated interior portals not proved by chart');
   }
   assert.equal(shapes.size,17);
+});
+
+test('Illinois actual NCAA bowl is not three identical circular seat bands and retains court-level seats 9–13',()=>{
+  const input=toProceduralSpec(get('illinois'));
+  const g=GeometryEngine.create(input);
+  assert.equal(input.interior.tierProfiles[0].outline,'rounded-rectangle');
+  assert.equal(input.interior.tierProfiles[2].outline,'circle');
+  const atX=g.point(0,0,.05),atZ=g.point(0,Math.PI/2,.05);
+  assert.ok(Math.abs(Math.abs(atX.x)-Math.abs(atZ.z))>3,
+    'The lower Illinois spectator bowl must follow the long basketball court instead of a circle');
+  const {model,plan,audit}=generateVenuePackage(input);
+  assert.ok(audit.passed,audit.errors.join('; '));
+  const sourceIds=new Set(model.seats.map(s=>s.sectionId));
+  for(const id of ['9','10','11','12','13'])
+    assert.ok(sourceIds.has(id),'Documented Illinois courtside section '+id+' missing');
+  const courtRows=new Map(input.interior.courtside.blocks.map(b=>[b.id,b.rows]));
+  for(const [id,rows] of courtRows){
+    const actual=[...new Set(model.seats.filter(s=>s.sectionId===id).map(s=>s.row))];
+    assert.deepEqual(actual,rows,'Illinois courtside source row labels must be preserved: '+id);
+  }
+  for(const id of ['101','102']){
+    const rowLabels=[...new Set(model.seats.filter(s=>s.sectionId===id).map(s=>s.row))];
+    assert.deepEqual(rowLabels.slice(0,3),['A','B','C']);
+    assert.equal(rowLabels.at(-1),'16');
+  }
+  assert.deepEqual([...new Set(model.seats.filter(s=>s.sectionId==='110').map(s=>s.row))],
+    Array.from({length:9},(_,i)=>String(i+1)));
+  assert.deepEqual([...new Set(model.seats.filter(s=>s.sectionId==='201').map(s=>s.row))],
+    Array.from({length:13},(_,i)=>String(i+6)));
+  assert.equal(model.sectionCoverage.completeness,true,
+    'Illinois must not omit any eligible row or valid courtside section');
+  const polygons=model.interiorSectionFootprints.filter(x=>
+    ['9','10','11','12','13'].includes(x.id));
+  assert.equal(polygons.length,5,'Court-level 9–13 must have distinct 2D map polygons');
+  assert.ok(polygons.every(x=>x.outlines.length>=6),
+    'Documented court-level blocks must include independent row polygons');
+  assert.ok(plan.architectureGeometry.decks.length>0);
 });
