@@ -522,8 +522,8 @@ async function main(){
     await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
       writeFileSync(join(dir,'component-plan-placement.png'),Buffer.from(frame.data,'base64')));
     await evaluate("document.querySelector('#show3d').click()");
-    const rendered=await poll(async()=>await evaluate("(()=>{const c=document.querySelector('#modelCanvas');return {visible:!c.hidden,hasContext:!!c.getContext('webgl2'),n:document.querySelector('#structureSelect').options.length}})()"),35);
-    if(!rendered.visible||!rendered.hasContext||rendered.n!==3)
+    const structureRendered=await poll(async()=>await evaluate("(()=>{const c=document.querySelector('#modelCanvas');return {visible:!c.hidden,hasContext:!!c.getContext('webgl2'),n:document.querySelector('#structureSelect').options.length}})()"),35);
+    if(!structureRendered.visible||!structureRendered.hasContext||structureRendered.n!==3)
       throw Error('3D component preview failed after 2D placement');
     console.log('studio: compact header, seven reusable components, live WebGL2 geometry, transform, duplicate and 2D placement verified');
 
