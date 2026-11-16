@@ -14,6 +14,8 @@ const SECTION_PROFILES=JSON.parse(readFileSync(
   new URL('../data/big-ten/reference-section-layouts.json',import.meta.url),'utf8')).layouts;
 const ARCH_SIGNATURES=JSON.parse(readFileSync(
   new URL('../data/big-ten/architectural-signatures.json',import.meta.url),'utf8')).venues;
+const INTERIOR_PROFILES=JSON.parse(readFileSync(
+  new URL('../data/big-ten/interior-reconstructions.json',import.meta.url),'utf8')).venues;
 const DEFAULT_OUT='build/big-ten-18';
 const DEFAULT_MAX_ERROR=.035;
 const fail=message=>{throw Error(message);};
@@ -78,7 +80,7 @@ export function validateBigTenCatalog(catalog,{require18=true}={}){
 }
 
 export function toProceduralSpec(venue){
-  return toBigTenProceduralSpec(venue,SECTION_PROFILES,ARCH_SIGNATURES);
+  return toBigTenProceduralSpec(venue,SECTION_PROFILES,ARCH_SIGNATURES,INTERIOR_PROFILES);
 }
 
 function reportFor(venue,packageResult){
@@ -89,6 +91,10 @@ function reportFor(venue,packageResult){
     schoolId:venue.id,school:venue.school.name,
     arena:venue.venue.name,city:venue.venue.city,state:venue.venue.state,
     modelStatus:'estimated-parametric',
+    interiorProfile:INTERIOR_PROFILES[venue.id]?{type:INTERIOR_PROFILES[venue.id].type,
+      outline:INTERIOR_PROFILES[venue.id].outline,
+      source:INTERIOR_PROFILES[venue.id].source,
+      status:'chart-informed-unsurveyed'}:null,
     sectionMapStatus:model.proceduralSpec.sectionMap?'official-section-ids/estimated-angles':'uniform-estimate',
     architectureSignature:ARCH_SIGNATURES[venue.id]?{roof:ARCH_SIGNATURES[venue.id].roof,
       feature:ARCH_SIGNATURES[venue.id].feature,source:ARCH_SIGNATURES[venue.id].source,
