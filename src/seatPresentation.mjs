@@ -4,7 +4,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 export const COLOR_SCHEMES = Object.freeze({
   neutral: ['#7e878c','#929ba0','#adb6bb','#c1c9cd'],
   ohio: ['#8b9499','#aab2b6','#bdc4c6','#d0d5d6'],
-  schott: ['#444b54','#5a626b','#777f86','#959da4'],
+  schott: ['#903549','#823348','#743245','#6b313e'],
   school: ['#164c80','#2875ae','#5597c6','#88b9d6'],
 });
 const validHex = x => typeof x === 'string' && HEX.test(x);

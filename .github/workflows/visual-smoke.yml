@@ -1,0 +1,45 @@
+name: Schottenstein visual smoke
+on:
+  push:
+    branches: [feature/schottenstein-audience-preview, feature/schottenstein-full-3d-architecture]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-for-browser-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bundle exact source for GPU browser acceptance
+        run: |
+          zip -q -r /tmp/schottenstein-source.zip . -x '.git/*'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: schottenstein-source
+          path: /tmp/schottenstein-source.zip
+          retention-days: 2
+
+  browser-webgl-acceptance:
+    if: github.ref == 'refs/heads/feature/schottenstein-full-3d-architecture'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+      - name: Render OSU and two generated venues with native WebGL2
+        run: node scripts/browser-visual-smoke.mjs
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: six-engine-browser-screenshots
+          path: artifacts/visual/*.png
+          retention-days: 7
+          if-no-files-found: warn

@@ -1,9 +1,13 @@
-// Dependency-free WebGL2 venue renderer: one instanced mesh for chairs,
-// bleachers, treads, court, goalposts and scoreboards. No CDN required.
+// Dependency-free WebGL2 venue renderer with instanced furnishings and optional
+// structural deck meshes. No CDN required.
 // Embedded eye/view helpers also permit standalone, zero-dependency school exports.
 const seatViewAnchors=(seat,posture='seated')=>{const yaw=Number.isFinite(seat.yaw)?seat.yaw:Math.atan2(-seat.x,-seat.z);const f=posture==='leaning'?.38:posture==='standing'?.20:.23;return {eye:{x:seat.x+Math.sin(yaw)*f,y:seat.y+({seated:1.17,leaning:1.23,standing:1.60}[posture]||1.17),z:seat.z+Math.cos(yaw)*f}};};
-function viewingTarget(surface,target='center',seat=null){const x=surface.width/2,z=surface.length/2;
-  if(target==='near-rim')return {x:0,y:3.05,z:z-1.6};if(target==='far-rim')return {x:0,y:3.05,z:-z+1.6};if(target==='scoreboard')return{x:0,y:15.5,z:0};
+function viewingTarget(surface,target='center',seat=null,scoreboardHeight=13.6){const x=surface.width/2,z=surface.length/2;
+  if(target==='near-rim'||target==='far-rim'){
+    const sign=(seat?.z<0?-1:1)*(target==='far-rim'?-1:1);
+    return {x:0,y:3.05,z:sign*(z-1.6)};
+  }
+  if(target==='scoreboard')return{x:0,y:scoreboardHeight,z:0};
   if(target==='near'||target==='far'){const sign=(seat?.z<0?-1:1)*(target==='far'?-1:1);return{x:0,y:surface.sport==='basketball'?3:1.2,z:z*.65*sign};}
   if(target==='left')return{x:-x*.72,y:1.25,z:0};if(target==='right')return{x:x*.72,y:1.25,z:0};return{x:0,y:surface.sport==='basketball'?2.4:1.35,z:0};
 }
@@ -31,33 +35,140 @@ layout(location=6) in float aSeatId;
 uniform mat4 uVP;
 uniform vec3 uEye;
 uniform float uHuman;
+uniform float uRound;
+uniform float uDeck;
+uniform float uSelected;
 out vec3 vColor;
 out vec3 vNormal;
+out vec3 vWorld;
+flat out float vMaterial;
 void main(){
+  vMaterial=uDeck;
+  if(uDeck>.5){
+    vNormal=aNormal;
+    // Separate presentation pedestal from first-person deck geometry.
+    // It remains a thin stand under the bowl, never a gray backing shell.
+    if(uDeck>45.5)vColor=vec3(.28,.38,.42); // Signature landmark tower glazing
+    else if(uDeck>44.5)vColor=vec3(.55,.29,.25); // Signature brick corner towers
+    else if(uDeck>43.5)vColor=vec3(.82,.83,.82); // Pale flat roof
+    else if(uDeck>42.5)vColor=vec3(.36,.39,.42); // Dark steel roof
+    else if(uDeck>41.5)vColor=vec3(.66,.47,.27); // Mackey copper roof
+    else if(uDeck>40.5)vColor=vec3(.94,.93,.89); // Illinois white shell
+    else if(uDeck>39.5)vColor=vec3(.20,.27,.29); // Glass double entrance doors
+    else if(uDeck>38.5)vColor=vec3(.72,.72,.68); // Projecting metal entry canopy
+    else if(uDeck>37.5)vColor=vec3(.25,.30,.32); // Entrance mullions
+    else if(uDeck>36.5)vColor=vec3(.28,.38,.41); // Deep vestibule curtain wall
+    else if(uDeck>35.5)vColor=vec3(.52,.30,.25); // Brick entrance wings
+    else if(uDeck>34.5)vColor=vec3(.72,.72,.68); // Circular rotunda roof ribs
+    else if(uDeck>33.5)vColor=vec3(.82,.80,.75); // Metal lantern roof ring
+    else if(uDeck>32.5)vColor=vec3(.28,.33,.35); // Tall tower window frames
+    else if(uDeck>31.5)vColor=vec3(.56,.31,.26); // Brick piers
+    else if(uDeck>30.5)vColor=vec3(.54,.30,.25); // Brick entrance-level walls
+    else if(uDeck>29.5)vColor=vec3(.41,.42,.43); // Horizontal metal panel joints
+    else if(uDeck>28.5)vColor=vec3(.70,.67,.62); // Upper seating bowl concrete
+    else if(uDeck>27.5)vColor=vec3(.24,.28,.30); // Press enclosure glazing
+    else if(uDeck>26.5)vColor=vec3(.61,.59,.55); // Press enclosure matches the connected inner masonry
+    else if(uDeck>25.5)vColor=vec3(.28,.40,.43); // Recessed tower glazing
+    else if(uDeck>24.5)vColor=vec3(.57,.31,.26); // OSU rotunda brick masonry
+    else if(uDeck>23.5)vColor=aNormal.y>0.?vec3(.68,.67,.63):vec3(.23,.24,.25); // Enclosed building roof
+    else if(uDeck>22.5)vColor=vec3(.30,.31,.32); // Radial roof beams with actual depth
+    else if(uDeck>21.5)vColor=vec3(.65,.64,.62); // Muted roof decking
+    else if(uDeck>20.5)vColor=vec3(.96,.84,.67); // Recessed warm architectural lights
+    else if(uDeck>19.5)vColor=vec3(.30,.31,.32); // Structural roof soffit
+    else if(uDeck>18.5)vColor=vec3(.47,.43,.40); // Deep fascia and beam edges
+    else if(uDeck>17.5)vColor=vec3(.65,.61,.55); // Three-dimensional columns
+    else if(uDeck>16.5)vColor=vec3(.27,.29,.30); // Window mullions and frames
+    else if(uDeck>15.5)vColor=vec3(.55,.41,.31); // Warm gallery windows
+    else if(uDeck>14.5)vColor=vec3(.20,.23,.25); // Recessed dark glazing
+    else if(uDeck>13.5)vColor=vec3(.61,.59,.55); // Inner wall with true openings
+    else if(uDeck>12.5)vColor=vec3(.64,.61,.57); // Exterior gallery shell
+    else if(uDeck>11.5)vColor=vec3(.68,.64,.58); // Reserved for tread risers
+    else if(uDeck>10.5)vColor=vec3(.82,.80,.76); // Reserved for aisle surfaces
+    else if(uDeck>9.5)vColor=vec3(.72,.64,.54); // Muted champagne fascia trim
+    else if(uDeck>8.5)vColor=vec3(.22,.25,.27); // Recessed graphite glazing
+    else if(uDeck>7.5)vColor=vec3(.75,.76,.76); // Light horizontal metal siding
+    else if(uDeck>6.5)vColor=vec3(.75,.73,.69); // Continuous tier concourses
+    else if(uDeck>5.5)vColor=vec3(.65,.63,.60); // Stepped row fascias
+    else if(uDeck>4.5)vColor=vec3(.80,.78,.74); // Row-aligned stone seat decks
+    else if(uDeck>2.5)vColor=vec3(.29,.30,.31); // Recessed plinth joints
+    else if(uDeck>1.5)vColor=aNormal.y>.5?vec3(.53,.52,.50):vec3(.42,.41,.40);
+    else vColor=mix(vec3(.76,.75,.73),vec3(.43,.43,.44),uHuman);
+    vWorld=aLocal;
+    gl_Position=uVP*vec4(aLocal,1.);
+    return;
+  }
   vec3 p=aLocal*aSize;
+  vec3 n=aNormal;
+  if(uRound>.5){
+    float radius=min(.027,min(aSize.x,min(aSize.y,aSize.z))*.38);
+    vec3 inset=aSize*.5-radius;
+    vec3 core=clamp(p,-inset,inset);
+    n=normalize(p-core);
+    p=core+n*radius;
+  }
   float c=cos(aYaw),s=sin(aYaw);
   vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);
   vec3 world=aPos+r;
+  // Overhead elements stay visible from the seat and hidden in the cutaway.
+  if(aSeatId == -2. && uHuman < .5){gl_Position=vec4(3.,3.,3.,1.);return;}
+  // Nested seating decks expose the interior face of their ribbon and suites.
+  if(aSeatId == -3. && uHuman > .5 && dot(uEye.xz-aPos.xz,aPos.xz)>0.){
+    gl_Position=vec4(3.,3.,3.,1.);return;
+  }
   // Suppress occupied chair and immediate camera-intersecting furniture.
-  if(uHuman>.5 && aSeatId>=0. && distance(aPos,uEye)<.83){gl_Position=vec4(3.,3.,3.,1.);return;}
-  vec3 n=aNormal;
+  if(uHuman>.5 && aSeatId>=0. && (abs(aSeatId-uSelected)<.25 || distance(aPos,uEye)<.29)){gl_Position=vec4(3.,3.,3.,1.);return;}
+  vMaterial=0.;
   vNormal=vec3(c*n.x+s*n.z,n.y,-s*n.x+c*n.z);
-  vColor=aColor;
+  vColor=aSeatId>=0. && abs(aSeatId-uSelected)<.25 ? vec3(.99,.63,.25) : aColor;
+  vWorld=world;
   gl_Position=uVP*vec4(world,1.);
 }`;
 const FRAGMENT=`#version 300 es
 precision highp float;
 in vec3 vColor;
 in vec3 vNormal;
+in vec3 vWorld;
+flat in float vMaterial;
+uniform vec3 uEye;
 out vec4 outColor;
 void main(){
-  vec3 sun=normalize(vec3(.38,.82,.44));
-  float diffuse=max(0.,dot(normalize(vNormal),sun));
-  float strength=.69+.31*diffuse;
-  vec3 rgb=pow(vColor,vec3(2.2))*strength;
-  outColor=vec4(pow(rgb,vec3(1./2.2)),1.);
+  vec3 n=normalize(vNormal);
+  vec3 sun=normalize(vec3(.45,.83,.34));
+  float diffuse=max(0.,dot(n,sun));
+  float fill=max(0.,dot(n,normalize(vec3(-.6,.45,-.55))));
+  float strength=.48+.43*diffuse+.11*fill+.07*max(n.y,0.);
+  vec3 base=pow(vColor,vec3(2.2));
+  vec3 rgb=pow(base*strength,vec3(1./2.2));
+  bool brick=abs(vMaterial-25.)<.2 || abs(vMaterial-31.)<.2
+    || abs(vMaterial-32.)<.2 || abs(vMaterial-36.)<.2;
+  if(brick){
+    // Small-scale procedural running bond. This enriches the real 3D brick
+    // surface without photo textures or changes to structural geometry.
+    float row=floor(vWorld.y/.29);
+    float mortarY=fract(vWorld.y/.29);
+    float course=fract(atan(vWorld.z,vWorld.x)*105.+mod(row,2.)*.5);
+    float horizontal=1.-smoothstep(.018,.065+fwidth(mortarY),min(mortarY,1.-mortarY));
+    float vertical=1.-smoothstep(.016,.047+fwidth(course),min(course,1.-course));
+    rgb*=1.-.20*clamp(horizontal+vertical,0.,1.);
+    rgb*=.975+.025*sin(dot(vWorld,vec3(2.7,1.3,2.1)));
+  }
+  bool glass=abs(vMaterial-9.)<.2 || abs(vMaterial-26.)<.2
+    || abs(vMaterial-37.)<.2 || abs(vMaterial-40.)<.2;
+  if(glass){
+    vec3 view=normalize(uEye-vWorld);
+    float reflection=pow(max(dot(reflect(-sun,n),view),0.),30.);
+    float fresnel=pow(1.-max(dot(n,view),0.),3.);
+    rgb+=vec3(.12,.15,.16)*reflection + vec3(.06,.08,.09)*fresnel;
+  }
+  if(abs(vMaterial-8.)<.2){
+    // Broad upper-siding highlights respond to surface direction.
+    rgb+=vec3(.035)*pow(max(dot(reflect(-sun,n),normalize(uEye-vWorld)),0.),15.);
+  }
+  rgb=clamp(rgb,0.,1.);
+  float haze=smoothstep(50.,245.,distance(vWorld,uEye))*.11;
+  outColor=vec4(mix(rgb,vec3(.87,.86,.84),haze),1.);
 }`;
-const cube=(()=>{
+const boxGeometry=()=>{
   const sides=[
     [[0,0,1],[[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]]],
     [[0,0,-1],[[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5]]],
@@ -66,59 +177,321 @@ const cube=(()=>{
     [[0,1,0],[[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5],[-.5,.5,-.5]]],
     [[0,-1,0],[[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5]]]
   ];
-  const a=[];for(const [normal,p] of sides)for(const i of [0,1,2,0,2,3])a.push(...p[i],...normal);return new Float32Array(a);
-})();
+  const data=[];
+  for(const [normal,p] of sides)for(const i of [0,1,2,0,2,3])data.push(...p[i],...normal);
+  return new Float32Array(data);
+};
+function bevelGeometry(){
+  const vertices=[],inset=.445;
+  const triangle=(a,b,c)=>{
+    const ab=b.map((v,i)=>v-a[i]),ac=c.map((v,i)=>v-a[i]);
+    const outward=a.map((v,i)=>v+b[i]+c[i]);
+    const order=dot(cross(ab,ac),outward)>0?[a,b,c]:[a,c,b];
+    for(const point of order)vertices.push(...point,0,1,0);
+  };
+  const quad=(a,b,c,d)=>{triangle(a,b,c);triangle(a,c,d);};
+  for(let axis=0;axis<3;axis++){
+    const u=(axis+1)%3,v=(axis+2)%3;
+    for(const sign of [-1,1]){
+      const point=(a,b)=>{
+        const p=[0,0,0];
+        p[axis]=sign*.5;p[u]=a*inset;p[v]=b*inset;
+        return p;
+      };
+      quad(point(-1,-1),point(1,-1),point(1,1),point(-1,1));
+      for(const edge of [-1,1]){
+        const other=(length)=>{
+          const p=point(edge,length);
+          p[axis]=sign*inset;p[u]=edge*.5;
+          return p;
+        };
+        quad(point(edge,-1),point(edge,1),other(1),other(-1));
+      }
+    }
+  }
+  for(const x of [-1,1])for(const y of [-1,1])for(const z of [-1,1]){
+    triangle([x*.5,y*inset,z*inset],[x*inset,y*.5,z*inset],[x*inset,y*inset,z*.5]);
+  }
+  return new Float32Array(vertices);
+}
+const cube=boxGeometry(),roundedBox=bevelGeometry();
+const instanceAttributes=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
+const instanceStride=44;
+
+const structureLayers=[
+  ['decks',5],['fascias',6],['concourse',7],['facade',8],['glazing',9],
+  ['trim',10],['aisles',11],['stepEdges',12],['backWall',13],['galleryGlass',15],
+  ['galleryGlow',16],['windowFrames',17],['pilasters',18],['roofEdge',19],['soffit',20],
+  ['downlights',21],['roofDeck',22],['radialBeams',23],['buildingRoof',24],
+  ['entryMasonry',25],['entryGlass',26],['pressWalls',27],['pressGlass',28],
+  ['cutawayFacade',8],['externalTrim',30],['galleryFloorMesh',7],['upperBowl',29],
+  ['brickBase',31],['brickPiers',32],['towerFrames',33],['towerCrown',34],
+  ['towerRibs',35],['entryBrick',36],['entryCurtain',37],
+  ['entryFrames',38],['entryCanopy',39],['entryDoors',40],
+  ['roofWhite',41],['roofCopper',42],['roofSlate',43],['roofPale',44],
+  ['towerBrick',45],['towerWindows',46],
+];
+const interiorLayers=new Set(['decks','fascias','upperBowl','concourse','aisles','stepEdges',
+  'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
+  'downlights','roofDeck','radialBeams','pressWalls','pressGlass','galleryFloorMesh']);
+// A spectator-only view should never contain the large gallery slabs and
+// roof soffits assembled for an illustrative exterior shell. They were the
+// gray ring still visible around Illinois after facade layers were hidden.
+const verifiedBowlLayers=new Set(['decks','fascias','aisles','stepEdges']);
+const exteriorOnly=new Set(['facade','glazing','externalTrim','brickBase',
+  'brickPiers','entryMasonry','entryGlass','entryFrames','entryCanopy',
+  'entryDoors','towerBrick','towerWindows','towerFrames','towerCrown',
+  'towerRibs','entryBrick','entryCurtain','roofWhite','roofCopper',
+  'roofSlate','roofPale','radialBeams','buildingRoof','roofEdge']);
+const schottensteinCutaway=new Set(['decks','fascias','upperBowl','concourse','trim','pressWalls','pressGlass','cutawayFacade']);
 
 export class NativeVenueRenderer {
+  // Keep the real seat-view deck, not the gray overview backing sheet.
+  // The renderer is also bundled as a classic script for offline exports.
+  static deckVisibleInMode(plan, mode) {
+    return mode === 'human' && Boolean(plan?.arenaInterior && plan?.deckGeometry?.length && !plan.architectureGeometry?.decks?.length);
+  }
+  static pedestalVisibleInMode(plan, mode) {
+    return mode !== 'human' && Boolean(plan?.arenaInterior && plan?.pedestalGeometry?.length);
+  }
+  static architectureVisibleInMode(plan,mode){
+    return mode !== 'human' && Boolean(plan?.arenaInterior && plan?.architectureGeometry);
+  }
+  // Shared visual policy for every venue: the overview keeps the complete
+  // exterior and seat bowl, but never puts an opaque lid over the arena.
+  static architectureLayerVisibleInMode(plan,mode,name){
+    if(!plan?.arenaInterior||!plan?.architectureGeometry)return false;
+    if(mode==='exterior')return exteriorOnly.has(name);
+    // An illustrative exterior envelope must not obscure the chart-driven
+    // seating bowl in the main view. The separately named exterior mode
+    // still presents those architectural shells for contextual inspection.
+    // OSU's specialized chart cutaway is unchanged.
+    if(plan.proceduralSpec?.interior)return verifiedBowlLayers.has(name);
+    if(['buildingRoof','roofWhite','roofCopper','roofSlate','roofPale'].includes(name))return false;
+    if(name==='cutawayFacade')return mode==='section'&&Boolean(plan.architectureGeometry.cutawayFacade?.length);
+    if(mode==='human')return interiorLayers.has(name);
+    if(mode==='section'&&plan.architectureGeometry.cutawayFacade?.length)
+      return schottensteinCutaway.has(name);
+    return true;
+  }
   constructor(canvas,onPick=()=>{}){
     this.canvas=canvas;this.onPick=onPick;
     const gl=canvas.getContext('webgl2',{antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});
     if(!gl)throw Error('WebGL2 is not available on this device. Use the 2D map instead.');
-    this.gl=gl;this.program=makeProgram(gl,VERTEX,FRAGMENT);this.locations={vp:gl.getUniformLocation(this.program,'uVP'),eye:gl.getUniformLocation(this.program,'uEye'),human:gl.getUniformLocation(this.program,'uHuman')};
-    this.vao=gl.createVertexArray();gl.bindVertexArray(this.vao);
-    this.cubeBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.cubeBuffer);gl.bufferData(gl.ARRAY_BUFFER,cube,gl.STATIC_DRAW);
-    for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);}
-    this.instances=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
-    const entries=[[2,3,0],[3,3,12],[4,1,24],[5,3,28],[6,1,40]];
-    for(const [loc,size,offset] of entries){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,44,offset);gl.vertexAttribDivisor(loc,1);}
-    gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.clearColor(0,0,0,0);
+    this.gl=gl;
+    this.program=makeProgram(gl,VERTEX,FRAGMENT);
+    this.locations=Object.fromEntries(['VP','Eye','Human','Round','Selected','Deck']
+      .map(name=>[name,gl.getUniformLocation(this.program,'u'+name)]));
+    this.instances=gl.createBuffer();
+    this.box=this.createMesh(cube);
+    this.roundedBox=this.createMesh(roundedBox);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    gl.clearColor(0,0,0,0);
     this.plan=null;this.mode='overview';this.pan=[0,0,0];this.theta=.68;this.phi=.87;this.distance=140;this.humanYaw=0;this.humanPitch=0;this.humanFov=63;this.viewOptions={posture:'seated',target:'center',zoom:1};
     this.bind();this.resize();this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(canvas);
   }
-  load(plan){
-    this.plan=plan;const gl=this.gl;gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);gl.bufferData(gl.ARRAY_BUFFER,plan.instanceData,gl.STATIC_DRAW);
-    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity,maxY=-Infinity;
-    for(const s of plan.seats){minX=Math.min(minX,s.x);maxX=Math.max(maxX,s.x);minZ=Math.min(minZ,s.z);maxZ=Math.max(maxZ,s.z);maxY=Math.max(maxY,s.y);}
-    const w=plan.surface.width,l=plan.surface.length;
-    minX=Math.min(-w/2,minX);maxX=Math.max(w/2,maxX);minZ=Math.min(-l/2,minZ);maxZ=Math.max(l/2,maxZ);
-    this.center=[(minX+maxX)/2,Math.max(1,Math.min(14,(maxY||8)*.32)),(minZ+maxZ)/2];
-    this.radius=Math.max(maxX-minX,maxZ-minZ)*.77+12;
-    this.distance=Math.max(35,this.radius*1.85);this.phi=.94;this.theta=.67;this.mode='overview';this.render();
+  createMesh(data){
+    const gl=this.gl,vao=gl.createVertexArray(),buffer=gl.createBuffer();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+    gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+    for(let i=0;i<2;i++){
+      gl.enableVertexAttribArray(i);
+      gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);
+    }
+    return {vao,buffer,vertices:data.length/6};
   }
-  resize(){const dpr=Math.min(devicePixelRatio||1,1.5),rect=this.canvas.getBoundingClientRect(),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;}this.render();}
-  view(mode,seat=null){this.mode=mode;
-    if(mode==='human'&&seat){this.seat=seat;const origin=seatViewAnchors(seat,this.viewOptions.posture).eye;const target=viewingTarget(this.plan.surface,this.viewOptions.target,seat);const dx=target.x-origin.x,dz=target.z-origin.z;this.humanYaw=Math.atan2(dx,dz);this.humanPitch=Math.atan2(target.y-origin.y,Math.hypot(dx,dz));this.humanFov=64;}
-    if(mode==='top'){this.distance=this.radius*1.7;}
-    if(mode==='section'&&seat){this.seat=seat;this.pan=[seat.x,seat.y,seat.z];this.distance=24;this.phi=1;this.theta=seat.yaw+Math.PI;}
-    if(mode==='overview'){this.pan=[0,0,0];this.distance=this.radius*1.85;this.theta=.67;this.phi=.94;}
+  bindInstances(mesh,start){
+    const gl=this.gl;
+    gl.bindVertexArray(mesh.vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
+    for(const [loc,size,offset] of instanceAttributes){
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc,size,gl.FLOAT,false,instanceStride,start*instanceStride+offset);
+      gl.vertexAttribDivisor(loc,1);
+    }
+  }
+  load(plan){
+    const gl = this.gl;
+    for (const mesh of [this.deck,this.pedestal,this.pedestalTrim,...Object.values(this.architecture||{})].filter(Boolean)) {
+      gl.deleteBuffer(mesh.buffer);
+      gl.deleteVertexArray(mesh.vao);
+    }
+    this.deck = plan.deckGeometry?.length ? this.createMesh(plan.deckGeometry) : null;
+    this.pedestal = plan.pedestalGeometry?.length ? this.createMesh(plan.pedestalGeometry) : null;
+    this.pedestalTrim = plan.pedestalTrimGeometry?.length ? this.createMesh(plan.pedestalTrimGeometry) : null;
+    this.architecture = Object.fromEntries(Object.entries(plan.architectureGeometry||{}).map(([key,data])=>[key,data.length?this.createMesh(data):null]));
+    this.plan=plan;
+    this.seatIndices=new Map(plan.seats.map((seat,i)=>[seat.uid,i]));
+    this.selectedIndex=-1;
+    gl.bindBuffer(gl.ARRAY_BUFFER,this.instances);
+    gl.bufferData(gl.ARRAY_BUFFER,plan.instanceData,gl.STATIC_DRAW);
+    const rounded=plan.roundedCount||0;
+    if(rounded)this.bindInstances(this.roundedBox,0);
+    this.bindInstances(this.box,rounded);
+    const w=plan.surface.width,l=plan.surface.length;
+    let minX=-w/2-2,maxX=w/2+2,minZ=-l/2-2,maxZ=l/2+2,minY=0,maxY=plan.surface.sport==='basketball'?15:9;
+    for(const {x,y,z} of plan.seats){
+      minX=Math.min(minX,x-1);maxX=Math.max(maxX,x+1);
+      minY=Math.min(minY,y-.5);maxY=Math.max(maxY,y+1);
+      minZ=Math.min(minZ,z-1);maxZ=Math.max(maxZ,z+1);
+    }
+    // Fit the overview to the architecture ACTUALLY drawn in that view.
+    // The former implementation included enormous hidden roof and facade
+    // meshes in fitDistance, shrinking the visible seats into a tiny patch
+    // despite fixing the gray ring. Track exterior-only bounds separately.
+    const structureCorners=[],exteriorOnlyCorners=[];
+    const useOverviewLayer=name=>
+      NativeVenueRenderer.architectureLayerVisibleInMode(plan,'overview',name);
+    const collect=(mesh,target,includeInOverview)=>{
+      const count=mesh.length/6,stride=Math.max(1,Math.floor(count/550));
+      for(let i=0;i<count;i+=stride){
+        const k=i*6,x=mesh[k],y=mesh[k+1],z=mesh[k+2];
+        if(!Number.isFinite(x+y+z))continue;
+        target.push([x,y,z]);
+        if(includeInOverview){
+          minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+          minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+          minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
+        }
+      }
+    };
+    for(const [name,mesh] of Object.entries(plan.architectureGeometry||{})){
+      if(!mesh?.length)continue;
+      const visible=useOverviewLayer(name);
+      collect(mesh,visible?structureCorners:exteriorOnlyCorners,visible);
+    }
+    for(const mesh of [plan.pedestalGeometry,plan.pedestalTrimGeometry]){
+      if(mesh?.length)collect(mesh,structureCorners,true);
+    }
+    this.center=[(minX+maxX)/2,(minY+maxY)*.31,(minZ+maxZ)/2];
+    this.corners=[minX,maxX].flatMap(x=>[minY,maxY].flatMap(y=>[minZ,maxZ].map(z=>[x,y,z])));
+    if(plan.sectionFootprints){
+      const stride=Math.max(1,Math.floor(plan.seats.length/800));
+      this.corners=plan.seats.filter((_,i)=>i%stride===0).map(s=>[s.x,s.y+.9,s.z]);
+      this.corners.push([-w/2,0,-l/2],[w/2,0,l/2],[0,maxY,0]);
+    }
+    this.corners.push(...structureCorners);
+    this.exteriorCorners=[...this.corners,...exteriorOnlyCorners];
+    const deck=plan.deckGeometry;
+    for(let i=(deck?.length??0)-6;i>=0&&deck[i+1]<-.5;i-=18){
+      this.corners.push([deck[i],deck[i+1],deck[i+2]]);
+    }
+    this.radius=Math.max(maxX-minX,maxZ-minZ)*.5;
+    this.view('overview');
+  }
+  fitDistance(){
+    const isTop=this.mode==='top',theta=isTop?0:this.theta,phi=isTop?Math.PI/2:this.phi;
+    const toEye=[Math.sin(theta)*Math.cos(phi),Math.sin(phi),Math.cos(theta)*Math.cos(phi)];
+    const right=[Math.cos(theta),0,-Math.sin(theta)];
+    const up=cross(toEye,right);
+    const vertical=Math.tan(52*Math.PI/360)*.90;
+    const horizontal=vertical*Math.max(.15,this.canvas.width/this.canvas.height);
+    const distances=(this.mode==='exterior'?this.exteriorCorners:this.corners).map(corner=>{
+      const p=corner.map((v,i)=>v-this.center[i]);
+      return dot(p,toEye)+Math.max(Math.abs(dot(p,right))/horizontal,Math.abs(dot(p,up))/vertical);
+    });
+    return Math.max(12,...distances);
+  }
+  highlight(seat){
+    const index=this.seatIndices?.get(seat?.uid)??-1;
+    if(index===this.selectedIndex)return;
+    this.selectedIndex=index;
+    this.render();
+  }
+  resize(){const dpr=Math.min(devicePixelRatio||1,1.5),rect=this.canvas.getBoundingClientRect(),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;this.render();}}
+  view(mode,seat=null){
+    if(mode==='building')mode='overview'; // Legacy route, now unified.
+    this.mode=mode;
+    if(seat)this.selectedIndex=this.seatIndices?.get(seat.uid)??-1;
+    if(mode==='human'&&seat){
+      this.seat=seat;
+      const origin=seatViewAnchors(seat,this.viewOptions.posture).eye;
+      const target=viewingTarget(this.plan.surface,this.viewOptions.target,seat,this.plan.scoreboardHeight);
+      const dx=target.x-origin.x,dz=target.z-origin.z;
+      this.humanYaw=Math.atan2(dx,dz);
+      this.humanPitch=Math.atan2(target.y-origin.y,Math.hypot(dx,dz));
+      this.humanFov=55;
+    }
+    if(mode==='section'&&seat){
+      this.seat=seat;this.pan=[seat.x,seat.y,seat.z];
+      this.distance=23;this.phi=.80;this.theta=seat.yaw+.35;
+    }
+    if(mode==='exterior'){this.theta=1.12;this.phi=.61;this.zoomFactor=1.1;}
+    if(mode==='overview'){
+      this.theta=1.12;
+      // High enough to see every seating bank above the retained outer facade.
+      this.phi=this.plan.arenaInterior?1.04:.79;
+    }
+    if(mode==='overview'||mode==='top')
+      this.zoomFactor=mode==='overview'&&this.plan.arenaInterior?1.0:1;
     this.render();
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
   currentCamera(){
-    if(this.mode==='human'&&this.seat){const p=seatViewAnchors(this.seat,this.viewOptions.posture).eye;const eye=[p.x,p.y,p.z];const a=this.humanYaw,b=this.humanPitch;return {eye,target:[eye[0]+Math.cos(b)*Math.sin(a)*50,eye[1]+Math.sin(b)*50,eye[2]+Math.cos(b)*Math.cos(a)*50],up:[0,1,0],fov:this.humanFov/this.viewOptions.zoom};}
+    if(this.mode==='human'&&this.seat){const p=seatViewAnchors(this.seat,this.viewOptions.posture).eye;const eye=[p.x,p.y,p.z];const a=this.humanYaw,b=this.humanPitch;return {eye,target:[eye[0]+Math.cos(b)*Math.sin(a)*50,eye[1]+Math.sin(b)*50,eye[2]+Math.cos(b)*Math.cos(a)*50],up:[0,1,0],fov:clamp(this.humanFov/this.viewOptions.zoom,8,95)};}
     const target=this.mode==='section'?this.pan.map((p,i)=>p+(i===1?1:0)):this.center;
-    if(this.mode==='top')return {eye:[target[0]+.001,target[1]+this.distance,target[2]],target,up:[0,0,-1],fov:54};
-    const cp=Math.cos(this.phi);return {eye:[target[0]+this.distance*Math.sin(this.theta)*cp,target[1]+this.distance*Math.sin(this.phi),target[2]+this.distance*Math.cos(this.theta)*cp],target,up:[0,1,0],fov:52};
+    const distance=this.mode==='section'?this.distance:this.fitDistance()*this.zoomFactor;
+    if(this.mode==='top')return {eye:[target[0],target[1]+distance,target[2]],target,up:[0,0,-1],fov:52};
+    const cp=Math.cos(this.phi);return {eye:[target[0]+distance*Math.sin(this.theta)*cp,target[1]+distance*Math.sin(this.phi),target[2]+distance*Math.cos(this.theta)*cp],target,up:[0,1,0],fov:52};
   }
   render(){if(!this.plan||!this.gl)return;
-    const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);
+    // Let the neutral CSS viewport show through instead of drawing a solid background.
+    // Use a dim backdrop only for the enclosed human-seat view.
+    if(this.plan.arenaInterior&&this.mode==='human')gl.clearColor(.19,.18,.205,1);
+    else gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     const camera=this.currentCamera(),vp=multiply(perspective(camera.fov*Math.PI/180,this.canvas.width/this.canvas.height,.045,4000),lookAt(camera.eye,camera.target,camera.up));this.vp=vp;
-    gl.useProgram(this.program);gl.uniformMatrix4fv(this.locations.vp,false,vp);gl.uniform3fv(this.locations.eye,camera.eye);gl.uniform1f(this.locations.human,this.mode==='human'?1:0);gl.bindVertexArray(this.vao);
-    gl.drawArraysInstanced(gl.TRIANGLES,0,36,this.plan.instanceCount);
+    gl.useProgram(this.program);
+    gl.uniformMatrix4fv(this.locations.VP,false,vp);
+    gl.uniform3fv(this.locations.Eye,camera.eye);
+    gl.uniform1f(this.locations.Human,this.mode==='human'?1:0);
+    gl.uniform1f(this.locations.Selected,this.selectedIndex);
+    const rounded=this.plan.roundedCount||0;
+    if(this.pedestal && NativeVenueRenderer.pedestalVisibleInMode(this.plan,this.mode)){
+      gl.uniform1f(this.locations.Deck,2);
+      gl.bindVertexArray(this.pedestal.vao);
+      gl.drawArrays(gl.TRIANGLES,0,this.pedestal.vertices);
+      if(this.pedestalTrim){
+        gl.uniform1f(this.locations.Deck,3);
+        gl.bindVertexArray(this.pedestalTrim.vao);
+        gl.drawArrays(gl.TRIANGLES,0,this.pedestalTrim.vertices);
+      }
+    }
+    if(this.plan.arenaInterior && this.architecture){
+      for(const [name,index] of structureLayers){
+        if(!NativeVenueRenderer.architectureLayerVisibleInMode(this.plan,this.mode,name))continue;
+        const mesh=this.architecture[name];
+        if(!mesh)continue;
+        gl.uniform1f(this.locations.Deck,index);
+        gl.bindVertexArray(mesh.vao);
+        gl.drawArrays(gl.TRIANGLES,0,mesh.vertices);
+      }
+    }
+    if(this.deck && NativeVenueRenderer.deckVisibleInMode(this.plan,this.mode)){
+      gl.uniform1f(this.locations.Deck,1);
+      gl.bindVertexArray(this.deck.vao);
+      gl.drawArrays(gl.TRIANGLES,0,this.deck.vertices);
+    }
+    if(this.mode!=='exterior'){
+    gl.uniform1f(this.locations.Deck,0);
+    gl.uniform1f(this.locations.Round,0);
+    gl.bindVertexArray(this.box.vao);
+    gl.drawArraysInstanced(gl.TRIANGLES,0,this.box.vertices,this.plan.instanceCount-rounded);
+    if(rounded){
+      gl.uniform1f(this.locations.Round,1);
+      gl.bindVertexArray(this.roundedBox.vao);
+      gl.drawArraysInstanced(gl.TRIANGLES,0,this.roundedBox.vertices,rounded);
+    }
+    }
+    this.onFrame?.(this);
   }
   projectPoint(pos){if(!this.vp)return null;const m=this.vp,[x,y,z]=pos;const w=m[3]*x+m[7]*y+m[11]*z+m[15];if(w<=0)return null;
     const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/w,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/w;
-    return [(px+1)*this.canvas.width*.5,(1-py)*this.canvas.height*.5];
+    return [(px+1)*this.canvas.width*.5,(1-py)*this.canvas.height*.5,w];
   }
   bind(){
     let start=null,changed=false;
@@ -126,16 +499,32 @@ export class NativeVenueRenderer {
     this.canvas.addEventListener('pointermove',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.hypot(dx,dy)>4)changed=true;
       if(this.mode==='human'){this.humanYaw=start.yaw-dx*.004;this.humanPitch=clamp(start.pitch+dy*.004,-1.3,1.3);}else{this.theta=start.theta-dx*.006;this.phi=clamp(start.phi-dy*.005,.10,1.49);}this.render();});
     this.canvas.addEventListener('pointerup',e=>{if(start&&!changed&&this.mode!=='human')this.pick(e);start=null;});
-    this.canvas.addEventListener('wheel',e=>{e.preventDefault();if(this.mode==='human')this.humanFov=clamp(this.humanFov*(e.deltaY>0?1.07:.93),25,95);else this.distance=clamp(this.distance*(e.deltaY>0?1.11:.90),4,1200);this.render();},{passive:false});
+    this.canvas.addEventListener('pointercancel',()=>{start=null;});
+    this.canvas.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const factor=e.deltaY>0?1.10:1/1.10;
+      if(this.mode==='human')this.humanFov=clamp(this.humanFov*factor,12,95);
+      else if(this.mode==='section')this.distance=clamp(this.distance*factor,4,250);
+      else this.zoomFactor=clamp(this.zoomFactor*factor,.25,4);
+      this.render();
+    },{passive:false});
   }
   pick(e){if(!this.plan)return;const rect=this.canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*this.canvas.width/rect.width,y=(e.clientY-rect.top)*this.canvas.height/rect.height;
-    let best=-1,dist=13*13*(this.canvas.width/rect.width)**2;
+    let best=-1,depth=Infinity,dist=13*13*(this.canvas.width/rect.width)**2;
     for(let i=0;i<this.plan.seats.length;i++){
       const s=this.plan.seats[i],p=this.projectPoint([s.x,s.y+.5,s.z]);if(!p)continue;
-      const d=(p[0]-x)**2+(p[1]-y)**2;if(d<dist){dist=d;best=i;}
+      const d=(p[0]-x)**2+(p[1]-y)**2;if(d<dist || (d===dist&&p[2]<depth)){dist=d;depth=p[2];best=i;}
     }
     if(best>=0)this.onPick(this.plan.seats[best]);
   }
   capture(){this.render();return this.canvas.toDataURL('image/png');}
-  dispose(){this.observer.disconnect();this.gl.deleteBuffer(this.instances);this.gl.deleteBuffer(this.cubeBuffer);this.gl.deleteVertexArray(this.vao);this.gl.deleteProgram(this.program);}
+  dispose(){
+    this.observer.disconnect();
+    this.gl.deleteBuffer(this.instances);
+    for(const {buffer,vao} of [this.box,this.roundedBox,this.deck,this.pedestal,this.pedestalTrim,...Object.values(this.architecture||{})].filter(Boolean)){
+      this.gl.deleteBuffer(buffer);
+      this.gl.deleteVertexArray(vao);
+    }
+    this.gl.deleteProgram(this.program);
+  }
 }

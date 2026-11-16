@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venues · FiledMaker</title>
+<meta name="description" content="Open a 3D venue or review real school seating documents.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./cases.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="FiledMaker case library"><span class="mark">F</span><strong>FiledMaker</strong></a>
+  <nav aria-label="Primary navigation">
+    <a href="./" aria-current="page">Cases</a>
+    <a href="../workbench/">Workbench</a>
+    <a href="../">OSU viewer</a>
+  </nav>
+  <a class="new-btn" href="../workbench/">New venue <span aria-hidden="true">＋</span></a>
+</header>
+<main class="main">
+  <section id="listView">
+    <div class="heading">
+      <div><h1>Choose a venue</h1><p>Open a model, or review a real school's source documents.</p></div>
+      <label class="search"><span class="visually-hidden">Search venues</span>
+        <input id="searchCases" type="search" placeholder="Search venues" autocomplete="off">
+      </label>
+    </div>
+    <div class="filters" role="group" aria-label="Filter venues">
+      <button data-filter="all" aria-pressed="true">All</button>
+      <button data-filter="models" aria-pressed="false">3D models</button>
+      <button data-filter="schools" aria-pressed="false">Real schools</button>
+    </div>
+    <div id="caseGrid" class="case-grid" aria-live="polite"></div>
+    <p id="emptyCases" class="empty" hidden>No matching venues.</p>
+    <p class="footnote">Modeled seats are estimates unless independently verified. Open a case to see exactly what is available.</p>
+  </section>
+  <section id="detailView" hidden>
+    <a class="back" href="./" id="backToCases">← All venues</a>
+    <div class="detail-head">
+      <div><div class="eyebrow" id="detailKind"></div><h1 id="detailTitle"></h1>
+        <p id="detailSubtitle"></p></div>
+      <span class="detail-status" id="detailStatus"></span>
+    </div>
+    <div class="detail-layout">
+      <div class="detail-main">
+        <div id="detailGraphic" class="detail-graphic" aria-label="Generic, illustrative venue diagram"></div>
+        <h2>What we know</h2>
+        <p id="detailDescription"></p>
+        <div id="detailFacts" class="detail-facts"></div>
+        <p class="disclaimer">This case has no verified row-by-row 3D reconstruction. The original school drawing must be reviewed before modeling.</p>
+      </div>
+      <aside class="detail-next">
+        <h2>Open this case</h2>
+        <p>The published source is available, but seat geometry needs staff review.</p>
+        <a id="detailSource" class="action-main" target="_blank" rel="noopener noreferrer">View original document ↗</a>
+        <a id="detailWorkbench" class="action-secondary">Start importing in workbench</a>
+        <small>Download the school's drawing from its original source, then upload it into FiledMaker. It is not automatically imported.</small>
+      </aside>
+    </div>
+  </section>
+</main>
+<script type="module" src="./cases.js"></script>
+</body>
+</html>

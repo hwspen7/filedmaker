@@ -2,6 +2,20 @@
 // The plan is renderer-independent and never invents official ticket inventory.
 import { seatColor, seatKind } from '../seatPresentation.mjs';
 import { ticketReconciliation } from '../seatFirst.mjs';
+import { polygonSpans } from '../schottensteinSeating.mjs';
+import { addSchottensteinBoard, addSchottensteinBowl, buildSchottensteinDecks, buildSchottensteinPedestal } from './schottensteinInterior.mjs';
+import { buildSchottensteinArchitecture } from './schottensteinArchitecture.mjs';
+import { ArchitectureEngine } from './engines/architecture.mjs';
+import { ValidationEngine } from './engines/validation.mjs';
+
+const SCHOTTENSTEIN_COURT_COLORS = {
+  wood:'#c7c7c3',
+  boards:['#c2c2bd','#cacac5','#c5c5c0','#cdccc7','#c0c1be'],
+  apron:'#bc1c33',
+  lane:'#b91d34',
+  lines:'#f8f7ef',
+};
+const BASKETBALL_LANE={width:3.66,length:5.79};
 
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const colorRGB=(hex)=>{
@@ -12,28 +26,74 @@ function offset(s,dx,dy,dz){
   const a=s.yaw||0;
   return [s.x+Math.cos(a)*dx+Math.sin(a)*dz,s.y+dy,s.z-Math.sin(a)*dx+Math.cos(a)*dz];
 }
+function addCourtsideChairs(add,width,length,roundSeats,seats){
+  const frame=colorRGB('#242327'), upholstery=colorRGB('#333136');
+  const pitch=.54;
+  const floorSeats=seats.filter(seat=>Math.abs(seat.y)<.85);
+  const chair=(x,z,yaw)=>{
+    if(floorSeats.some(seat=>Math.hypot(seat.x-x,seat.z-z)<.50))return;
+    const location={x,y:0,z,yaw};
+    add(offset(location,0,.435,.025),[.456,.054,.42],yaw,upholstery,-1,roundSeats);
+    add(offset(location,0,.676,-.188),[.445,.31,.047],yaw,upholstery,-1,roundSeats);
+    for(const side of [-.185,.185]){
+      for(const leg of [-.165,.17])add(offset(location,side,.215,leg),[.025,.43,.026],yaw,frame);
+      add(offset(location,side,.564,-.184),[.027,.27,.029],yaw,frame);
+    }
+  };
+  const row=(min,max,place)=>{
+    const count=Math.floor((max-min)/pitch);
+    for(let i=0;i<count;i++)place((min+max+(2*i+1-count)*pitch)/2);
+  };
+  const base=length/2+2.23,side=width/2+1.06;
+  for(const end of [-1,1]){
+    // Split the baseline seats at the basket support.
+    for(const sign of [-1,1]){
+      row(1.46,width/2-.20,x=>chair(x*sign,base*end,end===1?Math.PI:0));
+    }
+  }
+  // Spectator side opposite the teams and scorer's table.
+  for(const end of [-1,1]){
+    row(.79,length/2-.66,z=>chair(side,end*z,-Math.PI/2));
+  }
+  // Team chairs on either side of the scorer's table.
+  for(const end of [-1,1]){
+    row(3.20,length/2-1.92,z=>chair(-side,end*z,Math.PI/2));
+  }
+}
+function addFloorBorder(add,width,length,extension,y,thickness,color){
+  for(const sign of [-1,1]){
+    add([sign*(width+extension)*.5,y,0],[extension,thickness,length],0,color);
+    add([0,y,sign*(length+extension)*.5],[width+2*extension,thickness,extension],0,color);
+  }
+}
 export function buildVenuePlan(model,options={}) {
   const {seats,project,surface}=model;
   const official=ticketReconciliation(project,seats.length);
+  const chartPreview=Boolean(model.sectionFootprints);
   const hasRoster=project.ticketing?.inventoryMode==='file-import' && model.seatOrigin==='imported';
-  const elements=[];
-  const add=(pos,size,yaw,color,id=-1)=>{
+  const elements=[],seatShells=[];
+  const add=(pos,size,yaw,color,id=-1,rounded=false)=>{
     if(!pos.every(Number.isFinite)||!size.every(x=>Number.isFinite(x)&&x>0.0001))return;
-    elements.push(...pos,...size,Number(yaw)||0,...color,id);
+    (rounded?seatShells:elements).push(...pos,...size,Number(yaw)||0,...color,id);
   };
-  const concrete=colorRGB('#768187');
-  const riseFace=colorRGB('#5c686e');
-  const steel=colorRGB('#637078');
+  const concrete=colorRGB(chartPreview?'#d8d3cb':'#768187');
+  const riseFace=colorRGB(chartPreview?'#b1aba3':'#5c686e');
+  const steel=colorRGB(chartPreview?'#39393d':'#637078');
   const seatScale=clamp(Number(project.seatPitch)||.53,.42,.76);
   const rows=new Map();
   let chairCount=0,benchCount=0;
+  const roundSeats=seats.length<=30000 && options.detail!=='compact';
   for(let i=0;i<seats.length;i++){
-    const s=seats[i],kind=seatKind(project,s);
+    const s=seats[i],kind=s.seatType??seatKind(project,s);
     if(kind==='chair')chairCount++;else benchCount++;
     const key=[s.sectionId,s.tier,s.row].join('::');
     if(!rows.has(key))rows.set(key,[]);
     rows.get(key).push({seat:s,index:i});
-    const tint=colorRGB(options.palette?.[Math.max(0,Math.min(3,s.tier))] || seatColor(project,s.tier,s.sectionIndex));
+    const arenaTint=chartPreview
+      ? s.inferredRowColor==='courtside' ? '#323338' : ['#972c40','#8a293e','#852b3e'][s.tier]
+      : seatColor(project,s.tier,s.sectionIndex);
+    const tint=colorRGB(options.palette?.[Math.max(0,Math.min(3,s.tier))] || arenaTint);
+    const pitch=s.seatWidth??seatScale;
     // Seat elevations are the riser top, not the cushion centre.
     if(kind==='bleacher'){
       add(offset(s,0,.37,0),[seatScale*.90,.055,.31],s.yaw,tint,i);
@@ -42,15 +102,15 @@ export function buildVenuePlan(model,options={}) {
         add(offset(s,.15,.17,-.02),[.025,.32,.03],s.yaw,steel,i);
       }
     }else{
-      add(offset(s,0,.44,.055),[seatScale*.81,.065,.365],s.yaw,tint,i);
-      add(offset(s,0,.71,-.176),[seatScale*.77,.35,.055],s.yaw,tint,i);
+      const seatWidth=pitch*.87;
+      add(offset(s,0,.437,.058),[seatWidth,.075,.37],s.yaw,tint,i,roundSeats);
+      add(offset(s,0,.693,-.157),[seatWidth*.95,.365,.076],s.yaw,tint,i,roundSeats);
       if(seats.length<50000){
-        add(offset(s,-.16,.22,-.095),[.027,.40,.038],s.yaw,steel,i);
-        add(offset(s,.16,.22,-.095),[.027,.40,.038],s.yaw,steel,i);
-        // Premium detail optional to keep large university venues fast.
-        if(options.detail==='full'){
-          add(offset(s,-seatScale*.48,.60,.00),[.024,.037,.22],s.yaw,steel,i);
-          add(offset(s,seatScale*.48,.60,.00),[.024,.037,.22],s.yaw,steel,i);
+        add(offset(s,-seatWidth*.40,.207,-.103),[.027,.414,.09],s.yaw,steel,i);
+        add(offset(s,seatWidth*.40,.207,-.103),[.027,.414,.09],s.yaw,steel,i);
+        if(options.detail!=='compact'){
+          add(offset(s,-pitch*.48,.60,.00),[.024,.037,.22],s.yaw,steel,i);
+          add(offset(s,pitch*.48,.60,.00),[.024,.037,.22],s.yaw,steel,i);
         }
       }
     }
@@ -64,7 +124,6 @@ export function buildVenuePlan(model,options={}) {
       const n=Number(p.seat.number),m=Number(q.seat.number);
       return Number.isFinite(n)&&Number.isFinite(m)?n-m:0;
     });
-    const s0=a[0].seat;
     let run=0;
     for(let k=0;k<a.length;k++){
       const s=a[k].seat;
@@ -72,27 +131,62 @@ export function buildVenuePlan(model,options={}) {
       const dl=prev?Math.hypot(prev.x-s.x,prev.z-s.z):Infinity;
       const dr=next?Math.hypot(next.x-s.x,next.z-s.z):Infinity;
       if(prev&&dl>seatScale*1.7){aisleBreaks++;run++;}
-      const dy=(prev&&dl<seatScale*1.7)?Math.abs(prev.y-s.y):0;
-      if(dy>.13)invalidRows++;
+      if(prev&&dl<seatScale*1.7&&Math.abs(prev.y-s.y)>.13)invalidRows++;
       if(prev&&dl<.24)positionCollisions++;
-      const span=clamp(Math.min(dl,dr,seatScale*1.02),.35,seatScale*1.02);
-      // Light neutral tread and riser. The top is just below the seat anchor.
-      add(offset(s,0,-.155,0),[span,.28,.80],s.yaw,concrete,-1);
-      // Visible face on the approach side, continuous along a row.
-      add(offset(s,0,-.24,.386),[span,.30,.025],s.yaw,riseFace,-1);
+      const span=clamp(Math.min(dl,dr,seatScale*1.12),.32,seatScale*1.12);
+      if(model.seatingRows)continue;
+      const depth=.80, rise=.32;
+      // Supports stay under each row and leave the aisle between contiguous runs open.
+      add(offset(s,0,-rise/2-.01,.035),[span,rise,depth],s.yaw,concrete);
+      add(offset(s,0,-rise*.56,depth/2+.036),[span,rise*.78,.014],s.yaw,riseFace);
+      if(model.sectionFootprints && (k===0||k===a.length-1||dl>seatScale*1.7||dr>seatScale*1.7)){
+        add(offset(s,0,.004,depth*.46),[span,.012,.045],s.yaw,colorRGB('#e1eaf0'));
+      }
     }
     rowRuns+=run+1;
   }
+  const features=model.features??[];
+  if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
+  let deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
+  const architectureGeometry = chartPreview ? buildSchottensteinArchitecture(model)
+    : model.proceduralGeometry ? ArchitectureEngine.build(model.proceduralGeometry,{seatingRows:model.seatingRows}) : null;
+  // The same deck serves the exterior render and the first-person cutaway.
+  if(model.proceduralGeometry)deckGeometry=architectureGeometry?.decks;
+  const engineAudit=model.proceduralGeometry ? ValidationEngine.validate({
+    seats,architectureGeometry,spec:model.proceduralSpec,optimization:model.optimization
+  }) : null;
+  const pedestal = chartPreview && model.seatingRows ? buildSchottensteinPedestal(seats) : null;
+  const courtColors=chartPreview?SCHOTTENSTEIN_COURT_COLORS:null;
   // Central surface is a physically scaled reference marker, not an entire building.
   const field=surface.sport==='football'?colorRGB('#277047'):
-    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB(project.venueReference?.id==='schottenstein-center'?'#b3b5b7':'#cda976');
-  const darkField=surface.sport==='basketball'?colorRGB('#474d56'):colorRGB('#254c42');
-  add([0,-.14,0],[surface.width+7,.23,surface.length+7],0,darkField);
-  add([0,.005,0],[surface.width,.07,surface.length],0,field);
-  const white=colorRGB('#e9eeed');
+    surface.sport==='soccer'?colorRGB('#2d7b4f'):colorRGB(courtColors?.wood??'#d7b781');
+  const basketball = surface.sport==='basketball';
+  const accent=colorRGB(chartPreview?'#992437':basketball?'#334e69':'#254c42');
+  const darkField=colorRGB(basketball?'#24354b':'#254c42');
+  const apron=basketball?3.5:7;
+  if(chartPreview){
+    // Only keep the court/apron boundary. A full-size gray arena floor plate
+    // has no place in the open, seat-first preview (including human views).
+    addFloorBorder(add,surface.width+apron,surface.length+apron,1.35,-.12,.20,colorRGB('#38363b'));
+    addFloorBorder(add,surface.width,surface.length,apron*.5,-.11,.20,colorRGB(courtColors.apron));
+  }
+  if(!courtColors)add([0,-.14,0],[surface.width+apron,.23,surface.length+apron],0,darkField);
+  add([0,basketball?-.012:.005,0],[surface.width,.07,surface.length],0,field);
+  const white=colorRGB(courtColors?.lines??'#f8f7ef');
+  const line = (x1, y1, z1, x2, y2, z2, width, color) => {
+    const dx=x2-x1, dz=z2-z1;
+    add([(x1+x2)/2,(y1+y2)/2,(z1+z2)/2],[width,width,Math.hypot(dx,dz)+width*.4],
+      Math.atan2(dx,dz),color);
+  };
+  const arc = (x,y,z,r,start,end,width,color,segments=32) => {
+    for(let i=0;i<segments;i++){
+      const a=start+(end-start)*i/segments, b=start+(end-start)*(i+1)/segments;
+      line(x+Math.sin(a)*r,y,z+Math.cos(a)*r,x+Math.sin(b)*r,y,z+Math.cos(b)*r,width,color);
+    }
+  };
   const length=surface.length,width=surface.width;
   // Boundary and midpoint lines are crisp, with no stock imagery or text clutter.
-  for(const z of [-length/2,length/2,0])add([0,.051,z],[width,.012,.085],0,white);
+  for(const z of [-length/2,0,length/2])add([0,.051,z],[width,.012,.085],0,white);
   for(const x of [-width/2,width/2])add([x,.051,0],[.085,.012,length],0,white);
   if(surface.sport==='football'){
     for(let n=-45;n<=45;n+=5){const z=n*.9144;add([0,.06,z],[width,.01,n%10===0?.085:.05],0,white);}
@@ -103,18 +197,87 @@ export function buildVenuePlan(model,options={}) {
       add([0,3.05,z],[5.72,.09,.10],0,colorRGB('#f3cb66'));
       add([0,1.52,z],[.1,3.05,.1],0,colorRGB('#f3cb66'));
     }
-  } else if(surface.sport==='basketball'){
-    for(const sign of [-1,1]){
-      const z=sign*(length/2-1.5);
-      add([0,3.05,z],[1.8,1.0,.07],0,colorRGB('#dce8ed'));
-      add([0,2.5,z+sign*.1],[.14,4.6,.16],0,colorRGB('#6f7883'));
-      add([0,.075,sign*(length/2-5.8)],[4.9,.01,.07],0,white);
-      for(const x of [-2.45,2.45])add([x,.08,sign*(length/2-2.9)],[.07,.01,5.8],0,white);
+  } else if(basketball){
+    const wood = (courtColors?.boards??['#dec08c','#dfbf8a','#daba86','#e0c18e','#d9ba85']).map(colorRGB);
+    for(let i=0;i<64;i++){
+      const x=-width/2+(i+.5)*width/64;
+      const painted=courtColors&&Math.abs(x)<BASKETBALL_LANE.width*.5-width/128;
+      const boardLength=painted?length-2*BASKETBALL_LANE.length:length;
+      add([x,courtColors ? .032 : .0385,0],[width/64,.004,boardLength],0,wood[(i*7+Math.floor(i/5))%wood.length]);
     }
-    // Simple centre-hung screen: clearly a reference marker, not a BIM model.
-    add([0,15.2,0],[6.5,2.8,3.5],0,colorRGB('#303d49'));
-    add([0,15.2,1.78],[6.18,2.46,.08],0,colorRGB('#244e68'));
-    add([0,15.2,-1.78],[6.18,2.46,.08],0,colorRGB('#244e68'));
+    const markingY=.052, paint=colorRGB(courtColors?.lane??'#476a8c');
+    arc(0,markingY,0,1.83,0,Math.PI*2,.035,white,40);
+    for(const sign of [-1,1]){
+      const baseline=sign*length/2;
+      const rim=baseline-sign*1.60;
+      const board=baseline-sign*1.22;
+      const foul=baseline-sign*BASKETBALL_LANE.length;
+      const laneHalf=BASKETBALL_LANE.width*.5;
+      add([0,.042,(baseline+foul)/2],[BASKETBALL_LANE.width,.005,BASKETBALL_LANE.length],0,paint);
+      add([0,markingY,foul],[laneHalf*2,.009,.04],0,white);
+      const laneCenter=(baseline+foul)/2;
+      for(const x of [-laneHalf,laneHalf]){
+        add([x,markingY,laneCenter],[.04,.009,BASKETBALL_LANE.length],0,white);
+      }
+      arc(0,markingY,foul,1.83,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white);
+      arc(0,markingY,rim,1.22,sign>0?Math.PI/2:-Math.PI/2,sign>0?Math.PI*1.5:Math.PI/2,.035,white,20);
+      const radius=surface.threePointRadiusM||6.75;
+      const corner=Math.min(radius,width/2-.68);
+      const angle=Math.asin(corner/radius);
+      const joins=rim-sign*Math.sqrt(radius*radius-corner*corner);
+      arc(0,markingY,rim,radius,sign>0?Math.PI-angle:-angle,sign>0?Math.PI+angle:angle,.04,white,44);
+      for(const x of [-corner,corner])line(x,markingY,joins,x,markingY,baseline,.04,white);
+      const post=baseline+sign*1.22;
+      add([0,.28,post],[1.10,.58,.88],0,chartPreview?colorRGB('#28252a'):darkField);
+      add([0,1.58,post],[.20,3.16,.19],0,chartPreview?white:accent);
+      add([0,3.18,(post+board)/2],[.13,.13,Math.abs(post-board)],0,chartPreview?white:steel);
+      add([0,3.45,board],[1.83,1.06,.062],0,colorRGB('#a5bfd0'));
+      const boardFace=board-sign*.036;
+      for(const x of [-.87,.87,-.294,.294]){
+        const outer=Math.abs(x)>.5;
+        add([x,outer?3.45:3.27,boardFace],[.027,outer?1.01:.45,.016],0,white);
+      }
+      for(const [y,span] of [[2.95,1.77],[3.95,1.77],[3.05,.60],[3.50,.60]]){
+        add([0,y,boardFace],[span,.026,.02],0,white);
+      }
+      const rimColor=colorRGB('#f16c32'), net=colorRGB('#eeeae0');
+      add([0,3.05,(rim+board)/2],[.09,.03,Math.abs(rim-board)],0,rimColor);
+      arc(0,3.05,rim,.2286,0,Math.PI*2,.024,rimColor,24);
+      arc(0,2.70,rim,.145,0,Math.PI*2,.012,net,16);
+      for(let i=0;i<12;i++){
+        const a=i*Math.PI/6;
+        const dx=Math.sin(a),dz=Math.cos(a);
+        add([dx*.18,2.875,rim+dz*.18],[.012,.35,.012],0,net);
+      }
+    }
+    const housing=colorRGB('#192b3c');
+    if(chartPreview) addSchottensteinBoard(add,colorRGB);
+    else {
+    const screen=colorRGB('#286695'), bevel=colorRGB('#587d9e');
+    add([0,13.6,0],[4.65,2.5,6.4],0,housing);
+    add([0,12.30,0],[4.75,.11,6.5],0,bevel);
+    add([0,14.88,0],[4.75,.11,6.5],0,bevel);
+    for(const side of [-1,1]){
+      for(const end of [false,true]){
+        const x=end?0:side*2.343,z=end?side*3.216:0;
+        const yaw=end?0:Math.PI/2,w=end?4.31:6.08;
+        add([x,13.68,z],[w,1.87,.055],yaw,screen);
+        add([x,12.59,z],[w,.19,.067],yaw,bevel);
+        add([x,14.72,z],[w,.11,.072],yaw,accent);
+        // Screen graphics remain generic and work in offline exports.
+        for(const offset of [-.29,.29]){
+          const shift=w*offset;
+          add([x+(end?shift:side*.035),13.73,z+(end?side*.035:shift)],
+            [w*.26,.91,.025],yaw,colorRGB('#4c86ad'));
+        }
+      }
+    }
+    }
+    if(chartPreview){
+      addCourtsideChairs(add,width,length,roundSeats,seats);
+      add([-width/2-1.08,.44,0],[.57,.85,5.1],0,housing);
+      add([-width/2-.775,.51,0],[.044,.40,4.98],0,accent);
+    }
   } else {
     for(const sign of [-1,1]){
       const z=sign*(length/2+.25);
@@ -123,5 +286,14 @@ export function buildVenuePlan(model,options={}) {
     }
   }
   const schematic= model.seatOrigin!=='imported' || project.ticketing?.coordinates!=='supplied-unverified';
-  return {instanceData:new Float32Array(elements),instanceCount:elements.length/11,seats,project,surface,official,hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
+  const instanceData=new Float32Array(seatShells.length+elements.length);
+  instanceData.set(seatShells);
+  instanceData.set(elements,seatShells.length);
+  return {instanceData,deckGeometry,architectureGeometry,pedestalGeometry:pedestal?.body,pedestalTrimGeometry:pedestal?.trim,
+    instanceCount:instanceData.length/11,roundedCount:seatShells.length/11,
+    sectionFootprints:model.sectionFootprints,arenaInterior:chartPreview||Boolean(model.proceduralGeometry),
+    engineAudit,proceduralSpec:model.proceduralSpec??null,
+    scoreboardHeight:chartPreview?16.3:13.6,features,seats,project,surface,official,
+    courtStyle:courtColors?{...courtColors,apronWidth:apron,laneSize:BASKETBALL_LANE}:null,
+    hasRoster,schematic,chairCount,benchCount,rowRuns,aisleBreaks,invalidRows,positionCollisions};
 }

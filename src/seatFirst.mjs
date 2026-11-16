@@ -5,6 +5,7 @@ import { SURFACES, validateProject, resolveTiers, modelPerimeterPath,
   distanceAtAngle, pointAtDistance } from './model.mjs';
 import { parseCSV, MAX_IMPORT_SEATS } from './survey.mjs';
 import { venueFacts } from './osuFacts.mjs';
+import { estimateSchottensteinRoster, schottensteinSeatTier, usesSchottensteinChart } from './schottensteinSeating.mjs';
 
 export const BLUE_TIERS = Object.freeze(['#164c80', '#2875ae', '#5597c6', '#88b9d6']);
 export const BLUE_VARIANTS = Object.freeze(['#123f71', '#1d5b92', '#357eaf', '#67a3cb']);
@@ -20,6 +21,18 @@ export function tierBlue(tier=0,section=0){
   const index=Math.max(0,Math.min(3,Math.trunc(tier)||0));
   return (Math.abs(section)%5===0 ? BLUE_VARIANTS : BLUE_TIERS)[index];
 }
+function capacityReference(project,meta={}){
+  const facts=venueFacts(project?.venueReference?.id);
+  const general=facts?.capacity;
+  const season=facts?.mensBasketballCapacity;
+  if(season&&usesSchottensteinChart(project)){
+    const generalDefault=meta.officialCapacity===general.value&&meta.capacitySource===general.source;
+    const seasonDefault=meta.officialCapacity===season.value&&meta.capacitySource===season.source;
+    if(meta.officialCapacity==null||generalDefault||seasonDefault)return season;
+  }
+  return {value:meta.officialCapacity??general?.value??null,
+    source:meta.capacitySource||general?.source||'',scope:meta.capacityScope||general?.scope||''};
+}
 export function enableSeatFirst(input,opts={}) {
   const p=structuredClone(input);
   p.seatFirst=true;
@@ -30,12 +43,12 @@ export function enableSeatFirst(input,opts={}) {
   p.showFixtures=true;
   p.detailLevel='standard';
   if(p.blueTheme) p.sections.forEach((s,i)=>{s.color=tierBlue(0,i);});
-  const facts=venueFacts(p.venueReference?.id);
   const original=p.ticketing||{};
+  const capacity=capacityReference(p,original);
   p.ticketing={
-    officialCapacity:opts.officialCapacity??original.officialCapacity??facts?.capacity?.value??null,
-    capacitySource:opts.capacitySource??original.capacitySource??facts?.capacity?.source??'',
-    capacityScope:opts.capacityScope??original.capacityScope??facts?.capacity?.scope??'',
+    officialCapacity:opts.officialCapacity??capacity.value,
+    capacitySource:opts.capacitySource??capacity.source,
+    capacityScope:opts.capacityScope??capacity.scope,
     inventorySource:original.inventorySource||'',
     inventoryCount:original.inventoryCount??null,
     inventoryMode:original.inventoryMode||'none',
@@ -121,6 +134,7 @@ function sectionAssignment(project, roster) {
 // Grouped rows use their supplied seat identifiers and counts exactly.
 export function estimateRosterCoordinates(input,roster) {
   const project=validateProject(input),surface=SURFACES[project.surface];
+  if (usesSchottensteinChart(project)) return estimateSchottensteinRoster(roster);
   const tiers=resolveTiers(project),assignment=sectionAssignment(project,roster);
   const straightSides=['college-gym','high-basketball','high-football','middle-basketball'].includes(project.school?.profile);
   const orderedLabels=[...new Set(roster.map(s=>s.section))];
@@ -168,9 +182,19 @@ export function estimateRosterCoordinates(input,roster) {
   }
   return {seats:out,unmatchedSections:assignment.unmatched,coordinateMethod:'estimated'};
 }
-export function importTicketRoster(input,csv,source='School-supplied ticket inventory CSV') {
+export function importTicketRoster(input,csv,source='School-supplied ticket inventory CSV',{requireCoordinates=false}={}) {
   const project=enableSeatFirst(input);
   const parsed=parseTicketRosterCSV(csv);
+  const schottenstein=usesSchottensteinChart(project);
+  const needsXYZ=requireCoordinates||(schottenstein&&parsed.hasCoordinates);
+  if(needsXYZ&&(!parsed.hasCoordinates||parsed.seats.some(seat=>seat.y===null))){
+    throw new Error('This import requires x_m, y_m and z_m for every seat.');
+  }
+  if(schottenstein&&parsed.hasCoordinates){
+    const points=new Set(parsed.seats.map(seat=>JSON.stringify([seat.x,seat.y,seat.z])));
+    if(points.size!==parsed.seats.length)throw new Error('Each imported Schottenstein Center seat needs a distinct XYZ position.');
+    for(const seat of parsed.seats)seat.tier=schottensteinSeatTier(seat.section)??seat.tier;
+  }
   const inferred=parsed.hasCoordinates?null:estimateRosterCoordinates(project,parsed.seats);
   const seats=inferred?.seats??parsed.seats;
   // validateProject only mutates a cloned project. All-or-nothing import.
@@ -184,11 +208,12 @@ export function importTicketRoster(input,csv,source='School-supplied ticket inve
 }
 export function ticketReconciliation(project,modeledCount=null){
   const meta=validateTicketing(project?.ticketing);
-  const official=meta?.officialCapacity??venueFacts(project?.venueReference?.id)?.capacity?.value??null;
+  const capacity=capacityReference(project,meta??{});
+  const official=capacity.value;
   const modeled=modeledCount===null?null:Math.max(0,Math.trunc(modeledCount));
   const inventory=meta?.inventoryCount??(project?.survey?.mode==='imported' ? project.survey.seats.length : null);
   const reconciled=official!==null&&inventory!==null&&official===inventory;
-  return {officialCapacity:official,officialSource:meta?.capacitySource||venueFacts(project?.venueReference?.id)?.capacity?.source||'',
+  return {officialCapacity:official,officialSource:capacity.source,capacityWithStudents:capacity.withStudents??null,
     inventoryCount:inventory,modelSeatCount:modeled,
     inventoryVsOfficial:official===null||inventory===null?null:inventory-official,
     modelVsInventory:inventory===null||modeled===null?null:modeled-inventory,

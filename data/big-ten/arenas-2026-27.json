@@ -1,0 +1,1463 @@
+{
+  "schemaVersion": "1.0.0",
+  "conference": {
+    "name": "Big Ten Conference",
+    "season": "2026-27",
+    "sport": "men-basketball",
+    "membershipSource": {
+      "url": "https://bigten.org/news/2026/5/11/big-ten-conference-announces-2026-27-men-s-basketball-opponents-051226-60009.aspx",
+      "title": "Big Ten 2026–27 Men's Basketball Opponents",
+      "verifiedOn": "2026-11-15"
+    }
+  },
+  "generatedFrom": "Official capacity and school identity where sourced; geometry parameters manually estimated for preview, not sourced seat maps",
+  "venues": [
+    {
+      "id": "illinois",
+      "school": {
+        "name": "University of Illinois Urbana-Champaign",
+        "team": "Fighting Illini",
+        "primaryColor": "#B64D27",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "State Farm Center",
+        "city": "Champaign",
+        "state": "IL",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 15544,
+        "configuration": "men-basketball",
+        "notes": "15,544 post-renovation basketball configuration.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Illinois Athletics: State Farm Center",
+          "url": "https://fightingillini.com/facilities/state-farm-center/2",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 22,
+        "roundness": 2.9,
+        "clearance": 5.45,
+        "aisleWidth": 1.2,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 21,
+            "depth": 0.82,
+            "rise": 0.33,
+            "gap": 3.1,
+            "elevationGap": 2.2
+          },
+          {
+            "rows": 23,
+            "depth": 0.83,
+            "rise": 0.42,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        },
+        "geometryNotes": "Slightly increased first-bowl clearance to prevent collisions with real source-documented court-level section 9-13 chairs; physical coordinates remain unsurveyed."
+      }
+    },
+    {
+      "id": "indiana",
+      "school": {
+        "name": "Indiana University Bloomington",
+        "team": "Hoosiers",
+        "primaryColor": "#8D2631",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Simon Skjodt Assembly Hall",
+        "city": "Bloomington",
+        "state": "IN",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 17222,
+        "configuration": "men-basketball",
+        "notes": "17,222 published basketball capacity.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Indiana Athletics: Simon Skjodt Assembly Hall",
+          "url": "https://iuhoosiers.com/facilities/simon-skjodt-assembly-hall/2",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 4.3,
+        "clearance": 4.3,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 22,
+            "depth": 0.82,
+            "rise": 0.34,
+            "gap": 3.3,
+            "elevationGap": 2
+          },
+          {
+            "rows": 24,
+            "depth": 0.84,
+            "rise": 0.46,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "iowa",
+      "school": {
+        "name": "University of Iowa",
+        "team": "Hawkeyes",
+        "primaryColor": "#3C4146",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Carver-Hawkeye Arena",
+        "city": "Iowa City",
+        "state": "IA",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 14998,
+        "configuration": "men-basketball",
+        "notes": "Current Iowa facility page reports 14,998; older reports used 15,500.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Iowa Athletics: Men's Basketball Facilities",
+          "url": "https://hawkeyesports.com/mens-basketball-facilities",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 22,
+        "roundness": 2.8,
+        "clearance": 4.1,
+        "aisleWidth": 1.2,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 19,
+            "depth": 0.84,
+            "rise": 0.34,
+            "gap": 2.6,
+            "elevationGap": 2
+          },
+          {
+            "rows": 22,
+            "depth": 0.84,
+            "rise": 0.43,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "metal-and-brick",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "maryland",
+      "school": {
+        "name": "University of Maryland, College Park",
+        "team": "Terrapins",
+        "primaryColor": "#9D2C3C",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "XFINITY Center",
+        "city": "College Park",
+        "state": "MD",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 17300,
+        "configuration": "men-basketball",
+        "notes": "17,300 published basketball capacity; the official facility URL uses a legacy slug.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Maryland Athletics: XFINITY Center quick facts",
+          "url": "https://umterps.com/facilities/secu-stadium/8",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 4.6,
+        "clearance": 4.5,
+        "aisleWidth": 1.3,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 17,
+            "depth": 0.82,
+            "rise": 0.32,
+            "gap": 2.4,
+            "elevationGap": 2
+          },
+          {
+            "rows": 8,
+            "depth": 0.83,
+            "rise": 0.39,
+            "gap": 2,
+            "elevationGap": 1.3
+          },
+          {
+            "rows": 18,
+            "depth": 0.84,
+            "rise": 0.45,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "metal-and-brick",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "michigan",
+      "school": {
+        "name": "University of Michigan",
+        "team": "Wolverines",
+        "primaryColor": "#1A4572",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Crisler Center",
+        "city": "Ann Arbor",
+        "state": "MI",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 12707,
+        "configuration": "men-basketball",
+        "notes": "12,707 since the 2013 capacity revision; official site lists historical configurations.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Michigan Athletics: Crisler Center",
+          "url": "https://mgoblue.com/facilities/crisler-center/5",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 22,
+        "roundness": 3.3,
+        "clearance": 4.3,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 18,
+            "depth": 0.82,
+            "rise": 0.31,
+            "gap": 2.4,
+            "elevationGap": 2.2
+          },
+          {
+            "rows": 19,
+            "depth": 0.83,
+            "rise": 0.41,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "michigan-state",
+      "school": {
+        "name": "Michigan State University",
+        "team": "Spartans",
+        "primaryColor": "#1F5741",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Breslin Center",
+        "city": "East Lansing",
+        "state": "MI",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 14797,
+        "configuration": "men-basketball",
+        "notes": "14,797 from official men's basketball media information.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Michigan State 2025–26 Men's Basketball Preseason Information",
+          "url": "https://msuspartans.com/documents/download/2025/10/17/2526_MBB_Preseason_Info.pdf",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 4.5,
+        "clearance": 4.2,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 19,
+            "depth": 0.83,
+            "rise": 0.32,
+            "gap": 2.3,
+            "elevationGap": 2.1
+          },
+          {
+            "rows": 20,
+            "depth": 0.84,
+            "rise": 0.42,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "modern-glass",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "minnesota",
+      "school": {
+        "name": "University of Minnesota Twin Cities",
+        "team": "Golden Gophers",
+        "primaryColor": "#6C3542",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Williams Arena",
+        "city": "Minneapolis",
+        "state": "MN",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 14625,
+        "configuration": "men-basketball",
+        "notes": "14,625 stated as full house after loft seating addition.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Minnesota Athletics: The Barn / Williams Arena",
+          "url": "https://gophersports.com/sports/2026/6/12/facilities-the-barn-blue-cross-blue-shield",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 22,
+        "roundness": 4.6,
+        "clearance": 3.9,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 19,
+            "depth": 0.82,
+            "rise": 0.34,
+            "gap": 2,
+            "elevationGap": 1.7
+          },
+          {
+            "rows": 20,
+            "depth": 0.82,
+            "rise": 0.42,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "nebraska",
+      "school": {
+        "name": "University of Nebraska–Lincoln",
+        "team": "Cornhuskers",
+        "primaryColor": "#B72B3A",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Pinnacle Bank Arena",
+        "city": "Lincoln",
+        "state": "NE",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 15147,
+        "configuration": "men-basketball",
+        "notes": "Approximately 15,147 in the official 2013 announcement; current configuration should be rechecked.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Nebraska Athletics: Pinnacle Bank Arena seating announcement",
+          "url": "https://huskers.com/news/2013/05/03/pinnacle-bank-arena-waitlist-has-started",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 5.2,
+        "clearance": 4.5,
+        "aisleWidth": 1.3,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 16,
+            "depth": 0.82,
+            "rise": 0.32,
+            "gap": 2.8,
+            "elevationGap": 1.8
+          },
+          {
+            "rows": 8,
+            "depth": 0.82,
+            "rise": 0.37,
+            "gap": 2.6,
+            "elevationGap": 1.7
+          },
+          {
+            "rows": 15,
+            "depth": 0.84,
+            "rise": 0.43,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "modern-glass",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "northwestern",
+      "school": {
+        "name": "Northwestern University",
+        "team": "Wildcats",
+        "primaryColor": "#5A467B",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Welsh–Ryan Arena",
+        "city": "Evanston",
+        "state": "IL",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 7039,
+        "configuration": "men-basketball",
+        "notes": "7,039 capacity for renovated arena documented in 2018–19 game notes.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Northwestern 2018–19 Men's Basketball Game Notes",
+          "url": "https://nusports.com/documents/download/2018/12/3/NUMBB_GM9_MICH.pdf",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 18,
+        "roundness": 4.6,
+        "clearance": 3.4,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 11,
+            "depth": 0.8,
+            "rise": 0.29,
+            "gap": 1.5,
+            "elevationGap": 1.5
+          },
+          {
+            "rows": 14,
+            "depth": 0.83,
+            "rise": 0.38,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ohio-state",
+      "school": {
+        "name": "The Ohio State University",
+        "team": "Buckeyes",
+        "primaryColor": "#903549",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Value City Arena at the Schottenstein Center",
+        "city": "Columbus",
+        "state": "OH",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 19049,
+        "configuration": "men-basketball",
+        "notes": "19,049 standard published capacity; 18,809 with students in the 2026–27 record book.",
+        "sourceId": "school-capacity",
+        "alternates": [
+          {
+            "published": 18809,
+            "configuration": "men-basketball-with-students",
+            "sourceId": "school-capacity"
+          }
+        ]
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Ohio State 2026–27 Men's Basketball Record Book",
+          "url": "https://ohiostatebuckeyes.com/documents/download/2026/11/6/2026-27_Ohio_State_Men_s_Basketball_Record_Book.pdf",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 26,
+        "roundness": 4.3,
+        "clearance": 4.3,
+        "aisleWidth": 1.2,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 18,
+            "depth": 0.83,
+            "rise": 0.34,
+            "gap": 2.5,
+            "elevationGap": 2
+          },
+          {
+            "rows": 8,
+            "depth": 0.83,
+            "rise": 0.39,
+            "gap": 2.6,
+            "elevationGap": 2
+          },
+          {
+            "rows": 20,
+            "depth": 0.85,
+            "rise": 0.44,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "metal-and-brick",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "oregon",
+      "school": {
+        "name": "University of Oregon",
+        "team": "Ducks",
+        "primaryColor": "#176047",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Matthew Knight Arena",
+        "city": "Eugene",
+        "state": "OR",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 12364,
+        "configuration": "men-basketball",
+        "notes": "12,364 published capacity; also confirmed in recent sold-out event coverage.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Oregon Athletics: Matthew Knight Arena",
+          "url": "https://goducks.com/sports/2011/6/21/209800386",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 4.7,
+        "clearance": 4.8,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 16,
+            "depth": 0.83,
+            "rise": 0.33,
+            "gap": 2.7,
+            "elevationGap": 1.8
+          },
+          {
+            "rows": 18,
+            "depth": 0.84,
+            "rise": 0.43,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "modern-glass",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "penn-state",
+      "school": {
+        "name": "Pennsylvania State University",
+        "team": "Nittany Lions",
+        "primaryColor": "#24466D",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Bryce Jordan Center",
+        "city": "University Park",
+        "state": "PA",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 15261,
+        "configuration": "men-basketball",
+        "notes": "15,261 standard, expandable for some events.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Penn State Athletics: Bryce Jordan Center",
+          "url": "https://gopsusports.com/bryce-jordan-center",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 5.4,
+        "clearance": 4.4,
+        "aisleWidth": 1.2,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 16,
+            "depth": 0.84,
+            "rise": 0.32,
+            "gap": 2.9,
+            "elevationGap": 2
+          },
+          {
+            "rows": 8,
+            "depth": 0.83,
+            "rise": 0.38,
+            "gap": 2.3,
+            "elevationGap": 1.6
+          },
+          {
+            "rows": 16,
+            "depth": 0.85,
+            "rise": 0.44,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "metal-and-brick",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "purdue",
+      "school": {
+        "name": "Purdue University",
+        "team": "Boilermakers",
+        "primaryColor": "#4B4A4B",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Mackey Arena",
+        "city": "West Lafayette",
+        "state": "IN",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 14876,
+        "configuration": "men-basketball",
+        "notes": "Official facility page states 14,876 seats; attendance capacity language differs.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Purdue Athletics: Mackey Arena",
+          "url": "https://purduesports.com/facilities/mackey-arena",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 22,
+        "roundness": 2.7,
+        "clearance": 3.5,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 19,
+            "depth": 0.83,
+            "rise": 0.35,
+            "gap": 2.3,
+            "elevationGap": 1.7
+          },
+          {
+            "rows": 22,
+            "depth": 0.83,
+            "rise": 0.43,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "rutgers",
+      "school": {
+        "name": "Rutgers University–New Brunswick",
+        "team": "Scarlet Knights",
+        "primaryColor": "#9C2B3C",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Jersey Mike's Arena",
+        "city": "Piscataway",
+        "state": "NJ",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 8000,
+        "configuration": "men-basketball",
+        "notes": "8,000 men's basketball venue capacity from 2026 game notes.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Rutgers Men's Basketball Game Notes, November 2026",
+          "url": "https://scarletknights.com/documents/download/2026/11/8/RutgersMBB_GameNotes_NJIT.pdf",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 16,
+        "roundness": 4.2,
+        "clearance": 3.2,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 12,
+            "depth": 0.8,
+            "rise": 0.31,
+            "gap": 2,
+            "elevationGap": 1.6
+          },
+          {
+            "rows": 15,
+            "depth": 0.82,
+            "rise": 0.4,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ucla",
+      "school": {
+        "name": "University of California, Los Angeles",
+        "team": "Bruins",
+        "primaryColor": "#326FA5",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Pauley Pavilion",
+        "city": "Los Angeles",
+        "state": "CA",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 13800,
+        "configuration": "men-basketball",
+        "notes": "13,800 for men's basketball in current UCLA event information.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "UCLA Men's Basketball Oct. 2026 Game Information",
+          "url": "https://uclabruins.com/news/2026/10/20/mens-basketball-to-host-exhibition-game-on-wednesday-against-california-baptist",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 4.7,
+        "clearance": 4.8,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 18,
+            "depth": 0.84,
+            "rise": 0.33,
+            "gap": 3.1,
+            "elevationGap": 2.2
+          },
+          {
+            "rows": 18,
+            "depth": 0.85,
+            "rise": 0.43,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "modern-glass",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "usc",
+      "school": {
+        "name": "University of Southern California",
+        "team": "Trojans",
+        "primaryColor": "#92293B",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Galen Center",
+        "city": "Los Angeles",
+        "state": "CA",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 10258,
+        "configuration": "men-basketball",
+        "notes": "10,258 as listed in the official Galen Center facility profile.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "USC Athletics: Galen Center",
+          "url": "https://usctrojans.com/facilities/galen-center/3",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 20,
+        "roundness": 5.3,
+        "clearance": 4.2,
+        "aisleWidth": 1.05,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 15,
+            "depth": 0.82,
+            "rise": 0.32,
+            "gap": 2.3,
+            "elevationGap": 1.6
+          },
+          {
+            "rows": 16,
+            "depth": 0.84,
+            "rise": 0.41,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "metal-and-brick",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "washington",
+      "school": {
+        "name": "University of Washington",
+        "team": "Huskies",
+        "primaryColor": "#59437B",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Alaska Airlines Arena at Hec Edmundson Pavilion",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 9294,
+        "configuration": "men-basketball",
+        "notes": "9,294 from the current official facility facts; 10,000 appears in older listings.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Washington Athletics: Alaska Airlines Arena",
+          "url": "https://gohuskies.com/facilities/alaska-airlines-arena/41",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 20,
+        "roundness": 3.6,
+        "clearance": 3.6,
+        "aisleWidth": 1.05,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 14,
+            "depth": 0.82,
+            "rise": 0.31,
+            "gap": 2.2,
+            "elevationGap": 1.6
+          },
+          {
+            "rows": 16,
+            "depth": 0.84,
+            "rise": 0.4,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "masonry",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wisconsin",
+      "school": {
+        "name": "University of Wisconsin–Madison",
+        "team": "Badgers",
+        "primaryColor": "#9F293D",
+        "colorProvenance": "illustrative-seating-tone"
+      },
+      "venue": {
+        "name": "Kohl Center",
+        "city": "Madison",
+        "state": "WI",
+        "country": "USA",
+        "sport": "men-basketball"
+      },
+      "capacity": {
+        "published": 16838,
+        "configuration": "men-basketball",
+        "notes": "16,838 men's basketball specifically; hockey and women's capacity differ.",
+        "sourceId": "school-capacity"
+      },
+      "evidence": {
+        "seatMap": "not-digitized",
+        "sectionCoordinates": "not-available",
+        "seatRoster": "not-available",
+        "buildingDimensions": "not-surveyed"
+      },
+      "sources": [
+        {
+          "id": "school-capacity",
+          "kind": "university-athletics",
+          "title": "Wisconsin Athletics: Kohl Center",
+          "url": "https://uwbadgers.com/sports/2015/8/21/GEN_2014010135",
+          "verifiedOn": "2026-11-15"
+        }
+      ],
+      "model": {
+        "evidenceLevel": "estimated-parametric",
+        "surface": "ncaa",
+        "template": "indoor-arena",
+        "sections": 24,
+        "roundness": 4.9,
+        "clearance": 4.3,
+        "aisleWidth": 1.1,
+        "seatPitch": 0.54,
+        "capacityTolerance": 0.035,
+        "tiers": [
+          {
+            "rows": 18,
+            "depth": 0.83,
+            "rise": 0.33,
+            "gap": 2.9,
+            "elevationGap": 2.1
+          },
+          {
+            "rows": 8,
+            "depth": 0.83,
+            "rise": 0.4,
+            "gap": 2.4,
+            "elevationGap": 1.8
+          },
+          {
+            "rows": 18,
+            "depth": 0.84,
+            "rise": 0.44,
+            "gap": 0,
+            "elevationGap": 0
+          }
+        ],
+        "voids": [],
+        "exterior": {
+          "profile": "metal-and-brick",
+          "entrances": [
+            {
+              "angle": 0.7853981633974483,
+              "role": "primary"
+            },
+            {
+              "angle": 3.9269908169872414,
+              "role": "secondary"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

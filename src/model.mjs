@@ -2,6 +2,9 @@
 import { createSurvey, validateSurvey, importedSeats } from './survey.mjs';
 import { getNBAArena } from './nbaCatalog.mjs';
 import { facingYaw } from './seatPresentation.mjs';
+import { buildSchottensteinSeating, schottensteinFootprints, usesSchottensteinChart } from './schottensteinSeating.mjs';
+import { GeometryEngine } from './next/engines/geometry.mjs';
+import { SeatingEngine } from './next/engines/seating.mjs';
 export const TAU = Math.PI * 2;
 export const CURRENT_SCHEMA = 5;
 
@@ -113,6 +116,10 @@ export function validateProject(input) {
   project.showFixtures = project.showFixtures !== false;
   project.seatFirst = project.seatFirst === true;
   project.blueTheme = project.blueTheme === true;
+  if(project.proceduralVenue != null){
+    const profile=GeometryEngine.normalize(project.proceduralVenue);
+    if(profile.surface!==project.surface)throw Error('Procedural surface must match project surface');
+  }
   if(project.ticketing !== undefined && project.ticketing !== null){
     const t=project.ticketing;
     if(!t||typeof t!=='object'||Array.isArray(t))throw new Error('Invalid ticket metadata.');
@@ -161,8 +168,7 @@ export function validateProject(input) {
   }
   if (project.aisles === undefined) project.aisles = [];
   if (!Array.isArray(project.aisles) || project.aisles.length > 32) throw new Error('Use at most 32 aisles.');
-  // Migrate only the exact unedited, obsolete example cutouts. An aisle with
-  // any changed angle, width, ID or tier remains the user's own authored data.
+  // Remove exact, unedited reference cutouts without touching user-authored aisles.
   project.aisles = project.aisles.filter(a => !isLegacyReferenceAisle(project, a));
   const aisleIds = new Set();
   project.aisles.forEach((aisle, index) => {
@@ -489,10 +495,6 @@ export function pointAtDistance(path, distance) {
   };
 }
 
-// Schematic references should not cut equal-degree sectors: around squared
-// bowls that produces near-zero-width corner wedges and isolated single seats.
-// Space reference section boundaries by actual front-row perimeter instead.
-// This is a visual balancing aid, NOT a claim about official section locations.
 export function balancedReferenceSections(project, count, margin = 0) {
   const source = makeSections(count);
   const path = modelPerimeterPath(project, SURFACES[project.surface], margin, 1024);
@@ -504,13 +506,34 @@ export function balancedReferenceSections(project, count, margin = 0) {
   }));
 }
 
-export function generateSeats(input) {
+export function generateSeats(input, { audienceLayout = true } = {}) {
   const project = validateProject(input);
   const surface = SURFACES[project.surface];
   const tiers = resolveTiers(project);
   const source = importedSeats(project.survey, project);
-  if (source) return { project, surface, tiers, seats: source.seats, groups: [], capacity: source.seats.length,
-    seatOrigin: 'imported', registration: source.registration, elevationCount: source.elevationCount };
+  const chart = audienceLayout && usesSchottensteinChart(project);
+  if (source) {
+    const sectionFootprints = chart ? schottensteinFootprints() : undefined;
+    return { project, surface, tiers, seats: source.seats, groups: [], capacity: source.seats.length,
+      seatOrigin: 'imported', registration: source.registration, elevationCount: source.elevationCount, sectionFootprints };
+  }
+  if (chart) {
+    const reference = buildSchottensteinSeating(project.seatPitch);
+    return { project, surface, tiers, ...reference, capacity: reference.seats.length,
+      seatOrigin: 'generated', registration: null, elevationCount: reference.seats.length };
+  }
+  if(project.proceduralVenue){
+    const output=SeatingEngine.generate(project.proceduralVenue);
+    return {project,surface:{...surface,width:output.spec.field.width,length:output.spec.field.length},
+      tiers,seats:output.seats,groups:output.groups,
+      seatingRows:output.seatingRows,
+      interiorSectionFootprints:output.interiorSectionFootprints,
+      proceduralGeometry:output.geometry,
+      proceduralSpec:output.spec,optimization:output.optimization,
+      sectionCoverage:output.coverage,
+      capacity:output.seats.length,seatOrigin:'generated',registration:null,
+      elevationCount:output.seats.length};
+  }
   const seats = [], groups = [];
   for (const tier of tiers) {
     for (let sectionIndex = 0; sectionIndex < project.sections.length; sectionIndex++) {

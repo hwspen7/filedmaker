@@ -8,7 +8,8 @@ test('published school preview bundles native WebGL2 without an internet CDN',()
  const p=applySchoolRowPlan(createSchoolProject('college-gym',{school:'Fixture',venue:'Gym'}),'section,row,seats,side,tier\nHOME,A,4,east,T1\nHOME,B,4,east,T1\nAWAY,A,4,west,T1');
  const html=buildOfflineSchoolViewerHTML(p,source);
  assert.match(html,/NativeVenueRenderer/);
- assert.match(html,/2D Map/);assert.match(html,/Human View/);
+ assert.match(html,/2D map/);assert.match(html,/3D overview/);assert.match(html,/Seat view/);
+ assert.doesNotMatch(html,/id="building"/,'Standalone viewer must not split Building from 3D overview');
  assert.doesNotMatch(html,/cdn\.jsdelivr\.net|unpkg\.com/);
  assert.match(html,/Published capacity/);
  assert.match(html,/synthetic seats only/);

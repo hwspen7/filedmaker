@@ -1,0 +1,39 @@
+{
+  "id": "example-stadium",
+  "name": "Example Outdoor Stadium",
+  "surface": "ncaa-football",
+  "template": "open-stadium",
+  "sections": 24,
+  "clearance": 8,
+  "roundness": 4.6,
+  "seatPitch": 0.54,
+  "aisleWidth": 1.45,
+  "targetCapacity": 42000,
+  "capacityTolerance": 0.04,
+  "tiers": [
+    {
+      "rows": 24,
+      "depth": 0.87,
+      "rise": 0.35,
+      "gap": 4.4,
+      "elevationGap": 3.1
+    },
+    {
+      "rows": 21,
+      "depth": 0.89,
+      "rise": 0.43,
+      "gap": 0,
+      "elevationGap": 0
+    }
+  ],
+  "voids": [
+    {
+      "section": 12,
+      "tier": 1,
+      "firstRow": 19,
+      "lastRow": 21,
+      "reason": "Press enclosure (illustrative)"
+    }
+  ],
+  "sources": []
+}

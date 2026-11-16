@@ -1,0 +1,49 @@
+name: Real School PDF Acceptance
+on:
+  push:
+    branches: [feature/big-ten-arena-parity]
+    paths:
+      - 'src/workbench/**'
+      - 'workbench/**'
+      - 'scripts/browser-real-venues.mjs'
+      - 'scripts/fetch-real-venue-inputs.mjs'
+      - 'tests/real-public-cases.test.mjs'
+      - 'tests/fixtures/actual-school-cases.mjs'
+      - '.github/workflows/real-school-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install local, pinned PDF renderer
+        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Audit public school seating facts and contradictory inputs
+        run: npm run test:real-school-evidence
+      - name: Fetch actual source PDF bytes, record fingerprints and source failures
+        run: node scripts/fetch-real-venue-inputs.mjs
+      - name: Install Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+      - name: Open real school PDFs in local browser, verify non-fabrication
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/browser-real-venues.mjs
+      - name: Save reports and screenshot evidence (no original PDFs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: filedmaker-real-school-qa
+          path: |
+            artifacts/real-school/*.json
+            artifacts/real-school/*.png
+          retention-days: 14
+          if-no-files-found: warn

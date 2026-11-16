@@ -1,0 +1,259 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "architectural-feature-references-not-surveyed-meshes",
+  "notice": "Roof profiles, orientation, heights, facade widths, roof ribs and all polygon vertices are visual reconstruction estimates. These reference facts are NOT per-venue surveyed CAD geometry or proof of OSU-grade photographic parity. Real-world dimensions are stored only where individually documented; roof-geometry placement remains visual study rather than licensed architectural drawings.",
+  "venues": {
+    "illinois": {
+      "roof": "folded-dome",
+      "finish": "white",
+      "feature": "ring-glass-and-radial-pylons",
+      "roofRise": 12,
+      "entryAngle": 1.57,
+      "source": "https://www.statefarmcenter.com/arena-info/about-state-farm-center",
+      "note": "Folded thin-shell white concrete dome, radial supports and a recessed 360-degree glass band",
+      "outerDiameterMetres": 121.92,
+      "apexHeightMetres": 39.0144,
+      "radialButtresses": 48,
+      "measuredFacts": [
+        {
+          "key": "outerDiameterMetres",
+          "value": 121.92,
+          "units": "m",
+          "source": "https://www.statefarmcenter.com/arena-info/about-state-farm-center"
+        },
+        {
+          "key": "apexHeightMetres",
+          "value": 39.0144,
+          "units": "m above court",
+          "source": "https://docomomo-us.org/news/the-university-of-illinois-state-farm-center-the-renovation-of-a-mid-century-flying-saucer"
+        },
+        {
+          "key": "radialButtresses",
+          "value": 48,
+          "units": "count",
+          "source": "https://docomomo-us.org/news/the-university-of-illinois-state-farm-center-the-renovation-of-a-mid-century-flying-saucer"
+        }
+      ]
+    },
+    "indiana": {
+      "roof": "saddle",
+      "finish": "pale",
+      "feature": "south-glass-atrium",
+      "roofRise": 10,
+      "entryAngle": 4.71,
+      "source": "https://news.iu.edu/live/news/27429-ncaa-tournament-site-simon-skjodt-assembly-hall",
+      "note": "Suspension saddle roof; north/south stand separation and expanded south entrance"
+    },
+    "iowa": {
+      "roof": "truss-arch",
+      "finish": "slate",
+      "feature": "exposed-truss",
+      "roofRise": 8,
+      "entryAngle": 1.57,
+      "source": "https://sah-archipedia.org/buildings/IA-01-CE306",
+      "note": "Deep-set bowl below a low external roof of exposed steel trusses and curved glass-block walls",
+      "historicalClearspanMetres": {
+        "width": 91.44,
+        "length": 103.632
+      },
+      "measuredFacts": [
+        {
+          "key": "historicalClearspanMetres.width",
+          "value": 91.44,
+          "units": "m clearspan",
+          "source": "https://sah-archipedia.org/buildings/IA-01-CE306"
+        },
+        {
+          "key": "historicalClearspanMetres.length",
+          "value": 103.632,
+          "units": "m clearspan",
+          "source": "https://sah-archipedia.org/buildings/IA-01-CE306"
+        }
+      ]
+    },
+    "maryland": {
+      "roof": "flat-broad",
+      "finish": "pale",
+      "feature": "glass-atrium",
+      "roofRise": 2.5,
+      "entryAngle": 1.57,
+      "source": "https://facilities.umd.edu/sites/default/files/2023-11/UMD%20CFP_Final%20Report_No%20Exec%20Summary%20-%20FINAL_webview.pdf",
+      "note": "Large contemporary multi-level arena, broad roof and prominent stepped entrance, initial reference only"
+    },
+    "michigan": {
+      "roof": "oval-low",
+      "finish": "pale",
+      "feature": "glass-oval",
+      "roofRise": 4,
+      "entryAngle": 0.785,
+      "source": "https://www.athleticbusiness.com/project-galleries/architectural-showcase/Q7RCL46jlL/crisler-center-renovation-and-addition-u-of-michigan-ann-arbor-mich",
+      "note": "Low arena volume with brick and cast stone and the signature 36-foot-high oval glass entrance"
+    },
+    "michigan-state": {
+      "roof": "low-crown",
+      "finish": "slate",
+      "feature": "southeast-pavilion",
+      "roofRise": 3,
+      "entryAngle": 5.49,
+      "source": "https://breslincenter.com/about/our-story",
+      "note": "Broad arena and 2017 Gilbert Pavilion expansion at the southeast corner"
+    },
+    "minnesota": {
+      "roof": "barrel",
+      "finish": "slate",
+      "feature": "historic-brick",
+      "roofRise": 12,
+      "entryAngle": 1.57,
+      "source": "https://libnews.umn.edu/2018/02/happy-90-years-williams-arena/",
+      "note": "1928 field house with curved long-span roof and historic brick shell; raised floor is not yet digitized"
+    },
+    "nebraska": {
+      "roof": "oval-low",
+      "finish": "slate",
+      "feature": "multi-story-glass",
+      "roofRise": 5,
+      "entryAngle": 1.57,
+      "source": "https://huskers.com/facilities/pinnacle-bank-arena",
+      "note": "Oval metal/concrete mass and protruding multi-story glass lobby; split upper concourse"
+    },
+    "northwestern": {
+      "roof": "gable",
+      "finish": "pale",
+      "feature": "fieldhouse-glass",
+      "roofRise": 4,
+      "entryAngle": 1.57,
+      "source": "https://news.northwestern.edu/stories/2018/november/northwestern-dedicates-new-welsh-ryan-arena",
+      "note": "Renovated 1953 fieldhouse, retained roof structure and expanded glass-lit corner circulation"
+    },
+    "oregon": {
+      "roof": "swept",
+      "finish": "slate",
+      "feature": "curved-glass",
+      "roofRise": 7,
+      "entryAngle": 1.57,
+      "source": "https://tvaarchitects.com/project/matthew-knight-arena/",
+      "note": "Sweeping curved metal roof and extensive transparent entry facade with low bowl suites"
+    },
+    "penn-state": {
+      "roof": "low-crown",
+      "finish": "pale",
+      "feature": "brick-glass",
+      "roofRise": 5,
+      "entryAngle": 1.57,
+      "source": "https://gopsusports.com/news/2018/08/08/bryce-jordan-center",
+      "note": "Low-profile bi-level mass of brick and glass with broad curved roof"
+    },
+    "purdue": {
+      "roof": "copper-dome",
+      "finish": "copper",
+      "feature": "circular-brick",
+      "roofRise": 7,
+      "entryAngle": 1.57,
+      "source": "https://purduesports.com/facilities/mackey-arena",
+      "note": "Circular concrete and steel structure with distinctive warm-colored domed roof and brick exterior",
+      "historicalWallHeightMetres": 12.192,
+      "historicalDomeRiseMetres": 12.192,
+      "historicalApexAboveCourtMetres": 29.5656,
+      "measuredFacts": [
+        {
+          "key": "historicalWallHeightMetres",
+          "value": 12.192,
+          "units": "m",
+          "source": "https://archives.lib.purdue.edu/repositories/2/resources/1499"
+        },
+        {
+          "key": "historicalDomeRiseMetres",
+          "value": 12.192,
+          "units": "m",
+          "source": "https://archives.lib.purdue.edu/repositories/2/resources/1499"
+        },
+        {
+          "key": "historicalApexAboveCourtMetres",
+          "value": 29.5656,
+          "units": "m",
+          "source": "https://purduesports.com/facilities/mackey-arena"
+        }
+      ]
+    },
+    "rutgers": {
+      "roof": "trapezoid",
+      "finish": "slate",
+      "feature": "metal-overhang",
+      "roofRise": 9,
+      "entryAngle": 1.57,
+      "source": "https://www.si.com/college/2022/10/26/rutgers-basketball-arena-rac-history-steve-pikiell",
+      "note": "Unusual trapezoidal upper mass with angled metal siding and modest concrete entrance"
+    },
+    "ucla": {
+      "roof": "flat-broad",
+      "finish": "pale",
+      "feature": "terracotta-glass",
+      "roofRise": 2,
+      "entryAngle": 1.57,
+      "source": "https://newsroom.ucla.edu/magazine/pauley-pavilion-renovation-bruin-athletics",
+      "note": "Broad low roof over terracotta/glass wraparound concourse",
+      "asymmetricConcourseMetres": {
+        "north": 12.192,
+        "south": 6.096,
+        "east": 6.096,
+        "west": 2.7432
+      },
+      "measuredFacts": [
+        {
+          "key": "asymmetricConcourseMetres",
+          "value": {
+            "north": 12.192,
+            "south": 6.096,
+            "east": 6.096,
+            "west": 2.7432
+          },
+          "units": "m concourse addition",
+          "source": "https://newsroom.ucla.edu/magazine/pauley-pavilion-renovation-bruin-athletics"
+        }
+      ]
+    },
+    "usc": {
+      "roof": "flat-broad",
+      "finish": "pale",
+      "feature": "four-turrets",
+      "roofRise": 2,
+      "entryAngle": 1.57,
+      "source": "https://www.morleybuilders.com/project-experience/usc-galen-center/",
+      "note": "Tall concrete and brick perimeter with four corner turrets, large attached practice pavilion"
+    },
+    "washington": {
+      "roof": "gable-skylight",
+      "finish": "slate",
+      "feature": "roman-arches",
+      "roofRise": 10,
+      "entryAngle": 3.14,
+      "source": "https://sah-archipedia.org/buildings/WA-01-033-0085-12",
+      "note": "1928 Romanesque brick hall with round arched windows, gable roof and ridge skylight",
+      "historicalBuildingWidthMetres": 100.2792,
+      "historicalBuildingLengthMetres": 145.0848,
+      "measuredFacts": [
+        {
+          "key": "historicalBuildingWidthMetres",
+          "value": 100.2792,
+          "units": "m",
+          "source": "https://sah-archipedia.org/buildings/WA-01-033-0085-12"
+        },
+        {
+          "key": "historicalBuildingLengthMetres",
+          "value": 145.0848,
+          "units": "m",
+          "source": "https://sah-archipedia.org/buildings/WA-01-033-0085-12"
+        }
+      ]
+    },
+    "wisconsin": {
+      "roof": "flat-broad",
+      "finish": "pale",
+      "feature": "broad-glass-front",
+      "roofRise": 2.7,
+      "entryAngle": 1.57,
+      "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/uwbadgers.com/documents/2017/1/20/2017_UW_Athletics_Facilities_Master_Plan.pdf",
+      "note": "Wide rectilinear arena, pale roof and large multi-panel front curtain wall"
+    }
+  }
+}

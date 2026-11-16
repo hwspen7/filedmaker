@@ -1,6 +1,75 @@
+# FiledMaker — venue customization workbench
+
+**Current product focus:** a source-driven workflow for schools and small venues. The public studio showcases only Ohio State's Schottenstein Center and Ohio Stadium. The [Case Library](cases/) organizes school and reference cases by documented status. The [Venue Workbench](workbench/) provides plan-image registration, operator-traced section boundaries, school row-count CSV ingestion, deterministic seat generation, an editable geometry preview, and offline export.
+
+- Run `npm start`, then open `/workbench/`.
+- Data and geometry are separated. The number of imported row seats is never altered merely to match a venue's advertised capacity.
+- All traced coordinates, heights, and sightlines remain **estimated** until independently checked. The fictional 1,500-seat gym is an engine test, not a real school.
+- Source-derived Big Ten experimental files and batch scripts remain in Git history and the repository for regression, but are **not part of the product catalog or active development focus**.
+- See [Workbench operating guide](docs/VENUE_WORKBENCH.md) for source formats, validation, workflow, and known limitations.
+
+---
+
 # FiledMaker v10 — Seat Studio Rebuild
 
 **New default entry point:** `http://127.0.0.1:5174/` is a rebuilt seat-first viewer powered by a single dependency-free WebGL2 renderer. 2D remains available when WebGL2 is blocked. The school tool at `/school/` and viewer at `/viewer/` share the same renderer. The previous advanced modeling UI is retained at `/legacy/` for compatibility and its GLB export.
+
+## Big Ten 18 — automatic basketball arena batch
+
+This branch contains a source-linked **2026–27 Big Ten men's basketball** catalog covering all 18 member schools and a deterministic generator using the existing six engines.
+
+```bash
+npm run generate:big-ten -- --out build/big-ten-18 --html --strict
+```
+
+Open `build/big-ten-18/index.html` to browse 18 separate standalone 3D / 2D / seat-view previews. A dedicated GitHub Actions workflow builds and publishes the complete directory as a downloadable artifact. The machine-readable [arena catalog](data/big-ten/arenas-2026-27.json) and [JSON Schema](data/big-ten/venue-catalog.schema.json) keep sourced names/capacities distinct from estimated topology. Source provenance, per-arena capacity differences, row counts and QA are retained in reports.
+
+**Accuracy:** these are 18 actual universities and primary basketball arena names, with documented capacity references. The rendered per-section rows, seat positions, entrance placement and exteriors remain procedural estimates pending digitized venue charts or licensed measured CAD. **No individual modeled seat is an official ticket seat.**
+
+[Big Ten 18 data specification, capacities, commands and fidelity milestones](docs/BIG_TEN_18.md).
+
+[OSU-level visual-parity acceptance and per-school chart reconstruction status](docs/BIG_TEN_PARITY.md). The upgraded generator now supports authentic section IDs, per-tier row labels, separated side stands, and per-school illustrative seat colors. **Do not equate chart-ID import with fully traced stadium geometry.**
+
+## Reusable six-engine venue generator (full-architecture branch)
+
+This development branch now includes six independent, data-driven modules: Geometry, Seating, Architecture, Optimization, Reference and Validation. The same algorithms generate **two distinct fictional venue previews** (an indoor basketball arena and an outdoor American-football stadium) without calling Schottenstein-specific building code. The existing OSU reconstruction is preserved separately. New **Procedural arena** and **Procedural stadium** presets and a **Generate a venue** form are available on the studio home page.
+
+Generate from a JSON template:
+
+```bash
+npm run generate:venue -- --input examples/procedural-arena.json --out build/arena --html
+npm run generate:venue -- --input examples/procedural-stadium.json --out build/stadium --html
+```
+
+Each run writes an editable project JSON and a validation/provenance report. The optional standalone HTML contains the generated architecture, WebGL2 viewer and illustrative seat locations, without an external CDN. Browser acceptance in GitHub Actions takes real screenshots for OSU, the arena demo and the stadium demo.
+
+[Six-engine API, schema, limitations and validation protocol](docs/SIX_ENGINE_VENUE_PIPELINE.md).
+
+[Reference-guided Schottenstein exterior and reusable 3D facade configuration](docs/EXTERIOR_ENGINE.md). The exterior uses real brick, metal and glass architectural forms rather than a homogeneous gray shell, but remains a visual reconstruction rather than a surveyed BIM model.
+
+**Important:** This is a parametric generation and manual-reference calibration tool, not automatic one-photo reconstruction or survey-grade stadium digitization. Target capacity is a modeling goal, not a published ticket count, and all generated seat IDs are explicitly synthetic.
+
+## Audience preview
+
+The first venue is Ohio State men’s basketball at the Schottenstein Center. FiledMaker renders the arena, section map, camera and seating geometry in its own offline WebGL2 viewer. The seat inspector includes five reference positions for comparing the model to published seat-view photos.
+
+| Reference | Model feature |
+| --- | --- |
+| [Ohio State men’s basketball seating chart](https://ohiostatebuckeyes.com/sports/2018/6/4/seating-charts) | 78 traced section contours, including concave notches, separated corner blocks and the press-box cutout |
+| [Ohio State video board update](https://ohiostatebuckeyes.com/news/2026/7/17/mens-basketball-schottenstein-center-to-feature-video-board-enhancements-this-season) | Four convex faces, underside displays and 36-inch ribbon display |
+| [105](https://www.rateyourseats.com/schottenstein-center/seating/sections/105), [114](https://www.rateyourseats.com/schottenstein-center/seating/sections/114), [206](https://www.rateyourseats.com/schottenstein-center/seating/sections/206), [323](https://www.rateyourseats.com/schottenstein-center/seating/sections/323), [302](https://seatgeek.com/venues/value-city-arena-at-schottenstein-center/seating-chart) | Reference rows, club row counts, the gap behind 323 B, and interior sightline comparisons |
+
+The generic floor uses NCAA court dimensions and standard court markings. The scoreboard uses unbranded display panels. The 2D map and 3D seating rows share contours traced from the published chart, scaled to the playing lines inside the painted apron. Published row labels guide all three levels, including the documented gaps in terrace sections 304, 307, 314, 323 and 331. The eight club sections with published per-row counts retain those counts. Remaining positions are distributed across available row spans with at least 0.48 m of modeled center spacing. The allocator keeps the marked wheelchair platform, band area and press box clear of modeled chairs. Geometry outside the playing surface and the seat numbers remain approximate.
+
+The entry level uses traced section edges. The club and terrace seats and structural meshes use continuous elevation surfaces with transitions across section boundaries. The [public Ohio State basketball Virtual Venue](https://ohiostatebb.io-media.com/web/index.html) informed the terrace reconstruction. The modeled rear terrace is raised for a steeper profile. The shorter press-side footprint and unoccupied access space follow the seating chart. The native preview includes reconstructed floor chairs along the baselines and sidelines, displayed as court furnishings alongside the 19,049 selectable bowl seats. The band area, press box and accessible platform use the seating chart. The facility geometry and its dimensions are approximate. **Seat view** opens at the 105 D reference if no position is selected.
+
+The [2026–27 Ohio State men's basketball record book](https://ohiostatebuckeyes.com/documents/download/2026/11/6/2026-27_Ohio_State_Men_s_Basketball_Record_Book.pdf) lists a capacity of 19,049 and 18,809 with students. Seat Studio renders 19,049 chairs in the default preview and lists the student configuration separately. How the total is split among modeled rows is a reconstruction. A venue roster with XYZ can replace the preview positions for the seats it covers.
+
+In **3D overview** and **Section**, floating labels identify the chart sections, Band Area, Press Box and Accessible Platform. Select a section label to focus its seats. Labels follow the 3D camera and overlapping badges are hidden as needed. **Save image** includes the visible labels.
+
+Subsequent phases extend the same reference-and-geometry workflow to NCAA basketball arenas, then NCAA football stadiums, then lower-cost profiles for universities and secondary schools.
+
+For a surveyed Ohio State men's basketball import, use a CSV with `section,row,seat,x_m,y_m,z_m` and optional `seat_id`. Supply seat centers at tread height, in metres, with the playing surface centered at the origin. Y is elevation, X runs across the court and Z runs lengthwise. The right end of the published chart is negative Z. Each seat needs a distinct XYZ point. The imported inventory replaces the demo chairs in the open project and retains the traced section map. Published capacity remains a separate comparison. A partial survey displays the seats it covers. The [official public Virtual Venue](https://ohiostatebb.io-media.com/web/index.html) provides view references. The [Athletics Ticket Office](https://ohiostatebuckeyes.com/sports/2024/1/16/contact-us-ticket-office) is the point of contact for an event configuration's complete seat manifest and measured seat plan.
 
 ## What changed
 
@@ -118,7 +187,7 @@ digital twin.
 
 ## Version 5.0 — Real Venue Calibration Pipeline
 
-FiledMaker v5 joins the existing **ChatGPT-inspired light editor**, custom stadium outlines, human-eye seat views, and SVG tracing with a verifiable local workflow for real-world seating data. It is designed for **football, basketball and soccer venues in the United States and Canada**.
+FiledMaker v5 joins the existing **light editor**, custom stadium outlines, human-eye seat views, and SVG tracing with a verifiable local workflow for real-world seating data. It is designed for **football, basketball and soccer venues in the United States and Canada**.
 
 - **Real data tab:** import local seat-coordinate CSV files (up to 150,000 seats), with unique IDs, section/row/seat labels, optional measured elevation, meter/foot/drawing X/Z units, and explicit provenance. Imported seat positions replace generated seats and the schematic terraces are hidden instead of implying a surveyed building.
 - **Control-point registration:** solve a 2D translation, rotation and scale from two or more matched landmarks, with in-sample RMS and maximum residual (meters). A two-point calibration cannot verify global accuracy.
@@ -384,12 +453,6 @@ The visual renderer now shares seating type and school color rules across Studio
 
 For actual ticket-sale integration, the school must supply canonical section/row/seat identifiers, valid coordinates or photographed controls, and a real ticket-provider inventory API. A published capacity does **not** establish the number or location of sellable seats.
 
+## Reference bowl corrections
 
-## v10.0.1 — Reference seating gaps and white backdrop
-
-- Removed the oversized white/near-white ground from seat-first Three.js views. The native WebGL2 surface uses alpha transparency with a neutral non-white canvas backdrop. Structural steps remain present and use muted gray material.
-- Removed the **unverified default aisle cuts** previously generated for the Ohio Stadium and Schottenstein reference examples. Only the original, untouched legacy placeholder IDs/angles/widths are stripped from loaded JSON; user-edited and measured aisles remain intact.
-- Distribute the **schematic** reference sectors by front-row perimeter length rather than by equal angular slices. This eliminates ultra-narrow corner sectors and isolated 1–2 seat row fragments in the built-in examples.
-- Updated `examples/ohio-stadium-reference.json` to match the corrected reference generator.
-- No changes to imported real ticket IDs, imported coordinates or published official capacity. New reference counts are still **synthetic**, not verified stadium inventory. Without an authorized seat roster, no claim of missing or officially restored seats is made.
-- Automated geometry/HTTP tests passed. This environment's browser blocks localhost access, so actual GPU WebGL visual acceptance is pending on the user's computer.
+The Ohio Stadium and Schottenstein Center reference scenes no longer invent default aisle cuts. Their **illustrative** sectors are spaced by the front-row perimeter to avoid isolated corner fragments. Only untouched obsolete example cutouts are removed during project validation; staff-authored and measured aisles are preserved. Native WebGL2 uses transparent canvas output, while seating support colors avoid the previous white ground slab. These changes do not establish exact official seating identities.
