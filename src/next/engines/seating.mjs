@@ -15,7 +15,10 @@ function interiorSectionFootprints(geometry,seatingRows){
   if(!geometry.spec.interior)return null;
   const {spec,point}=geometry,sections=new Map();
   for(const row of seatingRows){
-    const key=row.tier+':'+row.sectionId;
+    // Iowa's lettered sections are continuous 1–42-row columns, not one
+    // inner tier and a fictional separately numbered outer tier. Group
+    // both row-depth bands under each actual section's single footprint.
+    const key=spec.id==='big-ten-iowa'?row.sectionId:row.tier+':'+row.sectionId;
     if(!sections.has(key))sections.set(key,{id:row.sectionId,
       tier:row.tier,outlines:[],labelPoint:null,_sumX:0,_sumZ:0,_count:0,
       depthRows:spec.tiers[row.tier].rows});
