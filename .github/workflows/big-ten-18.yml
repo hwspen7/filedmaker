@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/big-ten-18-arenas
+      - feature/big-ten-arena-parity
     paths:
       - 'data/big-ten/**'
       - 'scripts/generate-big-ten.mjs'
