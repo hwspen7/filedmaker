@@ -422,6 +422,19 @@ async function main(){
     console.log('workbench UI: four-stage navigation and Aiken/fictional/source-only case deep links verified');
 
     // Phase two: operate the actual row editor, verify 3D reacts, then undo/redo.
+
+    const initialFrame=await poll(async()=>{
+      const state=await evaluate("({w:Number(document.querySelector('#modelCanvas')?.dataset.seatingWidth||0),h:Number(document.querySelector('#modelCanvas')?.dataset.seatingHeight||0)})");
+      return state.w>0&&state.h>0?state:null;
+    },60);
+    if(initialFrame.w<25||initialFrame.h<17)
+      throw Error('Model remains too small in preview: '+JSON.stringify(initialFrame));
+    const controls=await evaluate("(()=>{document.querySelector('#cameraTop').click();const top=Number(document.querySelector('#modelCanvas').dataset.seatingWidth);document.querySelector('#cameraFit').click();document.querySelector('#toggleTools').click();const closed=document.querySelector('.content-grid').classList.contains('tools-collapsed');document.querySelector('#toggleTools').click();return {top,closed,reopened:!document.querySelector('.content-grid').classList.contains('tools-collapsed')}})()");
+    if(!controls.closed||!controls.reopened||controls.top<20)
+      throw Error('3D scene tools are not functional: '+JSON.stringify(controls));
+    await delay(300);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'focused-venue-workspace.png'),Buffer.from(frame.data,'base64')));
     const beforeEdit=await evaluate("({count:document.querySelector('#mappedCount').textContent,row:document.querySelector('#rowEditRow').value,section:document.querySelector('#rowEditSection').value})");
     if(beforeEdit.count!=='1,500'||!beforeEdit.row||!beforeEdit.section)
       throw Error('Operator row editor is not populated for the fictional gym');
@@ -441,7 +454,7 @@ async function main(){
     if(noChange.count!=='1,499'||!noChange.error.includes('Edit rejected'))
       throw Error('Invalid seat count did not fail atomically');
 
-    const seatEdited=await evaluate("(()=>{document.querySelector('#seatAdvanced').open=true;document.querySelector('#seatEditNumber').value='1';document.querySelector('#seatShiftX').value='.08';document.querySelector('#seatShiftY').value='.12';document.querySelector('#seatShiftZ').value='0';document.querySelector('#seatApplyOffset').click();return {count:document.querySelector('#mappedCount').textContent,qa:document.querySelector('#qa').textContent,error:document.querySelector('#workStatus').textContent}})()");
+    const seatEdited=await evaluate("(()=>{document.querySelector('[data-model-tool=\"seats\"]').click();document.querySelector('#seatAdvanced').open=true;document.querySelector('#seatEditNumber').value='1';document.querySelector('#seatShiftX').value='.08';document.querySelector('#seatShiftY').value='.12';document.querySelector('#seatShiftZ').value='0';document.querySelector('#seatApplyOffset').click();return {count:document.querySelector('#mappedCount').textContent,qa:document.querySelector('#qa').textContent,error:document.querySelector('#workStatus').textContent}})()");
     if(seatEdited.count!=='1,499'||!seatEdited.qa.includes('INDIVIDUAL_SEAT_OFFSETS')||
       seatEdited.error.includes('Edit rejected'))throw Error('Individual seat override was not applied: '+JSON.stringify(seatEdited));
     await delay(220);
@@ -450,6 +463,13 @@ async function main(){
     const resetSeat=await evaluate("(()=>{document.querySelector('#seatResetOffset').click();return {count:document.querySelector('#mappedCount').textContent,qa:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent}})()");
     if(resetSeat.count!=='1,499'||resetSeat.qa.includes('INDIVIDUAL_SEAT_OFFSETS')||
       resetSeat.status.includes('Edit rejected'))throw Error('Seat correction did not clear cleanly');
+
+    const batch=await evaluate("(()=>{document.querySelector('[data-model-tool=\"batch\"]').click();document.querySelector('#batchSection').value='WEST-1';document.querySelector('#batchSeatType').value='chair';document.querySelector('#batchApplyStyle').click();return {count:document.querySelector('#mappedCount').textContent,status:document.querySelector('#workStatus').textContent,shown:!document.querySelector('[data-model-tool-pane=\"batch\"]').hidden}})()");
+    if(batch.count!=='1,499'||!batch.shown||batch.status.includes('Batch rejected'))
+      throw Error('Batch editor did not apply consistently: '+JSON.stringify(batch));
+    await delay(160);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'batch-edit-workspace.png'),Buffer.from(frame.data,'base64')));
     await evaluate("document.querySelector('[data-open-stage=\"calibrate\"]').click()");
     const moved=await evaluate("(()=>{const select=document.querySelector('#sectionSelect');select.value='WEST-1';select.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#sectionMoveX').value='.1';document.querySelector('#sectionMoveZ').value='0';document.querySelector('#moveSelectedSection').click();return {seats:document.querySelector('#mappedCount').textContent,ledger:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent}})()");
     if(moved.seats!=='1,499'||moved.status.includes('Edit rejected'))

@@ -27,5 +27,8 @@ export function buildWorkbenchPreview(input){
   const model=generateSeats(validated);
   if(model.seats.length!==traced.seats.length)throw Error('Renderer dropped source seats');
   const plan=buildVenuePlan(model,{detail:'compact'});
+  // Fit the editing camera to actual staff-traced seats, not optional
+  // oversized architectural or invisible reference mesh bounds.
+  plan.operatorWorkspace=true;
   return {...traced,project:validated,model,plan};
 }

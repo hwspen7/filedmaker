@@ -461,3 +461,8 @@ The Ohio Stadium and Schottenstein Center reference scenes no longer invent defa
 ## Staff-operated precision editing
 
 See [Operator modeling](docs/OPERATOR_MODELING.md) for section, row and single-seat editing, the bounded edit ledger, geometry checks, and explicit source-verification requirements.
+
+
+## Canvas-first venue workbench
+
+The [workbench redesign guide](docs/WORKSPACE_REDESIGN.md) describes camera fitting, object-oriented edit modes, bulk row editing, explicit source review and modular expansion.

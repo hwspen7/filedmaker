@@ -112,3 +112,22 @@ test('operator measurement and individual seat controls are kept discoverable bu
   assert.match(page,/<details class="disclosure" id="measureTools"/);
   assert.match(page,/<details class="disclosure" id="seatAdvanced"/);
 });
+
+test('model tool modes and 3D navigation remain compact and operable',()=>{
+  const page=read('workbench/index.html'),script=read('workbench/workbench.js'),
+    style=read('workbench/workbench.css');
+  const modes=['rows','seats','batch','preview'];
+  for(const mode of modes){
+    assert.match(page,new RegExp('data-model-tool="'+mode+'"'));
+    assert.match(page,new RegExp('data-model-tool-pane="'+mode+'"'));
+  }
+  for(const id of ['batchSection','batchPreview','batchApplyStyle','batchApplyInsets',
+    'cameraFit','cameraTop','cameraFocus','cameraZoom','cameraCapture','toggleTools',
+    'modelCanvas','seatToolSection','seatToolRow']){
+    assert.match(page,new RegExp('id="'+id+'"'),id+' missing');
+  }
+  assert.match(script,/activateModelTool/);
+  assert.match(script,/applyVenueBatchEdit/);
+  assert.match(script,/cameraFit/);
+  assert.match(style,/\.content-grid\.tools-collapsed/);
+});

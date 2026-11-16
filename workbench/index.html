@@ -100,13 +100,18 @@
 <div class="step-actions"><button id="backToSource" type="button">Back</button><button id="calibrateNext" class="primary" type="button">Continue to 3D</button></div>
 </section>
 
-<section class="stage-screen" data-stage-panel="model" hidden>
-<div class="stage-heading"><span class="eyebrow">STEP 03</span><h2>Generate a 3D draft</h2>
-<p>Source row counts stay intact. Unmeasured heights and boundaries remain clearly marked as estimates.</p></div>
-<div class="section"><div class="small-title">Model generation</div>
-<button id="generate" class="primary full" type="button">Generate / update model</button>
-<p class="hint">Use the 2D / 3D / Seat view controls above the canvas. Clicking a seat enables its viewpoint.</p></div>
-<div class="section row-edit-panel">
+<section class="stage-screen editor-stage" data-stage-panel="model" hidden>
+  <div class="stage-heading model-heading">
+    <h2>Design the venue</h2>
+    <p>Choose an object, then edit it. Changes are provisional until source-reviewed.</p>
+  </div>
+  <div id="modelToolTabs" class="model-tool-tabs" role="group" aria-label="Editing tool">
+    <button type="button" data-model-tool="rows" aria-pressed="true">Rows</button>
+    <button type="button" data-model-tool="seats" aria-pressed="false">Seats</button>
+    <button type="button" data-model-tool="batch" aria-pressed="false">Batch</button>
+    <button type="button" data-model-tool="preview" aria-pressed="false">Scene</button>
+  </div>
+  <div data-model-tool-pane="rows"><div class="section row-edit-panel">
 <div class="small-title">Edit rows & seats</div>
 <label>Section<select id="rowEditSection"></select></label>
 <label>Row<select id="rowEditRow"></select></label>
@@ -126,16 +131,6 @@
 <div class="pair"><label>Row depth offset (m)<input id="rowDepthOffset" type="number" step=".05" min="-3" max="3"></label>
 <label>Row height (m)<input id="rowEditElevation" type="number" step=".05" min="0" max="100" placeholder="Section default"></label></div>
 </details>
-<details class="disclosure" id="seatAdvanced"><summary>Fine-tune an individual seat</summary>
-<p class="hint">Choose a seat label or click a seat in the 3D overview. These are estimated local coordinate corrections, not surveyed measurements.</p>
-<label>Seat number / label<input id="seatEditNumber" maxlength="30" placeholder="e.g. 12"></label>
-<div class="pair">
-<label>Shift X (m)<input id="seatShiftX" type="number" min="-1" max="1" step=".05" value="0"></label>
-<label>Shift Z (m)<input id="seatShiftZ" type="number" min="-1" max="1" step=".05" value="0"></label></div>
-<label>Shift elevation Y (m)<input id="seatShiftY" type="number" min="-.75" max=".75" step=".05" value="0"></label>
-<div class="row-actions"><button id="seatApplyOffset" type="button">Apply seat correction</button>
-<button id="seatResetOffset" type="button">Clear correction</button></div>
-</details>
 <details class="disclosure" id="rowOperations"><summary>Add, reorder or remove a row</summary>
 <label>New row label<input id="rowNewLabel" maxlength="30" placeholder="e.g. 16"></label>
 <label>New row seat count<input id="rowNewSeats" type="number" min="1" max="300" step="1" value="12"></label>
@@ -146,7 +141,58 @@
 </details>
 <p class="hint">Every staff change is recorded separately from the imported inventory. Geometry and capacity are checked after each edit.</p>
 </div>
-<div class="step-actions"><button id="backToCalibrate" type="button">Back</button><button id="modelNext" class="primary" type="button">Review & export</button></div>
+</div>
+  <div data-model-tool-pane="seats" hidden>
+    <div class="section"><div class="small-title">Single-seat refinement</div>
+      <p class="hint">Click a seat in 3D, or choose its section and row.</p>
+      <label>Section<select id="seatToolSection"></select></label>
+      <label>Row<select id="seatToolRow"></select></label>
+    </div>
+    <details class="disclosure" id="seatAdvanced" open><summary>Fine-tune an individual seat</summary>
+<p class="hint">Choose a seat label or click a seat in the 3D overview. These are estimated local coordinate corrections, not surveyed measurements.</p>
+<label>Seat number / label<input id="seatEditNumber" maxlength="30" placeholder="e.g. 12"></label>
+<div class="pair">
+<label>Shift X (m)<input id="seatShiftX" type="number" min="-1" max="1" step=".05" value="0"></label>
+<label>Shift Z (m)<input id="seatShiftZ" type="number" min="-1" max="1" step=".05" value="0"></label></div>
+<label>Shift elevation Y (m)<input id="seatShiftY" type="number" min="-.75" max=".75" step=".05" value="0"></label>
+<div class="row-actions"><button id="seatApplyOffset" type="button">Apply seat correction</button>
+<button id="seatResetOffset" type="button">Clear correction</button></div>
+</details>
+
+  </div>
+  <div data-model-tool-pane="batch" hidden>
+    <div class="section">
+      <div class="small-title">Multi-row editing</div>
+      <label>Section<select id="batchSection"></select></label>
+      <p id="batchPreview" class="row-edit-status">Choose a section to preview its rows.</p>
+      <label>Seat style<select id="batchSeatType"><option value="chair">Individual chair</option><option value="bleacher">Bleacher bench</option></select></label>
+      <button id="batchApplyStyle" class="primary full" type="button">Apply style to section</button>
+    </div>
+    <div class="section">
+      <div class="small-title">Row-edge clearance</div>
+      <div class="pair">
+        <label>Start inset (m)<input id="batchInsetStart" type="number" min="0" max="30" step=".05" value=".25"></label>
+        <label>End inset (m)<input id="batchInsetEnd" type="number" min="0" max="30" step=".05" value=".25"></label>
+      </div>
+      <button id="batchApplyInsets" type="button">Apply to all section rows</button>
+      <p class="hint">Applies in one undoable transaction. Never invents extra seats or aisle measurements.</p>
+    </div>
+  </div>
+  <div data-model-tool-pane="preview" hidden>
+    <div class="section">
+      <div class="small-title">Scene &amp; presentation</div>
+      <button id="generate" class="primary full" type="button">Regenerate 3D model</button>
+      <p class="hint">Use Fit / Top / Focus above the canvas to inspect the modeled structure.</p>
+      <div class="scene-guide">
+        <strong>Modeling scope</strong>
+        <p>Structure, seats, aisles and sightlines can be reviewed in the current preview. Geometry without measurements remains an estimate.</p>
+      </div>
+      <button id="openReviewFromScene" type="button">Open quality review</button>
+    </div>
+  </div>
+  <div class="step-actions"><button id="backToCalibrate" type="button">Back</button>
+    <button id="modelNext" class="primary" type="button">Review &amp; export</button>
+  </div>
 </section>
 
 <section class="stage-screen" data-stage-panel="review" hidden>
@@ -167,8 +213,15 @@
 </aside>
 <section class="canvas-area" aria-label="Venue drawing and model">
 <div class="canvas-header"><div><strong id="canvasTitle">Drawing workspace</strong><small id="canvasDescription">Manual inspection and geometry editing</small><small id="quickStats">No seats generated</small></div>
-<div class="tabs" role="group" aria-label="View mode"><button id="showPlan" class="active" type="button">2D plan</button>
-<button id="show3d" type="button">3D overview</button><button id="showEye" type="button">Seat view</button></div></div>
+<div class="tabs" role="group" aria-label="View mode"><button id="showPlan" class="active" type="button">2D</button>
+<button id="show3d" type="button">3D</button><button id="showEye" type="button">Seat view</button></div></div>
+<div class="model-toolbar" aria-label="3D navigation tools">
+<div class="model-camera-tools"><button id="cameraFit" type="button" title="Fit the model to view">Fit</button>
+<button id="cameraTop" type="button" title="Look straight down">Top</button>
+<button id="cameraFocus" type="button" title="Focus selected section">Focus section</button>
+<label class="zoom-tool">Zoom <input id="cameraZoom" type="range" min="60" max="200" step="5" value="120"><span id="cameraZoomLabel">120%</span></label></div>
+<div class="model-actions"><button id="cameraCapture" type="button" title="Save a screenshot of the current canvas">Save image</button>
+<button id="toggleTools" type="button" aria-pressed="false" title="Hide or show editing tools">Hide tools</button></div></div>
 <div class="visual"><canvas id="planCanvas" aria-label="Editable plan and section contours"></canvas>
 <canvas id="modelCanvas" aria-label="3D school venue preview" hidden></canvas>
 <div id="emptyCanvas" class="empty-canvas">

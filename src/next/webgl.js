@@ -375,6 +375,21 @@ export class NativeVenueRenderer {
     }
     this.corners.push(...structureCorners);
     this.exteriorCorners=[...this.corners,...exteriorOnlyCorners];
+    if(plan.operatorWorkspace && plan.seats.length){
+      // Editor previews must be framed by actual seats and playing surface.
+      // Hidden architecture, long fascia bands and unused structural bounds
+      // must never shrink a 1,500-seat gym to a tiny central speck.
+      const xs=plan.seats.map(s=>s.x),zs=plan.seats.map(s=>s.z),
+        ys=plan.seats.map(s=>s.y);
+      const minSeatX=Math.min(-w/2-2,...xs),maxSeatX=Math.max(w/2+2,...xs);
+      const minSeatZ=Math.min(-l/2-2,...zs),maxSeatZ=Math.max(l/2+2,...zs);
+      const low=Math.min(0,...ys),high=Math.max(3.5,...ys.map(y=>y+1.7));
+      const loX=minSeatX-2,hiX=maxSeatX+2,loZ=minSeatZ-2,hiZ=maxSeatZ+2;
+      this.center=[(loX+hiX)/2,(low+high)/2,(loZ+hiZ)/2];
+      this.corners=[loX,hiX].flatMap(x=>[low,high].flatMap(y=>
+        [loZ,hiZ].map(z=>[x,y,z])));
+      this.exteriorCorners=this.corners;
+    }
     const deck=plan.deckGeometry;
     for(let i=(deck?.length??0)-6;i>=0&&deck[i+1]<-.5;i-=18){
       this.corners.push([deck[i],deck[i+1],deck[i+2]]);
@@ -426,8 +441,35 @@ export class NativeVenueRenderer {
       this.phi=this.plan.arenaInterior?1.04:.79;
     }
     if(mode==='overview'||mode==='top')
-      this.zoomFactor=mode==='overview'&&this.plan.arenaInterior?1.0:1;
+      this.zoomFactor=mode==='overview'&&this.plan.operatorWorkspace?.82:
+        mode==='overview'&&this.plan.arenaInterior?1.0:1;
     this.render();
+  }
+  focusOnModel(){
+    if(!this.plan)return;
+    this.view('overview');
+  }
+  setEditorZoom(value){
+    if(!this.plan||this.mode==='human')return;
+    const zoom=clamp(Number(value),.40,2.8);
+    if(this.mode==='section')this.distance=clamp(this.fitDistance()*zoom,4,250);
+    else this.zoomFactor=zoom;
+    this.render();
+  }
+  focusOnSection(sectionId){
+    if(!this.plan)return false;
+    const choices=this.plan.seats.filter(s=>
+      String(s.sectionId??s.section).toLowerCase()===String(sectionId).toLowerCase());
+    if(!choices.length)return false;
+    const first=choices[Math.floor(choices.length/2)];
+    this.view('section',first);
+    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(const s of choices){minX=Math.min(minX,s.x);maxX=Math.max(maxX,s.x);
+      minZ=Math.min(minZ,s.z);maxZ=Math.max(maxZ,s.z);}
+    this.pan=[(minX+maxX)/2,first.y,(minZ+maxZ)/2];
+    this.distance=clamp(Math.max(maxX-minX,maxZ-minZ)*1.8+8,12,170);
+    this.render();
+    return true;
   }
   setViewOptions(options){this.viewOptions={...this.viewOptions,...options};if(this.mode==='human'&&this.seat)this.view('human',this.seat);this.render();}
   currentCamera(){
@@ -488,6 +530,26 @@ export class NativeVenueRenderer {
     }
     }
     this.onFrame?.(this);
+  }
+
+  // Project sample seat coordinates into the viewport. This is a measurable
+  // camera-framing diagnostic, not a claim of sightline or seat accuracy.
+  framingMetrics(){
+    if(!this.plan?.seats?.length||!this.vp||this.mode==='human')
+      return {seatWidth:0,seatHeight:0,visibleCount:0};
+    let x1=Infinity,x2=-Infinity,y1=Infinity,y2=-Infinity,visible=0;
+    const stride=Math.max(1,Math.floor(this.plan.seats.length/600));
+    for(let i=0;i<this.plan.seats.length;i+=stride){
+      const s=this.plan.seats[i],p=this.projectPoint([s.x,s.y+.5,s.z]);
+      if(!p)continue;
+      x1=Math.min(x1,p[0]);x2=Math.max(x2,p[0]);
+      y1=Math.min(y1,p[1]);y2=Math.max(y2,p[1]);
+      if(p[0]>=0&&p[0]<=this.canvas.width&&p[1]>=0&&p[1]<=this.canvas.height)
+        visible++;
+    }
+    return {seatWidth:Number.isFinite(x1)?(x2-x1)/this.canvas.width:0,
+      seatHeight:Number.isFinite(y1)?(y2-y1)/this.canvas.height:0,
+      visibleCount:visible};
   }
   projectPoint(pos){if(!this.vp)return null;const m=this.vp,[x,y,z]=pos;const w=m[3]*x+m[7]*y+m[11]*z+m[15];if(w<=0)return null;
     const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/w,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/w;

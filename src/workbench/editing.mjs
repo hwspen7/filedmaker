@@ -155,3 +155,43 @@ export function applyVenueEdit(input,edit){
   return {venue:normalized,operation,affected,seatDelta:count-oldCount,audit,
     publicationEligible:false};
 }
+
+
+// Apply one bounded section-wide operation as a single validated, undoable
+// transaction. Imported counts and explicit seat labels never change here.
+export function applyVenueBatchEdit(input,edit){
+  const venue=normalizeVenue(input);
+  const section=sectionFor(venue,edit?.section);
+  const rows=venue.rows.filter(r=>r.section.toLowerCase()===section.id.toLowerCase());
+  if(!rows.length)throw Error('The selected section has no rows');
+  if(rows.length>200)throw Error('Batch edits are limited to 200 rows at a time');
+  const kind=String(edit?.kind||'');
+  if(!['seat-type','end-insets'].includes(kind))
+    throw Error('Unsupported batch edit');
+  let type=null,start=null,end=null;
+  if(kind==='seat-type'){
+    type=String(edit.seatType??'');
+    if(!['chair','bleacher'].includes(type))
+      throw Error('Choose chair or bleacher seat style');
+  }else{
+    start=finite(edit.insetStartM,'Batch start clearance',0,30);
+    end=finite(edit.insetEndM,'Batch end clearance',0,30);
+  }
+  for(const row of rows){
+    if(kind==='seat-type')row.seatType=type;
+    else{row.insetStartM=start;row.insetEndM=end;}
+    row.sourceSeats??=row.operatorAdded?null:row.seats;
+    row.operatorEdited=true;
+    log(venue,'update-row',row.section,row.row,row.seats,row.seats,
+      'Batch '+kind+' adjustment; source rows and measurements need review');
+  }
+  const result=normalizeVenue(venue);
+  const generated=generateTracedVenue(result);
+  if(generated.quality.blockingCount)
+    throw Error('Batch edit rejected: '+generated.quality.issues
+      .filter(x=>x.severity==='blocking').slice(0,3).map(x=>x.code).join(', '));
+  return {venue:result,operation:'batch-'+kind,affected:section.id,
+    rowsAffected:rows.length,seatDelta:0,audit:{
+      seats:generated.seats.length,findings:generated.quality.issues.length,
+      quality:generated.quality.status},publicationEligible:false};
+}

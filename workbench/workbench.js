@@ -2,7 +2,7 @@ import {SPORT_DEFAULTS,newVenue,normalizeVenue,parseVenueRows} from '../src/work
 import {registerCourt} from '../src/workbench/registration.mjs';
 import {fictionalGym} from '../src/workbench/fixtures.mjs';
 import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
-import {applyVenueEdit} from '../src/workbench/editing.mjs';
+import {applyVenueEdit,applyVenueBatchEdit} from '../src/workbench/editing.mjs';
 import {generateTracedVenue} from '../src/workbench/generator.mjs';
 import {NativeVenueRenderer} from '../src/next/webgl.js';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
@@ -165,12 +165,59 @@ function refreshRowControls(preferredSection=null,preferredRow=null){
   sections.replaceChildren(...venue.sections.map(s=>new Option(s.id,s.id)));
   const target=venue.sections.find(s=>s.id===currentSection)||
     venue.sections.find(s=>s.id===selectedSection)||venue.sections[0];
-  if(!target){rows.replaceChildren();fillRowFields();return;}
+  if(!target){rows.replaceChildren();fillRowFields();refreshSpecialTools();return;}
   sections.value=target.id;
   const available=venue.rows.filter(r=>r.section.toLowerCase()===target.id.toLowerCase());
   rows.replaceChildren(...available.map(r=>new Option(r.row,r.row)));
   if(available.some(r=>r.row===currentRow))rows.value=currentRow;
   fillRowFields();
+  refreshSpecialTools();
+}
+
+function populateOptions(select,values,desired){
+  select.replaceChildren(...values.map(x=>new Option(x,x)));
+  if(values.includes(desired))select.value=desired;
+}
+function refreshSpecialTools(){
+  const sectionValues=venue.sections.map(s=>s.id);
+  const active=$('rowEditSection').value;
+  const batch=$('batchSection');
+  const oldBatch=batch.value;
+  populateOptions(batch,sectionValues,oldBatch||active);
+  const seatSection=$('seatToolSection');
+  populateOptions(seatSection,sectionValues,active);
+  const seatRows=venue.rows.filter(r=>r.section===$('seatToolSection').value)
+    .map(r=>r.row);
+  populateOptions($('seatToolRow'),seatRows,$('rowEditRow').value);
+  updateBatchPreview();
+}
+function updateBatchPreview(){
+  const id=$('batchSection').value;
+  const rows=venue.rows.filter(r=>r.section===id);
+  const count=rows.reduce((n,r)=>n+r.seats,0);
+  $('batchPreview').textContent=rows.length?
+    rows.length+' rows · '+number(count)+' positions · staff review required':
+    'Choose a section with source rows.';
+}
+function activateModelTool(tool){
+  const permitted=new Set(['rows','seats','batch','preview']);
+  if(!permitted.has(tool))return;
+  document.querySelectorAll('[data-model-tool]').forEach(btn=>
+    btn.setAttribute('aria-pressed',String(btn.dataset.modelTool===tool)));
+  document.querySelectorAll('[data-model-tool-pane]').forEach(pane=>
+    pane.hidden=pane.dataset.modelToolPane!==tool);
+  if(tool==='seats')$('seatAdvanced').open=true;
+}
+function commitBatch(edit,summary){
+  try{
+    const before=structuredClone(venue);
+    const result=applyVenueBatchEdit(venue,edit);
+    venue=result.venue;selectedSeat=null;
+    recordEdit(before,summary+' · '+result.affected);
+    sync();tryPreview();
+    message(summary+' · '+result.rowsAffected+' rows modified; capacity preserved. '+
+      'Source review still required.');
+  }catch(e){message('Batch rejected: '+e.message,true);}
 }
 function fillRowFields(){
   const section=$('rowEditSection').value,label=$('rowEditRow').value;
@@ -634,7 +681,18 @@ $('resizeSelectedSection').onclick=()=>{
     $('sectionWidthPct').value='100';
 };
 $('rowEditSection').onchange=()=>{refreshRowControls($('rowEditSection').value);draw();};
-$('rowEditRow').onchange=()=>{fillRowFields();draw();};
+$('rowEditRow').onchange=()=>{fillRowFields();refreshSpecialTools();draw();};
+$('seatToolSection').onchange=()=>refreshRowControls($('seatToolSection').value);
+$('seatToolRow').onchange=()=>refreshRowControls($('seatToolSection').value,$('seatToolRow').value);
+$('batchSection').onchange=()=>updateBatchPreview();
+$('batchApplyStyle').onclick=()=>commitBatch({section:$('batchSection').value,
+  kind:'seat-type',seatType:$('batchSeatType').value},'Batch seat style');
+$('batchApplyInsets').onclick=()=>commitBatch({section:$('batchSection').value,
+  kind:'end-insets',insetStartM:$('batchInsetStart').value,
+  insetEndM:$('batchInsetEnd').value},'Batch row clearance');
+document.querySelectorAll('[data-model-tool]').forEach(button=>
+  button.onclick=()=>activateModelTool(button.dataset.modelTool));
+$('openReviewFromScene').onclick=()=>workflowUI?.go('review');
 $('seatEditNumber').onchange=()=>fillSeatOffsetFields();
 $('seatApplyOffset').onclick=()=>{
   const section=$('rowEditSection').value,row=$('rowEditRow').value;
@@ -854,10 +912,16 @@ function open3d(mode){
       if(venue.rows.some(r=>r.section===s.sectionId&&r.row===s.row)){
         refreshRowControls(s.sectionId,s.row);
         $('seatEditNumber').value=String(s.number);fillSeatOffsetFields();
+        activateModelTool('seats');
       }
     });}
     catch(e){message('WebGL2 unavailable: '+e.message,true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
   }
+  renderer.onFrame=current=>{
+    const metrics=current.framingMetrics();
+    modelCanvas.dataset.seatingWidth=(metrics.seatWidth*100).toFixed(1);
+    modelCanvas.dataset.seatingHeight=(metrics.seatHeight*100).toFixed(1);
+  };
   renderer.load(preview.plan);renderer.resize();
   renderer.view(mode==='eye'?'human':'overview',selectedSeat);
   if(mode==='eye'&&!selectedSeat)message('Select a seat in 3D overview before entering Seat view.',true);
@@ -871,6 +935,59 @@ function tab(mode){
 $('showPlan').onclick=()=>{viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;tab('plan');resize();};
 $('show3d').onclick=()=>{open3d('overview');tab(viewMode);};
 $('showEye').onclick=()=>{if(!selectedSeat){message('Click a seat in 3D overview first.',true);return;}open3d('eye');tab(viewMode);};
+
+function requireModelCamera(){
+  if(!preview){message('Generate a 3D preview first.',true);return null;}
+  if(viewMode==='plan')open3d('overview');
+  return renderer;
+}
+$('cameraFit').onclick=()=>{
+  const view=requireModelCamera();if(!view)return;
+  view.focusOnModel();$('cameraZoom').value='120';$('cameraZoomLabel').textContent='120%';
+};
+$('cameraTop').onclick=()=>{
+  const view=requireModelCamera();if(!view)return;
+  view.view('top');viewMode='overview';tab('overview');
+};
+$('cameraFocus').onclick=()=>{
+  const view=requireModelCamera();if(!view)return;
+  const section=$('rowEditSection').value||$('sectionSelect').value;
+  if(!view.focusOnSection(section))message('Choose a section with modeled seats.',true);
+  else{viewMode='overview';tab('overview');}
+};
+$('cameraZoom').oninput=()=>{
+  const view=requireModelCamera();if(!view)return;
+  const percent=Number($('cameraZoom').value);
+  view.setEditorZoom(100/percent);
+  $('cameraZoomLabel').textContent=percent+'%';
+};
+$('cameraCapture').onclick=()=>{
+  try{
+    if(!preview)throw Error('Generate a model before saving its image');
+    const source=viewMode==='plan'?canvas.toDataURL('image/png'):
+      renderer?.capture();
+    if(!source)throw Error('3D capture is unavailable');
+    const a=document.createElement('a');a.href=source;
+    a.download=safeName()+'-model.png';a.click();
+    requestedDownloads.unshift('Requested · '+a.download);
+    refreshActivity();
+  }catch(e){message(e.message,true);}
+};
+$('toggleTools').onclick=()=>{
+  const collapsed=document.querySelector('.content-grid').classList.toggle('tools-collapsed');
+  $('toggleTools').setAttribute('aria-pressed',String(collapsed));
+  $('toggleTools').textContent=collapsed?'Show tools':'Hide tools';
+  requestAnimationFrame(resize);
+};
+activateModelTool('rows');
+window.addEventListener('keydown',event=>{
+  if(event.ctrlKey||event.metaKey||event.altKey||
+    event.target?.closest?.('input,textarea,select,[contenteditable],button'))return;
+  const key=event.key.toLowerCase();
+  if(key==='f'){$('cameraFit').click();}
+  else if(key==='t'){$('cameraTop').click();}
+  else if(key==='v'){$('showPlan').click();}
+});
 $('generate').onclick=()=>tryPreview();
 $('saveProject').onclick=()=>{
   try{venue=validateFields();save(safeName()+'.filedmaker-workbench.json',JSON.stringify(venue,null,2));message('Editable source project saved.');}

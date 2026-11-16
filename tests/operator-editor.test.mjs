@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fictionalGym} from '../src/workbench/fixtures.mjs';
 import {normalizeVenue} from '../src/workbench/contract.mjs';
-import {applyVenueEdit} from '../src/workbench/editing.mjs';
+import {applyVenueEdit,applyVenueBatchEdit} from '../src/workbench/editing.mjs';
 import {generateTracedVenue} from '../src/workbench/generator.mjs';
 import {rowStations} from '../src/workbench/rowLayout.mjs';
 
@@ -203,4 +203,42 @@ test('Aiken QA draft permits staff coordinate correction but stays non-official'
   assert.equal(preview.audit.publishedCapacity,1418);
   assert.equal(preview.quality.publicationEligible,false);
   assert.match(revised.venue.notes.join(' '),/not the real official row counts/i);
+});
+
+test('section-wide chair style updates every row in one atomic operation',()=>{
+  const original=baseline(),result=applyVenueBatchEdit(original,{
+    section:'WEST-1',kind:'seat-type',seatType:'chair'
+  });
+  assert.equal(result.rowsAffected,15);
+  assert.equal(result.seatDelta,0);
+  assert.equal(result.audit.seats,1500);
+  const selected=result.venue.rows.filter(r=>r.section==='WEST-1');
+  assert.ok(selected.every(r=>r.seatType==='chair'&&r.operatorEdited));
+  assert.ok(result.venue.rows.filter(r=>r.section!=='WEST-1')
+    .every(r=>r.seatType==='bleacher'));
+  assert.ok(result.venue.editLedger.length>=15);
+  assert.equal(original.rows[0].seatType,'bleacher');
+  assert.equal(result.publicationEligible,false);
+});
+test('section-wide row margins preserve source counts and abort on blocking geometry',()=>{
+  const original=baseline(),good=applyVenueBatchEdit(original,{
+    section:'WEST-1',kind:'end-insets',insetStartM:.2,insetEndM:.2
+  });
+  assert.equal(good.audit.seats,1500);
+  assert.ok(good.venue.rows.filter(r=>r.section==='WEST-1')
+    .every(r=>r.insetStartM===.2&&r.insetEndM===.2));
+  const snapshot=structuredClone(original);
+  assert.throws(()=>applyVenueBatchEdit(original,{
+    section:'WEST-1',kind:'end-insets',insetStartM:30,insetEndM:30
+  }),/Batch edit rejected|clearance|width|row/i);
+  assert.deepEqual(original,snapshot);
+});
+test('batch editor rejects unknown sections, unsupported styles and input limits',()=>{
+  const v=baseline();
+  assert.throws(()=>applyVenueBatchEdit(v,{section:'MISSING',kind:'seat-type',
+    seatType:'chair'}),/existing traced section/);
+  assert.throws(()=>applyVenueBatchEdit(v,{section:'WEST-1',kind:'seat-type',
+    seatType:'unknown'}),/Choose chair or bleacher/);
+  assert.throws(()=>applyVenueBatchEdit(v,{section:'WEST-1',kind:'end-insets',
+    insetStartM:-1,insetEndM:0}),/between/);
 });
