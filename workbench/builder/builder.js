@@ -340,6 +340,176 @@ function addSeat(primitives,seat,part){
     ctx.fillStyle=colorShade(part.color,1.36);ctx.fill();
   }});
 }
+
+// Render a real row-by-row curved terrace instead of stretching a flat box.
+// The same curvedLocalPoint formula is used by the parametric seat engine.
+function addArcStand(primitives,stand){
+  const segments=26,step=stand.depth/stand.rows;
+  for(let row=0;row<stand.rows;row++){
+    const z0=-stand.depth/2+row*step,z1=z0+step;
+    const y=stand.baseHeight+(row+1)*stand.rise;
+    const prev=row?stand.baseHeight+row*stand.rise:0;
+    for(let i=0;i<segments;i++){
+      const u0=-stand.width/2+i*stand.width/segments;
+      const u1=-stand.width/2+(i+1)*stand.width/segments;
+      const pos=(u,z,h)=>{
+        const q=curvedLocalPoint(stand,u,z);
+        return rotatedPoint(stand,q.x,q.z,h);
+      };
+      addFace(primitives,[pos(u0,z0,y),pos(u1,z0,y),
+        pos(u1,z1,y),pos(u0,z1,y)],colorShade(stand.color,1.07));
+      addFace(primitives,[pos(u0,z0,prev),pos(u1,z0,prev),
+        pos(u1,z0,y),pos(u0,z0,y)],colorShade(stand.color,.73));
+    }
+  }
+}
+function curvedHullPoints(part,top){
+  const samples=[];
+  const steps=24;
+  for(const z of [-part.depth/2,part.depth/2]){
+    for(let i=0;i<=steps;i++){
+      const u=-part.width/2+part.width*i/steps;
+      const p=curvedLocalPoint(part,u,z);
+      samples.push(rotatedPoint(part,p.x,p.z,z>0?top:0));
+    }
+  }
+  return samples;
+}
+// Each court is a separate editable component, including its own rotation,
+// surface color and markings. This supports multiple courts in one building.
+function addCourt(primitives,part){
+  addBlock(primitives,part,-part.width/2,part.width/2,
+    -part.depth/2,part.depth/2,part.height);
+  const y=part.height+.015;
+  const line='#f9fbfa',width=1.2;
+  const p=(x,z)=>{const world=rotatedPoint(part,x,z,y);
+    return screenPoint(world.x,world.y,world.z);};
+  const stroke=(a,b,w=width)=>{
+    const A=p(a[0],a[1]),B=p(b[0],b[1]);
+    const depth=(A.depth+B.depth)/2+.01;
+    primitives.push({depth,draw:()=>segment(A,B,line,w)});
+  };
+  const rectangle=(w,d)=>{
+    const x=w/2,z=d/2;
+    stroke([-x,-z],[x,-z]);stroke([x,-z],[x,z]);
+    stroke([x,z],[-x,z]);stroke([-x,z],[-x,-z]);
+  };
+  rectangle(part.width*.94,part.depth*.94);
+  if(part.kind==='basketball_court'){
+    stroke([-part.width*.47,0],[part.width*.47,0]);
+    for(const end of [-1,1]){
+      const z=end*part.depth*.35,at=end*part.depth*.47;
+      stroke([-part.width*.18,z],[part.width*.18,z]);
+      stroke([-part.width*.18,z],[-part.width*.18,at]);
+      stroke([part.width*.18,z],[part.width*.18,at]);
+    }
+  }else if(part.kind==='volleyball_court'){
+    stroke([-part.width*.47,0],[part.width*.47,0]);
+    for(const z of [-part.depth/6,part.depth/6])
+      stroke([-part.width*.47,z],[part.width*.47,z]);
+  }else if(part.kind==='badminton_court'){
+    stroke([-part.width*.47,0],[part.width*.47,0]);
+    for(const x of [-part.width*.3,part.width*.3])
+      stroke([x,-part.depth*.47],[x,part.depth*.47]);
+    for(const z of [-part.depth*.18,part.depth*.18])
+      stroke([-part.width*.47,z],[part.width*.47,z]);
+  }else if(part.kind==='pickleball_court'){
+    stroke([-part.width*.47,0],[part.width*.47,0]);
+    for(const z of [-part.depth*.16,part.depth*.16])
+      stroke([-part.width*.47,z],[part.width*.47,z]);
+  }else if(part.kind==='futsal_court'){
+    stroke([-part.width*.47,0],[part.width*.47,0]);
+    for(const end of [-1,1]){
+      const z=end*part.depth*.46,at=end*part.depth*.35;
+      stroke([-part.width*.25,z],[-part.width*.25,at]);
+      stroke([-part.width*.25,at],[part.width*.25,at]);
+      stroke([part.width*.25,at],[part.width*.25,z]);
+    }
+  }
+  const center=[];
+  const radius=Math.min(part.width,part.depth)*.1;
+  for(let i=0;i<=36;i++){
+    const a=i*Math.PI*2/36;center.push(p(Math.cos(a)*radius,Math.sin(a)*radius));
+  }
+  primitives.push({depth:screenPoint(part.x,y,part.z).depth+.02,draw:()=>{
+    for(let i=1;i<center.length;i++)segment(center[i-1],center[i],line,1);
+  }});
+}
+// Sports equipment is built from a few lightweight parametric boxes rather
+// than represented as solid cuboids, so orientation and height remain legible.
+function addEquipment(primitives,part){
+  const block=(x0,x1,z0,z1,height,base=0)=>
+    addBlock(primitives,part,x0,x1,z0,z1,height,base);
+  const w=part.width,d=part.depth,h=part.height;
+  if(part.kind==='hoop'){
+    block(-.06,.06,-d*.42,-d*.30,h,0);
+    block(-w*.47,w*.47,-d*.35,-d*.26,h,h-.68);
+    block(-.26,.26,-d*.25,-d*.05,h-.56,h-.63);
+  }else if(part.kind==='net'||part.kind==='goal'){
+    for(const x of [-w/2+.07,w/2-.07])block(x-.06,x+.06,-.07,.07,h);
+    block(-w/2,w/2,-.06,.06,h,h-.09);
+    if(part.kind==='net'){
+      for(let i=-3;i<=3;i++){
+        const x=i*w/8;block(x-.013,x+.013,-.025,.025,h-.2,h*.45);
+      }
+    }else{
+      block(-w/2,w/2,d*.44,d*.50,h*.18);
+    }
+  }else if(part.kind==='squat_rack'){
+    for(const x of [-w*.42,w*.42]){
+      for(const z of [-d*.35,d*.35])
+        block(x-.06,x+.06,z-.06,z+.06,h);
+    }
+    block(-w*.5,w*.5,-.07,.07,h*.82,h*.78);
+  }else if(part.kind==='training_bench'){
+    block(-w*.44,w*.44,-d*.3,d*.3,h,h*.7);
+    for(const x of [-w*.30,w*.30])block(x-.05,x+.05,-.08,.08,h*.71);
+  }else if(part.kind==='treadmill'){
+    block(-w/2,w/2,-d/2,d/2,.25);
+    for(const x of [-w*.38,w*.38])block(x-.04,x+.04,-d*.4,-d*.34,h);
+    block(-w*.46,w*.46,-d*.43,-d*.36,h,h-.18);
+  }else if(part.kind==='ball_rack'){
+    for(const z of [-d*.37,d*.37]){
+      for(const x of [-w*.46,w*.46])block(x-.035,x+.035,z-.03,z+.03,h);
+    }
+    for(const y of [.4,.8,1.2].filter(y=>y<h)){
+      block(-w*.46,w*.46,-d*.40,d*.40,y+.05,y);
+    }
+  }else if(part.kind==='bleacher'){
+    for(let i=0;i<4;i++){
+      const z0=-d/2+i*d/4,z1=z0+d/4;
+      block(-w/2,w/2,z0,z1,h*(i+1)/4);
+    }
+  }else if(part.kind==='table'){
+    block(-w/2,w/2,-d/2,d/2,h,h-.12);
+    for(const x of [-w*.35,w*.35]){
+      for(const z of [-d*.3,d*.3])block(x-.04,x+.04,z-.04,z+.04,h-.12);
+    }
+  }else if(part.kind==='tent'){
+    block(-w/2,w/2,-d/2,d/2,h*.65,h*.62);
+    for(const x of [-w*.46,w*.46]){
+      for(const z of [-d*.46,d*.46])block(x-.06,x+.06,z-.06,z+.06,h*.63);
+    }
+    block(-w*.2,w*.2,-d*.2,d*.2,h,h*.65);
+  }else{
+    block(-w/2,w/2,-d/2,d/2,h);
+  }
+}
+function addImportedMesh(primitives,part){
+  const mesh=part.mesh;
+  const vertices=mesh.vertices.map(([x,y,z])=>
+    rotatedPoint(part,x*part.width,z*part.depth,y*part.height));
+  for(const [a,b,c] of mesh.faces){
+    const v0=vertices[a],v1=vertices[b],v2=vertices[c];
+    const ux=v1.x-v0.x,uy=v1.y-v0.y,uz=v1.z-v0.z;
+    const vx=v2.x-v0.x,vy=v2.y-v0.y,vz=v2.z-v0.z;
+    const ny=uz*vx-ux*vz;
+    const normal=Math.hypot(uy*vz-uz*vy,ny,ux*vy-uy*vx)||1;
+    const brightness=.72+.25*clamp(ny/normal,-1,1);
+    addFace(primitives,[v0,v1,v2],colorShade(part.color,brightness));
+  }
+}
+
 function drawFloor(){
   const w=project.floor.width,l=project.floor.length;
   polygon(worldToPixels([{x:-w/2,y:-.11,z:-l/2},{x:w/2,y:-.11,z:-l/2},
@@ -390,15 +560,17 @@ function drawScene(){
     const isStand=part.kind==='stand';
     const top=isStand?part.baseHeight+part.rows*part.rise:part.height;
     const base=isStand?0:0;
-    const projected=worldToPixels([
-      ...corners(part,-part.width/2,part.width/2,-part.depth/2,part.depth/2,base),
-      ...corners(part,-part.width/2,part.width/2,-part.depth/2,part.depth/2,top)
-    ]);
+    const projected=worldToPixels(isStand&&(part.shape??'straight')==='arc'?
+      curvedHullPoints(part,top):[
+        ...corners(part,-part.width/2,part.width/2,-part.depth/2,part.depth/2,base),
+        ...corners(part,-part.width/2,part.width/2,-part.depth/2,part.depth/2,top)
+      ]);
     const shape=hull(projected);
     const depth=projected.reduce((s,p)=>s+p.depth,0)/projected.length;
     hitRegions.push({id:part.id,points:shape,depth});
     if(isStand){
-      for(let row=0;row<part.rows;row++){
+      if((part.shape??'straight')==='arc')addArcStand(primitives,part);
+      else for(let row=0;row<part.rows;row++){
         const z0=-part.depth/2+row*part.depth/part.rows;
         const z1=-part.depth/2+(row+1)*part.depth/part.rows;
         const height=part.baseHeight+(row+1)*part.rise;
@@ -406,9 +578,12 @@ function drawScene(){
       }
       const seats=seatsForStand(part);
       for(let i=0;i<seats.length;i+=renderEvery)addSeat(primitives,seats[i],part);
+    }else if(SURFACES.includes(part.kind)){
+      addCourt(primitives,part);
+    }else if(part.kind==='custom_model'){
+      addImportedMesh(primitives,part);
     }else{
-      addBlock(primitives,part,-part.width/2,part.width/2,
-        -part.depth/2,part.depth/2,part.height);
+      addEquipment(primitives,part);
     }
   }
   primitives.sort((a,b)=>a.depth-b.depth);
