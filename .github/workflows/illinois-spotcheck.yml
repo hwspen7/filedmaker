@@ -1,0 +1,39 @@
+name: Illinois Interior Visual Spot Check
+on:
+  push:
+    branches:
+      - feature/big-ten-arena-parity
+    paths:
+      - '.github/workflows/illinois-spotcheck.yml'
+      - 'scripts/browser-big-ten.mjs'
+      - 'src/next/webgl.js'
+      - 'src/next/engines/**'
+      - 'data/big-ten/**'
+      - 'src/next/bigTenCatalog.mjs'
+      - 'src/next/studio.js'
+      - 'index.html'
+  workflow_dispatch:
+
+jobs:
+  render-illinois:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate source-linked Big Ten venue model data
+        run: npm run generate:big-ten -- --out build/big-ten-18 --html --strict --max-error 0.035
+      - name: Validate real Illinois interior and Ohio State scene in WebGL2
+        run: BIG_TEN_FOCUS=illinois npm run test:big-ten-browser
+      - name: Publish actual browser captures
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: illinois-interior-visual-proof
+          path: artifacts/big-ten-visual/
+          if-no-files-found: error
+          retention-days: 14
