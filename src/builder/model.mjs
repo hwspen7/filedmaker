@@ -135,8 +135,16 @@ export function validatePart(part){
   if(part.kind==='custom_model'){
     validateMesh(part.mesh);
     if(typeof part.sourceName!=='string'||part.sourceName.length>150||
-       typeof part.sourceLicense!=='string'||part.sourceLicense.length>80)
+       !['Unverified','CC0','CC-BY','Authorized'].includes(part.sourceLicense)||
+       typeof (part.sourceAuthor??'')!=='string'||(part.sourceAuthor??'').length>120||
+       typeof (part.sourceUrl??'')!=='string'||(part.sourceUrl??'').length>500)
       throw Error('Invalid imported asset provenance');
+    if(part.sourceUrl&&
+       !/^https:\/\/[^\s]+$/i.test(part.sourceUrl))
+      throw Error('Asset source URL must use HTTPS');
+    if(part.sourceLicense==='CC-BY'&&
+       (!(part.sourceAuthor??'').trim()||!(part.sourceUrl??'').trim()))
+      throw Error('CC-BY asset requires creator and source URL');
   }
   return part;
 }
@@ -374,10 +382,12 @@ export function importOBJAsset(project,text,options={}){
   const result=clone(validateProject(project));
   const sourceName=String(options.sourceName??'Imported OBJ').slice(0,150);
   const sourceLicense=String(options.sourceLicense??'Unverified').slice(0,80);
+  const sourceAuthor=String(options.sourceAuthor??'').trim().slice(0,120);
+  const sourceUrl=String(options.sourceUrl??'').trim().slice(0,500);
   result.parts.push(makePart('custom_model',{
     x:options.x??0,z:options.z??0,
     label:String(options.label??sourceName).slice(0,80),
-    sourceName,sourceLicense,mesh
+    sourceName,sourceLicense,sourceAuthor,sourceUrl,mesh
   },idFor(result,'custom_model')));
   return validateProject(result);
 }
