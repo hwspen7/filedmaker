@@ -1,4 +1,5 @@
 import { generateSeats } from '../src/model.mjs';
+import { createOhioStadiumProject, createSchottensteinCenterProject } from '../src/venues.mjs';
 import { createSchoolProject, applySchoolRowPlan, schoolExampleRowsCSV } from '../src/schoolPipeline.mjs';
 import { ticketReconciliation } from '../src/seatFirst.mjs';
 import { VIEW_DEFAULTS } from '../src/view.mjs';
@@ -7,6 +8,16 @@ import { seatColor, canSelectOfficialSeat } from '../src/seatPresentation.mjs';
 const $ = id => document.getElementById(id);
 const modelKey = 'filedmaker.viewer.project';
 function getProject() {
+  // The public live experience uses a self-contained venue reference, never a
+  // school operator's private browser-stored work-in-progress.
+  if (window.location.pathname.startsWith('/experience/')) {
+    const params = new URLSearchParams(window.location.search);
+    const project = params.get('venue') === 'ohio'
+      ? createOhioStadiumProject()
+      : createSchottensteinCenterProject();
+    if (params.get('layout') === 'concert') project.liveStage = 'end';
+    return project;
+  }
   try {
     const value = localStorage.getItem(modelKey);
     if (value) return JSON.parse(value);
@@ -220,5 +231,23 @@ for(const [slot,id] of [[0,'compareA'],[1,'compareB']])$(id).onclick=()=>{
 };
 let photoURL=null;$('photo').onchange=e=>{const f=e.target.files?.[0];if(!f)return;if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>10_000_000){setError('Please upload JPEG, PNG or WebP under 10 MB.');return;}if(photoURL)URL.revokeObjectURL(photoURL);photoURL=URL.createObjectURL(f);const im=new Image();im.src=photoURL;im.alt='Local reference photo';$('photoPreview').replaceChildren(im);};
 const hash=new URLSearchParams(location.hash.slice(1));if(hash.has('seat')&&byId.has(hash.get('seat')))choose(byId.get(hash.get('seat')));
+// Narrow public adapter for the venue-first UI. The legacy viewer remains
+// unchanged on its own route; all seat IDs still come from the source model.
+if (window.location.pathname.startsWith('/experience/')) {
+  window.filedmakerExperience = Object.freeze({
+    seats: () => seats,
+    selected: () => selected,
+    pick: id => {
+      const seat = byId.get(String(id));
+      if (!seat) return false;
+      $('tier').value='all';
+      $('section').value=seat.sectionId;
+      choose(seat, true);
+      return true;
+    },
+    view: which => which === 'map' ? setView('map') : open3d(which),
+  });
+  window.dispatchEvent(new Event('filedmaker:ready'));
+}
 const ro=new ResizeObserver(()=>{size();if(scale<=1)fit();});ro.observe(canvas.parentElement);
 size();fit();
