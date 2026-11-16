@@ -272,6 +272,8 @@ function repaint(){
   $('modeLabel').textContent=editorMode==='select'?'Select · drag a section corner to adjust':
     editorMode==='calibrate'?'Calibration · mark all four court corners':
     'Tracing · front left → front right → rear right → rear left';
+  $('emptyCanvas').hidden=!!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
+  $('canvasOverlay').hidden=!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
   $('canvasOverlay').textContent=editorMode==='calibrate'?'Click the four court corners in order: near left, near right, far right, far left.':
     editorMode==='trace'?'Trace '+(draftPoints.length+1)+'/4: '+['front left','front right','rear right','rear left'][draftPoints.length]:
     image&&!registration?'Image loaded. Mark four court corners before tracing sections.':
@@ -631,7 +633,7 @@ function open3d(mode){
   if(mode==='eye'&&!selectedSeat)message('Select a seat in 3D overview before entering Seat view.',true);
 }
 function tab(mode){
-  $('canvasOverlay').hidden=mode!=='plan';
+  $('canvasOverlay').hidden=mode!=='plan'||!(image||venue.rows.length||venue.sections.length||preview);
   $('showPlan').classList.toggle('active',mode==='plan');
   $('show3d').classList.toggle('active',mode==='overview');
   $('showEye').classList.toggle('active',mode==='eye');
@@ -811,6 +813,7 @@ const observer=new ResizeObserver(()=>resize());observer.observe(canvas.parentEl
 sync();repaint();resize();
 
 $('openExisting').onclick=()=>$('openProject').click();
+$('emptyUpload').onclick=()=>$('pdfFile').click();
 workflowUI=setupWorkflow({onStageChange:stage=>{
   if(stage==='source'||stage==='calibrate')$('showPlan').click();
   if(stage==='model'&&preview)$('show3d').click();
@@ -850,7 +853,15 @@ async function openRequestedCase(){
     const c=getVenueCase(caseId);
     if(c){
       showCaseContext(c);
-      workflowUI.go('source');
+      const before=structuredClone(venue);
+      venue.school=c.subtitle;venue.venue=c.title;
+      if(c.capacity!==null&&c.source){
+        venue.officialCapacity=c.capacity;venue.capacitySource=c.source;
+      }
+      venue.notes=[c.description,'Source case metadata only. No verified row inventory or measured geometry is attached.'];
+      venue=normalizeVenue(venue);
+      recordEdit(before,'Load published case metadata: '+c.title);
+      sync();repaint();workflowUI.go('source');
       message('Download the referenced source document and import it locally. No seats or geometry were fabricated.');
     }
   }

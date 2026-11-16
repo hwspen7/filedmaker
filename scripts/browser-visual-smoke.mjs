@@ -362,12 +362,13 @@ async function main(){
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?case=wills-point'});
     const sourceCase=await poll(async()=>{
       const state=await evaluate(
-        "({ready:document.documentElement.dataset.workbenchReady,text:document.querySelector('#caseContextText')?.textContent,source:document.querySelector('#caseContextSource')?.href,seats:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage})"
+        "({ready:document.documentElement.dataset.workbenchReady,text:document.querySelector('#caseContextText')?.textContent,source:document.querySelector('#caseContextSource')?.href,seats:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage,title:document.querySelector('#workspaceName')?.textContent,empty:!document.querySelector('#emptyCanvas')?.hidden})"
       );
       return state?.ready==='true'&&state?.text?.includes('seat inventory')?state:null;
     },60);
     if(!sourceCase.text.includes('no complete seat inventory')||sourceCase.seats!=='0'||
-       sourceCase.stage!=='source'||!sourceCase.source.includes('wills-point'))
+       sourceCase.stage!=='source'||sourceCase.title!=='Main Gym'||
+       !sourceCase.empty||!sourceCase.source.includes('wills-point'))
       throw Error('Source-only case has invented geometry: '+JSON.stringify(sourceCase));
     await delay(200);
     const noSeats=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
@@ -388,7 +389,10 @@ async function main(){
 
   } finally {
     client?.close();chrome.kill('SIGKILL');server.kill('SIGTERM');
-    rmSync(work,{recursive:true,force:true});
+    // Chrome may still be flushing profile files after SIGKILL.
+    // Use bounded retries so successful UI tests do not fail on a teardown race.
+    await delay(450);
+    rmSync(work,{recursive:true,force:true,maxRetries:15,retryDelay:200});
   }
 }
 main().catch(e=>{console.error(e.stack||e.message);process.exitCode=1;});

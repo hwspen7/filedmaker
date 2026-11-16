@@ -127,6 +127,11 @@
 <button id="show3d" type="button">3D overview</button><button id="showEye" type="button">Seat view</button></div></div>
 <div class="visual"><canvas id="planCanvas" aria-label="Editable plan and section contours"></canvas>
 <canvas id="modelCanvas" aria-label="3D school venue preview" hidden></canvas>
+<div id="emptyCanvas" class="empty-canvas">
+<span class="empty-icon">✦</span><h2>Your next venue starts here</h2>
+<p>Upload a school floor plan, or explore the fully fictional 1,500-seat example.</p>
+<div class="empty-actions"><button id="emptyUpload" class="primary" type="button">Upload PDF</button>
+<a href="./?example=fictional">Try a demo</a></div></div>
 <div id="canvasOverlay" class="canvas-overlay">Upload a drawing or open the fictional demonstration.</div></div>
 <div class="bottom"><span id="modeLabel">Select a section corner to adjust</span><span>Coordinates in metres · estimates until verified</span></div>
 </section>
