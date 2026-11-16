@@ -233,10 +233,20 @@ function renderProject(){
     }
     $('rowsCount').textContent=fmt(plan.rowRuns);$('gapCount').textContent=fmt(plan.aisleBreaks);
     $('kindCount').textContent=plan.chairCount>plan.benchCount?'Chairs':'Bleachers';
-    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported':bigTenReference?'Source-mapped · estimated':model.proceduralGeometry?'Procedural 3D preview':model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
+    const inStatus=project.proceduralVenue?.provenance?.interiorStatus??'';
+    $('sourceTag').textContent=plan.hasRoster?'Ticket list imported'
+      :bigTenReference?(inStatus==='chart-informed-unsurveyed'
+        ?'Official section order · modeled seat shapes'
+        :'Source labels · schematic interior')
+      :model.proceduralGeometry?'Procedural 3D preview'
+      :model.seatingRows?'Photo-referenced preview':'Illustrative geometry';
     $('modelStatus').innerHTML='<span class="pulse"></span> '+(plan.hasRoster?'Roster / geometry unverified':'Schematic preview');
     $('reviewFlag').textContent=plan.hasRoster?'ROSTER':'REFERENCE';
-    $('warnings').style.color='';$('warnings').textContent=plan.engineAudit&&!plan.engineAudit.passed
+    $('warnings').style.color='';
+    const coverage=model.sectionCoverage;
+    $('warnings').textContent=coverage&&!coverage.completeness
+      ?`Seating geometry incomplete: ${coverage.missingSections.length} empty mapped sections, ${coverage.omittedEligibleRows.length} missing seatable rows. See original seating chart before trusting this view.`
+      :plan.engineAudit&&!plan.engineAudit.passed
       ?'Six-engine geometry validation failed: '+plan.engineAudit.errors.join(', ')
       :plan.engineAudit?.warnings.length?plan.engineAudit.warnings.join(' ') 
       :(plan.invalidRows||plan.positionCollisions)
