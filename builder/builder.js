@@ -103,6 +103,13 @@ function updateEditor(){
   $('rowCount').textContent=s.rows.length+' 排';
   $('bulkRowCount').value=String(Math.max(1,s.rows.length));
   $('bulkSeatCount').value=String(s.rows[0]?.seats??20);
+  $('frontCoords').value=s.front.map(p=>p.x+','+p.z).join('; ');
+  $('backCoords').value=s.back.map(p=>p.x+','+p.z).join('; ');
+  const advanced=$('advancedRow'),oldIndex=Number(advanced.value||0);
+  advanced.replaceChildren();
+  s.rows.forEach((r,i)=>advanced.add(new Option(r.label+' ('+(i+1)+')',String(i))));
+  advanced.value=String(Math.min(Math.max(0,oldIndex),s.rows.length-1));
+  loadAdvanced();
   const tbody=$('rowEditor');tbody.replaceChildren();
   s.rows.forEach((r,index)=>{
     const tr=document.createElement('tr');
@@ -246,6 +253,60 @@ function pointInside(point,poly){
   }
   return inside;
 }
+// Exact curve coordinates and row metadata are manually entered, not inferred.
+function parseCoords(input,label){
+  const parts=String(input).split(';').map(v=>v.trim()).filter(Boolean);
+  if(parts.length<2||parts.length>32)throw Error(label+' needs 2–32 control points');
+  return parts.map(part=>{
+    const pair=part.split(',').map(x=>x.trim());
+    if(pair.length!==2)throw Error(label+' points must be X,Z');
+    return {x:number(pair[0],label+' X',-2000,2000),
+      z:number(pair[1],label+' Z',-2000,2000)};
+  });
+}
+function loadAdvanced(){
+  const s=section(),r=s?.rows[Number($('advancedRow').value)];
+  for(const id of ['advancedSeatType','advancedDirection','advancedInsetStart',
+    'advancedInsetEnd','advancedDepth','advancedNumbers'])
+    $(id).disabled=!r;
+  if(!r)return;
+  $('advancedSeatType').value=r.seatType;
+  $('advancedDirection').value=r.seatDirection||'forward';
+  $('advancedInsetStart').value=r.insetStartM??0;
+  $('advancedInsetEnd').value=r.insetEndM??0;
+  $('advancedDepth').value=r.depthOffsetM??0;
+  $('advancedNumbers').value=(r.seatNumbers||[]).join('|');
+}
+$('advancedRow').onchange=loadAdvanced;
+$('applyAdvanced').onclick=()=>{
+  const s=section(),i=Number($('advancedRow').value),r=s?.rows[i];
+  if(!r)return;
+  const old=clone(r);
+  try{
+    r.seatType=$('advancedSeatType').value;
+    r.seatDirection=$('advancedDirection').value;
+    r.insetStartM=number($('advancedInsetStart').value,'Left inset',0,30);
+    r.insetEndM=number($('advancedInsetEnd').value,'Right inset',0,30);
+    r.depthOffsetM=number($('advancedDepth').value,'Depth offset',-3,3);
+    const data=$('advancedNumbers').value.trim();
+    r.seatNumbers=data?data.split('|').map(x=>x.trim()):[];
+    normalizeReconstruction(project);
+    updateEditor();schedulePreview();
+  }catch(error){s.rows[i]=old;updateEditor();setStatus(error.message,true);}
+};
+$('applyCoords').onclick=()=>{
+  const s=section();if(!s)return;
+  const front=clone(s.front),back=clone(s.back);
+  try{
+    s.front=parseCoords($('frontCoords').value,'Front curve');
+    s.back=parseCoords($('backCoords').value,'Rear curve');
+    normalizeReconstruction(project);
+    updateEditor();fit();schedulePreview();
+  }catch(error){
+    s.front=front;s.back=back;updateEditor();setStatus(error.message,true);
+  }
+};
+
 const canvas=$('planCanvas');
 canvas.addEventListener('pointerdown',e=>{
   const p=imagePos(e),s=section();
