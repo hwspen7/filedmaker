@@ -230,7 +230,7 @@
       "tierGroups": [
         [
           {
-            "startAngle": 1.5,
+            "startAngle": 3.070796326795,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
@@ -282,7 +282,7 @@
         ],
         [
           {
-            "startAngle": 1.62,
+            "startAngle": 3.190796326795,
             "spanAngle": 2.5,
             "sectionIds": [
               "121",
@@ -299,7 +299,7 @@
             "rowCount": 9
           },
           {
-            "startAngle": 5.05,
+            "startAngle": 0.337611019615,
             "spanAngle": 2.75,
             "sectionIds": [
               "134",
@@ -319,7 +319,7 @@
         ],
         [
           {
-            "startAngle": 1.45,
+            "startAngle": 3.020796326795,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "201",
@@ -476,7 +476,7 @@
         "Three east-side suite boxes",
         "Wheelchair platforms"
       ],
-      "notes": "Basketball configuration labels 101–120, 121–129, 134–143, 201–248, and separate court-level 9–13. Sections 130–133 are not presented as occupied spectator arcs on this source and are not fabricated. Lower court-level 9–13 require another non-overlapping strip. Sections 9–13 on the east court sideline are modeled from published student-section row labels; seat centers and five strip widths are visually estimated. Lower 101–120 widths manually estimated from seating-map polygons rather than uniform circular wedges.",
+      "notes": "Basketball configuration labels 101–120, 121–129, 134–143, 201–248, and separate court-level 9–13. Sections 130–133 are not presented as occupied spectator arcs on this source and are not fabricated. Lower court-level 9–13 require another non-overlapping strip. Sections 9–13 on the east court sideline are modeled from published student-section row labels; seat centers and five strip widths are visually estimated. Lower 101–120 widths manually estimated from seating-map polygons rather than uniform circular wedges. The chart coordinate basis is rotated 90 degrees so that 101/201 correspond to the western long side and 111/courtside 9–13 to the eastern long side of the same court. This is a diagram orientation fix, not a new invented section.",
       "angularGeometryPrecision": "estimated-manual-sketch-from-published-plan"
     },
     "iowa": {
