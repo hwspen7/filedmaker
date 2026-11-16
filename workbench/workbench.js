@@ -445,6 +445,7 @@ newInput.id='newSectionId';newInput.maxLength=30;newInput.value='SECTION-1';
 newId.append(newInput);$('trace').parentElement.before(newId);
 const observer=new ResizeObserver(()=>resize());observer.observe(canvas.parentElement);
 sync();repaint();resize();
+document.documentElement.dataset.workbenchReady="true";
 (async()=>{
   const el=$('buildTag');
   try{

@@ -177,11 +177,14 @@ async function main(){
     }
     // Verify the new end-to-end school workbench in a real browser.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/'});
-    await poll(async()=>await evaluate("!!document.querySelector('#fixture')"),40);
+    await poll(async()=>await evaluate("document.documentElement.dataset.workbenchReady==='true'"),60);
     await evaluate("document.querySelector('#fixture').click()");
-    const ready=await poll(async()=>await evaluate(
-      "({count:document.querySelector('#mappedCount')?.textContent,sections:document.querySelector('#sectionCount')?.textContent,error:document.querySelector('#workStatus')?.style.color})"
-    ),40);
+    const ready=await poll(async()=>{
+      const state=await evaluate(
+        "({count:document.querySelector('#mappedCount')?.textContent,sections:document.querySelector('#sectionCount')?.textContent,error:document.querySelector('#workStatus')?.textContent})"
+      );
+      return state?.count==='1,500'&&state?.sections==='4'?state:null;
+    },60);
     if(ready.count!=='1,500'||ready.sections!=='4')
       throw Error('Fictional 1,500-seat fixture did not reconcile: '+JSON.stringify(ready));
     await evaluate("document.querySelector('#show3d').click()");
