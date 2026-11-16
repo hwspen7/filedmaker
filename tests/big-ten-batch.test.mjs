@@ -140,14 +140,17 @@ test('unverified geometry cannot claim OSU-quality chart calibration by seat-cou
     const spec=toProceduralSpec(get(id));
     const normalized=GeometryEngine.normalize(spec);
     assert.ok(normalized.sectionMap,id);
-    assert.equal(spec.provenance.sectionOutlineProvenance,'estimated-arc',id);
+    assert.equal(spec.provenance.sectionOutlineProvenance,
+      ['indiana','iowa','ucla','wisconsin'].includes(id)?'official-adjacency-estimated-shape':'estimated-arc',id);
     assert.equal(spec.provenance.seatCoordinates,'not-available',id);
   }
   for(const id of ['illinois','maryland','michigan-state','nebraska',
     'northwestern','oregon','purdue','washington']){
     const spec=toProceduralSpec(get(id));
     assert.ok(spec.sectionMap,id+' must use chart-derived sections');
-    assert.equal(spec.provenance.sectionOutlineProvenance,'estimated-arc',id);
+    assert.equal(spec.provenance.sectionOutlineProvenance,
+      ['illinois','michigan-state','purdue','washington'].includes(id)?
+        'official-adjacency-estimated-shape':'estimated-arc',id);
   }
 });
 
@@ -197,7 +200,7 @@ test('Illinois, Nebraska, Purdue and Washington preserve distinct seating charts
   const nebraska=toProceduralSpec(get('nebraska'));
   assert.deepEqual(nebraska.sectionMap.map(t=>t[0].sectionIds[0]),['101','201','301']);
   const purdue=toProceduralSpec(get('purdue'));
-  assert.deepEqual(purdue.sectionMap.map(t=>t[0].sectionIds[0]),['01','101']);
+  assert.deepEqual(purdue.sectionMap.map(t=>t[0].sectionIds[0]),['1','101']);
   const washington=toProceduralSpec(get('washington'));
   assert.equal(washington.sectionMap[0][0].sectionIds.length,14);
   assert.equal(washington.sectionMap[1][0].rowStart,14);
@@ -397,8 +400,10 @@ test('Indiana, Purdue, Illinois and Iowa preserve characteristic independently m
   assert.equal(ill.sectionMap.length,3);
   assert.equal(ill.sectionMap[2][0].sectionIds.length,48);
   const iowa=generateVenuePackage(toProceduralSpec(get('iowa'))).model;
-  assert.ok(iowa.seats.some(s=>s.sectionId==='G'&&s.seatType==='bleacher'),
-    'Iowa official student bank must render as a bench section');
+  assert.ok(iowa.seats.some(s=>s.sectionId==='G'),
+    'Iowa G student bank must exist with its official section label');
+  assert.ok(!iowa.seats.some(s=>s.sectionId==='G'&&s.seatType==='bleacher'),
+    'Student designation alone cannot justify fabricated bleacher furniture');
   assert.ok(iowa.seats.some(s=>s.sectionId==='A'&&s.seatType==='chair'));
 });
 
