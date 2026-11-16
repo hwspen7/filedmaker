@@ -59,6 +59,38 @@ test('duplicating multiple objects keeps layout spacing and stable unique IDs',(
   assert.deepEqual(removed.venue.structures,source.structures);
   assert.equal(removed.ids.length,0);
 });
+test('repeated component arrays preserve spacing, provenance and capacity',()=>{
+  const source=trio();
+  const out=editVenueStructureBatch(source,{action:'array',
+    ids:ids(source),dx:2,dz:-1,copies:3});
+  assert.equal(out.venue.structures.length,12);
+  assert.equal(out.ids.length,9);
+  assert.equal(new Set(ids(out.venue)).size,12);
+  assert.deepEqual(out.venue.structures.slice(3).map(s=>s.x),
+    [2,7,22,4,9,24,6,11,26]);
+  assert.deepEqual(out.venue.structures.slice(3).map(s=>s.z),
+    [-1,1,5,-2,0,4,-3,-1,3]);
+  assert.ok(out.venue.structures.every(s=>
+    s.provenance==='operator-estimated/unverified'));
+  assert.equal(out.seatDelta,0);
+  assert.equal(out.venue.editLedger.length,source.editLedger.length+1);
+});
+test('regular arrays enforce integer repetition and 200-component ceiling',()=>{
+  const source=trio(),baseline=structuredClone(source);
+  assert.throws(()=>editVenueStructureBatch(source,{
+    action:'array',ids:ids(source),dx:1,dz:1,copies:1.5
+  }),/whole/);
+  const saturated=structuredClone(source);
+  while(saturated.structures.length<199){
+    const id='filler-'+saturated.structures.length;
+    saturated.structures.push({...saturated.structures[0],id,
+      x:saturated.structures.length+20});
+  }
+  assert.throws(()=>editVenueStructureBatch(saturated,{
+    action:'array',ids:ids(saturated).slice(0,3),dx:1,dz:0,copies:1
+  }),/Maximum 200/);
+  assert.deepEqual(source,baseline);
+});
 test('batch validation is atomic and cannot fabricate an extra source seat',()=>{
   const venue=trio(),before=structuredClone(venue),selection=ids(venue);
   for(const command of [
