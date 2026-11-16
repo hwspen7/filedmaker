@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "status": "architectural-feature-references-not-surveyed-meshes",
-  "notice": "Roof profiles, orientation, heights, facade widths, roof ribs and all polygon vertices are visual reconstruction estimates. These reference facts are NOT per-venue surveyed CAD geometry or proof of OSU-grade photographic parity.",
+  "notice": "Roof profiles, orientation, heights, facade widths, roof ribs and all polygon vertices are visual reconstruction estimates. These reference facts are NOT per-venue surveyed CAD geometry or proof of OSU-grade photographic parity. Real-world dimensions are stored only where individually documented; roof-geometry placement remains visual study rather than licensed architectural drawings.",
   "venues": {
     "illinois": {
       "roof": "folded-dome",
@@ -10,7 +10,30 @@
       "roofRise": 12,
       "entryAngle": 1.57,
       "source": "https://www.statefarmcenter.com/arena-info/about-state-farm-center",
-      "note": "Folded thin-shell white concrete dome, radial supports and a recessed 360-degree glass band"
+      "note": "Folded thin-shell white concrete dome, radial supports and a recessed 360-degree glass band",
+      "outerDiameterMetres": 121.92,
+      "apexHeightMetres": 39.0144,
+      "radialButtresses": 48,
+      "measuredFacts": [
+        {
+          "key": "outerDiameterMetres",
+          "value": 121.92,
+          "units": "m",
+          "source": "https://www.statefarmcenter.com/arena-info/about-state-farm-center"
+        },
+        {
+          "key": "apexHeightMetres",
+          "value": 39.0144,
+          "units": "m above court",
+          "source": "https://docomomo-us.org/news/the-university-of-illinois-state-farm-center-the-renovation-of-a-mid-century-flying-saucer"
+        },
+        {
+          "key": "radialButtresses",
+          "value": 48,
+          "units": "count",
+          "source": "https://docomomo-us.org/news/the-university-of-illinois-state-farm-center-the-renovation-of-a-mid-century-flying-saucer"
+        }
+      ]
     },
     "indiana": {
       "roof": "saddle",
@@ -109,7 +132,30 @@
       "roofRise": 7,
       "entryAngle": 1.57,
       "source": "https://purduesports.com/facilities/mackey-arena",
-      "note": "Circular concrete and steel structure with distinctive warm-colored domed roof and brick exterior"
+      "note": "Circular concrete and steel structure with distinctive warm-colored domed roof and brick exterior",
+      "historicalWallHeightMetres": 12.192,
+      "historicalDomeRiseMetres": 12.192,
+      "historicalApexAboveCourtMetres": 29.5656,
+      "measuredFacts": [
+        {
+          "key": "historicalWallHeightMetres",
+          "value": 12.192,
+          "units": "m",
+          "source": "https://archives.lib.purdue.edu/repositories/2/resources/1499"
+        },
+        {
+          "key": "historicalDomeRiseMetres",
+          "value": 12.192,
+          "units": "m",
+          "source": "https://archives.lib.purdue.edu/repositories/2/resources/1499"
+        },
+        {
+          "key": "historicalApexAboveCourtMetres",
+          "value": 29.5656,
+          "units": "m",
+          "source": "https://purduesports.com/facilities/mackey-arena"
+        }
+      ]
     },
     "rutgers": {
       "roof": "trapezoid",
@@ -145,7 +191,23 @@
       "roofRise": 10,
       "entryAngle": 3.14,
       "source": "https://sah-archipedia.org/buildings/WA-01-033-0085-12",
-      "note": "1928 Romanesque brick hall with round arched windows, gable roof and ridge skylight"
+      "note": "1928 Romanesque brick hall with round arched windows, gable roof and ridge skylight",
+      "historicalBuildingWidthMetres": 100.2792,
+      "historicalBuildingLengthMetres": 145.0848,
+      "measuredFacts": [
+        {
+          "key": "historicalBuildingWidthMetres",
+          "value": 100.2792,
+          "units": "m",
+          "source": "https://sah-archipedia.org/buildings/WA-01-033-0085-12"
+        },
+        {
+          "key": "historicalBuildingLengthMetres",
+          "value": 145.0848,
+          "units": "m",
+          "source": "https://sah-archipedia.org/buildings/WA-01-033-0085-12"
+        }
+      ]
     },
     "wisconsin": {
       "roof": "flat-broad",
