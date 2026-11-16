@@ -341,7 +341,7 @@ function drawMap(){
   c.width=Math.round(r.width*dpr);
   c.height=Math.round(r.height*dpr);
   const ctx=c.getContext('2d'),cx=c.width/2,cy=c.height/2;
-  const chart=model.sectionFootprints;
+  const chart=model.sectionFootprints??model.interiorSectionFootprints;
   const horizontal=chart||plan.surface.sport==='basketball';
   const palette=palettePresets[$('palette').value];
   const tint=(tier,index)=>palette?.[tier]||(model.seatingRows?['#903549','#823348','#743245'][tier]:seatColor(project,tier,index));
