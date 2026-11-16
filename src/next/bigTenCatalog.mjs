@@ -19,8 +19,10 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
     // Verified chart identities and clockwise adjacency are authoritative.
     // Never re-derive real section positions from a fictional section count or
     // the old cyclic width-pattern templates.
-    if(interior&&!chart)
+    if(interior&&!chart&&interior.scope!=='applied-to-synthetic-model-only')
       throw Error('First-wave interior requires a verified section-chart order: '+venue.id);
+    if(interior&&!chart&&!/^https:\/\//.test(interior.source??''))
+      throw Error('School-specific schematic profile is missing its source: '+venue.id);
     if(chart){
       if(!/^https:\/\//.test(chart.source)||chart.spatialPrecision!=='section-label-order-only')
         throw Error('Chart placement source or evidence precision missing for '+venue.id);
@@ -73,7 +75,7 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
       verifiedChartSectionIds:chart?.verifiedSections??null,
       unmodeledDocumentedSections:chart?.unmodeledSections??[],
       nonSeatChartLabels:chart?.nonSeatLabels??[],
-      interiorStatus:interior?'chart-informed-unsurveyed':'unmodeled',
+      interiorStatus:interior?(chart?'chart-informed-unsurveyed':'source-linked-illustrative-unsurveyed'):'unmodeled',
       notice:chart?'Section labels and circular neighbor order are source backed. Precise outlines, angles, row counts and individual seat coordinates are unverified. Omitted chart areas are intentionally not fabricated.':'Seats and section boundaries are estimated even when school chart section IDs and row-label ranges are sourced.'
     }
   };
