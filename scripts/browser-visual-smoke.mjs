@@ -69,7 +69,7 @@ async function main(){
       if(reply.exceptionDetails)throw Error('Browser exception: '+JSON.stringify(reply.exceptionDetails));
       return reply.result?.value;
     };
-    for(const [preset,file] of [['schott','osu'],['procedural','arena'],['procedural-football','stadium']]){
+    for(const [preset,file] of [['schott','osu'],['ohio','ohio-stadium']]){
       if(preset!=='schott')await evaluate("document.querySelector('[data-preset="+preset+"]')?.click()");
       const state=await poll(async()=>{
         const value=await evaluate("({loaded:document.querySelector('#loading')?.hidden,shown:document.querySelector('#visualCount')?.textContent,canvas:document.querySelector('#viewport3d')?.width,webgl:!!document.querySelector('#viewport3d')?.getContext('webgl2'),warning:document.querySelector('#warnings')?.textContent})");
@@ -175,17 +175,25 @@ async function main(){
         await evaluate("document.querySelector('[data-view=overview]').click()");
       }
     }
-    await evaluate("document.querySelector('#generateName').value='Custom QA Soccer Stadium';document.querySelector('#generateSurface').value='soccer';document.querySelector('#generateSections').value='22';document.querySelector('#generateLowerRows').value='13';document.querySelector('#generateUpperRows').value='18';document.querySelector('#generateCapacity').value='16500';document.querySelector('#generateVenue').click()");
-    const custom=await poll(async()=>{
-      const state=await evaluate("({name:document.querySelector('#title')?.textContent,loaded:document.querySelector('#loading')?.hidden,seats:document.querySelector('#visualCount')?.textContent,webgl:!!document.querySelector('#viewport3d')?.getContext('webgl2'),warning:document.querySelector('#warnings')?.textContent})");
-      return state?.name==='Custom QA Soccer Stadium' && state.loaded && Number(state.seats.replace(/,/g,''))>0 ? state:null;
-    },60);
-    if(!custom.webgl||/validation failed/i.test(custom.warning))throw Error('Custom venue form did not render correctly: '+JSON.stringify(custom));
-    await delay(1100);
-    const screenshot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
-    const name=join(dir,'custom.png');writeFileSync(name,Buffer.from(screenshot.data,'base64'));
-    if(statSync(name).size<12000)throw Error('Custom screenshot is blank');
-    console.log('custom: WebGL2 OK; '+custom.seats+' estimated seats');
+    // Verify the new end-to-end school workbench in a real browser.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/'});
+    await poll(async()=>await evaluate("!!document.querySelector('#fixture')"),40);
+    await evaluate("document.querySelector('#fixture').click()");
+    const ready=await poll(async()=>await evaluate(
+      "({count:document.querySelector('#mappedCount')?.textContent,sections:document.querySelector('#sectionCount')?.textContent,error:document.querySelector('#workStatus')?.style.color})"
+    ),40);
+    if(ready.count!=='1,500'||ready.sections!=='4')
+      throw Error('Fictional 1,500-seat fixture did not reconcile: '+JSON.stringify(ready));
+    await evaluate("document.querySelector('#show3d').click()");
+    const rendered=await poll(async()=>await evaluate("(()=>{const c=document.querySelector('#modelCanvas');return !c.hidden&&c.width>300&&!!c.getContext('webgl2')})()"),50);
+    if(!rendered)throw Error('Workbench did not render in native WebGL2');
+    await delay(850);
+    const workbenchShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const workbenchImage=join(dir,'workbench-gym.png');
+    writeFileSync(workbenchImage,Buffer.from(workbenchShot.data,'base64'));
+    if(statSync(workbenchImage).size<14000)throw Error('Workbench screenshot is blank');
+    console.log('workbench: 1,500 seats preserved, 4 independent banks, native WebGL2 verified');
+
   } finally {
     client?.close();chrome.kill('SIGKILL');server.kill('SIGTERM');
     rmSync(work,{recursive:true,force:true});

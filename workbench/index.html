@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venue Workbench — FiledMaker</title>
+<meta name="description" content="Trace a school seating plan, import source rows, calibrate geometry and publish a reviewable 3D venue preview.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./workbench.css"></head>
+<body><header class="topbar">
+<a href="../" class="brand"><span class="logo">F</span><span><strong>FiledMaker</strong><small>Venue Workbench</small></span></a>
+<nav aria-label="Primary"><a href="../">OSU references</a><a href="../school/">School data tools</a><a href="../legacy/">Advanced editor</a></nav>
+<span id="buildTag" class="build">Local workbench</span>
+</header>
+<div class="layout"><aside class="sidebar">
+<div class="section"><div class="eyebrow">Project</div><h2>Build from actual source material</h2>
+<p class="muted">Import a seating diagram and row records. Trace section boundaries to create a calibrated, editable preview.</p>
+<label>School or district<input id="school" maxlength="120"></label>
+<label>Venue name<input id="venue" maxlength="120"></label>
+<label>Venue type<select id="sport"><option value="nfhs-basketball">High-school basketball</option><option value="ncaa">College basketball</option><option value="nfhs-football">High-school football</option><option value="ncaa-football">College football</option></select></label>
+<div class="pair"><label>Surface width (m)<input id="courtWidth" type="number" step=".01" min="8" max="160"></label>
+<label>Surface length (m)<input id="courtLength" type="number" step=".01" min="15" max="200"></label></div>
+</div>
+<div class="section"><div class="eyebrow">Source drawings</div>
+<label class="upload">Upload plan image<input id="planFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" hidden></label>
+<p class="hint">PNG, JPEG or WebP. For PDF drawings, export the relevant page as an image first. No automatic PDF recognition is claimed.</p>
+<div id="sourceName" class="file-meta">No drawing attached</div>
+<div class="actions"><button type="button" id="calibrate">Mark court corners</button><button type="button" id="trace">Trace section</button></div>
+<p id="traceInstructions" class="hint">For a plan image, first select the four court corners in order, then trace each section's four corners: front left, front right, rear right, rear left.</p>
+</div>
+<div class="section"><div class="eyebrow">Seat records</div>
+<label class="upload">Import row counts CSV<input id="rowsFile" type="file" accept=".csv,text/csv" hidden></label>
+<div class="actions"><button id="csvExample" type="button">CSV example</button><button id="fixture" type="button">Fictional 1,500-seat example</button></div>
+<p class="hint">Required CSV columns: section, row, seats. Optional: seat_start, tier, seat_type. The exact row counts are preserved without adjusting them to match capacity.</p>
+<label>Published capacity (optional)<input id="capacity" type="number" min="1" max="150000" placeholder="Only if sourced"></label>
+<label>Published capacity HTTPS source<input id="capacitySource" type="url" placeholder="https://school.example.edu/venue"></label>
+</div>
+<div class="section"><div class="eyebrow">Selected section</div>
+<label>Section<select id="sectionSelect"><option value="">No section selected</option></select></label>
+<div class="pair"><label>First-row height (m)<input id="baseHeight" type="number" step=".05" min="0" max="80"></label>
+<label>Rise per row (m)<input id="rowRise" type="number" step=".01" min=".05" max="1.5"></label></div>
+<div class="actions"><button type="button" id="applySection">Apply geometry</button><button type="button" id="removeSection">Remove section</button></div>
+<p class="hint">Drag section corner handles on the drawing to adjust their positions. Elevations remain estimated until measured.</p>
+</div>
+<div class="section"><div class="eyebrow">Publish &amp; exchange</div>
+<div class="actions stack"><button id="generate" class="primary" type="button">Generate / update model</button>
+<button id="saveProject" type="button">Export editable project</button>
+<label class="upload secondary">Open editable project<input id="openProject" type="file" accept=".json,application/json" hidden></label>
+<button id="saveSeats" type="button">Export seat coordinates CSV</button>
+<button id="saveReport" type="button">Export validation report</button>
+<button id="publish" type="button">Export offline 3D preview</button></div>
+</div>
+</aside>
+<main class="main"><div class="workspace-top"><div><div class="eyebrow">Geometry workspace</div>
+<h1 id="workspaceName">Untitled school venue</h1>
+<p id="workStatus" class="muted">Trace a plan and import a school row list.</p></div>
+<div class="tabs"><button id="showPlan" class="active" type="button">2D plan</button><button id="show3d" type="button">3D overview</button><button id="showEye" type="button">Seat view</button></div></div>
+<div class="visual"><canvas id="planCanvas" aria-label="Editable plan and seat section contours"></canvas><canvas id="modelCanvas" aria-label="3D school venue preview" hidden></canvas>
+<div id="canvasOverlay" class="canvas-overlay">Choose a drawing or load the fictional exercise to begin.</div></div>
+<div class="bottom"><span id="modeLabel">Select · drag any section corner to adjust</span><span>Coordinates in metres · not surveyed</span></div>
+</main><aside class="inspector"><div class="eyebrow">Data integrity</div>
+<div class="metric"><strong id="mappedCount">0</strong><span>Modeled seat positions</span></div>
+<div class="two"><div><strong id="sectionCount">0</strong><span>Sections</span></div><div><strong id="rowCount">0</strong><span>Source rows</span></div></div>
+<div class="metric"><strong id="publishedCount">—</strong><span>Published capacity</span></div>
+<h3>Quality review</h3><div id="qa" class="qa">No model generated. Source data and geometry require review.</div>
+<h3>Selected seat</h3><div id="seatDetails" class="qa">Click a seat in the 3D view.</div>
+<div class="notice">This is a geometry preview, not a certified survey, evacuation model, accessibility review, or live ticketing service. The school must approve layouts and sightlines before publication.</div>
+</aside></div><script type="module" src="./workbench.js"></script></body></html>

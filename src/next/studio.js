@@ -1,19 +1,15 @@
 // Rebuilt school venue front end. Uses native WebGL2 and a single shared plan.
 import { createOhioStadiumProject, createSchottensteinCenterProject } from '../venues.mjs';
-import { createSchoolProject } from '../schoolPipeline.mjs';
 import { generateSeats, validateProject } from '../model.mjs';
 import { importTicketRoster } from '../seatFirst.mjs';
 import { buildVenuePlan } from './venuePlan.mjs';
 import { seatColor } from '../seatPresentation.mjs';
 import { SCHOTTENSTEIN_CHART_URL, SCHOTTENSTEIN_REFERENCE_VIEWS, SCHOTTENSTEIN_COURT_SOURCE, SCHOTTENSTEIN_BOARD_SOURCE } from '../schottensteinSeating.mjs';
 import { NativeVenueRenderer } from './webgl.js';
-import { createProceduralProject, PROCEDURAL_DEMOS } from './engines/factory.mjs';
-import {loadBigTenCatalog,toBigTenProceduralSpec} from './bigTenCatalog.mjs';
 const $=id=>document.getElementById(id);
 let project=null,model=null,plan=null,renderer=null,selected=null,mode='overview';
 let seatsBySection=new Map();
 let areaLabels=[],visibleAreaLabels=[];
-let bigTenCatalogRequest=null,bigTenRequestId=0;
 const palettePresets={
   slate:['#5e747e','#7b9099','#97aab2','#bacbd1'],
   navy:['#255583','#3f79a6','#76a7cd','#aacbe2'],
@@ -26,44 +22,11 @@ function download(filename,content,type='application/json'){
   a.href=u;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);
 }
 function error(message){$('warnings').textContent=limited(message);$('warnings').style.color='#a04444';}
-async function setBigTenVenue(id){
-  const request=++bigTenRequestId;
-  try{
-    $('loading').hidden=false;
-    if(!bigTenCatalogRequest){
-      bigTenCatalogRequest=loadBigTenCatalog().catch(e=>{
-        bigTenCatalogRequest=null;
-        throw e;
-      });
-    }
-    const {venues,sectionProfiles,architecturalSignatures,interiorProfiles,verifiedChartPlacements}=await bigTenCatalogRequest;
-    if(request!==bigTenRequestId)return;
-    const venue=venues.find(item=>item.id===id&&item.id!=='ohio-state');
-    if(!venue)throw Error('Big Ten school not found: '+id);
-    const spec=toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures,interiorProfiles,verifiedChartPlacements);
-    project=createProceduralProject(spec);
-    selected=null;
-    mode='overview';
-    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('[data-bigten]').forEach(b=>
-      b.classList.toggle('active',b.dataset.bigten===id));
-    renderProject();
-  }catch(e){
-    if(request===bigTenRequestId)error('Unable to open '+id+': '+e.message);
-  }finally{
-    if(request===bigTenRequestId)$('loading').hidden=true;
-  }
-}
-
 function setPreset(name){
-  ++bigTenRequestId;
-  document.querySelectorAll('[data-bigten]').forEach(b=>b.classList.remove('active'));
   try{
     if(name==='ohio')project=createOhioStadiumProject();
     else if(name==='schott')project={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
-    else if(name==='procedural')project=createProceduralProject(PROCEDURAL_DEMOS.arena);
-    else if(name==='procedural-football')project=createProceduralProject(PROCEDURAL_DEMOS.stadium);
-    else project=createSchoolProject('college-gym',{school:'Demonstration school',venue:'Example Gymnasium'});
+    else throw Error('Only the two Ohio State references are exposed in this studio.');
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));
     selected=null;renderProject();
   }catch(e){error(e.message)}
@@ -517,26 +480,6 @@ for(const reference of SCHOTTENSTEIN_REFERENCE_VIEWS){
   $('referenceButtons').append(button);
 }
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>setPreset(b.dataset.preset));
-document.querySelectorAll('[data-bigten]').forEach(b=>b.onclick=()=>setBigTenVenue(b.dataset.bigten));
-$('generateVenue').onclick=()=>{
-  try{
-    const sport=$('generateSurface').value;
-    const outdoor=['ncaa-football','soccer'].includes(sport);
-    const base=outdoor?PROCEDURAL_DEMOS.stadium:PROCEDURAL_DEMOS.arena;
-    const name=$('generateName').value.trim()||'Custom Venue';
-    const id='custom-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,42);
-    const target=$('generateCapacity').value.trim();
-    const spec={...base,id,name,surface:sport,
-      template:outdoor?'open-stadium':'indoor-arena',
-      sections:Number($('generateSections').value),
-      tiers:base.tiers.map((tier,i)=>({...tier,rows:Number($(i?'generateUpperRows':'generateLowerRows').value)})),
-      targetCapacity:target?Number(target):null,voids:[]};
-    project=createProceduralProject(spec);
-    selected=null;
-    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
-    renderProject();
-  }catch(e){error('Cannot generate venue: '+e.message);}
-};
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
 $('sectionPicker').onchange=e=>{
   if(e.target.value)pickSection(e.target.value);
@@ -622,7 +565,7 @@ async function showRunningBuild(){
     if(info.branch!=='feature/big-ten-arena-parity'){
       node.textContent='Wrong branch: '+info.branch+' @ '+short;
       node.style.color='#ac2525';
-      error('This server is not using the Big Ten development branch. Run scripts/launch-big-ten.ps1 from the FiledMaker repository.');
+      error('This server is not using the designated FiledMaker development branch.');
     }
   }catch(e){
     node.textContent='Version unverified';

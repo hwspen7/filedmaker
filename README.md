@@ -1,3 +1,15 @@
+# FiledMaker — venue customization workbench
+
+**Current product focus:** a source-driven workflow for schools and small venues. The public studio showcases only Ohio State's Schottenstein Center and Ohio Stadium. The [Venue Workbench](workbench/) provides plan-image registration, operator-traced section boundaries, school row-count CSV ingestion, deterministic seat generation, an editable geometry preview, and offline export.
+
+- Run `npm start`, then open `/workbench/`.
+- Data and geometry are separated. The number of imported row seats is never altered merely to match a venue's advertised capacity.
+- All traced coordinates, heights, and sightlines remain **estimated** until independently checked. The fictional 1,500-seat gym is an engine test, not a real school.
+- Source-derived Big Ten experimental files and batch scripts remain in Git history and the repository for regression, but are **not part of the product catalog or active development focus**.
+- See [Workbench operating guide](docs/VENUE_WORKBENCH.md) for source formats, validation, workflow, and known limitations.
+
+---
+
 # FiledMaker v10 — Seat Studio Rebuild
 
 **New default entry point:** `http://127.0.0.1:5174/` is a rebuilt seat-first viewer powered by a single dependency-free WebGL2 renderer. 2D remains available when WebGL2 is blocked. The school tool at `/school/` and viewer at `/viewer/` share the same renderer. The previous advanced modeling UI is retained at `/legacy/` for compatibility and its GLB export.

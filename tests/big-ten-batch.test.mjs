@@ -318,20 +318,14 @@ test('Pauley Pavilion varying-width exterior concourse is encoded in 3D perimete
     'The north concourse must project farther than the south concourse');
 });
 
-test('the native Seat Studio sidebar exposes all 18 Big Ten basketball venues like OSU',()=>{
+test('product home exposes only the two Ohio State references and the venue workbench',()=>{
   const page=readFileSync(new URL('../index.html',import.meta.url),'utf8');
   const program=readFileSync(new URL('../src/next/studio.js',import.meta.url),'utf8');
-  const ids=[...page.matchAll(/data-bigten="([a-z-]+)"/g)].map(item=>item[1]);
-  const expected=catalog.venues.map(v=>v.id).filter(id=>id!=='ohio-state');
-  assert.deepEqual(ids,expected,'Every Big Ten opponent must be a visible studio sidebar button');
-  assert.match(page,/data-preset="schott"/,'OSU keeps its specialist reference preset');
-  assert.match(page,/data-view="exterior"/,'Studio must expose building exterior alongside seat view');
-  assert.match(program,/setBigTenVenue\(b\.dataset\.bigten\)/,
-    'New venue buttons must trigger in-place selection');
-  assert.match(program,/createProceduralProject\(spec\)/,
-    'Selected venues must use the same native WebGL studio project pipeline');
-  assert.match(program,/loadBigTenCatalog\(/,
-    'Studio must load per-venue real source maps rather than demo presets');
+  assert.equal([...page.matchAll(/data-bigten="([a-z-]+)"/g)].length,0);
+  assert.match(page,/data-preset="schott"/);
+  assert.match(page,/data-preset="ohio"/);
+  assert.match(page,/href="\.\/workbench\//);
+  assert.doesNotMatch(program,/setBigTenVenue|loadBigTenCatalog/);
 });
 
 test('Big Ten native browser and offline batch share exactly the same geometry specification',()=>{
