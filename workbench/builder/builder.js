@@ -342,6 +342,19 @@ function drawScene(){
       part.kind==='stand'?part.baseHeight+part.rows*part.rise:part.height,part.z);
     ctx.beginPath();ctx.arc(point.x,point.y,5.2,0,Math.PI*2);
     ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#0791a5';ctx.lineWidth=2;ctx.stroke();
+    // Corner handles resize an entire component directly in the scene.
+    const handles=worldToPixels(corners(part,-part.width/2,part.width/2,
+      -part.depth/2,part.depth/2,
+      part.kind==='stand'?part.baseHeight+part.rows*part.rise:part.height));
+    for(const handle of handles){
+      ctx.fillStyle='#fff';ctx.strokeStyle='#078b9b';ctx.lineWidth=1.5;
+      ctx.fillRect(handle.x-4,handle.y-4,8,8);
+      ctx.strokeRect(handle.x-4,handle.y-4,8,8);
+    }
+    const rotate={x:point.x+44,y:point.y};
+    segment(point,rotate,'#078b9b',1.4);
+    ctx.beginPath();ctx.arc(rotate.x,rotate.y,6,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#078b9b';ctx.stroke();
     const label=part.label+' · '+part.id;
     ctx.font='600 12px system-ui';
     const width=ctx.measureText(label).width+16;
@@ -395,7 +408,27 @@ function coords(event){
 canvas.addEventListener('pointerdown',event=>{
   if(event.button!==0)return;
   canvas.focus({preventScroll:true});
-  const point=coords(event),id=hitTest(point.x,point.y);
+  const point=coords(event);
+  const active=project.parts.find(p=>p.id===selected);
+  if(active){
+    const height=active.kind==='stand'?active.baseHeight+active.rows*active.rise:active.height;
+    const center=screenPoint(active.x,height,active.z);
+    const rotate={x:center.x+44,y:center.y};
+    const start={start:point,before:snapshot(),id:active.id,moved:false};
+    if(Math.hypot(point.x-rotate.x,point.y-rotate.y)<12){
+      pointer={...start,action:'rotate',yaw:active.yaw};
+      canvas.setPointerCapture(event.pointerId);return;
+    }
+    const handles=worldToPixels(corners(active,-active.width/2,active.width/2,
+      -active.depth/2,active.depth/2,height));
+    const index=handles.findIndex(p=>Math.hypot(point.x-p.x,point.y-p.y)<11);
+    if(index>=0){
+      pointer={...start,action:'resize',index,
+        width:active.width,depth:active.depth,yaw:active.yaw};
+      canvas.setPointerCapture(event.pointerId);return;
+    }
+  }
+  const id=hitTest(point.x,point.y);
   if(id){
     choose(id);
     const part=project.parts.find(p=>p.id===id);
@@ -412,17 +445,36 @@ canvas.addEventListener('pointermove',event=>{
   const point=coords(event),dx=point.x-pointer.start.x,dy=point.y-pointer.start.y;
   if(Math.hypot(dx,dy)<2&&!pointer.moved)return;
   pointer.moved=true;
-  if(pointer.action==='move'){
+  if(pointer.action==='move'||pointer.action==='resize'){
     const c=Math.cos(view.yaw),s=Math.sin(view.yaw);
     const ux=dx/view.scale,uz=dy/(Math.sin(view.tilt)*view.scale);
-    let x=clamp(pointer.x+ux*c+uz*s,-200,200);
-    let z=clamp(pointer.z-ux*s+uz*c,-200,200);
-    if($('snap').checked){
-      const step=Number($('gridStep').value);
-      x=Math.round(x/step)*step;z=Math.round(z/step)*step;
-    }
+    const worldX=ux*c+uz*s,worldZ=-ux*s+uz*c;
     const part=project.parts.find(p=>p.id===pointer.id);
-    if(part){part.x=x;part.z=z;}
+    if(part&&pointer.action==='move'){
+      let x=clamp(pointer.x+worldX,-200,200);
+      let z=clamp(pointer.z+worldZ,-200,200);
+      if($('snap').checked){
+        const step=Number($('gridStep').value);
+        x=Math.round(x/step)*step;z=Math.round(z/step)*step;
+      }
+      part.x=x;part.z=z;
+    }else if(part){
+      const r=pointer.yaw*Math.PI/180;
+      const localX=worldX*Math.cos(r)+worldZ*Math.sin(r);
+      const localZ=-worldX*Math.sin(r)+worldZ*Math.cos(r);
+      const signX=[-1,1,1,-1][pointer.index];
+      const signZ=[-1,-1,1,1][pointer.index];
+      part.width=clamp(pointer.width+2*localX*signX,1.2,150);
+      part.depth=clamp(pointer.depth+2*localZ*signZ,.6,100);
+      if($('snap').checked){
+        const step=Number($('gridStep').value);
+        part.width=Math.max(1.2,Math.round(part.width/step)*step);
+        part.depth=Math.max(.6,Math.round(part.depth/step)*step);
+      }
+    }
+  }else if(pointer.action==='rotate'){
+    const part=project.parts.find(p=>p.id===pointer.id);
+    if(part)part.yaw=pointer.yaw+dx*.65;
   }else{
     view.yaw=pointer.yaw+dx*.008;
     view.tilt=clamp(pointer.tilt+dy*.006,.3,Math.PI/2);
@@ -434,12 +486,12 @@ canvas.addEventListener('pointermove',event=>{
 function pointerFinish(event){
   if(!pointer)return;
   if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
-  if(pointer.action==='move'&&pointer.moved){
+  if(['move','resize','rotate'].includes(pointer.action)&&pointer.moved){
     try{
       validateProject(project);
       record(pointer.before);
       renderProperties();renderObjectList();
-      status('Moved '+pointer.id+'. Position saved in the undo history.');
+      status('Updated '+pointer.id+'. Changes saved in the undo history.');
     }catch(error){restore(pointer.before);status(error.message,true);}
   }
   pointer=null;paintSoon();
