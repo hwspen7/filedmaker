@@ -102,8 +102,9 @@ function reportFor(venue,packageResult){
       feature:ARCH_SIGNATURES[venue.id].feature,source:ARCH_SIGNATURES[venue.id].source,
       evidence:'profile-not-surveyed'}:null,
     modeledSectionIdCount:model.proceduralSpec.sectionMap
-      ?new Set(model.proceduralSpec.sectionMap.flatMap(groups=>
-        groups.flatMap(group=>group.sectionIds))).size
+      ?new Set([...model.proceduralSpec.sectionMap.flatMap(groups=>
+          groups.flatMap(group=>group.sectionIds)),
+        ...(model.proceduralSpec.interior?.courtside?.blocks??[]).map(x=>x.id)]).size
       :model.proceduralSpec.sections,
     mappedSeatCoverage:model.sectionCoverage??null,
     osuVisualParity:{
