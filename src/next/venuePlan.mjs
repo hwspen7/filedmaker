@@ -149,7 +149,7 @@ export function buildVenuePlan(model,options={}) {
   if(chartPreview)addSchottensteinBowl(add,colorRGB,model.sectionFootprints,model.seatingRows??[],features,polygonSpans);
   let deckGeometry = chartPreview ? buildSchottensteinDecks(seats,model.sectionFootprints,Boolean(model.seatingRows)) : undefined;
   const architectureGeometry = chartPreview ? buildSchottensteinArchitecture(model)
-    : model.proceduralGeometry ? ArchitectureEngine.build(model.proceduralGeometry) : null;
+    : model.proceduralGeometry ? ArchitectureEngine.build(model.proceduralGeometry,{seatingRows:model.seatingRows}) : null;
   // The same deck serves the exterior render and the first-person cutaway.
   if(model.proceduralGeometry)deckGeometry=architectureGeometry?.decks;
   const engineAudit=model.proceduralGeometry ? ValidationEngine.validate({
