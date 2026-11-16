@@ -90,7 +90,7 @@ export function fictionalReconstruction(){
   p=addRectangularBank(p,{id:'WEST-1',side:'west',tier:'T1',rows:15,seatsPerRow:25,seatType:'bleacher'});
   p=addRectangularBank(p,{id:'EAST-1',side:'east',tier:'T1',rows:15,seatsPerRow:25,seatType:'bleacher'});
   // Split the long sides into two independent sections without changing counts.
-  for(const section of p.sections){
+  for(const section of [...p.sections]){
     const n=section.rows.length;
     const clone=structuredClone(section);
     section.id=section.id.replace('-1','-A');
