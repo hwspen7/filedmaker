@@ -1,7 +1,7 @@
 name: Quality
 on:
   push:
-    branches: [main, feature/schottenstein-audience-preview, feature/schottenstein-full-3d-architecture, feature/big-ten-arena-parity, feature/operator-geometry-editor]
+    branches: [main, feature/schottenstein-audience-preview, feature/schottenstein-full-3d-architecture, feature/big-ten-arena-parity, feature/operator-geometry-editor, feature/live-seat-experience]
   pull_request:
     branches: [main]
 permissions:
