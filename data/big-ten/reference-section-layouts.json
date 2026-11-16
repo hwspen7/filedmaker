@@ -229,7 +229,7 @@
       "chartIds": "documented",
       "rowLabels": "partially-documented",
       "geometry": "estimated",
-      "notes": "A, AA, BB,...NN, N, M,... B are 28 consecutively adjacent full-height section columns around Carver-Hawkeye Arena, not lower/upper disjoint sets. The two engine bands represent row-depth zones of these same sectors, with provisional 1–19 / 20–42 division. Two contiguous row bands are retained for mesh management, not because single- versus double-letter sections occupy different physical tiers. Exact section taper and 3D seat XYZ remain estimated.",
+      "notes": "A, AA, BB,...NN, N, M,... B are 28 consecutively adjacent full-height section columns around Carver-Hawkeye Arena, not lower/upper disjoint sets. The two engine bands represent row-depth zones of these same sectors, with provisional 1–19 / 20–42 division. Two contiguous row bands are retained for mesh management, not because single- versus double-letter sections occupy different physical tiers. Exact section taper and 3D seat XYZ remain estimated. Iowa full-height sectors remain contiguous through modeled row bands 1–19 and 20–42, without a fictitious 360-degree intervening concourse.",
       "tiers": [
         [
           {
@@ -313,8 +313,8 @@
           "rows": 19,
           "depth": 0.84,
           "rise": 0.34,
-          "gap": 2.6,
-          "elevationGap": 2
+          "gap": 0,
+          "elevationGap": 0
         },
         {
           "rows": 23,
