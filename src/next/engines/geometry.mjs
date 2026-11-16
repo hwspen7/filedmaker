@@ -153,7 +153,9 @@ export const GeometryEngine={
         if(!sectionExists(id,tier))throw Error('Unknown interior section '+id+' in tier '+tier);
         return {tier,id,
           frontRows:integer(rule.frontRows??0,'Interior front trim',0,tiers[tier].rows),
-          rearRows:integer(rule.rearRows??0,'Interior rear trim',0,tiers[tier].rows)};
+          rearRows:integer(rule.rearRows??0,'Interior rear trim',0,tiers[tier].rows),
+          frontWidth:finite(rule.frontWidth??1,'Section front width ratio',.4,1),
+          rearWidth:finite(rule.rearWidth??1,'Section rear width ratio',.4,1)};
       });
       const notches=(raw.notches??[]).map(notch=>{
         const tier=integer(notch.tier,'Notch tier',0,tiers.length-1),id=String(notch.id);
@@ -262,11 +264,18 @@ export const GeometryEngine={
       return result;
     };
     const rowIntervals=(tier,bank,slot)=>{
-      const {sectionId,lo:start,hi:end,rowStart,rowCount,skipRows=[]}=bank;
+      const {sectionId,rowStart,rowCount,skipRows=[]}=bank;
+      let start=bank.lo,end=bank.hi;
       if(slot<0||slot>=rowCount||skipRows.includes(rowStart+slot))return [];
       const rule=spec.interior?.sectionRules.find(r=>
         r.tier===tier.index&&r.id===sectionId);
       if(rule&&(slot<rule.frontRows||slot>=rowCount-rule.rearRows))return [];
+      if(rule){
+        const t=(slot+.5)/Math.max(1,rowCount),width=
+          rule.frontWidth*(1-t)+rule.rearWidth*t;
+        const mid=(start+end)/2,span=(end-start)*width;
+        start=mid-span/2;end=mid+span/2;
+      }
       const center=point(tier.index,(start+end)/2,(slot+.5)/tier.rows);
       const margin=spec.aisleWidth/Math.max(1,Math.hypot(center.x,center.z))*.5;
       let intervals=[[start+margin,end-margin]].filter(([a,b])=>b>a+1e-5);
