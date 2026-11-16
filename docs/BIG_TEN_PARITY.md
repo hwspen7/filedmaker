@@ -43,8 +43,8 @@ No per-seat coordinates are surveyed or licensed in this batch.
   capacity, using **3D overview + 2D map + seat view** with no separate
   Building mode.
 - The dedicated CI builds all 18 models and uses Chromium WebGL2 to capture
-  3D overviews of Michigan, Indiana, Rutgers and Wisconsin, plus a source-
-  mapped Michigan seat view.
+  an independent 3D overview **and seat-eye screenshot** for each of the 17
+  non-Ohio-State member arenas.
 
 ## Section-reference work by school
 
@@ -54,22 +54,22 @@ positions or measured architecture.
 
 | School | Section input | Primary source | Additional local reconstruction |
 | --- | --- | --- | --- |
-| Illinois | Source pending contour transcription | [Men's basketball tickets and 3D map](https://fightingillini.com/sports/2023/1/2/tickets-mens-basketball) | Distinctive State Farm Center bowl and entrances |
+| Illinois | 101–120, 121–143, 201–248 (48-sector upper) | [Men's basketball tickets and 3D map](https://fightingillini.com/sports/2023/1/2/tickets-mens-basketball) | Distinctive State Farm Center bowl and entrances |
 | Indiana | Main A–M (excluding I), AA–MM balconies | [Official 2026–27 map](https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019) | North/south loges, actual stair and balcony positions |
 | Iowa | A–N and AA–NN | [Men's basketball seating diagram](https://storage.googleapis.com/hawkeyesports-prod/2025/05/20/4FY3mLURtjTLeVfpBxPqO8U6pD3rHEl1UDrn7kgo.pdf) | Sunken lower bowl and true row-specific section ends |
-| Maryland | Pending chart contours | [XFINITY Center game day guide](https://umterps.com/sports/2020/1/15/xfinity-center-info-guide) | Extremely steep student wall and suite interruptions |
+| Maryland | 101–126 lower / 201–226 upper, modeler-estimated tier division | [XFINITY Center game day guide](https://umterps.com/sports/2020/1/15/xfinity-center-info-guide) | Extremely steep student wall and suite interruptions |
 | Michigan | 19 lower, 36 upper; official row ranges | [Crisler 2026 text chart](https://mgoblue.com/sports/2026/9/22/mens-basketball-crisler-center-seating-chart-text-alternative) and [Crisler map](https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/mgoblue.com/documents/2024/10/18/crisler-seating-bkm.pdf?timestamp=20241018115311) | Club/band voids, measured contour tracing, tower/roof |
 | Michigan State | 100/200 series; source 2023 map plus current row rules | [Breslin seating map](https://msuspartans.com/sports/2018/7/20/facilities-breslin-center-section-map-html) | Verify current map details, student benches, upper rake |
 | Minnesota | 100/200 numbering from *historical* 2007 map | [Archived seating guide](https://gophersports.com/documents/download/2011/7/13/_minn_m_baskbl_2007_8_misc_non_event__m-baskbl-media-guide-0708-sec9.pdf) | New source needed; raised playing floor and bank lofts |
-| Nebraska | Pending chart contours | [Nebraska basketball game day](https://huskers.com/basketball-game-day) | Split upper concourse and actual luxury suites |
-| Northwestern | Pending chart contours | [Welsh-Ryan Arena facilities](https://nusports.com/facilities/welsh-ryan-arena) | Compact seating bowls and realistic corner footprints |
-| Oregon | Pending chart contours | [2026–27 ticket map](https://goducks.com/sports/2021/4/6/mens-basketball-tickets) | Steep west end zone and exterior architecture |
+| Nebraska | 101–122 / 201–222 / 301–322 across three tiers | [Nebraska basketball game day](https://huskers.com/basketball-game-day) | Split upper concourse and actual luxury suites |
+| Northwestern | 101–115 / 201–220 with estimated club-side notch | [Welsh-Ryan Arena facilities](https://nusports.com/facilities/welsh-ryan-arena) | Compact seating bowls and realistic corner footprints |
+| Oregon | 101–121 / 201–221, modeler-estimated steeper ends | [2026–27 ticket map](https://goducks.com/sports/2021/4/6/mens-basketball-tickets) | Steep west end zone and exterior architecture |
 | Penn State | 100/200 series and box references | [BJC venue seating maps](https://bjc.psu.edu/events/seating-charts), [2026 production guide](https://venuecoalition.com/wp-content/uploads/2026/02/Production-Guide_BJC_2026.pdf) | Actual tier offsets, club boxes and ADA gaps |
-| Purdue | Pending chart contours | [Mackey 2026–27 maps](https://purduesports.com/mens-basketball-ticket-information) | Circular roof and lower club layout |
+| Purdue | 01–18 lower / 101–118 upper in two circular rings | [Mackey 2026–27 maps](https://purduesports.com/mens-basketball-ticket-information) | Circular roof and lower club layout |
 | Rutgers | 100/200/300 section levels | [Official chart](https://scarletknights.com/sports/2017/6/11/tickets-rac-seating-html) and [2026 guide](https://scarletknights.com/documents/download/2026/10/28/Rutgers_MBB_2026-27_Media_Guide_FINAL.pdf) | Nonuniform mezzanine and promenade, lobby loges |
 | UCLA | 101–126 / 201–226 | [2026–27 official seating map](https://www.woodenathleticfund.com/assets/media/tickets-and-parking/2026-27-mbb-seating-map.pdf) | Split 200 subzones, media cutout and octagonal perimeter |
 | USC | 101–124 / 201–222 | [2026–27 Galen Center map](https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/uscdev.sidearmsports.com/documents/2026/6/29/2026-27_MBB_PSM_pricing_-_For_Print.pdf) | Courtside gap and corner triangles |
-| Washington | Pending chart contours | [Alaska Airlines Arena official facility](https://gohuskies.com/facilities/alaska-airlines-arena/41) | Historic pavilion building proportions |
+| Washington | 1–14 court sections, row bands 1–13 and 14–31 | [Alaska Airlines Arena official facility](https://gohuskies.com/facilities/alaska-airlines-arena/41) | Historic pavilion building proportions |
 | Wisconsin | 101–128, 201–228, 301–328 | [Kohl Center basketball map](https://uwbadgers.com/documents/download/2023/6/27/MBB_Kohl_Center_Seating_Map_2024.pdf) | Two genuinely overhanging balconies, not three ordinary tiers |
 
 **Ohio State:** the separate Schottenstein-specific source contour and architecture
@@ -91,3 +91,5 @@ the specialized OSU model.
 
 Do not treat a successful GitHub build or a 0.02% seat-count deviation as an
 `OSU-level-preview` result.
+
+The remaining seven section profiles were added November 2026. All 17 non-Ohio-State arena entries now have independently cited maps for section identities. The separate Ohio State render and original scene continue unchanged. **This upgrades labeled geometry, not surveyed 3D photographic fidelity.**
