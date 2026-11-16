@@ -146,8 +146,15 @@ function renderProperties(){
   if(part.kind==='custom_model'){
     const notice=document.createElement('p');notice.className='hint';
     notice.textContent='Source: '+part.sourceName+' · License: '+part.sourceLicense+
+      (part.sourceAuthor?' · Creator: '+part.sourceAuthor:'')+
       '. Check the original asset license before publishing.';
     fields.append(notice);
+    if(part.sourceUrl){
+      const source=document.createElement('a');
+      source.href=part.sourceUrl;source.textContent='Open original asset source';
+      source.target='_blank';source.rel='noopener noreferrer';
+      fields.append(source);
+    }
   }
 }
 function renderObjectList(){
@@ -867,7 +874,8 @@ $('assetFile').addEventListener('change',async event=>{
     if(!/\.obj$/i.test(file.name))throw Error('Select a .obj file');
     if(file.size>1_000_000)throw Error('OBJ files must be under 1 MB');
     const next=importOBJAsset(project,await file.text(),{
-      sourceName:file.name,sourceLicense:$('assetLicense').value
+      sourceName:file.name,sourceLicense:$('assetLicense').value,
+      sourceAuthor:$('assetAuthor').value.trim(),sourceUrl:$('assetUrl').value.trim()
     });
     const old=new Set(project.parts.map(p=>p.id));
     const added=next.parts.find(p=>!old.has(p.id));
