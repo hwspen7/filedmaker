@@ -62,6 +62,19 @@
 <details class="disclosure"><summary>Published capacity (optional)</summary>
 <label>Documented capacity<input id="capacity" type="number" min="1" max="150000" placeholder="Only if sourced"></label>
 <label>Official HTTPS source<input id="capacitySource" type="url" placeholder="https://school.example.edu"></label></details></div>
+<details class="section disclosure" id="starterGallery">
+  <summary>Or start from a ready-to-edit venue</summary>
+  <p class="hint">Six clearly fictional layouts. Load one to practice modeling without importing documents.</p>
+  <label>Example layout<select id="sourceStarterSelect">
+    <option value="school-end-stands">Compact school gym</option>
+    <option value="four-side-fieldhouse">Four-side fieldhouse</option>
+    <option value="college-two-tier">Two-tier college arena</option>
+    <option value="metro-three-tier">Three-tier indoor arena</option>
+    <option value="horseshoe-football">Open-end football stadium</option>
+    <option value="grandstand-football">Two-sided football grandstands</option>
+  </select></label>
+  <button id="sourceStarterLoad" class="primary full" type="button">Open editable practice venue</button>
+</details>
 <button id="sourceNext" class="primary full" type="button">Continue to calibration</button>
 <button id="openExisting" class="quiet-action" type="button">Open an existing FiledMaker project</button>
 </section>
@@ -110,12 +123,37 @@
     <p>Choose an object, then edit it. Changes are provisional until source-reviewed.</p>
   </div>
   <div id="modelToolTabs" class="model-tool-tabs" role="group" aria-label="Editing tool">
+    <button type="button" data-model-tool="bowl" aria-pressed="false">Bowl</button>
     <button type="button" data-model-tool="rows" aria-pressed="true">Rows</button>
     <button type="button" data-model-tool="seats" aria-pressed="false">Seats</button>
     <button type="button" data-model-tool="batch" aria-pressed="false">Batch</button>
 <button type="button" data-model-tool="surface" aria-pressed="false">Court</button>
 <button type="button" data-model-tool="structures" aria-pressed="false">Build</button>
     <button type="button" data-model-tool="preview" aria-pressed="false">Scene</button>
+  </div>
+  <div data-model-tool-pane="bowl" hidden>
+    <div class="section bowl-builder">
+      <div class="small-title">Build an entire seating bowl</div>
+      <p class="hint">Create editable sections and rows in one operation, then refine banks, aisles, elevations and seats using the other tools.</p>
+      <label>Venue layout<select id="bowlPreset">
+        <option value="college-two-tier">Two-tier college arena</option>
+        <option value="metro-three-tier">Three-tier indoor arena</option>
+        <option value="four-side-fieldhouse">Four-side fieldhouse</option>
+        <option value="school-end-stands">Compact school gym</option>
+        <option value="horseshoe-football">Open-end football stadium</option>
+        <option value="grandstand-football">Two-sided football grandstands</option>
+      </select></label>
+      <div class="pair"><label>Sections per tier<input id="bowlSectors" type="number" min="8" max="32" step="1" value="24"></label>
+      <label>Tier count<input id="bowlLevels" type="number" min="1" max="3" step="1" value="2"></label></div>
+      <div class="pair"><label>Rows per tier<input id="bowlRows" type="number" min="4" max="34" step="1" value="16"></label>
+      <label>Row depth (m)<input id="bowlRowDepth" type="number" min=".55" max="1.35" step=".05" value=".8"></label></div>
+      <div class="pair"><label>Seat pitch (m)<input id="bowlSeatPitch" type="number" min=".43" max=".85" step=".01" value=".52"></label>
+      <label>Row rise (m)<input id="bowlRowRise" type="number" min=".1" max=".8" step=".01" value=".31"></label></div>
+      <label>Court / field clearance (m)<input id="bowlClearance" type="number" min="1" max="15" step=".25" value="3.5"></label>
+      <div id="bowlEstimate" class="row-edit-status" role="status">Choose a template and adjust its layout.</div>
+      <button id="bowlBuild" class="primary full" type="button">Generate editable seating bowl</button>
+      <p class="hint">For training and concept design only. Replaces current draft geometry after confirmation. Does not fabricate official inventories.</p>
+    </div>
   </div>
   <div data-model-tool-pane="rows"><div class="section row-edit-panel">
 <div class="small-title">Edit rows & seats</div>
@@ -446,8 +484,33 @@
 <div class="model-actions"><button id="cameraCapture" type="button" title="Save a screenshot of the current canvas">Save image</button>
 <button id="toggleTools" type="button" aria-pressed="false" title="Hide or show editing tools">Hide tools</button></div></div>
 </div>
-<div class="visual"><canvas id="planCanvas" aria-label="Editable plan and section contours"></canvas>
-<canvas id="modelCanvas" aria-label="3D school venue preview" hidden></canvas>
+<div class="visual">
+  <div class="precision-bar" id="precisionBar" role="toolbar" aria-label="Drawing accuracy tools">
+    <label title="Show the metric drafting grid"><input id="gridVisible" type="checkbox" checked> Grid</label>
+    <label title="Enable grid and object snapping"><input id="snapEnabled" type="checkbox" checked> Snap</label>
+    <label title="Show alignment inference lines"><input id="guidesVisible" type="checkbox" checked> Guides</label>
+    <label class="grid-size">Step <select id="gridStep" aria-label="Grid spacing in metres">
+      <option value=".1">0.1 m</option><option value=".25">0.25 m</option>
+      <option value=".5">0.5 m</option><option value="1" selected>1 m</option>
+      <option value="2">2 m</option><option value="5">5 m</option>
+      <option value="10">10 m</option>
+    </select></label>
+    <button id="studioHelpToggle" type="button" aria-expanded="false">? How to use</button>
+  </div>
+  <div id="studioHelp" class="studio-help" hidden>
+    <strong>Three steps to model a venue</strong>
+    <p>1. Open a practice case or use Bowl to generate an editable seating layout.</p>
+    <p>2. Use 2D Grid and Snap to position sections. Alignment lines appear as you drag.</p>
+    <p>3. Switch to 3D and Build. Click an object to select it; Shift-drag to move it, or Alt+Shift-drag to raise it. Arrow keys make small adjustments.</p>
+    <button id="studioHelpClose" type="button">Got it</button>
+  </div>
+  <canvas id="planCanvas" aria-label="Editable plan and section contours"></canvas>
+  <canvas id="modelCanvas" aria-label="3D school venue preview" hidden></canvas>
+  <canvas id="gizmoCanvas" aria-hidden="true" hidden></canvas>
+  <div class="three-d-editor-hint" id="threeDHint" hidden>
+    <label><input type="checkbox" id="threeDEditEnabled" checked> Edit objects in 3D</label>
+    <span id="threeDEditReadout">Click an object to select. Shift + drag to move. Alt + Shift + drag raises or lowers.</span>
+  </div>
 <div id="emptyCanvas" class="empty-canvas">
 <span class="empty-icon">✦</span><h2>Your next venue starts here</h2>
 <p>Upload a school floor plan, or explore the fully fictional 1,500-seat example.</p>
