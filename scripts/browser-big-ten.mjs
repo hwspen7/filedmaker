@@ -82,21 +82,26 @@ async function main(){
     for(const [id,arena] of [['illinois','State Farm Center'],
       ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena']]){
       await evalJs(`document.querySelector('[data-bigten="${id}"]').click()`);
+      let probes=0;
       await poll(async()=>{
-        const info=await evalJs(`(()=>{
+        const state=await evalJs(`JSON.stringify((()=>{
           const canvas=document.querySelector('#viewport3d');
           return {
             title:document.querySelector('#title')?.textContent,
             active:document.querySelector('[data-bigten="${id}"]')?.classList.contains('active'),
             seats:document.querySelector('#visualCount')?.textContent,
             canvas:!!canvas&&canvas.width>200&&canvas.height>200&&!!canvas.getContext('webgl2'),
-            warning:document.querySelector('#warnings')?.textContent
+            warning:document.querySelector('#warnings')?.textContent,
+            loaderHidden:document.querySelector('#loading')?.hidden,
+            subtitle:document.querySelector('#subtitle')?.textContent
           };
-        })()`);
-        if(info?.warning?.startsWith('Unable to open'))throw Error(info.warning);
-        return info?.title===arena&&info?.active&&
-          info?.seats!=='—'&&info?.canvas;
-      },100);
+        })())`);
+        const info=state?JSON.parse(state):{};
+        if(++probes===6||probes===20)
+          console.log('Native studio '+id+' selection probe:',JSON.stringify(info));
+        if(info.warning?.startsWith('Unable to open'))throw Error(info.warning);
+        return info.title===arena&&info.active&&info.seats!=='—'&&info.canvas;
+      },50);
       await evalJs("document.querySelector('[data-view=exterior]').click()");
       await poll(async()=>await evalJs(`(()=>{
         const selected=document.querySelector('[data-view=exterior]')?.classList.contains('current');
