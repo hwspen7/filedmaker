@@ -131,7 +131,7 @@ export const GeometryEngine={
     // First-wave school interiors are independently profiled. Reference
     // section numbers are sourced, but contours and notch footprints remain
     // visually interpreted rather than measured survey coordinates.
-    const interior=input.interior==null?null:(()=>{
+    const interior=input.interior==null||sectionMap==null?null:(()=>{
       const raw=input.interior;
       if(!raw||typeof raw!=='object'||Array.isArray(raw))
         throw Error('Invalid school interior profile');
