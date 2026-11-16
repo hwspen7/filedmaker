@@ -164,3 +164,29 @@ form controls and do not replace the standard undo/redo commands.
 
 The advanced arrangement tools remain closed until needed, so the scene
 canvas retains the larger canvas-first layout.
+
+## Quick-build venue assemblies
+
+The Build pane includes six optional composite layouts. They are built
+from the same editable and seat-safe geometry primitives as the standard
+component catalog, rather than imported opaque meshes:
+
+- Main entry and gates
+- Accessible spectator access with a platform and schematic ramp
+- Player tunnel and staging
+- Terraced stand with an aisle
+- Press and scorer station
+- Covered concourse bay
+
+Select a kit, provide its center X/Z, angle and scale, and insert it in
+one operation. Alternatively click **Place on 2D plan** to position the
+complete assembly using the calibrated drawing. All generated parts have
+independent stable IDs and can subsequently be individually selected,
+moved and resized or transformed as a group.
+
+An assembly is an atomic staff edit with one edit-ledger entry and one
+undo step. It never modifies source seat identities or capacity.
+A placement near source seats is rejected rather than deleting them.
+These templates illustrate approximate geometry only, not safe egress,
+accessibility compliance, clearances, structural loading or the school
+venue's actual architectural as-built measurements.
