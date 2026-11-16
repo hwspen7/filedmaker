@@ -37,6 +37,10 @@ export function buildWorkbenchPreview(input){
   plan.operatorWorkspace=true;
   plan.operatorStructures=v.structures??[];
   const furniture=buildStructureInstances(plan.operatorStructures);
+  // Keep a stable location for live editing in the WebGL instance buffer.
+  // Moving an existing object leaves the instance count and seat data intact.
+  plan.operatorStructureOffsetFloats=plan.instanceData.length;
+  plan.operatorStructureLengthFloats=furniture.length;
   const painted=buildZoneInstances(v.surfaceDesign);
   const extra=furniture.length+painted.length;
   if(extra){
