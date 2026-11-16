@@ -257,6 +257,8 @@ function pickReferenceSeat(reference){
 }
 function selectSeat(seat){
   selected=seat;
+  // Keep the overview uncluttered until the user chooses an actual seat.
+  if(seat)document.querySelector('#seatControls').open=true;
   syncSeatPicker(seat);
   for(const id of ['goHuman','previous','next'])$(id).disabled=!seat;
   document.querySelector('[data-view="human"]').disabled=!(seat||model.seatingRows)||!renderer;

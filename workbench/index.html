@@ -4,39 +4,28 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./workbench.css"></head>
 <body>
 <header class="topbar">
-<a class="brand" href="../"><span class="logo">F</span><span><strong>FiledMaker</strong><small>Venue Workbench</small></span></a>
-<nav class="global-links" aria-label="Primary"><a href="../">OSU references</a><a href="../cases/">Case Library</a><a href="./" aria-current="page">Workbench</a></nav>
-<div class="top-actions"><span id="buildTag" class="build">Local workbench</span></div>
+  <a class="brand" href="../cases/"><span class="logo">F</span><strong>FiledMaker</strong></a>
+  <nav class="global-links" aria-label="Primary"><a href="../cases/">Cases</a><a href="./" aria-current="page">Workbench</a><a href="../">OSU viewer</a></nav>
+  <details class="top-tools"><summary>More</summary>
+    <a href="../school/">School data tools</a><a href="../legacy/">Advanced editor</a><small id="buildTag" class="build">Local workbench</small>
+  </details>
 </header>
 <div class="layout">
-<aside class="sidebar" aria-label="Workspace navigation">
-<div class="sidebar-inner">
-<div class="eyebrow">YOUR WORKSPACE</div>
-<a href="./" class="side-link active">Create a venue</a>
-<a href="../cases/" class="side-link">Browse case library</a>
-<div class="sidebar-rule"></div>
-<div class="eyebrow">WORKFLOW</div>
-<nav class="step-nav" aria-label="Venue workflow">
-<button data-open-stage="source" aria-current="step"><span class="step-num">1</span><span><strong>Import data</strong><small>Plans & seat rows</small></span></button>
-<button data-open-stage="calibrate"><span class="step-num">2</span><span><strong>Calibrate</strong><small>Trace & adjust</small></span></button>
-<button data-open-stage="model"><span class="step-num">3</span><span><strong>3D preview</strong><small>Generate & inspect</small></span></button>
-<button data-open-stage="review"><span class="step-num">4</span><span><strong>Review & export</strong><small>Evidence & delivery</small></span></button>
-</nav>
-<div class="sidebar-rule"></div>
-<div class="eyebrow">TRY A CASE</div>
-<a class="side-link" href="../workbench/?example=fictional">1,500-seat fictional gym <span>Demo</span></a>
-<a class="side-link" href="../workbench/?example=aiken">Aiken Taylor Gym <span>Estimated</span></a>
-<a class="side-link" href="../cases/?group=schools">Real school sources</a>
-<details class="side-advanced"><summary>More tools</summary>
-<a href="../school/">School data tools</a><a href="../legacy/">Advanced editor</a></details>
-</div></aside>
+
 <main class="main">
 <header class="workspace-top">
 <div class="workspace-ident"><div class="eyebrow">SCHOOL VENUE PROJECT <span id="stageCounter">· STEP 1 OF 4</span></div>
 <h1 id="workspaceName">Untitled school venue</h1>
 <p id="workStatus" class="muted" role="status" aria-live="polite">Upload a plan and row inventory to begin.</p></div>
-<div class="workspace-actions"><button id="undo" type="button">Undo</button><button id="redo" type="button">Redo</button></div>
+<div class="workspace-actions"><button id="undo" type="button">Undo</button><button id="redo" type="button">Redo</button>
+<button id="detailsToggle" type="button" aria-controls="projectInspector" aria-expanded="false">Project details</button></div>
 </header>
+<div class="steps-strip"><nav class="step-nav" aria-label="Venue workflow">
+<button data-open-stage="source" aria-current="step"><span class="step-num">1</span><span><strong>Import data</strong><small>Plans & seat rows</small></span></button>
+<button data-open-stage="calibrate"><span class="step-num">2</span><span><strong>Calibrate</strong><small>Trace & adjust</small></span></button>
+<button data-open-stage="model"><span class="step-num">3</span><span><strong>3D preview</strong><small>Generate & inspect</small></span></button>
+<button data-open-stage="review"><span class="step-num">4</span><span><strong>Review & export</strong><small>Evidence & delivery</small></span></button>
+</nav></div>
 <div id="caseContext" class="case-context" hidden><div><strong id="caseContextTitle"></strong><p id="caseContextText"></p></div>
 <a id="caseContextSource" target="_blank" rel="noopener noreferrer" hidden>View source document</a>
 <button id="caseContextDismiss" aria-label="Dismiss case instructions" type="button">×</button></div>
@@ -45,12 +34,12 @@
 <section class="stage-screen" data-stage-panel="source">
 <div class="stage-heading"><span class="eyebrow">STEP 01</span><h2>Start with your sources</h2>
 <p>Upload a floor plan and row records. Originals remain local to this workbench.</p></div>
-<div class="section"><div class="small-title">Venue details</div>
+<details class="section disclosure venue-settings"><summary>Venue settings</summary>
 <label>School or district<input id="school" maxlength="120"></label>
 <label>Venue name<input id="venue" maxlength="120"></label>
 <label>Venue type<select id="sport"><option value="nfhs-basketball">High-school basketball</option><option value="ncaa">College basketball</option><option value="nfhs-football">High-school football</option><option value="ncaa-football">College football</option></select></label>
 <div class="pair"><label>Surface width (m)<input id="courtWidth" type="number" step=".01" min="8" max="160"></label>
-<label>Surface length (m)<input id="courtLength" type="number" step=".01" min="15" max="200"></label></div></div>
+<label>Surface length (m)<input id="courtLength" type="number" step=".01" min="15" max="200"></label></div></details>
 <div class="section"><div class="small-title">Reference drawing</div>
 <label class="upload primary-upload">+ Upload PDF<input id="pdfFile" type="file" accept=".pdf,application/pdf" hidden></label>
 <div class="file-options"><label class="upload">Image<input id="planFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" hidden></label>
@@ -122,7 +111,7 @@
 </section>
 </aside>
 <section class="canvas-area" aria-label="Venue drawing and model">
-<div class="canvas-header"><div><strong id="canvasTitle">Drawing workspace</strong><small id="canvasDescription">Manual inspection and geometry editing</small></div>
+<div class="canvas-header"><div><strong id="canvasTitle">Drawing workspace</strong><small id="canvasDescription">Manual inspection and geometry editing</small><small id="quickStats">No seats generated</small></div>
 <div class="tabs" role="group" aria-label="View mode"><button id="showPlan" class="active" type="button">2D plan</button>
 <button id="show3d" type="button">3D overview</button><button id="showEye" type="button">Seat view</button></div></div>
 <div class="visual"><canvas id="planCanvas" aria-label="Editable plan and section contours"></canvas>
@@ -137,7 +126,9 @@
 </section>
 </div>
 </main>
-<aside class="inspector" aria-label="Project evidence and review">
+<button id="detailsBackdrop" class="details-backdrop" type="button" hidden aria-label="Close project details"></button>
+<aside id="projectInspector" class="inspector" aria-label="Project details">
+<button id="detailsClose" class="details-close" type="button" aria-label="Close project details">×</button>
 <div class="inspector-header"><span class="eyebrow">PROJECT OVERVIEW</span><strong id="evidenceStatus">Needs source review</strong></div>
 <div class="metrics"><div><strong id="mappedCount">0</strong><small>Generated positions</small></div>
 <div><strong id="sectionCount">0</strong><small>Sections</small></div>

@@ -319,12 +319,12 @@ async function main(){
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/'});
     const library=await poll(async()=>{
       const state=await evaluate(
-        "({cards:document.querySelectorAll('#caseGrid .case-card').length,count:document.querySelector('#caseCount')?.textContent,ready:document.readyState})"
+        "({cards:document.querySelectorAll('#caseGrid a.case-card[href]').length,ready:document.documentElement.dataset.casesReady})"
       );
-      return state?.cards===10&&state.count==='10'?state:null;
+      return state?.cards===10&&state.ready==='true'?state:null;
     },65);
-    if(library.cards!==10||library.count!=='10')
-      throw Error('New case library does not show all ten cases: '+JSON.stringify(library));
+    if(library.cards!==10)
+      throw Error('Clickable case gallery is incomplete: '+JSON.stringify(library));
     await delay(260);
     const gallery=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     writeFileSync(join(dir,'case-library.png'),Buffer.from(gallery.data,'base64'));
@@ -332,12 +332,45 @@ async function main(){
     if(filtered!==6)throw Error('Real-school filter should show 6 schools, got '+filtered);
     const searched=await evaluate("(()=>{const input=document.querySelector('#searchCases');input.value='aiken';input.dispatchEvent(new Event('input',{bubbles:true}));return document.querySelectorAll('#caseGrid .case-card').length})()");
     if(searched!==1)throw Error('Case search failed for Aiken');
-    const accurate=await evaluate("document.querySelector('#caseGrid .case-card')?.textContent.includes('assumed rows')");
-    if(!accurate)throw Error('Aiken catalog card lost estimation disclaimer');
+    const accurate=await evaluate("document.querySelector('#caseGrid .case-card')?.textContent.includes('Unverified staff draft')");
+    if(!accurate)throw Error('Aiken catalog card lost its unverified status');
     console.log('cases: ten cases listed, six real-school filters, search, evidence labels verified');
 
+    // Real pointer click in the CENTER of a card, not merely its action label.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/?group=schools'});
+    await poll(async()=>await evaluate("document.querySelectorAll('#caseGrid a.case-card').length===6"),50);
+    const clickPoint=await evaluate("(()=>{const card=document.querySelector('[data-case=\"sanderson-high\"]');card.scrollIntoView({block:'center'});const r=card.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,href:card.href}})()");
+    if(!clickPoint.href.includes('case=sanderson-high'))throw Error('Source card has no detail URL');
+    await client.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',
+      x:clickPoint.x,y:clickPoint.y,clickCount:1});
+    await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',
+      x:clickPoint.x,y:clickPoint.y,clickCount:1});
+    const sourceDetails=await poll(async()=>{
+      const result=await evaluate("({url:location.href,visible:!document.querySelector('#detailView')?.hidden,title:document.querySelector('#detailTitle')?.textContent,source:document.querySelector('#detailSource')?.href,next:document.querySelector('#detailWorkbench')?.href})");
+      return result?.visible&&result.title==='Main Gymnasium'?result:null;
+    },60);
+    if(!sourceDetails.url.includes('case=sanderson-high')||
+       !sourceDetails.source.includes('Sanderson-High')||
+       !sourceDetails.next.includes('case=sanderson-high'))
+      throw Error('Real school detail has no original source and import flow: '+
+        JSON.stringify(sourceDetails));
+    await delay(200);
+    const sourceDetailShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    writeFileSync(join(dir,'case-real-school-detail.png'),Buffer.from(sourceDetailShot.data,'base64'));
+    await evaluate("document.querySelector('#detailWorkbench').click()");
+    const linkedProject=await poll(async()=>await evaluate(
+      "document.documentElement.dataset.workbenchReady==='true'&&document.querySelector('#workspaceName')?.textContent==='Main Gymnasium'"),65);
+    if(!linkedProject)throw Error('School case details cannot open an import project');
+
+    // Open 3D directly from its whole-case anchor.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/'});
+    await poll(async()=>await evaluate("document.querySelectorAll('#caseGrid .case-card').length===10"),50);
+    const directModel=await evaluate("document.querySelector('[data-case=\"aiken-high\"]')?.href");
+    if(!directModel.includes('example=aiken'))throw Error('Aiken card has no model link');
+    await evaluate("document.querySelector('[data-case=\"aiken-high\"]').click()");
+
+
     // Real school Aiken: launch a *provisional* interactive model from the case library.
-    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?example=aiken'});
     const aiken=await poll(async()=>{
       const state=await evaluate(
         "({ready:document.documentElement.dataset.workbenchReady,count:document.querySelector('#mappedCount')?.textContent,sections:document.querySelector('#sectionCount')?.textContent,stage:document.documentElement.dataset.activeStage,context:document.querySelector('#caseContextText')?.textContent,qa:document.querySelector('#qa')?.textContent})"
@@ -354,6 +387,9 @@ async function main(){
     await delay(500);
     const aikenShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     writeFileSync(join(dir,'case-aiken-estimated-3d.png'),Buffer.from(aikenShot.data,'base64'));
+    const drawer=await evaluate("(()=>{const panel=document.querySelector('.inspector');const closed=getComputedStyle(panel).display==='none';document.querySelector('#detailsToggle').click();const opened=getComputedStyle(panel).display!=='none';document.querySelector('#detailsClose').click();const closedAgain=getComputedStyle(panel).display==='none';return {closed,opened,closedAgain}})()");
+    if(!drawer.closed||!drawer.opened||!drawer.closedAgain)
+      throw Error('Project details drawer cannot open and close: '+JSON.stringify(drawer));
     const navigation=await evaluate("(()=>{document.querySelector('[data-open-stage=\"review\"]').click();const a=document.documentElement.dataset.activeStage;const b=document.querySelector('[data-stage-panel=\"review\"]').hidden;document.querySelector('[data-open-stage=\"source\"]').click();return {a,b,source:!document.querySelector('[data-stage-panel=\"source\"]').hidden}})()");
     if(navigation.a!=='review'||navigation.b||!navigation.source)
       throw Error('Four-step workbench navigation is broken: '+JSON.stringify(navigation));

@@ -34,13 +34,13 @@
 <aside class="inspector"><div class="section-head"><span>VENUE DATA</span><small id="reviewFlag">REFERENCE</small></div><div class="metric"><small>Published capacity</small><strong id="officialCapacity">—</strong><p id="capacitySource">Official venue information</p></div>
 <div class="two-metrics"><div><small>Modeled positions</small><strong id="visualCount">—</strong></div><div><small>Imported ticket IDs</small><strong id="ticketCount">0</strong></div></div>
 <div id="capacityNote" class="notice">The visible seating geometry is illustrative and is not an official seat count.</div>
-<div class="section-head"><span>SEAT INSPECTOR</span><small>VIEW</small></div><div class="seat-picker">
+<details id="seatControls" class="seat-controls"><summary>Find a section or seat</summary><div class="seat-picker">
 <label class="input-label">Section<select id="sectionPicker" aria-label="Section"></select></label>
 <div class="seat-picker-pair"><label class="input-label">Row<select id="rowPicker" aria-label="Row"></select></label><label class="input-label">Seat<select id="seatPicker" aria-label="Seat"></select></label></div>
 </div>
 <label class="input-label">Find a section, row or seat ID<input type="search" id="search" placeholder="Section / Row / Seat" autocomplete="off"></label><div class="search-help" id="searchHelp">Choose a venue or import a school's exact roster.</div>
 <div id="seatDetails" class="selected-card"><strong>No seat selected</strong><p>Click a seat in the model or search a seat ID. Modelled positions do not imply a real ticket location.</p></div>
-<div class="seat-actions"><button id="previous" class="btn secondary">← Previous</button><button id="next" class="btn secondary">Next →</button></div><button id="goHuman" class="btn dark fill">View from this location</button>
+<div class="seat-actions"><button id="previous" class="btn secondary">← Previous</button><button id="next" class="btn secondary">Next →</button></div><button id="goHuman" class="btn dark fill">View from this location</button></details>
 <section id="referenceViews" class="reference-views" aria-labelledby="referenceTitle" hidden>
 <h2 id="referenceTitle">Compare with arena photos</h2>
 <div id="referenceButtons" class="reference-buttons"></div>

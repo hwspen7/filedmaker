@@ -265,6 +265,10 @@ function repaint(){
   $('sectionCount').textContent=number(venue.sections.length);
   $('rowCount').textContent=number(venue.rows.length);
   $('mappedCount').textContent=number(preview?.seats.length??0);
+  $('quickStats').textContent=preview?
+    number(preview.seats.length)+' modeled positions · '+number(venue.sections.length)+' sections · needs review':
+    venue.rows.length?number(venue.rows.length)+' source rows · not yet modeled':
+    'No seats generated';
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   $('evidenceStatus').textContent=preview?.quality?.blockingCount?'Geometry blocked':
     preview?'Unverified model · human review required':
@@ -829,6 +833,22 @@ function showCaseContext(c){
   if(c.source)$('caseContextSource').href=c.source;
 }
 $('caseContextDismiss').onclick=()=>{$('caseContext').hidden=true;};
+function toggleDetails(force){
+  const open=force??!document.querySelector('.layout').classList.contains('details-open');
+  document.querySelector('.layout').classList.toggle('details-open',open);
+  $('detailsBackdrop').hidden=!open;
+  $('detailsToggle').setAttribute('aria-expanded',String(open));
+  if(open)$('detailsClose').focus();
+  else $('detailsToggle').focus();
+}
+$('detailsToggle').onclick=()=>toggleDetails();
+$('detailsClose').onclick=()=>toggleDetails(false);
+$('detailsBackdrop').onclick=()=>toggleDetails(false);
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&document.querySelector('.layout').classList.contains('details-open'))
+    toggleDetails(false);
+});
+
 async function openRequestedCase(){
   const params=new URLSearchParams(location.search);
   const example=params.get('example'),caseId=params.get('case');

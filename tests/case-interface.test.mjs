@@ -41,8 +41,12 @@ test('source-backed school cards preserve original documentary source links',()=
 test('case library is linked from both home and workbench, no fabricated certification',()=>{
   const cases=read('cases/index.html'),home=read('index.html'),workbench=read('workbench/index.html');
   assert.match(cases,/id="caseGrid"/);
-  assert.match(cases,/Search schools or venues/);
-  assert.match(cases,/Unverified staff draft/);
+  assert.match(cases,/Search venues/);
+  assert.match(cases,/id="detailView"/);
+  assert.match(cases,/View original document/);
+  const controller=read('cases/cases.js');
+  assert.match(controller,/anchor\.href=caseTarget\(c\)/);
+  assert.match(controller,/encodeURIComponent\(c\.id\)/);
   assert.match(home,/\.\/cases\//);
   assert.match(workbench,/\.\.\/cases\//);
   assert.doesNotMatch(cases,/certified 3D seat inventory available/i);
@@ -61,7 +65,8 @@ test('workbench groups all original tool controls into four unique stages',()=>{
     'compareProject','saveSeats','saveReport','publish','showPlan','show3d','showEye',
     'planCanvas','modelCanvas','canvasOverlay','modeLabel','sourceLedger','qa','delta',
     'reviewChecklist','seatDetails','rowCount','mappedCount','sectionCount','publishedCount',
-    'workspaceName','workStatus','openExisting','projectActivity','exportActivity','emptyCanvas','emptyUpload'];
+    'workspaceName','workStatus','openExisting','projectActivity','exportActivity','emptyCanvas','emptyUpload',
+    'detailsToggle','detailsClose','detailsBackdrop','projectInspector','quickStats'];
   for(const id of oldControls)assert.match(html,new RegExp('id="'+id+'"'),id+' has no DOM anchor');
   const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   assert.equal(new Set(ids).size,ids.length,'Duplicate UI ID could break event handlers');
@@ -78,4 +83,22 @@ test('old conference catalogue remains retired from the product navigation',()=>
   const homepage=read('index.html'),cases=read('cases/index.html');
   assert.doesNotMatch(homepage,/data-bigten=/);
   assert.doesNotMatch(cases,/data-bigten=/);
+});
+
+test('every case is an entire link and incomplete schools have details',()=>{
+  const code=read('cases/cases.js'),view=read('cases/index.html');
+  assert.match(code,/const anchor=node\('a','case-card'\)/);
+  assert.match(code,/anchor\.href=caseTarget\(c\)/);
+  assert.match(code,/showDetail\(selected\)/);
+  assert.match(view,/id="detailSource"/);
+  assert.match(view,/id="detailWorkbench"/);
+  assert.doesNotMatch(view,/class="sidebar"/);
+});
+test('workbench is two-column with a closable details drawer',()=>{
+  const view=read('workbench/index.html'),style=read('workbench/workbench.css');
+  assert.match(view,/id="detailsToggle"/);
+  assert.match(view,/id="detailsClose"/);
+  assert.match(view,/class="steps-strip"/);
+  assert.doesNotMatch(view,/aside class="sidebar"/);
+  assert.match(style,/\.layout\.details-open \.inspector/);
 });

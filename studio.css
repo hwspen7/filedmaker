@@ -55,3 +55,10 @@ body{background:#fff}.topbar{border-color:#e9edf0}.top-actions{gap:7px}.top-acti
 @media(max-width:1200px){.body-layout{grid-template-columns:224px minmax(430px,1fr) 240px}.top-meta .tag:first-child{display:none}.topbar{gap:8px}.top-actions{gap:3px}.top-actions a{padding:5px}}
 @media(max-width:900px){.topbar{height:auto;min-height:65px;flex-wrap:wrap;padding:10px 15px}.body-layout{height:auto;grid-template-columns:205px minmax(0,1fr)}.inspector{grid-column:1/-1}.sidebar{min-height:700px}.main{min-height:620px}}
 @media(max-width:600px){.top-meta{display:none}.top-actions{margin-left:auto}.top-actions #capture{display:none}.body-layout{display:block}.sidebar{min-height:auto}.main{height:70vh;min-height:450px}.sidebar .side-scroll{padding:12px}.venue-list{flex-direction:row;flex-wrap:wrap}.top-actions a.btn{padding:8px}.top-more{display:none}}
+
+/* Keep the viewer focused on the arena instead of exposing every seat control. */
+.seat-controls{border:1px solid #e5e9eb;border-radius:10px;padding:12px 12px 14px;margin-top:20px;background:#fff}
+.seat-controls>summary{cursor:pointer;font-size:12px;font-weight:700;color:#4c6170}
+.seat-controls[open]>summary{margin-bottom:17px}
+.inspector .section-head{margin-bottom:9px}.inspector .metric{margin-bottom:12px}
+.inspector{padding-top:20px}
