@@ -4,6 +4,7 @@ import {createSchottensteinCenterProject} from '../src/venues.mjs';
 import {generateSeats} from '../src/model.mjs';
 import {schottensteinDeckHeight,schottensteinDeckPoint} from '../src/schottensteinSeating.mjs';
 import {buildSchottensteinArchitecture} from '../src/next/schottensteinArchitecture.mjs';
+import {NativeVenueRenderer} from '../src/next/webgl.js';
 
 test('Ohio State preserves its source-mapped capacity and uses one shared lower-bowl tread mesh',()=>{
   const osu={...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'};
@@ -40,4 +41,16 @@ test('OSU shared lower-bowl surface has no sharp angular jumps at section bounda
     const a=schottensteinDeckHeight(0,r),b=schottensteinDeckHeight(0,n);
     assert.ok(Math.abs(a-b)<.08,'Lower-bowl surface jump at angle '+angle);
   }
+});
+
+test('unsurveyed outer arena facades are excluded from 3D interior, never from the explicit exterior view',()=>{
+  const shell={arenaInterior:true,architectureGeometry:{facade:new Float32Array(18),decks:new Float32Array(18)},
+    proceduralSpec:{interior:{outline:'rectangle'}}};
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'overview','facade'),false);
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'overview','decks'),true);
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'exterior','facade'),true);
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(shell,'exterior','decks'),false);
+  const osu={...shell,proceduralSpec:null};
+  assert.equal(NativeVenueRenderer.architectureLayerVisibleInMode(osu,'overview','facade'),true,
+    'Preserve the real OSU chart cutaway facade');
 });
