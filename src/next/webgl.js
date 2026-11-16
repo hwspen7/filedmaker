@@ -234,6 +234,10 @@ const structureLayers=[
 const interiorLayers=new Set(['decks','fascias','upperBowl','concourse','aisles','stepEdges',
   'backWall','galleryGlass','galleryGlow','windowFrames','pilasters','roofEdge','soffit',
   'downlights','roofDeck','radialBeams','pressWalls','pressGlass','galleryFloorMesh']);
+// A spectator-only view should never contain the large gallery slabs and
+// roof soffits assembled for an illustrative exterior shell. They were the
+// gray ring still visible around Illinois after facade layers were hidden.
+const verifiedBowlLayers=new Set(['decks','fascias','aisles','stepEdges']);
 const exteriorOnly=new Set(['facade','glazing','externalTrim','brickBase',
   'brickPiers','entryMasonry','entryGlass','entryFrames','entryCanopy',
   'entryDoors','towerBrick','towerWindows','towerFrames','towerCrown',
@@ -262,7 +266,7 @@ export class NativeVenueRenderer {
     // seating bowl in the main view. The separately named exterior mode
     // still presents those architectural shells for contextual inspection.
     // OSU's specialized chart cutaway is unchanged.
-    if(plan.proceduralSpec?.interior&&exteriorOnly.has(name))return false;
+    if(plan.proceduralSpec?.interior)return verifiedBowlLayers.has(name);
     if(['buildingRoof','roofWhite','roofCopper','roofSlate','roofPale'].includes(name))return false;
     if(name==='cutawayFacade')return mode==='section'&&Boolean(plan.architectureGeometry.cutawayFacade?.length);
     if(mode==='human')return interiorLayers.has(name);
