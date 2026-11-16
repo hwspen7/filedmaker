@@ -144,9 +144,31 @@ export const GeometryEngine={
         lengthScale:finite(t.lengthScale,'Interior tier length '+i,.88,1.2),
         radialInset:finite(t.radialInset,'Interior tier radial inset '+i,-8,3.5),
         rake:finite(t.rake,'Interior tier rake '+i,-2,2),
-        wave:finite(t.wave,'Interior tier wave '+i,0,1.5)
+        wave:finite(t.wave,'Interior tier wave '+i,0,1.5),
+        outline:outlines.has(t.outline)?t.outline:raw.outline,
+        cornerExponent:finite(t.cornerExponent??3.8,'Interior corner exponent '+i,2,8),
+        rearCurveBlend:finite(t.rearCurveBlend??0,'Interior rear rounding '+i,0,1)
       }));
       const sectionExists=(id,tier)=>sectionMap?.[tier]?.some(group=>group.sectionIds.includes(id));
+      const rowOverrides=(raw.rowOverrides??[]).map(item=>{
+        const tier=integer(item.tier,'Section row override tier',0,tiers.length-1);
+        const id=String(item.id);
+        if(!sectionExists(id,tier))throw Error('Unknown section row override '+id);
+        const rowStart=integer(item.rowStart??1,'Section row label start',1,100);
+        const rowCount=integer(item.rowCount,'Section verified row count',1,tiers[tier].rows);
+        const physicalSlotStart=integer(item.physicalSlotStart??0,'Physical start slot',0,tiers[tier].rows-1);
+        if(physicalSlotStart+rowCount>tiers[tier].rows)
+          throw Error('Section row count overflows physical tier: '+id);
+        const rowLabels=item.rowLabels??null;
+        if(rowLabels&&(!Array.isArray(rowLabels)||rowLabels.length!==rowCount||
+          rowLabels.some(label=>!(/^[A-Za-z0-9]{1,4}$/).test(String(label)))))
+          throw Error('Incorrect official row label list: '+id);
+        return {tier,id,rowStart,rowCount,physicalSlotStart,
+          rowLabels:rowLabels?.map(String)??null,
+          source:String(item.source??'').slice(0,512)};
+      });
+      if(new Set(rowOverrides.map(r=>r.tier+':'+r.id)).size!==rowOverrides.length)
+        throw Error('Duplicate venue section row override');
       const sectionRules=(raw.sectionRules??[]).map(rule=>{
         const tier=integer(rule.tier,'Interior rule tier',0,tiers.length-1);
         const id=String(rule.id);
@@ -177,7 +199,7 @@ export const GeometryEngine={
           sections:sections?[...sections]:null,kind:type.kind};
       });
       return {type:String(raw.type??'').slice(0,80),outline:raw.outline,
-        tierProfiles,sectionRules,notches,seatTypes,
+        tierProfiles,rowOverrides,sectionRules,notches,seatTypes,
         source:String(raw.source??'').slice(0,512),
         notes:String(raw.notes??'').slice(0,600),
         geometryStatus:'chart-informed-unsurveyed'};
@@ -214,7 +236,17 @@ export const GeometryEngine={
         const rx=Math.max(field.width/2+2,(field.width/2+d+p.radialInset)*p.widthScale);
         const rz=Math.max(field.length/2+2,(field.length/2+d+p.radialInset)*p.lengthScale);
         const c=Math.abs(Math.cos(angle)),z=Math.abs(Math.sin(angle));
-        switch(spec.interior.outline){
+        switch(p.outline){
+          case 'rounded-rectangle':{
+            // Square-cornered lower banks blend into the actual round upper
+            // gallery. This is not a global stadium circle/ellipse switch.
+            const n=p.cornerExponent,round=1/Math.pow(
+              Math.pow(c/rx,n)+Math.pow(z/rz,n),1/n);
+            const ellipse=1/Math.hypot(c/rx,z/rz);
+            const t=p.rearCurveBlend*fraction;
+            r=round*(1-t)+ellipse*t;
+            break;
+          }
           case 'circle':
             r=Math.max(field.length/2+2,field.length/2+d+p.radialInset);
             break;
@@ -256,8 +288,13 @@ export const GeometryEngine={
           const lo=group.startAngle+group.spanAngle*covered/total;
           covered+=group.weights[k];
           const hi=group.startAngle+group.spanAngle*covered/total;
+          const official=spec.interior?.rowOverrides.find(item=>
+            item.tier===tier.index&&item.id===group.sectionIds[k]);
           result.push({sectionId:group.sectionIds[k],sectionIndex:result.length,
-            lo,hi,rowStart:group.rowStart,rowCount:group.rowCount,
+            lo,hi,rowStart:official?.rowStart??group.rowStart,
+            rowCount:official?.rowCount??group.rowCount,
+            physicalSlotStart:official?.physicalSlotStart??0,
+            rowLabels:official?.rowLabels??null,
             skipRows:group.skipRows});
         }
       }
@@ -276,7 +313,7 @@ export const GeometryEngine={
         const mid=(start+end)/2,span=(end-start)*width;
         start=mid-span/2;end=mid+span/2;
       }
-      const center=point(tier.index,(start+end)/2,(slot+.5)/tier.rows);
+      const center=point(tier.index,(start+end)/2,(slot+(bank.physicalSlotStart??0)+.5)/tier.rows);
       const margin=spec.aisleWidth/Math.max(1,Math.hypot(center.x,center.z))*.5;
       let intervals=[[start+margin,end-margin]].filter(([a,b])=>b>a+1e-5);
       for(const notch of spec.interior?.notches??[]){
