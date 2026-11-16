@@ -78,3 +78,21 @@ button.danger{color:#ae3f38;border-color:#edc9c4}
 .inspector-footer p{font-size:11px;margin-top:5px}
 @media(max-width:1150px){.shell{grid-template-columns:210px minmax(0,1fr) 205px}.top-actions{gap:4px}.topbar{padding:0 12px;gap:12px}.subheading{display:none}}
 @media(max-width:850px){.topbar{height:auto;min-height:78px;flex-wrap:wrap;padding:10px}.top-actions{width:100%;justify-content:flex-start}.shell{height:auto;min-height:calc(100vh - 100px);grid-template-columns:1fr}.sidebar{order:2;display:block;border-top:1px solid #e2e8ed}.sidebar section{display:inline-block;vertical-align:top;width:min(100%,320px)}.workspace{order:1;height:65vh;min-height:440px}.inspector{order:3;display:block}.empty-selection{margin:18px}.inspector-footer{margin-top:15px}.canvas-help{font-size:10px}}
+
+/* Expanded component catalogue: readable categories without losing canvas width. */
+.part-library{display:block;max-height:390px;overflow-y:auto;padding-right:3px}
+.part-group{margin-bottom:14px}
+.part-group h3{font-size:11px;color:#8093a1;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+.part-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.part[hidden],.part-group[hidden]{display:none}
+#componentSearch{width:100%;height:35px;padding:7px 10px;margin:0 0 13px;
+  border:1px solid #d6e0e5;border-radius:8px;background:#fafcfd;font-size:12px}
+.assembly-list{display:grid;gap:6px}
+.assembly{width:100%;padding:9px 10px;text-align:left;background:#f5f8fa;
+  border:1px solid #e1e9ec;border-radius:8px;cursor:grab;font-size:11px}
+.assembly:hover{background:#e9f4f8;border-color:#b4d0df}
+.asset-links{margin-top:12px;color:#607787;font-size:11px}
+.asset-links summary{cursor:pointer;font-weight:650}
+.asset-links a{display:block;margin:8px 0;color:#237094}
+.asset-links p{font-size:11px;color:#94a2ac}
+.sidebar .file-button{display:block;text-align:center;margin-top:10px}
