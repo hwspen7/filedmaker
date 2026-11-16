@@ -142,7 +142,7 @@ export const GeometryEngine={
       const tierProfiles=raw.tierProfiles.map((t,i)=>({
         widthScale:finite(t.widthScale,'Interior tier width '+i,.88,1.2),
         lengthScale:finite(t.lengthScale,'Interior tier length '+i,.88,1.2),
-        radialInset:finite(t.radialInset,'Interior tier radial inset '+i,-3.5,3.5),
+        radialInset:finite(t.radialInset,'Interior tier radial inset '+i,-8,3.5),
         rake:finite(t.rake,'Interior tier rake '+i,-2,2),
         wave:finite(t.wave,'Interior tier wave '+i,0,1.5)
       }));
