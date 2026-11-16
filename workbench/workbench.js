@@ -575,9 +575,13 @@ function draw(){
     outline(boundary,chosen?'#8cb9c088':'#668b9766',
       chosen?'#276d8c':'#56717e',chosen?3:1.5);
     const center=worldToScreen(s,g);
-    ctx.fillStyle='#193c50';ctx.font='700 10px system-ui';
-    ctx.textAlign='center';ctx.fillText(s.id,center.x,center.y);
-    if(chosen){
+    // Keep the canvas free from overlapping component labels. The active
+    // object shows its ID only while editing the construction layer.
+    if(chosen&&activeModelTool==='structures'){
+      ctx.fillStyle='#193c50';ctx.font='700 10px system-ui';
+      ctx.textAlign='center';ctx.fillText(s.id,center.x,center.y-14);
+    }
+    if(chosen&&activeModelTool==='structures'){
       ctx.beginPath();ctx.arc(center.x,center.y,5,0,2*Math.PI);
       ctx.fillStyle='#ffc16a';ctx.fill();
       if(activeModelTool==='structures')for(const [kind,pos] of Object.entries(structureHandles(s))){
@@ -654,6 +658,11 @@ function repaint(){
     venue.plan.name||venue.rows.length?'Import / calibration in progress':'Awaiting source files';
   $('modeLabel').textContent=editorMode==='place-structure'?
     'Place component · click a point on the calibrated 2D plan':
+    editorMode==='place-zone'?'Paint zone · click a point on the calibrated 2D plan':
+    editorMode==='select'&&activeModelTool==='surface'?
+      'Court · drag handles to move, resize or rotate':
+    editorMode==='select'&&activeModelTool==='structures'?
+      'Build · drag a component, resize handle or rotate handle':
     editorMode==='select'?'Select · drag a section corner to adjust':
     editorMode==='calibrate'?'Calibration · mark all four court corners':
     editorMode==='measure'?'Ruler · select two plan points':
@@ -663,6 +672,12 @@ function repaint(){
   $('canvasOverlay').textContent=editorMode==='place-structure'?
     'Click on the plan to place '+STRUCTURE_CATALOG[activeStructureKind].label+
     '. This will not alter source seat counts.':
+    editorMode==='place-zone'?
+      'Click the calibrated plan to place the selected painted area.':
+    editorMode==='select'&&activeModelTool==='surface'?
+      'Drag the golden center to reposition the court, white handles to resize, or the blue handle to rotate.':
+    editorMode==='select'&&activeModelTool==='structures'?
+      'Select a component to move, resize or rotate it. The numeric controls are optional.':
     editorMode==='measure'?'Select two points on the plan for a provisional distance.':
     editorMode==='calibrate'?'Click the four court corners in order: near left, near right, far right, far left.':
     editorMode==='trace'?'Trace '+(draftPoints.length+1)+'/4: '+['front left','front right','rear right','rear left'][draftPoints.length]:
