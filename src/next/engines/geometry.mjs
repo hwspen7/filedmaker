@@ -49,7 +49,24 @@ export const GeometryEngine={
         roofRise:finite(signature.roofRise,'Signature roof rise',0,30),
         entryAngle:finite(signature.entryAngle,'Signature entrance direction',0,TAU),
         source:String(signature.source??'').slice(0,512),
-        note:String(signature.note??'').slice(0,300)
+        note:String(signature.note??'').slice(0,300),
+        measuredDimensions:signature.measuredFacts??[],
+        outerDiameterMetres:signature.outerDiameterMetres==null?null:
+          finite(signature.outerDiameterMetres,'Historic dome diameter',40,200),
+        apexHeightMetres:signature.apexHeightMetres==null?null:
+          finite(signature.apexHeightMetres,'Historic apex height',8,80),
+        radialButtresses:signature.radialButtresses==null?null:
+          integer(signature.radialButtresses,'Radial buttress count',6,100),
+        historicalWallHeightMetres:signature.historicalWallHeightMetres==null?null:
+          finite(signature.historicalWallHeightMetres,'Historic exterior wall',3,50),
+        historicalDomeRiseMetres:signature.historicalDomeRiseMetres==null?null:
+          finite(signature.historicalDomeRiseMetres,'Historic dome rise',3,40),
+        historicalApexAboveCourtMetres:signature.historicalApexAboveCourtMetres==null?null:
+          finite(signature.historicalApexAboveCourtMetres,'Historic roof apex',8,90),
+        historicalBuildingWidthMetres:signature.historicalBuildingWidthMetres==null?null:
+          finite(signature.historicalBuildingWidthMetres,'Historic building width',40,250),
+        historicalBuildingLengthMetres:signature.historicalBuildingLengthMetres==null?null:
+          finite(signature.historicalBuildingLengthMetres,'Historic building length',40,250)
       }:null,entrances:entrances.map((item,index)=>({
         angle:finite(item.angle,'Entrance angle '+index,0,Math.PI*2),
         role:item.role==='primary'?'primary':'secondary'
