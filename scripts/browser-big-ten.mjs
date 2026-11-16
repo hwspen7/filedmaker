@@ -114,7 +114,10 @@ async function main(){
   }finally{
     socket?.close();
     server.kill('SIGKILL');chrome.kill('SIGKILL');
-    rmSync(scratch,{recursive:true,force:true});
+    // Chromium can still flush profile files after SIGKILL; cleanup must
+    // never turn a successful 3D render into a failed visual audit.
+    try{rmSync(scratch,{recursive:true,force:true,maxRetries:12,retryDelay:250});}
+    catch(error){console.warn('Chrome temporary profile cleanup:',error.message);}
   }
 }
 main().catch(e=>{console.error('Big Ten browser acceptance failed:',e);process.exitCode=1;});
