@@ -250,3 +250,62 @@ test('distinctive Illinois, Purdue, Indiana, Iowa and Washington roofs produce r
       id+' is missing its facade massing');
   }
 });
+
+
+test('source measurements, not nominal capacity, determine three documented exterior bounding envelopes',()=>{
+  const points=mesh=>{
+    const out=[];
+    for(let i=0;i<mesh.length;i+=6)out.push([mesh[i],mesh[i+1],mesh[i+2]]);
+    return out;
+  };
+  const illinois=toProceduralSpec(get('illinois'));
+  assert.equal(illinois.exterior.signature.radialButtresses,48);
+  assert.equal(illinois.exterior.signature.outerDiameterMetres,121.92);
+  const {plan:il,audit:ilAudit}=generateVenuePackage(illinois);
+  assert.ok(ilAudit.passed,ilAudit.errors.join('; '));
+  const ilPts=points(il.architectureGeometry.roofWhite);
+  const radius=Math.max(...ilPts.map(p=>Math.hypot(p[0],p[2])));
+  const apex=Math.max(...ilPts.map(p=>p[1]));
+  assert.ok(Math.abs(radius-60.96)<.1,'Illinois 400 ft dome must drive roof mesh');
+  assert.ok(Math.abs(apex-39.0144)<.2,'Illinois 128 ft apex must drive roof height');
+  assert.ok(il.architectureGeometry.brickPiers.length>2000,
+    'Illinois physical radial supports must be modeled');
+
+  const washington=toProceduralSpec(get('washington'));
+  assert.equal(washington.exterior.signature.historicalBuildingLengthMetres,145.0848);
+  const {plan:wa,audit:waAudit}=generateVenuePackage(washington);
+  assert.ok(waAudit.passed,waAudit.errors.join('; '));
+  const waPts=points(wa.architectureGeometry.roofSlate);
+  const halfWidth=Math.max(...waPts.map(p=>Math.abs(p[0])));
+  const halfLength=Math.max(...waPts.map(p=>Math.abs(p[2])));
+  assert.ok(Math.abs(halfWidth-50.1396)<.1,'Washington documented building width');
+  assert.ok(Math.abs(halfLength-72.5424)<.1,'Washington documented building length');
+
+  const purdue=toProceduralSpec(get('purdue'));
+  const {plan:pu,audit:puAudit}=generateVenuePackage(purdue);
+  assert.ok(puAudit.passed,puAudit.errors.join('; '));
+  const puPts=points(pu.architectureGeometry.roofCopper);
+  const outerRadius=Math.max(...puPts.map(p=>Math.hypot(p[0],p[2])));
+  const edge=puPts.filter(p=>Math.hypot(p[0],p[2])>outerRadius-.3)
+    .map(p=>Math.hypot(p[0],p[2]));
+  assert.ok(Math.max(...edge)-Math.min(...edge)<.3,'Mackey must have a circular dome');
+});
+
+test('Pauley Pavilion varying-width exterior concourse is encoded in 3D perimeter',()=>{
+  const spec=toProceduralSpec(get('ucla'));
+  assert.deepEqual(spec.exterior.signature.asymmetricConcourseMetres,
+    {north:12.192,south:6.096,east:6.096,west:2.7432});
+  const {plan,audit}=generateVenuePackage(spec);
+  assert.ok(audit.passed,audit.errors.join('; '));
+  const roof=plan.architectureGeometry.roofPale;
+  const zNorth=[],zSouth=[];
+  for(let i=0;i<roof.length;i+=6){
+    const x=roof[i],z=roof[i+2];
+    if(Math.abs(x)>5)continue;
+    if(z>0)zNorth.push(z);
+    if(z<0)zSouth.push(-z);
+  }
+  assert.ok(zNorth.length&&zSouth.length,'Missing Pauley roof sampling');
+  assert.ok(Math.max(...zNorth)-Math.max(...zSouth)>5,
+    'The north concourse must project farther than the south concourse');
+});
