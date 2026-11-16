@@ -61,7 +61,152 @@
           ]
         ]
       ],
-      "sectionRules": [],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "A",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "B",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "C",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "D",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "E",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "F",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "G",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "H",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "J",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "K",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "L",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "M",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "AA",
+          "frontWidth": 0.7,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "BB",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "CC",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "DD",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "EE",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "FF",
+          "frontWidth": 0.7,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "GG",
+          "frontWidth": 0.7,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "HH",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "JJ",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "KK",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "LL",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "MM",
+          "frontWidth": 0.7,
+          "rearWidth": 1
+        }
+      ],
       "notches": [
         {
           "tier": 0,
@@ -165,7 +310,224 @@
           ]
         ]
       ],
-      "sectionRules": [],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "01",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "02",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "03",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "04",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "05",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "06",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "07",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "08",
+          "frontWidth": 0.72,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "09",
+          "frontWidth": 0.7,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "10",
+          "frontWidth": 0.7,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "11",
+          "frontWidth": 0.72,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "12",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "13",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "14",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "15",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "16",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "17",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "18",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "101",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "102",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "103",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "104",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "105",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "106",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "107",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "108",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "109",
+          "frontWidth": 0.74,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "110",
+          "frontWidth": 0.74,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "111",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "112",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "113",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "114",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "115",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "116",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "117",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "118",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        }
+      ],
       "notches": [
         {
           "tier": 1,
@@ -323,12 +685,550 @@
         {
           "tier": 1,
           "id": "129",
-          "frontRows": 1
+          "frontRows": 1,
+          "frontWidth": 0.82,
+          "rearWidth": 1
         },
         {
           "tier": 1,
           "id": "136",
-          "frontRows": 1
+          "frontRows": 1,
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "101",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "102",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "103",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "104",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "105",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "106",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "107",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "108",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "109",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "110",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "111",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "112",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "113",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "114",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "115",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "116",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "117",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "118",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "119",
+          "frontWidth": 0.89,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "120",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "121",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "122",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "123",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "124",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "125",
+          "frontWidth": 0.87,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "126",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "127",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "128",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "130",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "131",
+          "frontWidth": 0.87,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "132",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "133",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "134",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "135",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "137",
+          "frontWidth": 0.87,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "138",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "139",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "140",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "141",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "142",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "143",
+          "frontWidth": 0.87,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "201",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "202",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "203",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "204",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "205",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "206",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "207",
+          "frontWidth": 0.76,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "208",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "209",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "210",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "211",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "212",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "213",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "214",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "215",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "216",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "217",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "218",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "219",
+          "frontWidth": 0.76,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "220",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "221",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "222",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "223",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "224",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "225",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "226",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "227",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "228",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "229",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "230",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "231",
+          "frontWidth": 0.76,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "232",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "233",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "234",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "235",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "236",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "237",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "238",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "239",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "240",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "241",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "242",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "243",
+          "frontWidth": 0.76,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "244",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "245",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "246",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "247",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "248",
+          "frontWidth": 0.83,
+          "rearWidth": 1
         }
       ],
       "notches": [
@@ -418,7 +1318,176 @@
           ]
         ]
       ],
-      "sectionRules": [],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "A",
+          "frontWidth": 0.74,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "B",
+          "frontWidth": 0.81,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "C",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "D",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "E",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "F",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "G",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "H",
+          "frontWidth": 0.91,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "I",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "J",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "K",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "L",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "M",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "N",
+          "frontWidth": 0.79,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "AA",
+          "frontWidth": 0.76,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "BB",
+          "frontWidth": 0.85,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "CC",
+          "frontWidth": 0.87,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "DD",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "EE",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "FF",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "GG",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "HH",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "II",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "JJ",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "KK",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "LL",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "MM",
+          "frontWidth": 0.87,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "NN",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        }
+      ],
       "notches": [
         {
           "tier": 0,
@@ -566,7 +1635,356 @@
           ]
         ]
       ],
-      "sectionRules": [],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "101",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "102",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "104",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "106",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "108",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "109",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "110",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "111",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "113",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "115",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "117",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "118",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "120",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "122",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "124",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "126",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "127",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "128",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "129",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "131",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "133",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "135",
+          "frontWidth": 0.93,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "201",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "202",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "203",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "204",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "205",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "206",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "207",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "208",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "209",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "210",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "211",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "212",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "213",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "214",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "215",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "216",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "217",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "218",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "219",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "220",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "221",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "222",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "223",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "224",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "225",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "226",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "227",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "228",
+          "frontWidth": 0.78,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "229",
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "230",
+          "frontWidth": 0.82,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "231",
+          "frontWidth": 0.84,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "232",
+          "frontWidth": 0.86,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "233",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "234",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "235",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "236",
+          "frontWidth": 0.94,
+          "rearWidth": 1
+        }
+      ],
       "notches": [
         {
           "tier": 0,
@@ -753,22 +2171,510 @@
         {
           "tier": 0,
           "id": "104",
-          "frontRows": 6
+          "frontRows": 6,
+          "frontWidth": 0.6,
+          "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "112",
-          "frontRows": 6
+          "frontRows": 6,
+          "frontWidth": 0.6,
+          "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "118",
-          "frontRows": 6
+          "frontRows": 6,
+          "frontWidth": 0.6,
+          "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "126",
-          "frontRows": 6
+          "frontRows": 6,
+          "frontWidth": 0.6,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "101",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "102",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "103",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "105",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "106",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "107",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "108",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "109",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "110",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "111",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "113",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "114",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "115",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "116",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "117",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "119",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "120",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "121",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "122",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "123",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "124",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "125",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "127",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "128",
+          "frontWidth": 0.96,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "201",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "202",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "203",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "204",
+          "frontWidth": 0.64,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "205",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "206",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "207",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "208",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "209",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "210",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "211",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "212",
+          "frontWidth": 0.64,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "213",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "214",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "215",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "216",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "217",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "218",
+          "frontWidth": 0.64,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "219",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "220",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "221",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "222",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "223",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "224",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "225",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "226",
+          "frontWidth": 0.64,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "227",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "228",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "301",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "302",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "303",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "304",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "305",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "306",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "307",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "308",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "309",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "310",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "311",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "312",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "313",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "314",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "315",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "316",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "317",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "318",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "319",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "320",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "321",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "322",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "323",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "324",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "325",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "326",
+          "frontWidth": 0.66,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "327",
+          "frontWidth": 0.83,
+          "rearWidth": 1
+        },
+        {
+          "tier": 2,
+          "id": "328",
+          "frontWidth": 0.83,
+          "rearWidth": 1
         }
       ],
       "notches": [
@@ -935,27 +2841,373 @@
         {
           "tier": 0,
           "id": "107",
-          "frontRows": 5
+          "frontRows": 5,
+          "frontWidth": 0.8,
+          "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "110",
-          "frontRows": 4
+          "frontRows": 4,
+          "frontWidth": 0.8,
+          "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "120",
-          "frontRows": 7
+          "frontRows": 7,
+          "frontWidth": 0.8,
+          "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "121",
-          "frontRows": 7
+          "frontRows": 7,
+          "frontWidth": 0.8,
+          "rearWidth": 1
         },
         {
           "tier": 0,
           "id": "122",
-          "frontRows": 7
+          "frontRows": 7,
+          "frontWidth": 0.8,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "101",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "102",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "103",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "104",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "105",
+          "frontWidth": 0.63,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "106",
+          "frontWidth": 0.63,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "108",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "109",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "111",
+          "frontWidth": 0.63,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "112",
+          "frontWidth": 0.63,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "113",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "114",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "115",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "116",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "117",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "118",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "119",
+          "frontWidth": 0.63,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "123",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "124",
+          "frontWidth": 0.63,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "125",
+          "frontWidth": 0.63,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "126",
+          "frontWidth": 0.95,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "201",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "202",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "203",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "204",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "205",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "206A",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "206B",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "206C",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "207",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "208",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "209",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "210A",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "210B",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "211A",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "211B",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "211C",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "212",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "213",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "214",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "216",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "217",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "218",
+          "frontWidth": 0.97,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "219A",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "219B",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "219C",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "220",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "221",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "222",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "223A",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "223B",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "224A",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "224B",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "224C",
+          "frontWidth": 0.77,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "225",
+          "frontWidth": 0.9,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "226",
+          "frontWidth": 0.9,
+          "rearWidth": 1
         }
       ],
       "notches": [
@@ -1105,7 +3357,176 @@
           ]
         ]
       ],
-      "sectionRules": [],
+      "sectionRules": [
+        {
+          "tier": 0,
+          "id": "1",
+          "frontWidth": 0.75,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "2",
+          "frontWidth": 0.75,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "3",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "4",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "5",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "6",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "7",
+          "frontWidth": 0.75,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "8",
+          "frontWidth": 0.75,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "9",
+          "frontWidth": 0.75,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "10",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "11",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "12",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "13",
+          "frontWidth": 0.92,
+          "rearWidth": 1
+        },
+        {
+          "tier": 0,
+          "id": "14",
+          "frontWidth": 0.75,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "1",
+          "frontWidth": 0.79,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "2",
+          "frontWidth": 0.79,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "3",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "4",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "5",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "6",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "7",
+          "frontWidth": 0.79,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "8",
+          "frontWidth": 0.79,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "9",
+          "frontWidth": 0.79,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "10",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "11",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "12",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "13",
+          "frontWidth": 0.88,
+          "rearWidth": 1
+        },
+        {
+          "tier": 1,
+          "id": "14",
+          "frontWidth": 0.79,
+          "rearWidth": 1
+        }
+      ],
       "notches": [
         {
           "tier": 0,
