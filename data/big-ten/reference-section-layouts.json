@@ -1122,11 +1122,11 @@
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Basketball configuration labels 101–120, 121–129, 134–143, 201–248, and separate court-level 9–13. Sections 130–133 are not presented as occupied spectator arcs on this source and are not fabricated. Lower court-level 9–13 require another non-overlapping strip. Exact section taper and 3D seat XYZ remain estimated. Refined lower 101–120 uneven widths and manually sourced A–C/numbered row bands. Court-level 9–13 restored in school interior profile. Shape still unsurveyed.",
+      "notes": "Basketball configuration labels 101–120, 121–129, 134–143, 201–248, and separate court-level 9–13. Sections 130–133 are not presented as occupied spectator arcs on this source and are not fabricated. Lower court-level 9–13 require another non-overlapping strip. Exact section taper and 3D seat XYZ remain estimated. Refined lower 101–120 uneven widths and manually sourced A–C/numbered row bands. Court-level 9–13 restored in school interior profile. Shape still unsurveyed. Court/section chart basis rotated 90 degrees, preserving all documented 100 and 200 section neighbors while aligning student sideline seats with section 111.",
       "tiers": [
         [
           {
-            "startAngle": 1.5,
+            "startAngle": 3.070796326795,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
@@ -1178,7 +1178,7 @@
         ],
         [
           {
-            "startAngle": 1.62,
+            "startAngle": 3.190796326795,
             "spanAngle": 2.5,
             "sectionIds": [
               "121",
@@ -1195,7 +1195,7 @@
             "rowCount": 9
           },
           {
-            "startAngle": 5.05,
+            "startAngle": 0.337611019615,
             "spanAngle": 2.75,
             "sectionIds": [
               "134",
@@ -1215,7 +1215,7 @@
         ],
         [
           {
-            "startAngle": 1.45,
+            "startAngle": 3.020796326795,
             "spanAngle": 6.283185307179586,
             "sectionIds": [
               "201",
