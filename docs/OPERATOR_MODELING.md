@@ -125,3 +125,27 @@ fully engineered building elements.
 
 Tests must distinguish source-preserving preview edits from verified
 construction measurements and accessibility compliance.
+
+## Multi-component layout and repeated elements
+
+The collapsed **Arrange multiple components** panel supports genuine
+selection sets. Ctrl-click a component center on the 2D plan to toggle
+membership, drag empty 2D plan space to select a rectangular group, or
+select objects from the multiple-selection list. A regular click selects
+one object; dragging an already selected member moves the whole group.
+The component list also supports select-all and returning to one object.
+
+Selected components can be translated together by documented offsets,
+aligned to the first selected center, spaced evenly between the outer
+centers, or mirrored about their shared X or Z centerline. Multi-object
+duplication preserves internal spacing and assigns new component IDs.
+A linear array creates one to twenty repeated copies at a specified
+two-axis offset per repetition, allowing repeated railings, desks,
+canopies or structural posts to be built without repeated manual clicks.
+
+All group commands validate the whole proposed result against the
+200-object limit, source seat positions and document geometry before
+committing it. No partial changes survive a failed operation. Accepted
+groups form one undo/redo step and one provisional audit event. These
+schematic structures do not establish legal access, egress, load capacity
+or measured construction geometry.
