@@ -322,23 +322,20 @@ export function schottensteinDeckPoint(tier, angle, fraction) {
   return {x:radius*Math.cos(angle),z:radius*Math.sin(angle)};
 }
 
-const lowerElevations = new Map(blocks.filter(block => block.tier === 0).map(block => {
-  const heightAt = slot => schottensteinDeckHeight(0, rowPlane(block, slot).point(block.profileAxis));
-  const first = heightAt(0), last = heightAt(block.depthRows - 1);
-  return [block.id, {first, rise: (last - first) / (block.depthRows - 1)}];
-}));
-
 function rowGeometry(block,rowIndex,{reserve=false}={}) {
   const slot = block.details?.slots?.[rowIndex] ?? rowIndex;
   const {point,depth,treadDepth}=rowPlane(block,slot);
   const {nx,nz} = block;
   // Split seats and treads anywhere a scan crosses a notch or a circulation gap.
   let ranges=polygonSpans(block.projected,depth);
-  const lowerProfile = lowerElevations.get(block.id);
   const [frontY]=tierElevations[block.tier];
-  const y=lowerProfile ? lowerProfile.first + slot * lowerProfile.rise
-    : block.accessibleRear&&slot<3 ? frontY+slot*.38
-    : deckHeight(block.tier,slot/(block.depthRows-1));
+  // A single world-coordinate height field now determines every lower-bank
+  // tread. Independent per-section linear interpolation previously produced
+  // visible elevation discontinuities where two chart sections met.
+  const y=block.tier===0
+    ?schottensteinDeckHeight(0,point(block.profileAxis))
+    :block.accessibleRear&&slot<3 ? frontY+slot*.38
+    :deckHeight(block.tier,slot/(block.depthRows-1));
   if(reserve){
     for(const [start,end] of polygonSpans(block.reserved,depth)){
       ranges=ranges.flatMap(([low,high])=>end<=low||start>=high?[[low,high]]:
