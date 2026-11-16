@@ -30,6 +30,13 @@ function interiorSectionFootprints(geometry,seatingRows){
     const section=sections.get(key);
     const tier=spec.tiers[row.tier],u=row.slot/tier.rows,
       v=(row.slot+1)/tier.rows;
+    if(row.courtPatch){
+      section.outlines.push(row.courtPatch);
+      section._sumX+=(row.left.x+row.right.x)/2;
+      section._sumZ+=(row.left.z+row.right.z)/2;
+      section._count++;
+      continue;
+    }
     // Curved banks are tessellated into narrow quadrilateral patches to
     // preserve their true per-row outline and entrance-notch boundaries.
     const divisions=3;
@@ -104,6 +111,45 @@ export const SeatingEngine={
           }
         }
       }
+      const floor=spec.interior?.courtside;
+      if(floor){
+        const blocks=floor.blocks,total=blocks.length;
+        const half=spec.field.length*.475,segment=half*2/total;
+        const sign=floor.side==='east'?1:-1;
+        const start=sign*(spec.field.width/2+floor.margin);
+        const spread=segment*.94;
+        const depth=floor.seatDepth;
+        blocks.forEach((block,index)=>{
+          const zHigh=half-index*segment-(segment-spread)/2;
+          const zLow=zHigh-spread;
+          block.rows.forEach((label,slot)=>{
+            const x=sign*(Math.abs(start)+(slot+.5)*depth);
+            const y=floor.frontHeight+slot*.22;
+            const count=Math.max(1,Math.floor(spread/pitch));
+            const first=seats.length;
+            const center={x,y,z:(zLow+zHigh)/2};
+            const innerX=sign*(Math.abs(start)+slot*depth);
+            const outerX=sign*(Math.abs(start)+(slot+1)*depth);
+            const courtPatch=[
+              {x:innerX,y:y-.20,z:zLow},{x:innerX,y:y-.20,z:zHigh},
+              {x:outerX,y:y-.20,z:zHigh},{x:outerX,y:y-.20,z:zLow}
+            ];
+            seatingRows.push({left:{x,y,z:zLow},right:{x,y,z:zHigh},
+              width:spread,depth,y,tier:0,sectionId:block.id,row:label,slot,
+              courtPatch});
+            for(let n=0;n<count;n++){
+              const z=zLow+(n+.5)*spread/count;
+              const position={x,y,z};
+              seats.push({...position,yaw:Math.atan2(-x,-z),tier:0,
+                sectionId:block.id,sectionIndex:spec.sections+index,row:label,
+                number:n+1,seatWidth:spread/count,seatType:'chair',
+                uid:'EST-'+spec.id+'-COURT-'+block.id+'-'+label+'-'+(n+1)});
+            }
+            groups.push({tier:0,sectionIndex:spec.sections+index,
+              row:label,from:first,count});
+          });
+        });
+      }
       return {seats,seatingRows,groups};
     };
     const optimized=OptimizationEngine.fitCapacity(spec.targetCapacity,build,{
@@ -124,6 +170,11 @@ export const SeatingEngine={
         }))eligibleRowKeys.add(tier.index+':'+bank.sectionId+':'+
           (slot+(bank.physicalSlotStart??0)));
       }
+    }
+    for(const block of spec.interior?.courtside?.blocks??[]){
+      expectedSections.add('0:'+block.id);
+      for(let slot=0;slot<block.rows.length;slot++)
+        eligibleRowKeys.add('0:'+block.id+':'+slot);
     }
     for(const row of seatingRows)actualRowKeys.add(row.tier+':'+row.sectionId+':'+row.slot);
     const omittedEligibleRows=[...eligibleRowKeys].filter(key=>!actualRowKeys.has(key));
