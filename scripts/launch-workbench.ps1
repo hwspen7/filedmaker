@@ -1,4 +1,4 @@
-# Start a verified, fresh FiledMaker dev-branch instance without
+# Start a verified FiledMaker Venue Workbench instance without
 # mistakenly reusing an old localhost:5174 server on another checkout.
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -15,7 +15,7 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
 
 Write-Host 'Checking the actual FiledMaker Git checkout...'
 & git fetch origin $target
-if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch the official Big Ten development branch.' }
+if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch the designated FiledMaker development branch.' }
 
 $localBranch = (& git branch --show-current).Trim()
 if ($localBranch -ne $target) {
@@ -35,8 +35,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Branch cannot fast-forward. Check local commit
 $sha = (& git rev-parse HEAD).Trim()
 $branch = (& git branch --show-current).Trim()
 $head = Get-Content -Raw (Join-Path $root 'index.html')
-if ($branch -ne $target -or -not $head.Contains('data-bigten="indiana"')) {
-    throw 'This checkout is not the updated 18-arena webpage.'
+if ($branch -ne $target -or -not $head.Contains('href="./workbench/"')) {
+    throw 'This checkout does not contain Venue Workbench.'
 }
 
 # Never reuse an existing listening port: its process may serve an old
@@ -85,6 +85,6 @@ Write-Host ""
 Write-Host "Verified running source: $($served.branch)"
 Write-Host "Verified running commit: $($served.commit.Substring(0, 12))"
 Write-Host "Serving from: $($served.root)"
-Write-Host "Open this URL, NOT an old localhost:5174 tab: $url"
+Write-Host "Open this Workbench URL, NOT an old localhost:5174 tab: $url/workbench/"
 Write-Host "Server process: $($server.Id)"
-Start-Process $url
+Start-Process "$url/workbench/"

@@ -15,7 +15,10 @@ reconstruction are not implemented and must not be promised to schools.
 
 ## Getting started
 
-Run Node.js 20 or later. Use npm start to serve the repository, then open:
+Run Node.js 20 or later. On Windows, the branch-verified launcher is
+scripts/launch-workbench.ps1. It selects a fresh localhost port and verifies
+the actual Git branch and commit through the built-in status endpoint.
+Alternatively use npm start and open:
 http://127.0.0.1:5174/workbench/
 
 The main homepage contains the two Ohio State reference studies.

@@ -104,3 +104,11 @@ test('homepage exposes only two OSU references and custom workbench',()=>{
   assert.doesNotMatch(html,/data-bigten=/);
   assert.match(html,/href="\.\/workbench\//);
 });
+
+test('Windows workbench launcher checks branch and runtime identity',()=>{
+  const launcher=readFileSync(new URL('../scripts/launch-workbench.ps1',import.meta.url),'utf8');
+  assert.match(launcher,/feature\/big-ten-arena-parity/);
+  assert.match(launcher,/__filedmaker\/status/);
+  assert.match(launcher,/workbench\//);
+  assert.doesNotMatch(launcher,/data-bigten=/);
+});
