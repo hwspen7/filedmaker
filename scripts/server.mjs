@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, stat, realpath } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -27,12 +27,28 @@ const server = http.createServer(async (req, res) => {
       res.end(req.method==='HEAD'?undefined:JSON.stringify(buildInfo));
       return;
     }
+    // Do not expose private working-tree files, Git internals, workflows,
+    // scripts or dependency folders through a local development web server.
+    const parts=path.split('/').filter(Boolean);
+    const allowedDirs=new Set(['src','workbench','school','viewer','legacy','examples','data']);
+    const publicRoot=new Set(['index.html','studio.css','styles.css','favicon.svg']);
+    const testFixture=process.env.FILEDMAKER_TEST_FIXTURES==='1'&&
+      /^\/tests\/fixtures\/[A-Za-z0-9_.-]+\.base64\.txt$/.test(path);
+    if(parts.some(p=>p.startsWith('.')||p==='..')||
+      (!testFixture&&(parts.length>1?!allowedDirs.has(parts[0]):
+        parts.length===1&&!allowedDirs.has(parts[0])&&!publicRoot.has(parts[0])))){
+      res.writeHead(403);res.end('Forbidden');return;
+    }
     const requestFile = path.endsWith('/') ? `${path}index.html` : path;
     const file = resolve(root, `.${requestFile}`);
     if (file !== root && !file.startsWith(`${root}${sep}`)) { res.writeHead(403); res.end(); return; }
     if (!(await stat(file)).isFile()) { res.writeHead(404); res.end(); return; }
-    const data = await readFile(file);
-    res.writeHead(200, { 'content-type': mime[extname(file)] || 'application/octet-stream', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' });
+    const real=await realpath(file);
+    if(real!==root&&!real.startsWith(`${root}${sep}`)){res.writeHead(403);res.end();return;}
+    const data = await readFile(real);
+    res.writeHead(200, { 'content-type': mime[extname(real)] || 'application/octet-stream',
+      'cache-control': 'no-store','x-content-type-options':'nosniff',
+      'referrer-policy':'no-referrer','x-frame-options':'SAMEORIGIN' });
     res.end(req.method === 'HEAD' ? undefined : data);
   } catch { res.writeHead(404); res.end('Not found'); }
 });

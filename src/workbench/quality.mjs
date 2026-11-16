@@ -14,6 +14,12 @@ const crossing=(a,b,c,d)=>{
   const v1=orient(a,b,c),v2=orient(a,b,d),v3=orient(c,d,a),v4=orient(c,d,b);
   return v1*v2<-.000001&&v3*v4<-.000001;
 };
+export function inspectSectionTopology(section){
+  const poly=[section.front[0],section.front.at(-1),section.back.at(-1),section.back[0]];
+  return {area:positiveArea(poly),
+    crossed:crossing(poly[0],poly[1],poly[2],poly[3])||
+       crossing(poly[1],poly[2],poly[3],poly[0])};
+}
 export function assessVenueGeometry(traced){
   const {venue,seats,rowRuns}=traced;
   const issues=[],add=(severity,code,detail,section=null)=>issues.push({severity,code,detail,section});
@@ -27,10 +33,10 @@ export function assessVenueGeometry(traced){
   const sourceReview=assessSources(venue);
   for(const description of sourceReview.issues)add('review','SOURCE_PROVENANCE',description);
   for(const section of venue.sections){
-    const poly=[section.front[0],section.front.at(-1),section.back.at(-1),section.back[0]];
-    if(positiveArea(poly)<.35)add('blocking','COLLAPSED_SECTION','Section footprint has negligible area',section.id);
-    if(crossing(poly[0],poly[1],poly[2],poly[3])||
-       crossing(poly[1],poly[2],poly[3],poly[0]))
+    const topology=inspectSectionTopology(section);
+    if(topology.area<.35)
+      add('blocking','COLLAPSED_SECTION','Section footprint has negligible area',section.id);
+    if(topology.crossed)
       add('blocking','CROSSED_SECTION','Section footprint is self-intersecting',section.id);
   }
   for(const row of rowRuns){

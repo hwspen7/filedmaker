@@ -1,7 +1,7 @@
 // Deterministic source-row placement into operator-traced front/rear contours.
 // Seat identities are preserved. Missing precision is never filled with invented ticket IDs.
 import {normalizeVenue} from './contract.mjs';
-import {assessVenueGeometry} from './quality.mjs';
+import {assessVenueGeometry,inspectSectionTopology} from './quality.mjs';
 const length=path=>path.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p.x-path[i].x,p.z-path[i].z),0);
 function sample(path,t){
   let remain=length(path)*t;
@@ -26,6 +26,11 @@ export function generateTracedVenue(input){
     rowsBySection.get(id).push(row);
   }
   const ids=new Set();
+  for(const section of venue.sections){
+    const check=inspectSectionTopology(section);
+    if(check.crossed||check.area<.35)
+      throw Error('Section '+section.id+' is crossed or collapsed; correct the traced footprint');
+  }
   for(const s of venue.sections){
     const rows=rowsBySection.get(s.id.toLowerCase())??[];
     if(!rows.length){warnings.push('Section '+s.id+' has no imported rows');continue;}

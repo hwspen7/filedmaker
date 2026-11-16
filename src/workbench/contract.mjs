@@ -44,8 +44,11 @@ export function parseVenueRows(csv){
     const key=section.toLowerCase()+'|'+row.toLowerCase();
     if(seen.has(key))throw Error('Duplicate section and row: '+section+'/'+row);
     seen.add(key);
-    return {section,row,seats,first,tier:name(r.tier||'T1','Tier',12),
-      seatType:r.seat_type==='bleacher'?'bleacher':'chair'};
+    const tier=name(r.tier||'T1','Tier',12);
+    if(!/^T[1-4]$/.test(tier))throw Error('Unsupported seating tier: '+tier);
+    const kind=String(r.seat_type||'chair').trim().toLowerCase();
+    if(!['chair','bleacher'].includes(kind))throw Error('Unsupported seat type: '+kind);
+    return {section,row,seats,first,tier,seatType:kind};
   });
   if(rows.reduce((n,r)=>n+r.seats,0)>40000)
     throw Error('Workbench preview is limited to 40,000 seats; use the survey import for larger projects');
@@ -107,8 +110,11 @@ export function normalizeVenue(input){
     rowKeys.add(key);
     const seats=finite(r.seats,'Row seats',1,300),first=finite(r.first??1,'First seat',1,100000);
     if(!Number.isInteger(seats)||!Number.isInteger(first))throw Error('Row counts and seat numbers must be integers');
-    return {section,row,seats,first,tier:name(r.tier||'T1','Tier',12),
-      seatType:r.seatType==='bleacher'?'bleacher':'chair'};
+    const tier=name(r.tier||'T1','Tier',12);
+    if(!/^T[1-4]$/.test(tier))throw Error('Unsupported seating tier: '+tier);
+    const kind=String(r.seatType||'chair').trim().toLowerCase();
+    if(!['chair','bleacher'].includes(kind))throw Error('Unsupported seat type: '+kind);
+    return {section,row,seats,first,tier,seatType:kind};
   });
   if(v.rows.reduce((n,r)=>n+r.seats,0)>40000)throw Error('Seat count exceeds the 40,000-seat preview limit');
   v.notes=Array.isArray(v.notes)?v.notes.map(s=>String(s).slice(0,250)).slice(0,50):[];

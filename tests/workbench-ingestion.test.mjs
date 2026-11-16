@@ -78,9 +78,10 @@ test('quality gate flags crossed contours and near-collisions without deleting s
   assert.equal(initial.seats.length,1500);assert.equal(initial.quality.blockingCount,0);
   assert.equal(initial.quality.publicationEligible,false);
   v.sections[0].back.reverse();
-  const crossed=generateTracedVenue(v);
-  assert.ok(crossed.quality.issues.some(x=>x.code==='CROSSED_SECTION'));
-  assert.equal(crossed.seats.length,1500);
+  const crossed=assessVenueGeometry({venue:normalizeVenue(v),seats:initial.seats,
+    rowRuns:initial.rowRuns});
+  assert.ok(crossed.issues.some(x=>x.code==='CROSSED_SECTION'));
+  assert.throws(()=>generateTracedVenue(v),/crossed or collapsed/);
 });
 test('vector candidates and independent calibration checks survive project export',()=>{
   const v=fictionalGym();
@@ -102,4 +103,9 @@ test('annual project comparison identifies modified rows and added bank geometry
   assert.equal(delta.rowChanges.length,1);
   assert.equal(delta.hasChanges,true);
   assert.equal(compareVenueProjects(before,before).hasChanges,false);
+});
+
+test('row importer rejects unknown tier and seat furniture rather than silently coercing it',()=>{
+  assert.throws(()=>parseVenueRows('section,row,seats,tier\nHOME,A,5,T9\n'),/Unsupported seating tier/);
+  assert.throws(()=>parseVenueRows('section,row,seats,seat_type\nHOME,A,5,standing\n'),/Unsupported seat type/);
 });

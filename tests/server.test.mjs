@@ -31,6 +31,14 @@ test('static server serves the app and module with correct MIME types', async t 
   assert.match(await module.text(), /generateSeats/);
   const missing = await fetch(`http://127.0.0.1:${port}/missing.js`);
   assert.equal(missing.status, 404);
+  const workbench=await fetch(`http://127.0.0.1:${port}/workbench/`);
+  assert.equal(workbench.status,200);
+  assert.match(await workbench.text(),/Venue Workbench/);
+  for(const hidden of ['/package.json','/.git/config','/.github/workflows/quality.yml',
+                        '/scripts/server.mjs','/tests/fixtures/row-workbook.base64.txt']){
+    const denied=await fetch(`http://127.0.0.1:${port}${hidden}`);
+    assert.equal(denied.status,403,'Must not serve '+hidden);
+  }
   const request = await fetch(`http://127.0.0.1:${port}/`, { method: 'POST' });
   assert.equal(request.status, 405);
 });

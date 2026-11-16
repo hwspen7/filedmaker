@@ -45,7 +45,7 @@ async function main(){
   const dir=resolve(process.env.VISUAL_OUTPUT??'artifacts/visual');
   mkdirSync(dir,{recursive:true});
   const server=spawn(process.execPath,['scripts/server.mjs'],{
-    env:{...process.env,PORT:String(port)},stdio:'ignore'
+    env:{...process.env,PORT:String(port),FILEDMAKER_TEST_FIXTURES:'1'},stdio:'ignore'
   });
   const chrome=spawn(findChrome(),[
     '--headless=new','--no-sandbox','--disable-dev-shm-usage',
