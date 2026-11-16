@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Build and rearrange a 3D school venue for sports, concerts, and events.">
+<title>FiledMaker · Venue Builder</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./builder.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../"><span class="mark">F</span><span>FiledMaker <small>Venue Builder</small></span></a>
+  <div class="project-heading">
+    <input id="projectName" aria-label="Project name" value="School basketball venue" maxlength="120">
+    <span class="subheading">Drag components in 3D · No drawings or seat spreadsheets required</span>
+  </div>
+  <nav class="top-actions" aria-label="Project actions">
+    <button id="undo" title="Undo (Ctrl+Z)">Undo</button>
+    <button id="redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+    <button id="save">Save locally</button>
+    <button id="open">Open saved</button>
+    <button id="export" class="primary">Export JSON</button>
+    <label class="file-button" for="importFile">Import JSON<input id="importFile" type="file" accept=".json,application/json"></label>
+  </nav>
+</header>
+<div class="shell">
+  <aside class="sidebar" aria-label="Venue library">
+    <section>
+      <h2>Start with a layout</h2>
+      <label for="activity">Activity</label>
+      <select id="activity">
+        <option value="basketball">Basketball</option>
+        <option value="concert">Concert / performance</option>
+        <option value="community">Community event</option>
+      </select>
+      <button id="newProject" class="full secondary">Create starter layout</button>
+      <p class="hint">Switching layouts starts a new design. Your current work is not replaced unless you confirm.</p>
+    </section>
+    <section class="library">
+      <h2>Build with components</h2>
+      <p class="hint">Click to add, or drag a component into the scene.</p>
+      <div id="library" class="part-library"></div>
+    </section>
+    <section class="objects">
+      <div class="section-title"><h2>Scene objects</h2><span id="objectCount">0</span></div>
+      <div id="objectList" class="object-list"></div>
+    </section>
+    <div class="sidebar-note">Illustrative venue geometry, not an official seating inventory or construction plan.</div>
+  </aside>
+
+  <main class="workspace">
+    <div class="viewport-toolbar">
+      <div class="toolbar-group">
+        <button id="orbitView" class="active">3D view</button>
+        <button id="topView">Top view</button>
+        <button id="fitView">Fit</button>
+        <button id="zoomIn" aria-label="Zoom in">+</button>
+        <button id="zoomOut" aria-label="Zoom out">−</button>
+      </div>
+      <div class="toolbar-group">
+        <label class="checkbox"><input id="snap" type="checkbox" checked> Grid snap</label>
+        <label class="grid-label">Grid <select id="gridStep"><option value="0.25">0.25m</option><option value="0.5" selected>0.5m</option><option value="1">1m</option><option value="2">2m</option></select></label>
+      </div>
+    </div>
+    <div class="canvas-frame" id="canvasFrame">
+      <canvas id="scene" tabindex="0" aria-label="Editable 3D venue scene. Click a component to select, drag to move. Drag empty space to orbit."></canvas>
+      <div class="canvas-help">Click a stand or object to select · Drag it to move · Drag empty space to orbit · Scroll to zoom</div>
+      <div class="view-pill" id="viewName">Editable 3D layout</div>
+      <div class="drop-help" id="dropHelp" hidden>Drop component to place in the venue</div>
+    </div>
+    <div class="statusbar">
+      <span id="status" role="status" aria-live="polite">Ready. Select a component to start editing.</span>
+      <span id="seatCount">0 modeled seats</span>
+    </div>
+  </main>
+
+  <aside class="inspector" aria-label="Component properties">
+    <div class="inspector-header">
+      <h2>Properties</h2>
+      <span id="selectionType">No selection</span>
+    </div>
+    <div id="emptySelection" class="empty-selection">
+      <div class="empty-icon">◇</div>
+      <strong>Select an object</strong>
+      <p>Click or drag a stand, stage, barrier, platform or other component directly on the scene.</p>
+    </div>
+    <div id="properties" hidden>
+      <div id="fieldList" class="field-list"></div>
+      <div class="inspector-actions">
+        <button id="duplicate">Duplicate</button>
+        <button id="remove" class="danger">Delete</button>
+      </div>
+      <p class="hint">Edits update the 3D scene and seat count immediately. Changes are undoable.</p>
+    </div>
+    <div class="inspector-footer">
+      <strong>Designed to be editable</strong>
+      <p>Move, rotate, resize and duplicate venue components. Use Export JSON to keep a portable design file.</p>
+    </div>
+  </aside>
+</div>
+<script type="module" src="./builder.js"></script>
+</body>
+</html>
