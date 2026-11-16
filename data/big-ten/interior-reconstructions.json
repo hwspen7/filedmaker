@@ -83,49 +83,230 @@
       "geometryStatus": "chart-backed-section-identity;unsurveyed-section-contours"
     },
     "illinois": {
-      "type": "three-concentric-rings",
+      "type": "court-aligned-lower-and-circular-upper-with-suites",
       "outline": "circle",
       "tierProfiles": [
         {
-          "widthScale": 1,
-          "lengthScale": 1,
-          "radialInset": 0.5,
+          "widthScale": 1.06,
+          "lengthScale": 1.035,
+          "radialInset": 1,
           "rake": 0.1,
-          "wave": 0
+          "wave": 0,
+          "outline": "rounded-rectangle",
+          "cornerExponent": 5.1,
+          "rearCurveBlend": 0.28
         },
         {
           "widthScale": 1,
           "lengthScale": 1,
           "radialInset": -0.3,
           "rake": 0.36,
-          "wave": 0
+          "wave": 0,
+          "outline": "circle"
         },
         {
           "widthScale": 1,
           "lengthScale": 1,
           "radialInset": 0,
           "rake": 0.7,
-          "wave": 0.14
+          "wave": 0.14,
+          "outline": "circle"
         }
       ],
       "sectionRules": [],
       "notches": [],
       "seatTypes": [],
       "source": "https://www.statefarmcenter.com/assets/doc/production_guide_19-4d1fa8277a.pdf",
-      "notes": "Published seating configuration distinguishes 100 lower, 100 upper/club and 48-sector 200 ring; measured suite and ADA platform polygons remain unavailable. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted. Unsurveyed frontWidth/rearWidth taper factors and simulated row trims are discarded. Only published physical section gaps may remove seat runs.",
+      "notes": "Published seating configuration distinguishes 100 lower, 100 upper/club and 48-sector 200 ring; measured suite and ADA platform polygons remain unavailable. Unsupported internal aisle notches and unsupported student-seat furniture have been removed. Wedge taper and seat-row shape remain illustrative estimates. Section order is controlled only by data/big-ten/section-chart-verified-order.json. Legacy repeated section width patterns are deleted. Unsurveyed frontWidth/rearWidth taper factors and simulated row trims are discarded. Only published physical section gaps may remove seat runs. Official guide confirms sections 9–13 on the east sideline, not a blank floor. Current row-label guides confirm student section rows AA,A–C,1–5 for 10–12 and A–C,1–3 for 9/13. 101 and 102 retain A–C and 1–16. Physical depth and seat centers remain chart-calibrated estimates. Lower 100 banks change from circular to court-aligned rounded rectangle, while 200 gallery remains circular.",
       "undocumentedNotchesDiscarded": [
         "111",
         "119",
         "134"
       ],
-      "unmodeledOfficialSections": [
-        "9",
-        "10",
-        "11",
-        "12",
-        "13"
+      "unmodeledOfficialSections": [],
+      "geometryStatus": "chart-backed-section-identity;unsurveyed-section-contours",
+      "rowOverrides": [
+        {
+          "tier": 0,
+          "id": "101",
+          "rowStart": 1,
+          "rowCount": 19,
+          "rowLabels": [
+            "A",
+            "B",
+            "C",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16"
+          ],
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/101"
+        },
+        {
+          "tier": 0,
+          "id": "102",
+          "rowStart": 1,
+          "rowCount": 19,
+          "rowLabels": [
+            "A",
+            "B",
+            "C",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16"
+          ],
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/102"
+        },
+        {
+          "tier": 0,
+          "id": "110",
+          "rowStart": 1,
+          "rowCount": 9,
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/110"
+        },
+        {
+          "tier": 0,
+          "id": "119",
+          "rowStart": 1,
+          "rowCount": 13,
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/119"
+        },
+        {
+          "tier": 1,
+          "id": "121",
+          "rowStart": 1,
+          "rowCount": 11,
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/121"
+        },
+        {
+          "tier": 1,
+          "id": "125",
+          "rowStart": 1,
+          "rowCount": 11,
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/125"
+        },
+        {
+          "tier": 1,
+          "id": "127",
+          "rowStart": 1,
+          "rowCount": 11,
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/127"
+        },
+        {
+          "tier": 2,
+          "id": "201",
+          "rowStart": 6,
+          "rowCount": 13,
+          "physicalSlotStart": 5,
+          "source": "https://www.rateyourseats.com/state-farm-center/seating/sections/201"
+        }
       ],
-      "geometryStatus": "chart-backed-section-identity;unsurveyed-section-contours"
+      "courtside": {
+        "side": "east",
+        "source": "https://www.statefarmcenter.com/assets/doc/production_guide_19-4d1fa8277a.pdf",
+        "margin": 1.16,
+        "seatDepth": 0.72,
+        "frontHeight": 0.55,
+        "blocks": [
+          {
+            "id": "9",
+            "rows": [
+              "A",
+              "B",
+              "C",
+              "1",
+              "2",
+              "3"
+            ]
+          },
+          {
+            "id": "10",
+            "rows": [
+              "AA",
+              "A",
+              "B",
+              "C",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          },
+          {
+            "id": "11",
+            "rows": [
+              "AA",
+              "A",
+              "B",
+              "C",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          },
+          {
+            "id": "12",
+            "rows": [
+              "AA",
+              "A",
+              "B",
+              "C",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          },
+          {
+            "id": "13",
+            "rows": [
+              "A",
+              "B",
+              "C",
+              "1",
+              "2",
+              "3"
+            ]
+          }
+        ],
+        "rowLabelSources": [
+          "https://www.rateyourseats.com/state-farm-center/seating/sections/9",
+          "https://www.rateyourseats.com/state-farm-center/seating/sections/10",
+          "https://www.rateyourseats.com/state-farm-center/seating/sections/11",
+          "https://www.rateyourseats.com/state-farm-center/seating/sections/12",
+          "https://www.rateyourseats.com/state-farm-center/seating/sections/13"
+        ],
+        "coordinatePrecision": "diagram-estimate;row-names-supported-by-third-party-seat-guides"
+      }
     },
     "iowa": {
       "type": "sunken-compact-bowl",
