@@ -943,14 +943,26 @@
         "327",
         "328"
       ],
-      "unmodeledSections": [],
+      "unmodeledSections": [
+        "N128",
+        "N101",
+        "N102",
+        "SC116",
+        "SC115",
+        "SC114",
+        "CCN",
+        "CCS"
+      ],
       "unmodeledFeatures": [
         "Media in 208",
         "Nicholas Club behind north lower sections",
         "South Club sections and floor consoles",
         "Wheelchair landing edge positions"
       ],
-      "notes": "Official Kohl map places 101,201,301 north-center, numbers advancing clockwise down the east wall through 108,208,308, south student sections 114–117,214–216,314–316, then west 122s."
+      "notes": "Official Kohl map places 101,201,301 north-center, numbers advancing clockwise down the east wall through 108,208,308, south student sections 114–117,214–216,314–316, then west 122s. Official Kohl chart also distinguishes Nicholas Club N128/N101/N102, South Club SC116/SC115/SC114 and courtside CCN/CCS. Those separate premium blocks are not modeled as ordinary 100/200/300-level wedges.",
+      "nonSeatLabels": [
+        "MEDIA beside section 208"
+      ]
     },
     "ucla": {
       "source": "https://www.woodenathleticfund.com/assets/media/tickets-and-parking/2026-27-mbb-seating-map.pdf",
