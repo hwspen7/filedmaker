@@ -561,13 +561,13 @@ export class NativeVenueRenderer {
     if(!this.plan||this.mode==='human')return null;
     const rect=this.canvas.getBoundingClientRect(),camera=this.currentCamera();
     if(!rect.width||!rect.height)return null;
-    const forward=normalize(camera.target.map((v,i)=>v-camera.eye[i]));
-    const right=normalize(cross(forward,camera.up));
-    const up=normalize(cross(right,forward));
+    const forward=norm(camera.target.map((v,i)=>v-camera.eye[i]));
+    const right=norm(cross(forward,camera.up));
+    const up=norm(cross(right,forward));
     const tan=Math.tan(camera.fov*Math.PI/360);
     const nx=(2*(clientX-rect.left)/rect.width-1)*tan*rect.width/rect.height;
     const ny=(1-2*(clientY-rect.top)/rect.height)*tan;
-    const ray=normalize(forward.map((v,i)=>v+right[i]*nx+up[i]*ny));
+    const ray=norm(forward.map((v,i)=>v+right[i]*nx+up[i]*ny));
     if(Math.abs(ray[1])<1e-6)return null;
     const t=(planeY-camera.eye[1])/ray[1];
     if(t<=0||t>10000)return null;
