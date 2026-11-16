@@ -142,8 +142,11 @@ async function main(){
     writeFileSync(join(output,'venue-builder-curved-seating.png'),
       Buffer.from(arcShot.data,'base64'));
     // Import a tiny offline OBJ asset and ensure provenance stays attached.
-    await evaluate("(()=>{const file=new File(['v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3'],'cube.obj',{type:'text/plain'});const dt=new DataTransfer();dt.items.add(file);const input=document.querySelector('#assetFile');input.files=dt.files;document.querySelector('#assetLicense').value='CC0';input.dispatchEvent(new Event('change',{bubbles:true}));})()");
-    const imported=await poll(async()=>await evaluate("({selected:document.querySelector('#selectionType')?.textContent,provenance:document.querySelector('#fieldList')?.textContent})"));
+    await evaluate("(()=>{const file=new File(['v 0 0 0\\nv 1 0 0\\nv 0 1 0\\nf 1 2 3'],'cube.obj',{type:'text/plain'});const dt=new DataTransfer();dt.items.add(file);const input=document.querySelector('#assetFile');input.files=dt.files;document.querySelector('#assetLicense').value='CC0';input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    const imported=await poll(async()=>{
+      const value=await evaluate("({selected:document.querySelector('#selectionType')?.textContent,provenance:document.querySelector('#fieldList')?.textContent})");
+      return value?.selected==='Imported OBJ model'?value:null;
+    });
     if(imported.selected!=='Imported OBJ model'||!imported.provenance.includes('CC0'))
       throw Error('OBJ import did not preserve provenance: '+JSON.stringify(imported));
     console.log('Extended builder acceptance passed: 3 courts, assembly, arc seating, OBJ import');
