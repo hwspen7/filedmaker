@@ -31,6 +31,14 @@ export function buildWorkbenchPreview(input){
   // is passed separately to the rendering plan, never mistaken for surveyed seats.
   model.surface={...model.surface,width:v.court.width,length:v.court.length};
   if(model.seats.length!==traced.seats.length)throw Error('Renderer dropped source seats');
+  // Preserve staff-specified chair versus bleacher furniture. Imported-seat
+  // normalization keeps seat identities but otherwise omits row furniture;
+  // without this mapping school gyms render as generic venue seat types.
+  const furnitureById=new Map(traced.seats.map(seat=>[seat.id,seat.seatType]));
+  for(const seat of model.seats){
+    const style=furnitureById.get(seat.uid);
+    if(style)seat.seatType=style;
+  }
   const plan=buildVenuePlan(model,{detail:'compact',operatorSurface:v.surfaceDesign});
   // Fit the editing camera to actual staff-traced seats, not optional
   // oversized architectural or invisible reference mesh bounds.
