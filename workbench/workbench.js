@@ -1206,6 +1206,20 @@ function releasePointer(event){
     else{sync();tryPreview();}
     return;
   }
+  if(completed.kind==='structure'){
+    const from=completed.before.structures.find(s=>s.id===completed.id);
+    const to=venue.structures.find(s=>s.id===completed.id);
+    venue=completed.before;
+    if(!from||!to){sync();tryPreview();return;}
+    const keys=['x','y','z','yaw','width','depth','height'];
+    const changes=Object.fromEntries(keys.filter(key=>
+      Math.abs(from[key]-to[key])>1e-6).map(key=>[key,to[key]]));
+    if(Object.keys(changes).length){
+      if(!commitStructure({action:'update',id:completed.id,changes},
+        'Modify component on plan')){sync();tryPreview();}
+    }else{sync();tryPreview();}
+    return;
+  }
   if(completed.kind==='court'||completed.kind==='zone'){
     const changed=structuredClone(venue);
     venue=completed.before;
@@ -1787,6 +1801,137 @@ $('fixture').onclick=()=>{
   workflowUI?.go('model');
   message('Loaded an explicitly fictional 1,500-seat geometry exercise.');
 };
+function render3dEditorOverlay(current){
+  const overlay=$('gizmoCanvas'),bounds=modelCanvas.getBoundingClientRect();
+  if(overlay.hidden||bounds.width<2||bounds.height<2)return;
+  const scale=Math.min(window.devicePixelRatio||1,1.5);
+  const w=Math.round(bounds.width*scale),h=Math.round(bounds.height*scale);
+  if(overlay.width!==w||overlay.height!==h){overlay.width=w;overlay.height=h;}
+  const ox=overlay.getContext('2d');
+  ox.setTransform(scale,0,0,scale,0,0);ox.clearRect(0,0,bounds.width,bounds.height);
+  const screen=point=>{
+    const p=current.projectPoint(point);
+    return p?{x:p[0]/(modelCanvas.width/bounds.width),
+      y:p[1]/(modelCanvas.height/bounds.height)}:null;
+  };
+  if($('gridVisible').checked&&current.mode!=='human'){
+    const s=venue.surfaceDesign;
+    const extentX=Math.max(18,venue.court.width*.8);
+    const extentZ=Math.max(25,venue.court.length*.65);
+    const step=Math.max(2,Number($('gridStep').value)*4);
+    ox.save();ox.strokeStyle='#6f9eab35';ox.lineWidth=.8;
+    for(let x=-extentX;x<=extentX+.01;x+=step){
+      const a=screen([x,0,-extentZ]),b=screen([x,0,extentZ]);
+      if(!a||!b)continue;
+      ox.beginPath();ox.moveTo(a.x,a.y);ox.lineTo(b.x,b.y);ox.stroke();
+    }
+    for(let z=-extentZ;z<=extentZ+.01;z+=step){
+      const a=screen([-extentX,0,z]),b=screen([extentX,0,z]);
+      if(!a||!b)continue;
+      ox.beginPath();ox.moveTo(a.x,a.y);ox.lineTo(b.x,b.y);ox.stroke();
+    }
+    ox.restore();
+  }
+  const selected=venue.structures.find(x=>x.id===selectedStructure);
+  if(!selected||activeModelTool!=='structures'||current.mode==='human')return;
+  const center=[selected.x,selected.y+selected.height/2,selected.z];
+  const origin=screen(center);if(!origin)return;
+  const axes=[
+    ['X',[center[0]+2.5,center[1],center[2]],'#cb625c'],
+    ['Y',[center[0],center[1]+2.5,center[2]],'#4d9974'],
+    ['Z',[center[0],center[1],center[2]+2.5],'#477ec8']
+  ];
+  ox.save();
+  for(const [axis,end,color] of axes){
+    const target=screen(end);
+    if(!target)continue;
+    const dx=target.x-origin.x,dy=target.y-origin.y;
+    const length=Math.hypot(dx,dy);if(length<.1)continue;
+    const reach=Math.max(27,Math.min(48,length));
+    const px=origin.x+dx/length*reach,py=origin.y+dy/length*reach;
+    ox.strokeStyle=color;ox.fillStyle=color;ox.lineWidth=3;
+    ox.beginPath();ox.moveTo(origin.x,origin.y);ox.lineTo(px,py);ox.stroke();
+    ox.beginPath();ox.arc(px,py,4.5,0,Math.PI*2);ox.fill();
+    ox.font='700 11px system-ui';ox.textAlign='center';
+    ox.fillText(axis,px+9,py-5);
+  }
+  ox.beginPath();ox.arc(origin.x,origin.y,5.5,0,Math.PI*2);
+  ox.fillStyle='#fff';ox.fill();ox.strokeStyle='#35566d';
+  ox.lineWidth=2;ox.stroke();
+  const readout=selected.label+'  X '+selected.x.toFixed(2)+
+    '  Y '+selected.y.toFixed(2)+'  Z '+selected.z.toFixed(2);
+  ox.font='600 11px system-ui';ox.textAlign='left';
+  const labelWidth=ox.measureText(readout).width+18;
+  const px=Math.max(7,Math.min(bounds.width-labelWidth-7,origin.x+13));
+  const py=Math.max(64,Math.min(bounds.height-56,origin.y+11));
+  ox.fillStyle='#263d4ce8';ox.fillRect(px,py,labelWidth,23);
+  ox.fillStyle='#fff';ox.fillText(readout,px+9,py+16);
+  ox.restore();
+}
+function start3dObjectDrag(structure){
+  if(!$('threeDEditEnabled').checked||viewMode==='eye')return false;
+  if(!venue.structures.some(s=>s.id===structure.id))return false;
+  const selected=selectedStructureIds.has(structure.id)&&selectedStructureIds.size>1;
+  if(!selected)selectStructure(structure.id);
+  else{selectedStructure=structure.id;refreshStructureControls(structure.id);}
+  modelDrag={before:structuredClone(venue),id:structure.id,
+    ids:selected?[...selectedStructureIds]:[structure.id],
+    proposal:{dx:0,dz:0,dy:0}};
+  activateModelTool('structures');
+  $('threeDEditReadout').textContent='Moving '+modelDrag.ids.length+
+    ' object(s) · release to validate; Alt adjusts elevation.';
+  return true;
+}
+function preview3dObjectDrag(delta){
+  if(!modelDrag||!renderer)return;
+  const anchor=modelDrag.before.structures.find(s=>s.id===modelDrag.id);
+  if(!anchor)return;
+  let dx=0,dz=0,dy=0;
+  if(delta.altKey){
+    dy=Math.round(delta.dy*10)/10;
+    dy=Math.max(-Math.min(...modelDrag.ids.map(id=>
+      modelDrag.before.structures.find(s=>s.id===id).y)),dy);
+    dy=Math.min(85-Math.max(...modelDrag.ids.map(id=>
+      modelDrag.before.structures.find(s=>s.id===id).y)),dy);
+  }else{
+    const point=inferObjectPoint({x:anchor.x+delta.dx,
+      z:anchor.z+delta.dz},modelDrag.ids,delta);
+    dx=point.x-anchor.x;dz=point.z-anchor.z;
+  }
+  modelDrag.proposal={dx,dz,dy};
+  for(const id of modelDrag.ids){
+    const before=modelDrag.before.structures.find(s=>s.id===id);
+    const current=venue.structures.find(s=>s.id===id);
+    if(before&&current){
+      current.x=before.x+dx;current.z=before.z+dz;
+      current.y=before.y+dy;
+    }
+  }
+  renderer.updateOperatorInstances(venue.structures,
+    buildStructureInstances(venue.structures));
+  $('threeDEditReadout').textContent=modelDrag.ids.length+' selected · '+
+    'ΔX '+dx.toFixed(2)+' m · ΔY '+dy.toFixed(2)+' m · ΔZ '+dz.toFixed(2)+' m';
+}
+function finish3dObjectDrag(cancel=false){
+  if(!modelDrag)return;
+  const completed=modelDrag;modelDrag=null;guideState=null;
+  const {dx,dz,dy}=completed.proposal;
+  venue=completed.before;
+  if(cancel||(!dx&&!dz&&!dy)){
+    sync();tryPreview();return;
+  }
+  let success=false;
+  if(completed.ids.length>1)success=commitStructureBatch({
+    action:'translate',ids:completed.ids,dx,dz,dy
+  },'Move objects directly in 3D');
+  else{
+    const from=completed.before.structures.find(s=>s.id===completed.id);
+    success=commitStructure({action:'update',id:completed.id,
+      changes:{x:from.x+dx,y:from.y+dy,z:from.z+dz}},
+      'Move object directly in 3D');
+  }
+  if(!success){sync();tryPreview();}
+}
 function open3d(mode){
   if(!preview){message('Trace sections, import rows, and generate a valid model first.',true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
   viewMode=mode;canvas.hidden=true;modelCanvas.hidden=false;
@@ -1805,20 +1950,30 @@ function open3d(mode){
     catch(e){message('WebGL2 unavailable: '+e.message,true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
   }
   renderer.onStructurePick=structure=>selectStructure(structure.id);
+  renderer.onStructureDragStart=structure=>start3dObjectDrag(structure);
+  renderer.onStructureDrag=delta=>preview3dObjectDrag(delta);
+  renderer.onStructureDragEnd=()=>finish3dObjectDrag(false);
+  renderer.onStructureDragCancel=()=>finish3dObjectDrag(true);
   renderer.onFrame=current=>{
     const metrics=current.framingMetrics();
     modelCanvas.dataset.seatingWidth=(metrics.seatWidth*100).toFixed(1);
     modelCanvas.dataset.seatingHeight=(metrics.seatHeight*100).toFixed(1);
+    render3dEditorOverlay(current);
   };
   renderer.load(preview.plan);renderer.resize();
   renderer.view(mode==='eye'?'human':'overview',selectedSeat);
   if(mode==='eye'&&!selectedSeat)message('Select a seat in 3D overview before entering Seat view.',true);
 }
 function tab(mode){
+  const show3d=mode!=='plan'&&mode!=='eye';
+  $('gizmoCanvas').hidden=!show3d;
+  $('threeDHint').hidden=!show3d;
+  $('precisionBar').hidden=mode==='eye';
   $('canvasOverlay').hidden=mode!=='plan'||!(image||venue.rows.length||venue.sections.length||preview);
   $('showPlan').classList.toggle('active',mode==='plan');
   $('show3d').classList.toggle('active',mode==='overview');
   $('showEye').classList.toggle('active',mode==='eye');
+  if(show3d&&renderer)render3dEditorOverlay(renderer);
 }
 $('showPlan').onclick=()=>{viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;tab('plan');resize();};
 $('show3d').onclick=()=>{open3d('overview');tab(viewMode);};
