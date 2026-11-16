@@ -1,7 +1,8 @@
 import {VENUE_CASES,getVenueCase} from '../src/workbench/caseCatalog.mjs';
 
 const $=id=>document.getElementById(id);
-const MODEL_IDS=new Set(['osu-basketball','osu-football','fictional-gym','aiken-high']);
+const MODEL_IDS=new Set(['osu-basketball','osu-football','fictional-gym','aiken-high',
+  ...VENUE_CASES.filter(c=>c.group==='demos').map(c=>c.id)]);
 const validFilters=new Set(['all','models','schools']);
 let filter=new URLSearchParams(location.search).get('group')||'all';
 if(filter==='references'||filter==='demos')filter='models';
