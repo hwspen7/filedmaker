@@ -23,10 +23,10 @@ function box(out,center,tangent,outward,width,depth,low,high){
   quad(out,c,d,D,C,outward);quad(out,d,a,A,D,tangent.map(x=>-x));
   quad(out,A,B,C,D,[0,1,0]);quad(out,d,c,b,a,[0,-1,0]);
 }
-function roofHeight(style,rise,t,a){
+function roofHeight(style,rise,t,a,ribs=48){
   const dome=(1-t*t);
   switch(style){
-    case 'folded-dome':return rise*dome+.33*dome*Math.cos(32*a);
+    case 'folded-dome':return (rise+.33*(Math.cos(ribs*a)-1))*dome;
     case 'copper-dome':return rise*Math.sqrt(Math.max(0,1-t*t));
     case 'saddle':return rise*(.44*dome+.28*dome*t*t*Math.cos(2*a));
     case 'truss-arch':return rise*(1-t*t)**.72;
@@ -100,7 +100,7 @@ export const SignatureArchitectureEngine={
         const h=rise*(1-Math.abs(x)/(signature.historicalBuildingWidthMetres/2));
         return v(x,base+h,p.z*t);
       }
-      return v(p.x*t,base+roofHeight(roof,rise,t,a),p.z*t);
+      return v(p.x*t,base+roofHeight(roof,rise,t,a,signature.radialButtresses??48),p.z*t);
     };
     const roofTarget=output[rooffinish[finish]??'roofSlate'],rings=22;
     for(let j=0;j<rings;j++){
