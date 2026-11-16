@@ -10,12 +10,14 @@ import {describeFile,appendSource,assessSources} from '../src/workbench/sources.
 import {createHistory} from '../src/workbench/history.mjs';
 import {assessRegistration} from '../src/workbench/registration-audit.mjs';
 import {compareVenueProjects} from '../src/workbench/diff.mjs';
+import {openPdfFile,renderPdfPage,closePdfFile} from '../src/workbench/imports/pdf.mjs';
+import {reviewReadiness,suggestionQueue} from '../src/workbench/review.mjs';
 
 const $=id=>document.getElementById(id);
 const canvas=$('planCanvas'),modelCanvas=$('modelCanvas'),ctx=canvas.getContext('2d');
 let venue=newVenue(),registration=null,image=null,editorMode='select',draftPoints=[];
 let preview=null,renderer=null,selectedSection='',selectedSeat=null,drag=null,viewMode='plan';
-let pendingRows=null,vectorDrawing=null;
+let pendingRows=null,vectorDrawing=null,pdfHandle=null;
 const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
 const safeName=()=>venue.venue.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'school-venue';
@@ -35,6 +37,8 @@ async function restoreDocument(next){
     restoredImage=new Image();restoredImage.src=checked.plan.imageData;
     await restoredImage.decode();
   }else if(checked.plan.name===oldFile)restoredImage=oldImage;
+  if(pdfHandle){closePdfFile(pdfHandle).catch(()=>{});pdfHandle=null;}
+  $('pdfPageWrap').hidden=true;
   venue=checked;image=restoredImage;selectedSeat=null;selectedSection='';
   registration=image&&venue.calibration.corners.length===4?
     registerCourt(venue.calibration.corners,venue.court.width,venue.court.length):null;
@@ -90,9 +94,31 @@ function sync(){
   $('capacitySource').value=venue.capacitySource;
   $('workspaceName').textContent=venue.venue;
   $('sourceName').textContent=venue.plan.name||'No drawing attached';
+  renderPdfSuggestions();
   $('undo').disabled=!history.canUndo;$('redo').disabled=!history.canRedo;
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   refreshSections();
+}
+function renderPdfSuggestions(){
+  const root=$('pdfLabels');root.replaceChildren();
+  const matching=suggestionQueue(venue.plan?.labels||[],venue.rows,venue.sections);
+  if(!matching.length){
+    const note=document.createElement('span');
+    note.className='quiet';
+    note.textContent='No text labels match the current row list. Trace sections manually.';
+    root.append(note);return;
+  }
+  for(const hint of matching.slice(0,24)){
+    const b=document.createElement('button');b.type='button';
+    b.textContent=hint.id+' · label';
+    b.title='Text from PDF only. The section outline must be traced manually.';
+    b.onclick=()=>{
+      $('newSectionId').value=hint.id;
+      if(registration){editorMode='trace';draftPoints=[];repaint();}
+      message('Suggested '+hint.id+'. Confirm this label, then trace its four actual section corners.');
+    };
+    root.append(b);
+  }
 }
 function refreshSections(){
   const select=$('sectionSelect'),previous=selectedSection;
@@ -211,6 +237,14 @@ function draw(){
   }
 }
 function repaint(){
+  const review=reviewReadiness(venue);
+  $('reviewChecklist').replaceChildren(...review.steps.map(step=>{
+    const row=document.createElement('div');
+    row.className=step.done?'complete':'';
+    row.textContent=(step.done?'✓ ':'○ ')+step.label;
+    return row;
+  }));
+  renderPdfSuggestions();
   $('workspaceName').textContent=venue.venue;
   $('sectionCount').textContent=number(venue.sections.length);
   $('rowCount').textContent=number(venue.rows.length);
@@ -424,15 +458,90 @@ async function installRows(file,index=0){
 }
 $('rowsFile').onchange=async event=>{
   const file=event.target.files?.[0];if(!file)return;
-  try{pendingRows=file;await installRows(file);}
+  try{
+    pendingRows=file;await installRows(file);
+    if(pdfHandle&&venue.plan.pageNumber){
+      const sheet=await renderPdfPage(pdfHandle,venue.plan.pageNumber,venue.rows);
+      venue.plan.labels=sheet.labels;repaint();
+    }
+  }
   catch(e){message('Row import rejected: '+e.message,true);}
   finally{event.target.value='';}
 };
 $('sheetSelect').onchange=async()=>{
   if(!pendingRows)return;
-  try{await installRows(pendingRows,Number($('sheetSelect').value));}
+  try{
+    await installRows(pendingRows,Number($('sheetSelect').value));
+    if(pdfHandle&&venue.plan.pageNumber){
+      const sheet=await renderPdfPage(pdfHandle,venue.plan.pageNumber,venue.rows);
+      venue.plan.labels=sheet.labels;repaint();
+    }
+  }
   catch(e){message('Worksheet import rejected: '+e.message,true);}
 };
+
+async function adoptPdfPage(handle,page,source=null){
+  if(venue.sections.length&&!confirm('Choosing a different drawing page will clear current traced sections. Continue?'))return false;
+  const imported=await renderPdfPage(handle,page,venue.rows);
+  const loaded=new Image();loaded.src=imported.imageData;await loaded.decode();
+  const before=structuredClone(venue);
+  let next=structuredClone(venue);
+  if(source){next=appendSource(next,source);next.planSourceId=source.id;}
+  next.plan={
+    name:handle.name+' · page '+page,mime:'application/pdf',
+    width:imported.width,height:imported.height,
+    imageData:imported.imageData.length<6_000_000?imported.imageData:'',
+    pageNumber:page,labels:imported.labels
+  };
+  next.calibration={corners:[],checkpoints:[]};
+  next.sections=[];next.vectorCandidates=[];
+  venue=normalizeVenue(next);image=loaded;registration=null;selectedSection='';
+  selectedSeat=null;editorMode='calibrate';draftPoints=[];preview=null;
+  recordEdit(before,'Review PDF page '+page+' of '+handle.name);
+  sync();repaint();resize();
+  const analysis=imported.summary;
+  $('pdfStatus').textContent='PDF page '+page+'/'+handle.count+
+    ' · '+analysis.textCount+' selectable text items · '+
+    analysis.matchingLabels+' section-label suggestions · operator confirmation required';
+  message('PDF page rendered locally. '+analysis.assistance+
+    '. Calibrate the court and trace boundaries manually.');
+  return true;
+}
+$('pdfFile').onchange=async event=>{
+  const file=event.target.files?.[0];if(!file)return;
+  let next=null;
+  try{
+    if(venue.sections.length&&!confirm('Importing a PDF resets current traced sections. Continue?'))return;
+    next=await openPdfFile(file);
+    const source=await describeFile(file,{role:'reference-plan',origin:'school-supplied'});
+    const accepted=await adoptPdfPage(next,1,source);
+    if(!accepted)return;
+    if(pdfHandle)await closePdfFile(pdfHandle);
+    pdfHandle=next;next=null;
+    $('pdfPageWrap').hidden=pdfHandle.count<=1;
+    $('pdfPage').replaceChildren(...Array.from({length:pdfHandle.count},
+      (_,i)=>new Option('Page '+(i+1),String(i+1))));
+    $('pdfPage').value='1';
+  }catch(e){
+    $('pdfStatus').textContent='PDF import failed. Your existing venue is retained.';
+    message('PDF import rejected: '+e.message,true);
+  }finally{
+    if(next)await closePdfFile(next).catch(()=>{});
+    event.target.value='';
+  }
+};
+$('pdfPage').onchange=async()=>{
+  if(!pdfHandle)return;
+  const old=venue.plan.pageNumber;
+  try{
+    const applied=await adoptPdfPage(pdfHandle,Number($('pdfPage').value));
+    if(!applied)$('pdfPage').value=String(old);
+  }catch(e){
+    $('pdfPage').value=String(old);
+    message('PDF page could not be rendered: '+e.message,true);
+  }
+};
+
 $('planFile').onchange=async event=>{
   const file=event.target.files?.[0];if(!file)return;
   try{
@@ -448,7 +557,10 @@ $('planFile').onchange=async event=>{
     const before=structuredClone(venue);
     venue=appendSource(venue,source);
     venue.planSourceId=source.id;venue.vectorCandidates=[];
-    venue.plan={name:file.name,mime:file.type,width:image.width,height:image.height,imageData:''};
+    venue.plan={name:file.name,mime:file.type,width:image.width,height:image.height,imageData:'',
+      pageNumber:null,labels:[]};
+    if(pdfHandle){await closePdfFile(pdfHandle);pdfHandle=null;}
+    $('pdfPageWrap').hidden=true;
     if(file.size<3_500_000){
       venue.plan.imageData=await new Promise((resolve,reject)=>{
         const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));
@@ -467,6 +579,8 @@ $('csvExample').onclick=()=>save('example-rows.csv',
 $('fixture').onclick=()=>{
   const before=structuredClone(venue);
   venue=fictionalGym();registration=null;image=null;preview=null;selectedSection='';
+  if(pdfHandle){closePdfFile(pdfHandle).catch(()=>{});pdfHandle=null;}
+  $('pdfPageWrap').hidden=true;
   recordEdit(before,'Load fictional geometry fixture');
   editorMode='select';draftPoints=[];sync();tryPreview();
   message('Loaded an explicitly fictional 1,500-seat geometry exercise.');
@@ -511,6 +625,8 @@ $('openProject').onchange=async event=>{
       loadedImage=new Image();loadedImage.src=next.plan.imageData;
       await loadedImage.decode();
     }
+    if(pdfHandle){await closePdfFile(pdfHandle);pdfHandle=null;}
+    $('pdfPageWrap').hidden=true;
     venue=next;image=loadedImage;registration=image&&next.calibration.corners.length===4?
       registerCourt(next.calibration.corners,next.court.width,next.court.length):null;
     preview=null;selectedSeat=null;selectedSection='';editorMode='select';draftPoints=[];
@@ -605,7 +721,7 @@ $('vectorFile').onchange=async e=>{
     const next=appendSource(venue,source);
     next.planSourceId=source.id;
     next.plan={name:file.name,mime:file.type||'image/svg+xml',width:loaded.width,
-      height:loaded.height,imageData:raster.url};
+      height:loaded.height,imageData:raster.url,pageNumber:null,labels:[]};
     next.calibration={corners:[],checkpoints:[]};
     next.sections=[];
     next.vectorCandidates=vectors.contours.map(item=>({
@@ -613,6 +729,8 @@ $('vectorFile').onchange=async e=>{
       points:item.points.map(p=>({x:p.x*raster.scale,y:p.y*raster.scale}))
     }));
     venue=normalizeVenue(next);image=loaded;vectorDrawing=vectors;registration=null;
+    if(pdfHandle){await closePdfFile(pdfHandle);pdfHandle=null;}
+    $('pdfPageWrap').hidden=true;
     selectedSection='';preview=null;editorMode='calibrate';draftPoints=[];
     recordEdit(before,'Import '+vectors.format+' vector plan '+file.name);
     sync();repaint();

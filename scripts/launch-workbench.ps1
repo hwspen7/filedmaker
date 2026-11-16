@@ -56,6 +56,18 @@ foreach ($candidate in 5188..5217) {
 }
 if (-not $port) { throw 'No available port in 5188 through 5217.' }
 
+# PDF importing must work out of the box after a normal branch pull.
+$pdfModule = Join-Path $root 'node_modules/pdfjs-dist/build/pdf.mjs'
+if (-not (Test-Path $pdfModule)) {
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        throw 'npm is needed to install the pinned local PDF reader.'
+    }
+    Write-Host 'Installing local PDF document reader...'
+    & npm install --no-package-lock --no-audit --no-fund
+    if ($LASTEXITCODE -ne 0) { throw 'PDF dependency installation failed.' }
+}
+
+
 $logDirectory = Join-Path $root 'build'
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 $logOut = Join-Path $logDirectory "filedmaker-$port.stdout.log"

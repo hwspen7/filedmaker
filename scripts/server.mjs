@@ -21,6 +21,19 @@ const server = http.createServer(async (req, res) => {
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if(path==='/__filedmaker/pdf/pdf.mjs'||path==='/__filedmaker/pdf/pdf.worker.mjs'){
+      // Strictly allow these two pinned PDF.js distribution assets only.
+      const moduleName=path.endsWith('pdf.worker.mjs')?'pdf.worker.mjs':'pdf.mjs';
+      const pdfAsset=resolve(root,'node_modules','pdfjs-dist','build',moduleName);
+      const directory=resolve(root,'node_modules','pdfjs-dist','build');
+      const actual=await realpath(pdfAsset);
+      if(!actual.startsWith(directory+sep)){res.writeHead(403);res.end();return;}
+      const asset=await readFile(actual);
+      res.writeHead(200,{'content-type':'text/javascript; charset=utf-8',
+        'cache-control':'no-store','x-content-type-options':'nosniff'});
+      res.end(req.method==='HEAD'?undefined:asset);
+      return;
+    }
     if(path==='/__filedmaker/status'){
       res.writeHead(200,{'content-type':'application/json; charset=utf-8',
         'cache-control':'no-store','x-content-type-options':'nosniff'});

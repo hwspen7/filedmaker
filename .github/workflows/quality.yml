@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install pinned PDF renderer dependency
+        run: npm install --no-package-lock --no-audit --no-fund
       - name: Verify syntax, geometry and server tests
         run: npm run verify
       - name: Prepare Chrome for real browser acceptance

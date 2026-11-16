@@ -28,7 +28,7 @@ export function newVenue(sport='nfhs-basketball'){
   return {format:'filedmaker-venue-workbench',
     school:'Example school',venue:'Untitled school venue',sport,
     court:{width:d.width,length:d.length},officialCapacity:null,
-    capacitySource:'',plan:{name:'',mime:'',width:0,height:0,imageData:''},
+    capacitySource:'',plan:{name:'',mime:'',width:0,height:0,imageData:'',pageNumber:null,labels:[]},
     calibration:{corners:[],checkpoints:[]},sections:[],rows:[],notes:[],
     sources:[],rowSourceId:null,planSourceId:null,changeLog:[],vectorCandidates:[]};
 }
@@ -73,7 +73,15 @@ export function normalizeVenue(input){
     mime:String(plan.mime||'').slice(0,80),
     width:plan.width?finite(plan.width,'Image width',1,20000):0,
     height:plan.height?finite(plan.height,'Image height',1,20000):0,
-    imageData:typeof plan.imageData==='string'&&/^data:image\/(png|jpeg|webp);base64,/.test(plan.imageData)&&plan.imageData.length<6000000?plan.imageData:''};
+    imageData:typeof plan.imageData==='string'&&/^data:image\/(png|jpeg|webp);base64,/.test(plan.imageData)&&plan.imageData.length<6000000?plan.imageData:'',
+    pageNumber:plan.pageNumber==null?null:finite(plan.pageNumber,'PDF page number',1,24),
+    labels:(Array.isArray(plan.labels)?plan.labels:[]).slice(0,200).map(label=>({
+      id:name(label.id,'PDF label',60),
+      x:finite(label.x,'PDF label pixel X',0,20000),
+      y:finite(label.y,'PDF label pixel Y',0,20000),
+      confidence:finite(label.confidence,'PDF label confidence',0,100),
+      kind:String(label.kind||'unverified-label').slice(0,40)
+    }))};
   const corners=v.calibration?.corners??[];
   if(!Array.isArray(corners)||![0,4].includes(corners.length))throw Error('Calibration needs exactly four playing-surface corners');
   v.calibration={corners:corners.map(p=>({x:finite(p.x,'Anchor pixel X',0,20000),y:finite(p.y,'Anchor pixel Y',0,20000)})),

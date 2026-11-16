@@ -18,13 +18,20 @@
 <label>Surface length (m)<input id="courtLength" type="number" step=".01" min="15" max="200"></label></div>
 </div>
 <div class="section"><div class="eyebrow">Source drawings</div>
+<label class="upload">Import PDF floor plan<input id="pdfFile" type="file" accept=".pdf,application/pdf" hidden></label>
+<label id="pdfPageWrap" hidden>PDF page<select id="pdfPage"></select></label>
+<div id="pdfStatus" class="hint" aria-live="polite">PDF pages are rendered locally. Select a page, review text suggestions and manually trace boundaries.</div>
+<div class="eyebrow">PDF section labels · suggestions only</div>
+<div id="pdfLabels" class="suggestions" aria-live="polite">No labels extracted</div>
 <label class="upload">Upload raster plan<input id="planFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" hidden></label>
 <label class="upload">Import SVG / ASCII DXF contours<input id="vectorFile" type="file" accept=".svg,.dxf,image/svg+xml" hidden></label>
 <button id="matchVectors" type="button">Review and import labeled vector sections</button>
-<p class="hint">PNG/JPEG/WebP overlays and SVG/DXF vector contours. Vector sections are suggestions only and must have labels matching the imported rows. PDF pages require a local image export; no PDF recognition is claimed.</p>
+<p class="hint">PDF, PNG/JPEG/WebP, SVG and basic DXF. Select a PDF page and confirm any suggested section labels. Scanned PDF images remain manual to trace. Geometry and elevations are not automatically certified.</p>
 <div id="sourceName" class="file-meta">No drawing attached</div>
 <div class="actions"><button type="button" id="calibrate">Mark court corners</button><button type="button" id="trace">Trace section</button></div>
-<p id="traceInstructions" class="hint">For a plan image, first select the four court corners in order, then trace each section's four corners: front left, front right, rear right, rear left.</p>
+<p id="traceInstructions" class="hint">Four court corners first, then four corners per section: front left, front right, rear right, rear left. Text labels never auto-create seats or polygons.</p>
+<div class="eyebrow">Human review checkpoints</div>
+<div id="reviewChecklist" class="checklist" aria-live="polite"></div>
 </div>
 <div class="section"><div class="eyebrow">Seat records</div>
 <label class="upload">Import row counts CSV / TSV / JSON / XLSX<input id="rowsFile" type="file" accept=".csv,.tsv,.json,.xlsx" hidden></label>

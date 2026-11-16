@@ -6,6 +6,7 @@ import { mkdtempSync,mkdirSync,writeFileSync,rmSync,statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join,resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import {makeSchoolPdf} from '../tests/fixtures/synthetic-pdf.mjs';
 const port=5189,debugPort=9238;
 function findChrome(){
   if(process.env.CHROME_BIN)return process.env.CHROME_BIN;
@@ -219,6 +220,52 @@ async function main(){
     if(vector?.names?.join(',')!=='HOME,AWAY'||!vector.png)
       throw Error('Safe SVG contour import failed: '+JSON.stringify(vector));
     console.log('imports: XLSX dual worksheets, SVG vector contours and raster preview verified');
+
+    const testPdf64=Buffer.from(makeSchoolPdf()).toString('base64');
+    await evaluate(`(()=>{
+      window.confirm=()=>true; // Test fixture only: replace manual accept interaction.
+      const bytes=Uint8Array.from(atob(${JSON.stringify(testPdf64)}),c=>c.charCodeAt(0));
+      const file=new File([bytes],'fictional-school.pdf',{type:'application/pdf'});
+      const transfer=new DataTransfer();transfer.items.add(file);
+      const input=document.querySelector('#pdfFile');input.files=transfer.files;
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+      return true;
+    })()`);
+    const pdfFirst=await poll(async()=>{
+      const state=await evaluate(`({
+        text:document.querySelector('#pdfStatus')?.textContent,
+        match:document.querySelectorAll('#pdfLabels button').length,
+        file:document.querySelector('#sourceName')?.textContent,
+        tab:document.querySelector('#pdfPage')?.value,
+        missing:document.querySelector('#reviewChecklist')?.textContent
+      })`);
+      return state?.match===4&&state.tab==='1'?state:null;
+    },70);
+    if(!pdfFirst?.file.includes('fictional-school.pdf')||
+      !pdfFirst.missing.includes('Trace each row-bearing section'))
+      throw Error('PDF did not enter assisted manual review: '+JSON.stringify(pdfFirst));
+    await evaluate(`(()=>{
+      document.querySelector('#pdfPage').value='2';
+      document.querySelector('#pdfPage').dispatchEvent(new Event('change',{bubbles:true}));
+      return true;
+    })()`);
+    const second=await poll(async()=>{
+      const state=await evaluate(`({
+        status:document.querySelector('#pdfStatus')?.textContent,
+        match:document.querySelectorAll('#pdfLabels button').length,
+        source:document.querySelector('#sourceLedger')?.textContent,
+        path:document.querySelector('#sourceName')?.textContent
+      })`);
+      return state?.status?.includes('PDF page 2/2')?state:null;
+    },70);
+    if(second.match!==0||!second.status.includes('0 selectable text items')||
+       !second.source.includes('SHA-256')||!second.path.includes('page 2'))
+      throw Error('Scanned/unlabeled PDF did not require manual tracing: '+JSON.stringify(second));
+    const pdfFrame=await client.send('Page.captureScreenshot',
+      {format:'png',captureBeyondViewport:false});
+    writeFileSync(join(dir,'workbench-pdf-review.png'),Buffer.from(pdfFrame.data,'base64'));
+    console.log('pdf: real local two-page PDF parsed, four row-label hints found, zero-text page required manual tracing');
+
 
   } finally {
     client?.close();chrome.kill('SIGKILL');server.kill('SIGTERM');

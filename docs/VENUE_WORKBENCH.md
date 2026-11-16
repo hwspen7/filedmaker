@@ -8,10 +8,13 @@ only Ohio State's Schottenstein Center and Ohio Stadium. A fictional 1,500-seat
 high-school gym fixture is strictly an engine exercise, not a documented venue.
 
 The first deliverable is a manual source-to-preview workflow:
-bitmap reference, four-corner registration, independently traced section banks,
+PDF or bitmap reference, four-corner registration, independently traced section banks,
 school row-count CSV, geometry generation, correction, audit and offline export.
-Automatic PDF interpretation, computer-vision section detection and CAD
-reconstruction are not implemented and must not be promised to schools.
+PDF pages are now directly rendered locally using Mozilla PDF.js, with
+selectable text mapped to staff review suggestions. Scanned PDF pages have
+no text layer and must be traced manually. Full computer-vision section
+detection, unattended geometry inference, OCR, and CAD reconstruction are
+not implemented and must not be promised to schools.
 
 ## Getting started
 
@@ -28,8 +31,10 @@ and measured seat coordinates. /legacy/ keeps advanced calibration utilities.
 ## Staff workflow
 
 1. Enter the school, venue, sport and actual court dimensions in metres.
-2. Upload a PNG, JPEG or WebP seating diagram. For PDF sources, export the
-   relevant page as an image before upload; PDF is not automatically parsed.
+2. Upload a PDF directly or import PNG, JPEG or WebP. For a PDF select the
+   relevant page and inspect textual section-label suggestions. Recognized text
+   does not create polygons and never replaces operator-traced section geometry.
+   For a scanned PDF, trace the visible boundaries manually.
 3. Mark the court corners: near-left, near-right, far-right, far-left.
    Four-point planar projective registration aligns the diagram, not elevation.
 4. Enter each real section ID, then trace four section corners: front-left,
@@ -152,7 +157,7 @@ violations, and native WebGL2 browser rendering.
 
 ## What is deliberately not certified yet
 
-Direct PDF/DWG ingestion, extracting text or structured seats from scans,
+DWG ingestion, extracting text or structured seats from scans,
 automatic OCR/CV section detection, curves/bulges in CAD files, complex
 multilevel accessible seating, clash-tested egress and automated external
 ticketing are separate engineering efforts. There is no claim that a school
@@ -171,3 +176,22 @@ elevation_m is an unverified row-height override.
 Rows preserve exact seat counts, subtract reserved aisle widths from the
 usable footprint and place seats only in remaining continuous spans.
 Unreasonable or impossible placements fail closed rather than erasing aisles.
+
+## Assisted PDF drawing import
+
+PDF.js is pinned to an exact production dependency and served from two explicit
+allowlisted local endpoints. No third-party document upload or public CDN is used.
+The local browser opens PDFs up to 24 MB and at most 24 pages. Each page is
+rasterized within a bounded pixel budget, retaining the SHA-256 fingerprint
+of the original PDF as its source record. Text position hints are compared to
+section IDs in the imported row inventory, but never manufacture a section
+shape, row or seat. A staff member must select and trace each area. Replacing a
+page invalidates the previously traced geometry after explicit confirmation.
+
+Text-free raster pages, scanned diagrams and complex camera-derived photos
+are supported as manual tracing overlays, not automatic OCR reconstructions.
+The project export embeds the rendered page only within the existing image
+size limit. Reopening large projects without embedded pages requires the
+original PDF attachment and staff review. Synthetic PDF fixtures verify
+actual browser rendering, page selection, label suggestions, and the deliberate
+absence of claims for text-free pages.

@@ -39,6 +39,14 @@ test('static server serves the app and module with correct MIME types', async t 
     const denied=await fetch(`http://127.0.0.1:${port}${hidden}`);
     assert.equal(denied.status,403,'Must not serve '+hidden);
   }
+  const pdfModule=await fetch(`http://127.0.0.1:${port}/__filedmaker/pdf/pdf.mjs`);
+  assert.equal(pdfModule.status,200);
+  assert.match(pdfModule.headers.get('content-type'),/javascript/);
+  const pdfWorker=await fetch(`http://127.0.0.1:${port}/__filedmaker/pdf/pdf.worker.mjs`);
+  assert.equal(pdfWorker.status,200);
+  assert.ok((await pdfWorker.text()).length>10000);
+  const prohibited=await fetch(`http://127.0.0.1:${port}/__filedmaker/pdf/../../package.json`);
+  assert.notEqual(prohibited.status,200);
   const request = await fetch(`http://127.0.0.1:${port}/`, { method: 'POST' });
   assert.equal(request.status, 405);
 });
