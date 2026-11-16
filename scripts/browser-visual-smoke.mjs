@@ -576,11 +576,11 @@ async function main(){
       throw Error('Atomic component group layout failed in live browser: '+
         JSON.stringify(layoutEdited));
     await evaluate("document.querySelector('#undo').click()");
-    const undone=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
-    if(undone!==3)throw Error('Group array did not undo in one step');
+    const undoneGroupCount=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
+    if(undoneGroupCount!==3)throw Error('Group array did not undo in one step');
     await evaluate("document.querySelector('#redo').click()");
-    const redone=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
-    if(redone!==9)throw Error('Group array did not redo as one transaction');
+    const redoneGroupCount=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
+    if(redoneGroupCount!==9)throw Error('Group array did not redo as one transaction');
     await evaluate("document.querySelector('#showPlan').click()");
     await delay(250);
     await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
