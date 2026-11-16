@@ -69,6 +69,23 @@ async function main(){
       if(result.exceptionDetails)throw Error(JSON.stringify(result.exceptionDetails));
       return result.result?.value;
     };
+    const ensureDrawn=async label=>{
+      const count=await evalJs(`(()=>{
+        const canvas=document.querySelector('#viewport3d');
+        if(!canvas||canvas.hidden)return 0;
+        const gl=canvas.getContext('webgl2');
+        if(!gl)return 0;
+        const width=canvas.width,height=canvas.height;
+        const pixels=new Uint8Array(width*height*4);
+        gl.readPixels(0,0,width,height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+        let visible=0;
+        for(let y=0;y<height;y+=8)for(let x=0;x<width;x+=8){
+          if(pixels[(y*width+x)*4+3]>28)visible++;
+        }
+        return visible;
+      })()`);
+      if(count<40)throw Error('Actual WebGL2 framebuffer is blank: '+label+' '+count);
+    };
     await send('Page.enable');await send('Runtime.enable');
     // The home page must offer the same one-click native studio workflow as OSU.
     await send('Page.navigate',{url:'http://127.0.0.1:'+PORT+'/'});
@@ -148,6 +165,7 @@ async function main(){
           c?.width>300 && !c.hidden && !!c.getContext('webgl2');
       })()`));
       await delay(450);
+      await ensureDrawn('native stadium interior '+id);
       const render=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
       const renderPath=join(out,'studio-'+id+'-interior.png');
       writeFileSync(renderPath,Buffer.from(render.data,'base64'));
@@ -180,6 +198,7 @@ async function main(){
         c?.width>300&&!c.hidden&&!!c.getContext('webgl2');
     })()`));
     await delay(450);
+    await ensureDrawn('Ohio State Schottenstein Center lower-bowl mesh');
     const osuOverview=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     const osuImage=join(out,'studio-ohio-state-smoothed-interior.png');
     writeFileSync(osuImage,Buffer.from(osuOverview.data,'base64'));
