@@ -35,7 +35,7 @@ export function editVenueStructureBatch(input,command){
   const axis=['align','distribute','mirror'].includes(action)?
     axisOf(command.axis):null;
   let affectedIds=[...ids];
-  if(action==='translate'||action==='duplicate'){
+  if(['translate','duplicate','array'].includes(action)){
     const dx=finite(command.dx??0,'Horizontal offset',-200,200);
     const dz=finite(command.dz??0,'Depth offset',-200,200);
     const dy=action==='translate'?
@@ -44,12 +44,18 @@ export function editVenueStructureBatch(input,command){
     if(action==='translate'){
       for(const s of selected){s.x+=dx;s.z+=dz;s.y+=dy;}
     }else{
-      if(venue.structures.length+selected.length>200)
+      // A regular array repeats the original selection, retaining its
+      // internal spacing. Every copy receives a new stable ID.
+      const copies=action==='array'?
+        finite(command.copies,'Array copy count',1,20):1;
+      if(!Number.isInteger(copies))throw Error('Array copy count must be whole');
+      if(venue.structures.length+selected.length*copies>200)
         throw Error('Maximum 200 operator structures');
       affectedIds=[];
-      for(const s of selected){
+      for(let index=1;index<=copies;index++)for(const s of selected){
         const copy={...s,id:nextStructureId(venue.structures,s.kind),
-          label:(s.label+' copy').slice(0,80),x:s.x+dx,z:s.z+dz,
+          label:(s.label+' copy '+index).slice(0,80),
+          x:s.x+dx*index,z:s.z+dz*index,
           provenance:'operator-estimated/unverified'};
         venue.structures.push(copy);
         affectedIds.push(copy.id);
