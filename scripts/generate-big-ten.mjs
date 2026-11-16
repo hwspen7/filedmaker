@@ -118,6 +118,15 @@ function reportFor(venue,packageResult){
     modeledSectionIdCount:model.proceduralSpec.sectionMap
       ?model.proceduralSpec.sectionMap.flatMap(groups=>groups.flatMap(group=>group.sectionIds)).length
       :model.proceduralSpec.sections,
+    osuVisualParity:{
+      complete:false,
+      chartSectionIdsVerified:Boolean(SECTION_PROFILES[venue.id]?.chartIds==='documented'),
+      sectionBoundariesDigitized:false,
+      sectionRowTopologyVerified:false,
+      exteriorPhotoCalibrated:false,
+      seatViewReferenceValidated:false,
+      reason:'Capacity-fitting and chart labels do not establish the hand-traced bowl and building fidelity of the OSU example.'
+    },
     publishedCapacity:{value:target,configuration:venue.capacity.configuration,
       notes:venue.capacity.notes,sourceId:venue.capacity.sourceId,
       alternates:venue.capacity.alternates??[]},
@@ -235,7 +244,9 @@ export function generateBigTenBatch(catalog,{out,only=null,html=false,strict=fal
       capacityErrorPct:r.capacityErrorPct,withinTolerance:r.capacityErrorPct/100<=maxError,
       report:r.schoolId+'/geometry-report.json',
       html:html?r.schoolId+'/venue-preview.html':null})),
-    notice:'No official section-level or seat-level coordinates are asserted.'
+    chartIdentifiedArenas:reports.filter(r=>r.sectionMapStatus==='official-section-ids/estimated-angles').length,
+    osuParityCompleted:reports.filter(r=>r.osuVisualParity.complete).length,
+    notice:'No official section-level or seat-level coordinates are asserted. OSU-level visual parity requires digitized section outlines and per-venue building calibration.'
   };
   if(!dry){
     writeFileSync(join(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
