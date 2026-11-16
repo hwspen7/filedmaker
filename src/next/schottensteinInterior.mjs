@@ -176,13 +176,10 @@ export function addSchottensteinBowl(add,color,footprints,rows,features,spanAt) 
   const tread=color('#d9d4cd'), fascia=color('#807a74');
   const suite=color('#555152'), glass=color('#292d31');
   const led=color('#9c475b');
-  // The entry level has distinct seating banks close to the court.
-  // The elevated tiers use the continuous decks instead of row slabs.
-  for(const {left,right,y,depth,tier} of rows){
-    if(tier!==0)continue;
-    const slab=Math.min(y+.28,.82);
-    spanBox(add,left,right,y-slab*.5,slab,depth,tread);
-  }
+  // Physical OSU steps (including the lower bowl) are all supplied by
+  // buildSchottensteinArchitecture from actual seat rows. Do not overlay
+  // the old mismatched rectangular tread boxes: they created side seams,
+  // doubled concrete and irregular planar offsets at section boundaries.
 
   addChartRegions(add,color,features,spanAt);
 
