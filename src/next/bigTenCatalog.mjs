@@ -16,34 +16,21 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
   if(layout){
     base.tiers=structuredClone(layout.tiersOverride);
     base.sectionMap=structuredClone(layout.tiers);
-    if(interior){
-      if(interior.upperSubsections){
-        if(base.sectionMap.length!==2||base.sectionMap[1].length!==1)
-          throw Error('Unsupported upper subsection replacement for '+venue.id);
-        base.sectionMap[1][0].sectionIds=[...interior.upperSubsections];
-      }
-      for(let tier=0;tier<base.sectionMap.length;tier++){
-        const groups=base.sectionMap[tier],sets=interior.sectionWeights?.[tier];
-        if(!sets||sets.length!==groups.length)
-          throw Error('Incomplete interior section-width map: '+venue.id+' tier '+tier);
-        for(let k=0;k<groups.length;k++){
-          if(sets[k].length!==groups[k].sectionIds.length)
-            throw Error('Interior section weights do not match chart: '+venue.id+' tier '+tier);
-          groups[k].weights=[...sets[k]];
-        }
-      }
-    }
-    if(interior&&!chart)throw Error('First-wave interior requires a verified section-chart order: '+venue.id);
+    // Verified chart identities and clockwise adjacency are authoritative.
+    // Never re-derive real section positions from a fictional section count or
+    // the old cyclic width-pattern templates.
+    if(interior&&!chart)
+      throw Error('First-wave interior requires a verified section-chart order: '+venue.id);
     if(chart){
       if(!/^https:\/\//.test(chart.source)||chart.spatialPrecision!=='section-label-order-only')
         throw Error('Chart placement source or evidence precision missing for '+venue.id);
       if(!Array.isArray(chart.tierGroups)||chart.tierGroups.length!==base.tiers.length)
         throw Error('Official chart tier count mismatch for '+venue.id);
-      const weights=new Map();
-      for(const groups of base.sectionMap)for(const group of groups)
-        group.sectionIds.forEach((id,i)=>weights.set(id,group.weights?.[i]??1));
       const official=new Set(chart.verifiedSections);
-      const found=new Set(chart.tierGroups.flatMap(groups=>groups.flatMap(g=>g.sectionIds)));
+      if(official.size!==chart.verifiedSections.length)
+        throw Error('Official section list contains duplicates: '+venue.id);
+      const mapped=chart.tierGroups.flatMap(groups=>groups.flatMap(g=>g.sectionIds));
+      const found=new Set(mapped);
       if(found.size!==official.size||[...found].some(id=>!official.has(id)))
         throw Error('Chart section identity mismatch for '+venue.id);
       const omissions=new Set(chart.unmodeledSections??[]);
@@ -53,8 +40,11 @@ export function toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignat
         const maxRows=Math.max(...groups.map(g=>g.rowCount));
         if(base.tiers[tierIndex].rows<maxRows)
           base.tiers[tierIndex].rows=maxRows;
-        return groups.map(g=>({...structuredClone(g),
-          weights:g.sectionIds.map(id=>weights.get(id)??1)}));
+        return groups.map(g=>({
+          ...structuredClone(g),
+          // Estimates are allowed only when explicitly stored and labeled.
+          weights:g.weights??g.sectionIds.map(()=>1)
+        }));
       });
     }
     base.sections=Math.max(...base.sectionMap.map(groups=>
