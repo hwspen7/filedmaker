@@ -534,6 +534,12 @@ async function main(){
       !accuracy.help||!accuracy.hidden)
       throw Error('Metric grid and interactive beginner help are not functional: '+
         JSON.stringify(accuracy));
+    const quickPanel=await evaluate("(()=>{const panel=document.querySelector('#quickObjectInspector');const displayed=!panel.hidden;document.querySelector('#quickYaw').value='15';document.querySelector('#quickApply').click();const angle=document.querySelector('#structureYaw').value;document.querySelector('#quickClose').click();const dismissed=panel.hidden;document.querySelector('#objectPropertiesToggle').click();return {displayed,angle,dismissed,restored:!panel.hidden,status:document.querySelector('#workStatus').textContent}})()");
+    if(!quickPanel.displayed||quickPanel.angle!=='15'||!quickPanel.dismissed||
+      !quickPanel.restored||quickPanel.status.includes('rejected'))
+      throw Error('Floating 2D/3D object properties are not editable: '+
+        JSON.stringify(quickPanel));
+    console.log('studio: on-canvas precise object properties, apply and dismiss verified');
     await evaluate("document.querySelector('#show3d').click()");
     const pick3d=await poll(async()=>{
       const v=await evaluate("(()=>{document.querySelector('#structureSelect').dispatchEvent(new Event('change'));const c=document.querySelector('#modelCanvas');const r=c.getBoundingClientRect();return {id:c.dataset.operatorId,x:Number(c.dataset.operatorScreenX),y:Number(c.dataset.operatorScreenY),left:r.left,top:r.top,width:r.width,height:r.height,startY:Number(document.querySelector('#structureY').value),gizmo:!document.querySelector('#gizmoCanvas').hidden}})()");
