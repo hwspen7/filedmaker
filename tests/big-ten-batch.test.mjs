@@ -467,6 +467,12 @@ test('eight school section sets and clockwise positions are exactly chart-backed
   const first=iowa.sectionMap[0][0].sectionIds,second=iowa.sectionMap[1][0].sectionIds;
   assert.equal(first.length,28);
   assert.deepEqual(first,second,'Iowa has 28 continuous section columns, not separate lettered floors');
+  assert.equal(iowa.tiers[0].gap,0,
+    'A continuous Iowa seating column cannot contain a fabricated full 360-degree concourse');
+  const iowaPlan=generateVenuePackage(iowa).model;
+  assert.equal(iowaPlan.interiorSectionFootprints.length,28,
+    'There must be exactly one clickable Iowa section footprint per official section');
+
   assert.deepEqual(first.slice(0,5),['A','AA','BB','CC','DD']);
   assert.deepEqual(first.slice(-4),['E','D','C','B']);
   const illinois=toProceduralSpec(get('illinois'));
