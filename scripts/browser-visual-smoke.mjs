@@ -317,9 +317,12 @@ async function main(){
 
     // New GPT-style case library: actual browse, category filter, and search.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/'});
-    const library=await poll(async()=>await evaluate(
-      "({cards:document.querySelectorAll('#caseGrid .case-card').length,count:document.querySelector('#caseCount')?.textContent})"
-    ),50);
+    const library=await poll(async()=>{
+      const state=await evaluate(
+        "({cards:document.querySelectorAll('#caseGrid .case-card').length,count:document.querySelector('#caseCount')?.textContent,ready:document.readyState})"
+      );
+      return state?.cards===10&&state.count==='10'?state:null;
+    },65);
     if(library.cards!==10||library.count!=='10')
       throw Error('New case library does not show all ten cases: '+JSON.stringify(library));
     await delay(260);
@@ -335,9 +338,12 @@ async function main(){
 
     // Real school Aiken: launch a *provisional* interactive model from the case library.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?example=aiken'});
-    const aiken=await poll(async()=>await evaluate(
-      "({ready:document.documentElement.dataset.workbenchReady,count:document.querySelector('#mappedCount')?.textContent,sections:document.querySelector('#sectionCount')?.textContent,stage:document.documentElement.dataset.activeStage,context:document.querySelector('#caseContextText')?.textContent,qa:document.querySelector('#qa')?.textContent})"
-    ),70);
+    const aiken=await poll(async()=>{
+      const state=await evaluate(
+        "({ready:document.documentElement.dataset.workbenchReady,count:document.querySelector('#mappedCount')?.textContent,sections:document.querySelector('#sectionCount')?.textContent,stage:document.documentElement.dataset.activeStage,context:document.querySelector('#caseContextText')?.textContent,qa:document.querySelector('#qa')?.textContent})"
+      );
+      return state?.count==='1,418'&&state?.sections==='4'&&state?.stage==='model'?state:null;
+    },75);
     if(aiken.count!=='1,418'||aiken.sections!=='4'||aiken.stage!=='model'||
        !aiken.context.includes('assumed')||!aiken.qa.includes('PROJECT NOTE'))
       throw Error('Aiken unverified 3D example lost its data and disclaimer: '+JSON.stringify(aiken));
@@ -354,9 +360,12 @@ async function main(){
 
     // Real source-only case should never manufacture a model.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?case=wills-point'});
-    const sourceCase=await poll(async()=>await evaluate(
-      "({ready:document.documentElement.dataset.workbenchReady,text:document.querySelector('#caseContextText')?.textContent,source:document.querySelector('#caseContextSource')?.href,seats:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage})"
-    ),50);
+    const sourceCase=await poll(async()=>{
+      const state=await evaluate(
+        "({ready:document.documentElement.dataset.workbenchReady,text:document.querySelector('#caseContextText')?.textContent,source:document.querySelector('#caseContextSource')?.href,seats:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage})"
+      );
+      return state?.ready==='true'&&state?.text?.includes('seat inventory')?state:null;
+    },60);
     if(!sourceCase.text.includes('no complete seat inventory')||sourceCase.seats!=='0'||
        sourceCase.stage!=='source'||!sourceCase.source.includes('wills-point'))
       throw Error('Source-only case has invented geometry: '+JSON.stringify(sourceCase));
@@ -365,9 +374,12 @@ async function main(){
     writeFileSync(join(dir,'case-real-source-review.png'),Buffer.from(noSeats.data,'base64'));
 
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/?example=fictional'});
-    const synthetic=await poll(async()=>await evaluate(
-      "({count:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage})"
-    ),60);
+    const synthetic=await poll(async()=>{
+      const state=await evaluate(
+        "({count:document.querySelector('#mappedCount')?.textContent,stage:document.documentElement.dataset.activeStage})"
+      );
+      return state?.count==='1,500'&&state?.stage==='model'?state:null;
+    },70);
     if(synthetic.count!=='1,500'||synthetic.stage!=='model')
       throw Error('Fictional demo deep link is not interactive: '+JSON.stringify(synthetic));
     console.log('workbench UI: four-stage navigation and Aiken/fictional/source-only case deep links verified');
