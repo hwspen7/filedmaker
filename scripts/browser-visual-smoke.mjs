@@ -585,6 +585,23 @@ async function main(){
     await delay(250);
     await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
       writeFileSync(join(dir,'component-multi-selection-and-array.png'),Buffer.from(frame.data,'base64')));
+    const assembled=await evaluate("(()=>{const root=document.querySelector('#structureAssemblyTools');root.open=true;document.querySelector('#structureAssemblyPreset').value='press_station';document.querySelector('#structureAssemblyX').value='0';document.querySelector('#structureAssemblyZ').value='0';document.querySelector('#structureAssemblyAdd').click();return {count:document.querySelector('#structureSelect').options.length,status:document.querySelector('#workStatus').textContent,seats:document.querySelector('#mappedCount').textContent,selected:[...document.querySelector('#structureMultiSelect').selectedOptions].length}})()");
+    if(assembled.count!==13||assembled.seats!=='1,499'||assembled.selected!==4||
+      assembled.status.includes('rejected'))
+      throw Error('Quick-build assembly did not add four seat-safe editable parts: '+
+        JSON.stringify(assembled));
+    await evaluate("document.querySelector('#undo').click()");
+    const undoAssemblyCount=await poll(async()=>await evaluate(
+      "document.querySelector('#structureSelect').options.length"),30);
+    if(undoAssemblyCount!==9)throw Error('Quick-build assembly did not undo atomically');
+    await evaluate("document.querySelector('#redo').click()");
+    const redoAssemblyCount=await poll(async()=>await evaluate(
+      "document.querySelector('#structureSelect').options.length"),30);
+    if(redoAssemblyCount!==13)throw Error('Quick-build assembly did not redo atomically');
+    await delay(180);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'quick-build-press-station.png'),Buffer.from(frame.data,'base64')));
+    console.log('studio: quick-build composite assembly, seat safety and reversible insertion verified');
     console.log('studio: atomic multi-object alignment, movement, arrays, selection persistence and undo/redo verified');
 
     console.log('studio: court palette, dimensions, paint-zone geometry, boundary rejection, plan direct-edit and 23 searchable components verified');
