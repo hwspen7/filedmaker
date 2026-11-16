@@ -37,6 +37,14 @@
         <option value="complex">Multi-sport training complex</option>
       </select>
       <button id="newProject" class="full secondary">Create starter layout</button>
+      <details class="hall-dimensions">
+        <summary>Hall / site dimensions</summary>
+        <div class="field-row">
+          <label>Width (m)<input id="floorWidth" type="number" min="8" max="150" step="1"></label>
+          <label>Length (m)<input id="floorLength" type="number" min="12" max="160" step="1"></label>
+        </div>
+        <button id="applyFloor" class="full">Resize hall footprint</button>
+      </details>
       <p class="hint">Switching layouts starts a new design. Your current work is not replaced unless you confirm.</p>
     </section>
     <section class="library">
@@ -119,6 +127,19 @@
         <button id="duplicate">Duplicate</button>
         <button id="remove" class="danger">Delete</button>
       </div>
+      <details class="array-panel">
+        <summary>Repeat / array this component</summary>
+        <p class="hint">Build rows of courts, seats or equipment with one operation.</p>
+        <div class="field-row">
+          <label>Columns<input id="arrayColumns" type="number" value="3" min="1" max="10"></label>
+          <label>Rows<input id="arrayRows" type="number" value="1" min="1" max="10"></label>
+        </div>
+        <div class="field-row">
+          <label>Across (m)<input id="arrayStepX" type="number" value="25" step="0.5"></label>
+          <label>Along (m)<input id="arrayStepZ" type="number" value="30" step="0.5"></label>
+        </div>
+        <button id="applyArray" class="full secondary">Create repeated objects</button>
+      </details>
       <p class="hint">Edits update the 3D scene and seat count immediately. Changes are undoable.</p>
     </div>
     <div class="inspector-footer">
