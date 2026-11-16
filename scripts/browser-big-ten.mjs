@@ -95,7 +95,21 @@ async function main(){
       const target=join(out,venue+'-3d.png');
       writeFileSync(target,Buffer.from(image.data,'base64'));
       if(statSync(target).size<18000)throw Error('Empty 3D WebGL screenshot '+venue);
-      await evalJs(`(()=>{
+      const roof=await evalJs(`(()=>{
+        const payload=JSON.parse(document.querySelector('#payload').textContent);
+        const meshes=payload.packedArchitecture||{};
+        return ['roofWhite','roofCopper','roofSlate','roofPale']
+          .some(key=>typeof meshes[key]==='string'&&meshes[key].length>1000);
+      })()`);
+      if(!roof)throw Error('Missing source-specific exterior roof mesh: '+venue);
+      await evalJs("document.querySelector('#exterior').click()");
+      await poll(async()=>await evalJs("document.querySelector('#exterior').classList.contains('active')"));
+      await delay(650);
+      const outside=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      const exteriorFile=join(out,venue+'-exterior.png');
+      writeFileSync(exteriorFile,Buffer.from(outside.data,'base64'));
+      if(statSync(exteriorFile).size<18000)throw Error('Empty exterior screenshot '+venue);
+            await evalJs(`(()=>{
         const payload=JSON.parse(document.querySelector('#payload').textContent);
         const seat=${venue==='michigan'?"payload.seats.find(s=>s.sectionId==='205'&&s.row==='22')":"null"} ||
           payload.seats.find(s=>s.tier===0&&s.number===4)||payload.seats[0];
