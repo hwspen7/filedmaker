@@ -130,7 +130,7 @@ test('Indiana Assembly Hall has separated opposing stands, not a continuous unif
   for(const id of ['A','F','G','M','AA','FF','GG','MM'])assert.ok(ids.has(id),id);
   const inMissingArc=model.seats.filter(s=>s.tier===0&&(()=>{
     const a=(Math.atan2(s.z,s.x)+Math.PI*2)%(Math.PI*2);
-    return a>4.28&&a<5.05;
+    return a>2.70&&a<3.48;
   })());
   assert.equal(inMissingArc.length,0,'No seats should fill the structural side-stand gap');
 });
@@ -157,7 +157,7 @@ test('unverified geometry cannot claim OSU-quality chart calibration by seat-cou
 test('overlapping chart arc groups fail normalization',()=>{
   const mapped=toProceduralSpec(get('indiana'));
   const invalid=structuredClone(mapped);
-  invalid.sectionMap[0][1].startAngle=3;
+  invalid.sectionMap[0][1].startAngle=1.58;
   assert.throws(()=>GeometryEngine.normalize(invalid),/Overlapping mapped section arcs/);
 });
 
@@ -175,7 +175,7 @@ test('Indiana 3D structural treads do not bridge the empty side-stand gap',()=>{
   const points=plan.architectureGeometry.decks;
   for(let i=0;i<points.length;i+=6){
     const a=(Math.atan2(points[i+2],points[i])+Math.PI*2)%(Math.PI*2);
-    assert.ok(!(a>4.40&&a<4.95),
+    assert.ok(!(a>2.82&&a<3.36),
       'Unoccupied side-stand gap must not have a gray structural floor');
   }
 });
