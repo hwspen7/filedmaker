@@ -131,11 +131,15 @@ try{
         const state=await evaluate("({venue:document.querySelector('#workspaceName').textContent,"+
           "seats:document.querySelector('#mappedCount').textContent,"+
           "sections:document.querySelector('#sectionCount').textContent,"+
-          "qa:document.querySelector('#qa').textContent})");
+          "qa:document.querySelector('#qa').textContent,"+
+          "pdfStatus:document.querySelector('#pdfStatus').textContent,"+
+          "source:document.querySelector('#sourceLedger').textContent})");
         return state.seats==='1,418'&&state.sections==='4'?state:null;
       },55);
       if(!metadata.estimated||!ready.venue.includes('operator-estimated')||
-        !ready.qa.includes('review'))
+        !ready.qa.includes('review')||!ready.qa.includes('PROJECT NOTE · QA ONLY')||
+        !ready.source.includes('No hashed source files attached')||
+        !ready.pdfStatus.includes('No active PDF reader'))
         throw Error('Unverified operator draft lost estimation flags: '+JSON.stringify(ready));
       await evaluate("document.querySelector('#show3d').click()");
       const visible=await poll(async()=>await evaluate(

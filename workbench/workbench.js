@@ -39,6 +39,7 @@ async function restoreDocument(next){
   }else if(checked.plan.name===oldFile)restoredImage=oldImage;
   if(pdfHandle){closePdfFile(pdfHandle).catch(()=>{});pdfHandle=null;}
   $('pdfPageWrap').hidden=true;
+  $('pdfStatus').textContent='No active PDF reader. Reattach the source PDF to review another page.';
   venue=checked;image=restoredImage;selectedSeat=null;selectedSection='';
   registration=image&&venue.calibration.corners.length===4?
     registerCourt(venue.calibration.corners,venue.court.width,venue.court.length):null;
@@ -261,7 +262,9 @@ function repaint(){
   $('sourceLedger').textContent=venue.sources?.length?
     venue.sources.map(item=>item.role+' · '+item.name+' · SHA-256 '+item.sha256.slice(0,12)+
       ' · '+item.review).join('\n'):
-      'No hashed source files. The fixture is synthetic.';
+      (venue.rows.length||venue.sections.length?
+        'No hashed source files attached. Verify and reattach original evidence before delivery.':
+        'No source files attached.');
   let calibrationNote='';
   if(venue.calibration.corners.length===4){
     const state=assessRegistration(venue.calibration.corners,venue.court.width,
@@ -278,10 +281,12 @@ function repaint(){
       preview.quality.reviewCount+' review findings',
     ...preview.quality.issues.slice(0,16).map(i=>i.severity.toUpperCase()+' '+i.code+' · '+i.detail),
     ...preview.warnings.slice(0,5),
-    ...sourceStatus.issues,calibrationNote
+    ...sourceStatus.issues,calibrationNote,
+    ...venue.notes.slice(0,5).map(note=>'PROJECT NOTE · '+note)
   ].filter(Boolean).join('\n'):
     [venue.rows.length?'Import completed. Trace each row-bearing section and generate a model.':
-    'Awaiting source rows and traced sections.',...sourceStatus.issues,calibrationNote].filter(Boolean).join('\n');
+    'Awaiting source rows and traced sections.',...sourceStatus.issues,calibrationNote,
+    ...venue.notes.slice(0,5).map(note=>'PROJECT NOTE · '+note)].filter(Boolean).join('\n');
   draw();
 }
 function tryPreview(){
@@ -292,7 +297,8 @@ function tryPreview(){
     preview=next;
     if(renderer)renderer.load(preview.plan);
     if(viewMode!=='plan')open3d(viewMode);
-    message('Generated '+number(next.seats.length)+' source-based positions. Geometry remains estimated.');
+    message('Generated '+number(next.seats.length)+
+      ' positions from current project rows. Source and elevation verification remain required.');
   }catch(e){preview=null;message(e.message,true);}
   repaint();
 }
@@ -583,6 +589,7 @@ $('fixture').onclick=()=>{
   venue=fictionalGym();registration=null;image=null;preview=null;selectedSection='';
   if(pdfHandle){closePdfFile(pdfHandle).catch(()=>{});pdfHandle=null;}
   $('pdfPageWrap').hidden=true;
+  $('pdfStatus').textContent='No active PDF. Import a source drawing for manual review.';
   recordEdit(before,'Load fictional geometry fixture');
   editorMode='select';draftPoints=[];sync();tryPreview();
   message('Loaded an explicitly fictional 1,500-seat geometry exercise.');
@@ -629,6 +636,7 @@ $('openProject').onchange=async event=>{
     }
     if(pdfHandle){await closePdfFile(pdfHandle);pdfHandle=null;}
     $('pdfPageWrap').hidden=true;
+    $('pdfStatus').textContent='No active PDF reader. Reattach the source PDF to review another page.';
     venue=next;image=loadedImage;registration=image&&next.calibration.corners.length===4?
       registerCourt(next.calibration.corners,next.court.width,next.court.length):null;
     preview=null;selectedSeat=null;selectedSection='';editorMode='select';draftPoints=[];
