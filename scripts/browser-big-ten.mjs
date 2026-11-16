@@ -75,19 +75,28 @@ async function main(){
     await poll(async()=>await evalJs(`(()=>{
       const ids=[...document.querySelectorAll('[data-bigten]')].map(b=>b.dataset.bigten);
       return ids.length===17 && !!document.querySelector('[data-preset="schott"]') &&
-        !!document.querySelector('[data-view="exterior"]') && !!document.querySelector('#title');
+        !!document.querySelector('[data-view="exterior"]') &&
+        typeof document.querySelector('[data-bigten="illinois"]')?.onclick==='function' &&
+        !!document.querySelector('#title');
     })()`),75);
     for(const [id,arena] of [['illinois','State Farm Center'],
       ['purdue','Mackey Arena'],['washington','Alaska Airlines Arena']]){
       await evalJs(`document.querySelector('[data-bigten="${id}"]').click()`);
-      await poll(async()=>await evalJs(`(()=>{
-        const title=document.querySelector('#title')?.textContent;
-        const active=document.querySelector('[data-bigten="${id}"]')?.classList.contains('active');
-        const canvas=document.querySelector('#viewport3d');
-        return title===${JSON.stringify(arena)} && active &&
-          document.querySelector('#visualCount')?.textContent!=='—' &&
-          canvas?.width>200 && canvas?.height>200 && !!canvas.getContext('webgl2');
-      })()`),100);
+      await poll(async()=>{
+        const info=await evalJs(`(()=>{
+          const canvas=document.querySelector('#viewport3d');
+          return {
+            title:document.querySelector('#title')?.textContent,
+            active:document.querySelector('[data-bigten="${id}"]')?.classList.contains('active'),
+            seats:document.querySelector('#visualCount')?.textContent,
+            canvas:!!canvas&&canvas.width>200&&canvas.height>200&&!!canvas.getContext('webgl2'),
+            warning:document.querySelector('#warnings')?.textContent
+          };
+        })()`);
+        if(info?.warning?.startsWith('Unable to open'))throw Error(info.warning);
+        return info?.title===${JSON.stringify(arena)}&&info?.active&&
+          info?.seats!=='—'&&info?.canvas;
+      },100);
       await evalJs("document.querySelector('[data-view=exterior]').click()");
       await poll(async()=>await evalJs(`(()=>{
         const selected=document.querySelector('[data-view=exterior]')?.classList.contains('current');
