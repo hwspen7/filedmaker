@@ -13,7 +13,7 @@
   <a class="brand" href="../../"><span class="mark">F</span><span>FiledMaker <small>Venue Builder</small></span></a>
   <div class="project-heading">
     <input id="projectName" aria-label="Project name" value="School basketball venue" maxlength="120">
-    <span class="subheading">Drag components in 3D · No drawings or seat spreadsheets required</span>
+    <span class="subheading">Edit curved stands, multiple courts, sports gear and events in one scene</span>
   </div>
   <nav class="top-actions" aria-label="Project actions">
     <button id="undo" title="Undo (Ctrl+Z)">Undo</button>
@@ -33,14 +33,42 @@
         <option value="basketball">Basketball</option>
         <option value="concert">Concert / performance</option>
         <option value="community">Community event</option>
+        <option value="training">Multi-court basketball training hall</option>
+        <option value="complex">Multi-sport training complex</option>
       </select>
       <button id="newProject" class="full secondary">Create starter layout</button>
       <p class="hint">Switching layouts starts a new design. Your current work is not replaced unless you confirm.</p>
     </section>
     <section class="library">
       <h2>Build with components</h2>
-      <p class="hint">Click to add, or drag a component into the scene.</p>
+      <p class="hint">Search, click or drag components into the 3D scene.</p>
+      <input id="componentSearch" type="search" placeholder="Search courts, seating, equipment…" aria-label="Search component library">
       <div id="library" class="part-library"></div>
+    </section>
+    <section class="assembly-library">
+      <h2>One-click layout assemblies</h2>
+      <p class="hint">Add a court with hoops, a fitness zone, or a complete event production set.</p>
+      <div id="assemblies" class="assembly-list"></div>
+    </section>
+    <section>
+      <h2>Import a 3D asset</h2>
+      <p class="hint">Import a small OBJ mesh you are permitted to use. The model is embedded into your project.</p>
+      <label for="assetLicense">Asset license / permission</label>
+      <select id="assetLicense">
+        <option value="Unverified">Unverified (review before sharing)</option>
+        <option value="CC0">CC0 / public domain</option>
+        <option value="CC-BY">CC BY (attribution required)</option>
+        <option value="Authorized">Owned or separately authorized</option>
+      </select>
+      <label class="file-button full" for="assetFile">Import OBJ model
+        <input id="assetFile" type="file" accept=".obj,text/plain" hidden>
+      </label>
+      <details class="asset-links"><summary>Free model libraries</summary>
+        <p>Verify each model's license before redistributing.</p>
+        <a href="https://kenney.nl/assets" rel="noopener noreferrer" target="_blank">Kenney (CC0 kits)</a>
+        <a href="https://polyhaven.com/models" rel="noopener noreferrer" target="_blank">Poly Haven (CC0)</a>
+        <a href="https://quaternius.com" rel="noopener noreferrer" target="_blank">Quaternius (restrictions apply)</a>
+      </details>
     </section>
     <section class="objects">
       <div class="section-title"><h2>Scene objects</h2><span id="objectCount">0</span></div>
