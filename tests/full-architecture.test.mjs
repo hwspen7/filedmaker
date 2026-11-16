@@ -5,6 +5,7 @@ import { generateSeats } from '../src/model.mjs';
 import { polygonSpans } from '../src/schottensteinSeating.mjs';
 import { fitRearSeatEnvelope } from '../src/next/engines/geometry.mjs';
 import { buildVenuePlan } from '../src/next/venuePlan.mjs';
+import { buildSchottensteinArchitecture } from '../src/next/schottensteinArchitecture.mjs';
 import { NativeVenueRenderer } from '../src/next/webgl.js';
 
 const build = () => buildVenuePlan(generateSeats({
