@@ -382,6 +382,39 @@ export function importOBJAsset(project,text,options={}){
   return validateProject(result);
 }
 
+
+export function resizeFloor(project,width,length){
+  const result=clone(validateProject(project));
+  result.floor.width=finite(width,8,150,'Floor width');
+  result.floor.length=finite(length,12,160,'Floor length');
+  return validateProject(result);
+}
+
+export function arrayPart(project,id,options={}){
+  const result=clone(validateProject(project));
+  const source=result.parts.find(p=>p.id===id);
+  if(!source)throw Error('Select a component to repeat');
+  const columns=whole(options.columns??2,1,10,'Array columns');
+  const rows=whole(options.rows??1,1,10,'Array rows');
+  const stepX=finite(options.stepX??24,-100,100,'Array horizontal spacing');
+  const stepZ=finite(options.stepZ??30,-100,100,'Array longitudinal spacing');
+  if(columns*rows<=1)throw Error('Array needs more than one position');
+  if(columns>1&&Math.abs(stepX)<.3)throw Error('Column spacing is too small');
+  if(rows>1&&Math.abs(stepZ)<.3)throw Error('Row spacing is too small');
+  for(let row=0;row<rows;row++){
+    for(let column=0;column<columns;column++){
+      if(!row&&!column)continue;
+      const part=clone(source);
+      part.id=idFor(result,part.kind);
+      part.label=source.label.slice(0,68)+' '+(row+1)+'-'+(column+1);
+      part.x=Math.round((source.x+column*stepX)*10000)/10000;
+      part.z=Math.round((source.z+row*stepZ)*10000)/10000;
+      result.parts.push(part);
+    }
+  }
+  return validateProject(result);
+}
+
 export function exportProject(project){return JSON.stringify(validateProject(project),null,2)+'\n';}
 export function importProject(json){
   const data=typeof json==='string'?JSON.parse(json):json;
