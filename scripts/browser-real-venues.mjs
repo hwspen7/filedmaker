@@ -125,7 +125,7 @@ try{
         "const transfer=new DataTransfer();transfer.items.add(file);"+
         "const el=document.querySelector('#openProject');el.files=transfer.files;"+
         "el.dispatchEvent(new Event('change',{bubbles:true}));"+
-        "return {rows:draft.rows.length,estimated:draft.notes.some(x=>x.includes('ASSUMED'))}})()";
+        "return {rows:draft.rows.length,estimated:draft.rows.every(r=>r.row.startsWith('ASSUMED-'))}})()";
       const metadata=await evaluate(load);
       const ready=await poll(async()=>{
         const state=await evaluate("({venue:document.querySelector('#workspaceName').textContent,"+
