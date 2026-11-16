@@ -560,29 +560,29 @@
       "outline": "rectangle",
       "tierProfiles": [
         {
-          "widthScale": 1.07,
-          "lengthScale": 0.975,
-          "radialInset": 0,
+          "widthScale": 0.955,
+          "lengthScale": 0.95,
+          "radialInset": -0.25,
           "rake": 0.15,
           "wave": 0.07
         },
         {
-          "widthScale": 1.06,
-          "lengthScale": 0.99,
-          "radialInset": -0.25,
+          "widthScale": 0.95,
+          "lengthScale": 0.96,
+          "radialInset": -0.42,
           "rake": 0.35,
           "wave": 0.07
         },
         {
-          "widthScale": 1.045,
-          "lengthScale": 1.01,
-          "radialInset": -0.5,
+          "widthScale": 0.945,
+          "lengthScale": 0.98,
+          "radialInset": -0.55,
           "rake": 0.66,
           "wave": 0.08
         }
       ],
       "source": "https://scarletknights.com/sports/2017/6/11/tickets-rac-seating-html",
-      "notes": "Rutgers Athletics confirms 100 courtside and student zones, 201–217 mezzanine and 301–317 promenade around the RAC. The 100/200/300 area boundaries and court loges are not surveyed.",
+      "notes": "Rutgers Athletics confirms 100 courtside and student zones, 201–217 mezzanine and 301–317 promenade around the RAC. The 100/200/300 area boundaries and court loges are not surveyed. Previous schematic rectangle exceeded the 8,000 published capacity even at the permitted maximum pitch. Envelope is compacted conservatively; no verified sections or seat gaps were removed.",
       "sectionRules": [],
       "notches": [],
       "seatTypes": [],
