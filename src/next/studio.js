@@ -217,9 +217,11 @@ function renderProject(){
       link.dataset.role='official-section-chart';
       $('capacityNote').append(' ',link);
       const omitted=project.proceduralVenue.provenance.unmodeledDocumentedSections??[];
+      const nonseats=project.proceduralVenue.provenance.nonSeatChartLabels??[];
       $('capacityNote').append(document.createTextNode(
         ' · Verified: section labels and order only. Section boundaries, rows and seats remain estimated.'+
-        (omitted.length?' Not yet modeled: '+omitted.join(', ')+'.':'')
+        (omitted.length?' Documented but unmodeled: '+omitted.join(', ')+'.':'')+
+        (nonseats.length?' Not a spectator section: '+nonseats.join(', ')+'.':'')
       ));
     }
     $('referenceViews').hidden=!model.sectionFootprints;
