@@ -8,12 +8,24 @@ const scanArtifacts = {
 };
 
 const protectedBanks = new Set([105,114,131]);
-const mediaBack = new Map([[321,23.8],[322,23.6],[323,24.4],[324,24.5],[325,25.4],[326,26.2]]);
+// The short press-side stands have been visually restored to the same U-row
+// elevation as neighbouring upper stands. Source chart pixels remain intact.
+// These seating extents are illustrative, not a verified ticket inventory.
+const filledUpperBanks = new Map([
+  [321,[660,629,723,629,723,727,660,727]],
+  [322,[587,627,650,627,650,727,587,727]],
+  [323,[513,627,577,627,577,727,513,727]],
+  [324,[439,630,503,630,503,727,439,727]],
+  [325,[395,622,429,628,429,726,369,716]],
+  [326,[355,602,385,618,363,713,312,682]]
+]);
 export const ACCESS_FRONT_DEPTH = .48;
 const accessBanks = new Set([304,307,314,331]);
 const alignToRear = new Set([313,315,320]);
 
 export function refineSchottensteinContour(section, outlines) {
+  const filled=filledUpperBanks.get(section);
+  if(filled)return [filled];
   const artifacts = scanArtifacts[section];
   if (!artifacts) return outlines;
   return outlines.map(outline => {
@@ -28,7 +40,7 @@ export function refineSchottensteinContour(section, outlines) {
 
 export function schottensteinRowHeading(section, front, rear) {
   if (alignToRear.has(section)) return rear;
-  if (section < 200 || mediaBack.has(section)) {
+  if (section < 200) {
     return {x:front.x+rear.x,z:front.z+rear.z};
   }
   // The two bearings describe the same bank. Weight them by direction
@@ -54,9 +66,9 @@ function broaderEnd(start, limit, direction, width, target) {
 // keyed inventories and documented voids on their original boundaries.
 export function refineSchottensteinBank(section, tier, near, far, rows, spansAt) {
   if (protectedBanks.has(section)||accessBanks.has(section))return {near,far};
-  const minimum = mediaBack.has(section)?Math.min(.60,(far-near)/rows*.84):[.47,.58,.65][tier];
+  const minimum=[.47,.58,.65][tier];
   const totalAdjustment=Math.max(0,(far-near)-minimum*rows);
-  const rearLimit=Math.min(totalAdjustment,mediaBack.has(section)?1.75:[.85,1.15,2.25][tier]);
+  const rearLimit=Math.min(totalAdjustment,[.85,1.15,2.25][tier]);
   const rear=broaderEnd(far,rearLimit,-1,end=>runWidth(spansAt,end-(end-near)/(2*rows)),.90);
   const firstWidth=start=>runWidth(spansAt,start+(rear-start)/(2*rows));
   const pitch=(rear-near)/rows;
@@ -84,15 +96,6 @@ export function refineAccessibleRear(section, near, treadDepth, spansAt) {
     }
   }
   return {end,depth:treadDepth};
-}
-
-export function schottensteinMediaElevation(section,tierFront,slotCount,treadDepth){
-  const target=mediaBack.get(section);
-  if(target===undefined)return null;
-  // Lift the media-side floor while limiting the row-to-row rake.
-  const climb=1.08*treadDepth*(slotCount-1);
-  const front=Math.min(tierFront+2.15,Math.max(tierFront+.35,target-climb));
-  return {front,rear:Math.min(target,front+climb)};
 }
 
 // Drop thin fragments unsupported by a bank of three consecutive rows.
