@@ -555,3 +555,30 @@ test('only actual diagram-backed row omissions may remove seats in first-wave ve
     }
   }
 });
+
+
+test('all seventeen Big Ten interiors have venue-specific actual seat geometry, never the generic copied bowl',()=>{
+  const shapes=new Map();
+  const sourceProfiles=JSON.parse(readFileSync(
+    new URL('../data/big-ten/interior-reconstructions.json',import.meta.url))).venues;
+  for(const venue of catalog.venues.filter(v=>v.id!=='ohio-state')){
+    const id=venue.id,spec=toProceduralSpec(venue),geometry=GeometryEngine.create(spec);
+    assert.ok(spec.interior,id+' is still the old common bowl');
+    assert.ok(sourceProfiles[id].source?.startsWith('https://'),id+' lacks evidence provenance');
+    assert.ok(spec.provenance.interiorStatus.includes('unsurveyed'),
+      id+' is incorrectly claiming measured section boundaries');
+    const sample=spec.tiers.flatMap((tier,t)=>Array.from({length:12},(_,i)=>{
+      const p=geometry.point(t,i*Math.PI/6,.5);
+      return [p.x,p.y,p.z].map(x=>x.toFixed(2)).join(',');
+    }));
+    const fingerprint=sample.join('|');
+    assert.ok(!shapes.has(fingerprint),
+      id+' shares identical 3D seating bowl with '+shapes.get(fingerprint));
+    shapes.set(fingerprint,id);
+    assert.equal(spec.interior.sectionRules.length,0,
+      id+' still contains unsupported row deletions or taper masks');
+    assert.equal(spec.interior.notches.length,id==='washington'?2:0,
+      id+' has fabricated interior portals not proved by chart');
+  }
+  assert.equal(shapes.size,17);
+});
