@@ -40,7 +40,7 @@ async function setBigTenVenue(id){
     if(request!==bigTenRequestId)return;
     const venue=venues.find(item=>item.id===id&&item.id!=='ohio-state');
     if(!venue)throw Error('Big Ten school not found: '+id);
-    const spec=toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures,interiorProfiles);
+    const spec=toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures,interiorProfiles,verifiedChartPlacements);
     project=createProceduralProject(spec);
     selected=null;
     mode='overview';
