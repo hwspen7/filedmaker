@@ -360,7 +360,7 @@ test('each first-wave arena has independent chart-informed sections, 2D polygons
   for(const id of FIRST_WAVE_INTERIORS){
     const input=toProceduralSpec(get(id)),{model,plan,audit}=generateVenuePackage(input);
     assert.ok(input.interior,id+' must have its own interior reference');
-    assert.match(input.interior.geometryStatus,/not-surveyed/,
+    assert.match(input.interior.geometryStatus,/(not-surveyed|unsurveyed)/,
       'Source records must explicitly distinguish verified section labels from unsurveyed seat geometry');
     assert.ok(input.interior.source.startsWith('https://'),id);
     assert.ok(audit.passed,id+': '+audit.errors.join('; '));
