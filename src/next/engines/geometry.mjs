@@ -294,6 +294,29 @@ export const GeometryEngine={
         }
         r+=p.wave*Math.cos(4*angle)*(0.25+fraction*.75);
       }else r=radial(angle,field.width/2+d,field.length/2+d);
+      const court=spec.interior?.courtside;
+      if(court&&tier===0){
+        // The documented floor-level strip 9–13 occupies the east sideline.
+        // The main lower-bowl rim must begin BEHIND its last occupied chair
+        // row, including the diagonal 110/111/112 corner. Push the analytic
+        // spectator surface outward as one continuous, smooth seating bank
+        // instead of dropping colliding seats from either real section.
+        const sign=court.side==='east'?1:-1;
+        const direction=Math.cos(angle)*sign;
+        if(direction>.20){
+          const zAtRim=Math.abs(r*Math.sin(angle));
+          const taper=Math.max(0,Math.min(1,
+            (field.length/2+1.5-zAtRim)/3));
+          if(taper>0){
+            const occupiedDepth=Math.max(...court.blocks.map(b=>b.rows.length))*
+              court.seatDepth;
+            const minMainX=field.width/2+court.margin+occupiedDepth+.72;
+            const required=Math.max(0,minMainX/direction-r);
+            const rowFade=1-.4*Math.min(1,Math.max(0,fraction));
+            r+=required*taper*rowFade;
+          }
+        }
+      }
       return {x:r*Math.cos(angle),
         y:t.baseY+t.rows*t.rise*fraction+(p?.rake??0)*fraction*(1-fraction),
         z:r*Math.sin(angle)};
