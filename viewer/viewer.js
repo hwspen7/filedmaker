@@ -14,7 +14,7 @@ function getProject() {
     const params = new URLSearchParams(window.location.search);
     const project = params.get('venue') === 'ohio'
       ? createOhioStadiumProject()
-      : createSchottensteinCenterProject();
+      : {...createSchottensteinCenterProject(), audienceLayout:'schottenstein-men'};
     if (params.get('layout') === 'concert') project.liveStage = 'end';
     return project;
   }
