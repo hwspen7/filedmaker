@@ -15,6 +15,18 @@ export function buildWorkbenchPreview(input){
   });
   project.surface=v.sport;
   project.title=v.venue;
+  // Imported sections may include mezzanine and upper decks even when the
+  // school's baseline profile is single-tier. Preserve tier identities so
+  // T2/T3/T4 positions do not silently collapse into T1 in the WebGL model.
+  const highestTier=Math.max(1,...traced.seats.map(s=>Number(s.tier.slice(1))||1));
+  const existing=new Map(project.tiers.map(t=>[t.id,t]));
+  project.tiers=Array.from({length:highestTier},(_,i)=>{
+    const id='T'+(i+1);
+    return existing.get(id)??{
+      id,label:'Imported level '+(i+1),rows:1,depth:.8,rise:.3,
+      offset:0,height:0,gap:0,heightGap:0,
+    };
+  });
   project.school={...project.school,status:'operator-review',
     seatCoordinateMethod:'plan-trace/estimated',
     notice:'Section contours traced by operator. Seat pitch and elevations are estimates, not surveyed coordinates.'};
