@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdtempSync,rmSync,existsSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {parseReconstructionArgs,generateBatch,seatsCSV} from '../scripts/generate-reconstruction.mjs';
 import {
   RECONSTRUCTION_FORMAT,createReconstruction,addRectangularBank,
   fictionalReconstruction,normalizeReconstruction,toWorkbenchVenue,generateReconstruction,
@@ -115,4 +118,43 @@ test('data-first builder exposes editable geometry without any scan file input',
     assert.match(html,new RegExp('id="'+id+'"'),'Missing control '+id);
   assert.doesNotMatch(html,/accept="[^"]*\.(?:png|jpg|jpeg|pdf)/i);
   assert.match(html,/builder\.js/);
+});
+
+test('batch generator produces reproducible multi-venue manifests without scanning',()=>{
+  const work=mkdtempSync(join(tmpdir(),'filedmaker-reconstruction-'));
+  try{
+    const first=addRectangularBank(createReconstruction(),{
+      id:'101',rows:2,seatsPerRow:6,side:'west'});
+    first.venue='Test School A';
+    const second=addRectangularBank(createReconstruction(),{
+      id:'201',rows:3,seatsPerRow:8,side:'east'});
+    second.venue='Test School B';
+    const a=join(work,'a.json'),b=join(work,'b.json');
+    writeFileSync(a,JSON.stringify(first));writeFileSync(b,JSON.stringify(second));
+    const output=join(work,'build');
+    const manifest=generateBatch([{id:'a',path:a},{id:'b',path:b}],{out:output});
+    assert.equal(manifest.count,2);
+    assert.deepEqual(manifest.venues.map(x=>x.seats),[12,24]);
+    assert.ok(existsSync(join(output,'a','seat-coordinates.csv')));
+    assert.ok(existsSync(join(output,'b','validation-report.json')));
+    assert.ok(existsSync(join(output,'manifest.json')));
+    assert.match(readFileSync(join(output,'a','seat-coordinates.csv'),'utf8'),
+      /operator_entered_geometry_unverified/);
+    assert.deepEqual(generateBatch([{id:'a',path:a},{id:'b',path:b}],{
+      out:join(work,'dry'),dry:true}).venues.map(x=>x.seats),[12,24]);
+    assert.ok(!existsSync(join(work,'dry')));
+    assert.throws(()=>generateBatch([{id:'a',path:a},{id:'a',path:b}],{
+      out:join(work,'dup'),dry:true}),/Duplicate batch output ID/);
+  }finally{rmSync(work,{recursive:true,force:true});}
+});
+
+test('batch CLI demands exactly one input source',()=>{
+  assert.throws(()=>parseReconstructionArgs([]),/exactly one/);
+  assert.throws(()=>parseReconstructionArgs([
+    '--input','a.json','--catalog','b.json']),/exactly one/);
+  const args=parseReconstructionArgs(['--input','my-venue.json','--dry-run']);
+  assert.equal(args.dry,true);
+  assert.ok(args.input.endsWith('my-venue.json'));
+  assert.match(seatsCSV([{id:'1',section:'A',row:'1',number:'2',tier:'T1',
+    x:1,y:2,z:3}]),/seat_id,section,row,seat,level,x_m,y_m,z_m/);
 });
