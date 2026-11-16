@@ -321,9 +321,9 @@ async function main(){
       const state=await evaluate(
         "({cards:document.querySelectorAll('#caseGrid a.case-card[href]').length,ready:document.documentElement.dataset.casesReady})"
       );
-      return state?.cards===10&&state.ready==='true'?state:null;
+      return state?.cards===16&&state.ready==='true'?state:null;
     },65);
-    if(library.cards!==10)
+    if(library.cards!==16)
       throw Error('Clickable case gallery is incomplete: '+JSON.stringify(library));
     await delay(260);
     const gallery=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
@@ -334,7 +334,27 @@ async function main(){
     if(searched!==1)throw Error('Case search failed for Aiken');
     const accurate=await evaluate("document.querySelector('#caseGrid .case-card')?.textContent.includes('Unverified staff draft')");
     if(!accurate)throw Error('Aiken catalog card lost its unverified status');
-    console.log('cases: ten cases listed, six real-school filters, search, evidence labels verified');
+    console.log('cases: sixteen cases listed, six real-school filters, search, evidence labels verified');
+    const demoCards=await evaluate("(()=>{document.querySelector('#searchCases').value='';document.querySelector('#searchCases').dispatchEvent(new Event('input'));document.querySelector('[data-filter=\"models\"]').click();return [...document.querySelectorAll('#caseGrid .case-card')].filter(c=>c.dataset.case.startsWith('synthetic-')).map(c=>({id:c.dataset.case,href:c.href}))})()");
+    if(demoCards.length!==6||demoCards.some(c=>!c.href.includes('example=bowl-')))
+      throw Error('Six generated source-labeled venue cases are not navigable: '+
+        JSON.stringify(demoCards));
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+
+      '/workbench/?example=bowl-college-two-tier'});
+    const arenaCase=await poll(async()=>{
+      const state=await evaluate("({ready:document.documentElement.dataset.workbenchReady,stage:document.documentElement.dataset.activeStage,seats:document.querySelector('#mappedCount')?.textContent,sections:Number(document.querySelector('#sectionCount')?.textContent),rows:Number(document.querySelector('#rowCount')?.textContent),qa:document.querySelector('#qa')?.textContent,webgl:!!document.querySelector('#modelCanvas')?.getContext('webgl2')})");
+      return state?.ready==='true'&&state?.stage==='model'&&state?.sections>20&&
+        state?.rows>200&&state?.webgl?state:null;
+    },75);
+    if(!arenaCase.seats||arenaCase.seats==='0'||
+      !arenaCase.qa.includes('synthetic')&&
+      !arenaCase.qa.includes('SYNTHETIC'))
+      throw Error('Generated two-tier arena has no real source-labeled seating: '+
+        JSON.stringify(arenaCase));
+    await delay(350);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'synthetic-two-tier-arena.png'),Buffer.from(frame.data,'base64')));
+    console.log('cases: synthetic two-tier arena rendered with hundreds of editable rows and genuine WebGL2 geometry');
 
     // Real pointer click in the CENTER of a card, not merely its action label.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/?group=schools'});
@@ -364,7 +384,7 @@ async function main(){
 
     // Open 3D directly from its whole-case anchor.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/cases/'});
-    await poll(async()=>await evaluate("document.querySelectorAll('#caseGrid .case-card').length===10"),50);
+    await poll(async()=>await evaluate("document.querySelectorAll('#caseGrid .case-card').length===16"),50);
     const directModel=await evaluate("document.querySelector('[data-case=\"aiken-high\"]')?.href");
     if(!directModel.includes('example=aiken'))throw Error('Aiken card has no model link');
     await evaluate("document.querySelector('[data-case=\"aiken-high\"]').click()");
@@ -420,6 +440,229 @@ async function main(){
     if(synthetic.count!=='1,500'||synthetic.stage!=='model')
       throw Error('Fictional demo deep link is not interactive: '+JSON.stringify(synthetic));
     console.log('workbench UI: four-stage navigation and Aiken/fictional/source-only case deep links verified');
+
+
+    const compact=await evaluate("(()=>{const top=document.querySelector('.studio-header').getBoundingClientRect();const view=document.querySelector('.visual').getBoundingClientRect();const single=document.querySelector('.canvas-header').getBoundingClientRect();return {header:top.height,canvas:view.height,canvasHeader:single.height,workflowInside:!!document.querySelector('.studio-header .step-nav'),titleInside:!!document.querySelector('.studio-header #workspaceName'),extraBars:document.querySelectorAll('.workspace-top,.steps-strip').length}})()");
+    if(compact.header>80||compact.canvas<300||compact.canvasHeader>63||
+      !compact.workflowInside||!compact.titleInside||compact.extraBars)
+      throw Error('The viewport is still squeezed by redundant header rows: '+JSON.stringify(compact));
+    const cameraAccessible=await evaluate("(()=>{const button=document.querySelector('#cameraFit');const r=button.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.closest('button')?.id==='cameraFit'})()");
+    if(!cameraAccessible)
+      throw Error('The model camera tools are still covered by a case banner');
+
+
+    // Phase two: operate the actual row editor, verify 3D reacts, then undo/redo.
+
+    const initialFrame=await poll(async()=>{
+      const state=await evaluate("({w:Number(document.querySelector('#modelCanvas')?.dataset.seatingWidth||0),h:Number(document.querySelector('#modelCanvas')?.dataset.seatingHeight||0)})");
+      return state.w>0&&state.h>0?state:null;
+    },60);
+    if(initialFrame.w<25||initialFrame.h<17)
+      throw Error('Model remains too small in preview: '+JSON.stringify(initialFrame));
+    const controls=await evaluate("(()=>{document.querySelector('#cameraTop').click();const top=Number(document.querySelector('#modelCanvas').dataset.seatingWidth);document.querySelector('#cameraFit').click();document.querySelector('#toggleTools').click();const closed=document.querySelector('.content-grid').classList.contains('tools-collapsed');document.querySelector('#toggleTools').click();return {top,closed,reopened:!document.querySelector('.content-grid').classList.contains('tools-collapsed')}})()");
+    if(!controls.closed||!controls.reopened||controls.top<20)
+      throw Error('3D scene tools are not functional: '+JSON.stringify(controls));
+    await delay(300);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'focused-venue-workspace.png'),Buffer.from(frame.data,'base64')));
+    const beforeEdit=await evaluate("({count:document.querySelector('#mappedCount').textContent,row:document.querySelector('#rowEditRow').value,section:document.querySelector('#rowEditSection').value})");
+    if(beforeEdit.count!=='1,500'||!beforeEdit.row||!beforeEdit.section)
+      throw Error('Operator row editor is not populated for the fictional gym');
+    const afterEdit=await evaluate("(()=>{document.querySelector('#rowEditSeats').value='24';document.querySelector('#applyRowEdit').click();return {count:document.querySelector('#mappedCount').textContent,review:document.querySelector('#qa').textContent,rows:document.querySelector('#rowEditStatus').textContent}})()");
+    if(afterEdit.count!=='1,499'||!afterEdit.review.includes('STAFF_EDITS_PENDING_SOURCE_RECONCILIATION')||
+      !afterEdit.rows.includes('Staff-edited'))
+      throw Error('Applying row edit failed to update seats and provenance: '+JSON.stringify(afterEdit));
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-row-editor.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#undo').click()");
+    const undone=await poll(async()=>await evaluate("document.querySelector('#mappedCount')?.textContent==='1,500'"),50);
+    if(!undone)throw Error('Undo did not restore original 1,500 source seats');
+    await evaluate("document.querySelector('#redo').click()");
+    const redone=await poll(async()=>await evaluate("document.querySelector('#mappedCount')?.textContent==='1,499'"),50);
+    if(!redone)throw Error('Redo did not restore staff-modified count');
+    const noChange=await evaluate("(()=>{document.querySelector('#rowEditSeats').value='0';document.querySelector('#applyRowEdit').click();return {count:document.querySelector('#mappedCount').textContent,error:document.querySelector('#workStatus').textContent}})()");
+    if(noChange.count!=='1,499'||!noChange.error.includes('Edit rejected'))
+      throw Error('Invalid seat count did not fail atomically');
+
+    const seatEdited=await evaluate("(()=>{document.querySelector('[data-model-tool=\"seats\"]').click();document.querySelector('#seatAdvanced').open=true;document.querySelector('#seatEditNumber').value='1';document.querySelector('#seatShiftX').value='.08';document.querySelector('#seatShiftY').value='.12';document.querySelector('#seatShiftZ').value='0';document.querySelector('#seatApplyOffset').click();return {count:document.querySelector('#mappedCount').textContent,qa:document.querySelector('#qa').textContent,error:document.querySelector('#workStatus').textContent}})()");
+    if(seatEdited.count!=='1,499'||!seatEdited.qa.includes('INDIVIDUAL_SEAT_OFFSETS')||
+      seatEdited.error.includes('Edit rejected'))throw Error('Individual seat override was not applied: '+JSON.stringify(seatEdited));
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-single-seat.png'),Buffer.from(frame.data,'base64')));
+    const resetSeat=await evaluate("(()=>{document.querySelector('#seatResetOffset').click();return {count:document.querySelector('#mappedCount').textContent,qa:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent}})()");
+    if(resetSeat.count!=='1,499'||resetSeat.qa.includes('INDIVIDUAL_SEAT_OFFSETS')||
+      resetSeat.status.includes('Edit rejected'))throw Error('Seat correction did not clear cleanly');
+
+    const batch=await evaluate("(()=>{document.querySelector('[data-model-tool=\"batch\"]').click();document.querySelector('#batchSection').value='WEST-1';document.querySelector('#batchSeatType').value='chair';document.querySelector('#batchApplyStyle').click();return {count:document.querySelector('#mappedCount').textContent,status:document.querySelector('#workStatus').textContent,shown:!document.querySelector('[data-model-tool-pane=\"batch\"]').hidden}})()");
+    if(batch.count!=='1,499'||!batch.shown||batch.status.includes('Batch rejected'))
+      throw Error('Batch editor did not apply consistently: '+JSON.stringify(batch));
+    await delay(160);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'batch-edit-workspace.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('[data-open-stage=\"calibrate\"]').click()");
+    const moved=await evaluate("(()=>{const select=document.querySelector('#sectionSelect');select.value='WEST-1';select.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#sectionMoveX').value='.1';document.querySelector('#sectionMoveZ').value='0';document.querySelector('#moveSelectedSection').click();return {seats:document.querySelector('#mappedCount').textContent,ledger:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent}})()");
+    if(moved.seats!=='1,499'||moved.status.includes('Edit rejected'))
+      throw Error('Section translation damaged model or failed to apply: '+JSON.stringify(moved));
+    await evaluate("document.querySelector('#sectionAdvanced').open=true");
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-section-tools.png'),Buffer.from(frame.data,'base64')));
+
+    const ruler=await evaluate("(()=>{document.querySelector('#measureTools').open=true;document.querySelector('#measureTool').click();const c=document.querySelector('#planCanvas');const r=c.getBoundingClientRect();const point=(x,y)=>c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+x*r.width,clientY:r.top+y*r.height,pointerId:31}));point(.40,.45);point(.55,.52);return {result:document.querySelector('#measureResult').textContent,canvas:!c.hidden}})()");
+    if(!ruler.canvas||!ruler.result.includes('Plan-derived distance')||
+      !ruler.result.includes('Not an independently verified measurement'))
+      throw Error('Plan distance ruler is not functional: '+JSON.stringify(ruler));
+    await delay(160);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-plan-ruler.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#measureClear').click()");
+    const clearedRuler=await evaluate("document.querySelector('#measureResult').textContent");
+    if(clearedRuler!=='No plan measurement yet.')throw Error('Plan ruler did not reset');
+
+
+    // Real operator component placement, modification, duplication and 2D
+    // point placement are tested on the actual initialized WebGL2 workbench.
+    await evaluate("document.querySelector('[data-open-stage=\"model\"]').click()");
+    const made=await evaluate("(()=>{document.querySelector('[data-model-tool=\"structures\"]').click();document.querySelector('[data-structure-kind=\"platform\"]').click();document.querySelector('#structureAdd').click();return {count:document.querySelector('#mappedCount').textContent,items:document.querySelector('#structureSelect').options.length,qa:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent,active:!document.querySelector('[data-model-tool-pane=\"structures\"]').hidden}})()");
+    if(made.count!=='1,499'||made.items!==1||!made.active||
+      !made.qa.includes('OPERATOR_STRUCTURES_UNVERIFIED')||
+      made.status.includes('Component rejected'))
+      throw Error('Platform component is not attached to the live model: '+JSON.stringify(made));
+    const accuracy=await evaluate("(()=>{const step=document.querySelector('#gridStep');step.value='.25';step.dispatchEvent(new Event('change'));document.querySelector('#studioHelpToggle').click();const help=!document.querySelector('#studioHelp').hidden;document.querySelector('#studioHelpClose').click();return {grid:document.querySelector('#gridVisible').checked,snap:document.querySelector('#snapEnabled').checked,step:step.value,help,hidden:document.querySelector('#studioHelp').hidden}})()");
+    if(!accuracy.grid||!accuracy.snap||accuracy.step!=='.25'||
+      !accuracy.help||!accuracy.hidden)
+      throw Error('Metric grid and interactive beginner help are not functional: '+
+        JSON.stringify(accuracy));
+    const quickPanel=await evaluate("(()=>{const panel=document.querySelector('#quickObjectInspector');const displayed=!panel.hidden;document.querySelector('#quickYaw').value='15';document.querySelector('#quickApply').click();const angle=document.querySelector('#structureYaw').value;document.querySelector('#quickClose').click();const dismissed=panel.hidden;document.querySelector('#objectPropertiesToggle').click();return {displayed,angle,dismissed,restored:!panel.hidden,status:document.querySelector('#workStatus').textContent}})()");
+    if(!quickPanel.displayed||quickPanel.angle!=='15'||!quickPanel.dismissed||
+      !quickPanel.restored||quickPanel.status.includes('rejected'))
+      throw Error('Floating 2D/3D object properties are not editable: '+
+        JSON.stringify(quickPanel));
+    console.log('studio: on-canvas precise object properties, apply and dismiss verified');
+    await evaluate("document.querySelector('#show3d').click()");
+    const pick3d=await poll(async()=>{
+      const v=await evaluate("(()=>{document.querySelector('#structureSelect').dispatchEvent(new Event('change'));const c=document.querySelector('#modelCanvas');const r=c.getBoundingClientRect();return {id:c.dataset.operatorId,x:Number(c.dataset.operatorScreenX),y:Number(c.dataset.operatorScreenY),left:r.left,top:r.top,width:r.width,height:r.height,startY:Number(document.querySelector('#structureY').value),gizmo:!document.querySelector('#gizmoCanvas').hidden}})()");
+      return v?.id&&v.gizmo&&Number.isFinite(v.x)&&Number.isFinite(v.y)?v:null;
+    },60);
+    const dx=pick3d.left+pick3d.x,dy=pick3d.top+pick3d.y;
+    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy,modifiers:0});
+    await client.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',x:dx,y:dy,clickCount:1,modifiers:0});
+    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy-18,modifiers:1});
+    const dragReadout=await evaluate("document.querySelector('#threeDEditReadout').textContent");
+    await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',x:dx,y:dy-18,clickCount:1,modifiers:0});
+    const changed3d=await poll(async()=>{
+      const r=await evaluate("({y:Number(document.querySelector('#structureY').value),status:document.querySelector('#workStatus').textContent})");
+      return r?.y>pick3d.startY+.1?r:null;
+    },40);
+    if(!dragReadout.includes('ΔY')||changed3d.status.includes('rejected'))
+      throw Error('Actual WebGL canvas Shift-drag editing did not update 3D height: '+
+        JSON.stringify({dragReadout,changed3d,pick3d}));
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'3d-direct-edit-axes.png'),Buffer.from(frame.data,'base64')));
+    console.log('studio: click-to-edit 3D axis gizmo, camera-plane picking, Alt-height drag and reversible geometry verified');
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'component-library-3d.png'),Buffer.from(frame.data,'base64')));
+    const transformed=await evaluate("(()=>{document.querySelector('#structureX').value='2';document.querySelector('#structureApply').click();document.querySelector('#structureDuplicate').click();document.querySelector('#structureRotate').click();return {items:document.querySelector('#structureSelect').options.length,count:document.querySelector('#mappedCount').textContent,status:document.querySelector('#workStatus').textContent}})()");
+    if(transformed.items!==2||transformed.count!=='1,499'||
+      transformed.status.includes('Component rejected'))
+      throw Error('Structure transform / duplicate failed: '+JSON.stringify(transformed));
+    await evaluate("document.querySelector('[data-structure-kind=\"portal\"]').click()");
+    await evaluate("document.querySelector('#structurePickOnPlan').click()");
+    const placed=await evaluate("(()=>{const c=document.querySelector('#planCanvas'),r=c.getBoundingClientRect();c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:80,clientX:r.left+r.width*.5,clientY:r.top+r.height*.5}));return {items:document.querySelector('#structureSelect').options.length,count:document.querySelector('#mappedCount').textContent,status:document.querySelector('#workStatus').textContent,planVisible:!c.hidden}})()");
+    if(placed.items!==3||placed.count!=='1,499'||!placed.planVisible||
+      placed.status.includes('Component rejected'))
+      throw Error('Direct 2D component placement failed: '+JSON.stringify(placed));
+    await delay(180);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'component-plan-placement.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#show3d').click()");
+    const structureRendered=await poll(async()=>await evaluate("(()=>{const c=document.querySelector('#modelCanvas');return {visible:!c.hidden,hasContext:!!c.getContext('webgl2'),n:document.querySelector('#structureSelect').options.length}})()"),35);
+    if(!structureRendered.visible||!structureRendered.hasContext||structureRendered.n!==3)
+      throw Error('3D component preview failed after 2D placement');
+
+    await evaluate("document.querySelector('[data-model-tool=\"surface\"]').click()");
+    const palette=await evaluate("(()=>{const b=document.querySelector('[data-surface-preset=\"navy\"]');b.click();return {status:document.querySelector('#workStatus').textContent,floor:document.querySelector('#surfaceFloor').value,count:document.querySelector('#mappedCount').textContent,pane:!document.querySelector('[data-model-tool-pane=\"surface\"]').hidden}})()");
+    if(!palette.pane||palette.floor!=='#8ba9bd'||palette.count!=='1,499'||
+      palette.status.includes('Court edit rejected'))
+      throw Error('Live venue surface preset did not change: '+JSON.stringify(palette));
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'surface-navy-court.png'),Buffer.from(frame.data,'base64')));
+    const courtChanged=await evaluate("(()=>{document.querySelector('#surfaceDimensions').open=true;document.querySelector('#surfaceWidth').value='16.5';document.querySelector('#surfaceLength').value='28.0';document.querySelector('#surfaceApplyDimensions').click();return {status:document.querySelector('#workStatus').textContent,description:document.querySelector('#surfaceStatus').textContent,qa:document.querySelector('#qa').textContent,count:document.querySelector('#mappedCount').textContent}})()");
+    if(!courtChanged.description.includes('16.50 × 28.00')||
+      !courtChanged.qa.includes('PLAYING_SURFACE_RECALIBRATION_REQUIRED')||
+      courtChanged.count!=='1,499'||courtChanged.status.includes('Court edit rejected'))
+      throw Error('Playing surface dimensional edit has no effect: '+JSON.stringify(courtChanged));
+    const addedPaint=await evaluate("(()=>{document.querySelector('#surfaceZones').open=true;document.querySelector('#zoneKind').value='rectangle';document.querySelector('#zoneWidth').value='2';document.querySelector('#zoneDepth').value='1';document.querySelector('#zoneColor').value='#557b9d';document.querySelector('#zoneAdd').click();return {count:document.querySelector('#mappedCount').textContent,zones:document.querySelector('#zoneSelect').options.length,status:document.querySelector('#workStatus').textContent,qa:document.querySelector('#qa').textContent}})()");
+    if(addedPaint.zones!==1||addedPaint.count!=='1,499'||
+      !addedPaint.qa.includes('PAINTED_FLOOR_ZONES_UNVERIFIED')||
+      addedPaint.status.includes('Court edit rejected'))
+      throw Error('Painted surface zone was not added: '+JSON.stringify(addedPaint));
+    const invalidPaint=await evaluate("(()=>{document.querySelector('#zoneWidth').value='80';document.querySelector('#zoneAdd').click();return {zones:document.querySelector('#zoneSelect').options.length,status:document.querySelector('#workStatus').textContent}})()");
+    if(invalidPaint.zones!==1||!invalidPaint.status.includes('Court edit rejected'))
+      throw Error('Surface-zone boundary check did not roll back: '+JSON.stringify(invalidPaint));
+    await evaluate("document.querySelector('#surfaceEditOnPlan').click()");
+    const surfaceControls=await evaluate("(()=>{const c=document.querySelector('#planCanvas');const style=document.querySelector('#surfaceStatus').textContent;return {visible:!c.hidden,stage:document.querySelector('[data-open-stage=\"model\"]').getAttribute('aria-current'),status:style}})()");
+    if(!surfaceControls.visible||surfaceControls.stage!=='step')
+      throw Error('2D direct-edit surface tools are not accessible: '+JSON.stringify(surfaceControls));
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'surface-direct-edit-plan.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#show3d').click()");
+    await delay(220);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'surface-custom-floor-3d.png'),Buffer.from(frame.data,'base64')));
+    // New structural templates remain searchable rather than all rendered at once.
+    const richCatalog=await evaluate("(()=>{document.querySelector('[data-model-tool=\"structures\"]').click();document.querySelector('#structureCategory').value='all';document.querySelector('#structureCategory').dispatchEvent(new Event('change'));document.querySelector('#structureSearch').value='roof';document.querySelector('#structureSearch').dispatchEvent(new Event('input'));return {total:document.querySelectorAll('[data-structure-kind]').length,shown:[...document.querySelectorAll('[data-structure-kind]')].filter(b=>!b.hidden).map(b=>b.dataset.structureKind)}})()");
+    if(richCatalog.total!==23||richCatalog.shown.join(',')!=='roof')
+      throw Error('Searchable 23-component catalog is not accessible: '+JSON.stringify(richCatalog));
+    // Exercise real multi-selection and layout commands in the initialized
+    // browser, including one-step history and persistent source seat totals.
+    const layoutEdited=await evaluate("(()=>{document.querySelector('#structureGroupTools').open=true;document.querySelector('#structureSelectAll').click();const before=document.querySelector('#structureSelect').options.length;document.querySelector('#structureGroupDx').value='1';document.querySelector('#structureGroupDz').value='0';document.querySelector('#structureGroupMove').click();const moved=document.querySelector('#workStatus').textContent;document.querySelector('#structureGroupAxis').value='z';document.querySelector('#structureGroupAlign').click();const aligned=document.querySelector('#workStatus').textContent;document.querySelector('#structureGroupCopies').value='2';document.querySelector('#structureGroupDx').value='0';document.querySelector('#structureGroupDz').value='.25';document.querySelector('#structureGroupArray').click();return {before,after:document.querySelector('#structureSelect').options.length,status:document.querySelector('#workStatus').textContent,moved,aligned,seats:document.querySelector('#mappedCount').textContent,selected:[...document.querySelector('#structureMultiSelect').selectedOptions].length}})()");
+    if(layoutEdited.before!==3||layoutEdited.after!==9||
+      layoutEdited.seats!=='1,499'||layoutEdited.selected!==6||
+      layoutEdited.status.includes('rejected')||
+      layoutEdited.moved.includes('rejected')||layoutEdited.aligned.includes('rejected'))
+      throw Error('Atomic component group layout failed in live browser: '+
+        JSON.stringify(layoutEdited));
+    await evaluate("document.querySelector('#undo').click()");
+    const undoneGroupCount=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
+    if(undoneGroupCount!==3)throw Error('Group array did not undo in one step');
+    await evaluate("document.querySelector('#redo').click()");
+    const redoneGroupCount=await poll(async()=>await evaluate("document.querySelector('#structureSelect').options.length"),30);
+    if(redoneGroupCount!==9)throw Error('Group array did not redo as one transaction');
+    await evaluate("document.querySelector('#showPlan').click()");
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'component-multi-selection-and-array.png'),Buffer.from(frame.data,'base64')));
+    const assembled=await evaluate("(()=>{const root=document.querySelector('#structureAssemblyTools');root.open=true;document.querySelector('#structureAssemblyPreset').value='press_station';document.querySelector('#structureAssemblyX').value='0';document.querySelector('#structureAssemblyZ').value='0';document.querySelector('#structureAssemblyAdd').click();return {count:document.querySelector('#structureSelect').options.length,status:document.querySelector('#workStatus').textContent,seats:document.querySelector('#mappedCount').textContent,selected:[...document.querySelector('#structureMultiSelect').selectedOptions].length}})()");
+    if(assembled.count!==13||assembled.seats!=='1,499'||assembled.selected!==4||
+      assembled.status.includes('rejected'))
+      throw Error('Quick-build assembly did not add four seat-safe editable parts: '+
+        JSON.stringify(assembled));
+    await evaluate("document.querySelector('#undo').click()");
+    const undoAssemblyCount=await poll(async()=>await evaluate(
+      "document.querySelector('#structureSelect').options.length"),30);
+    if(undoAssemblyCount!==9)throw Error('Quick-build assembly did not undo atomically');
+    await evaluate("document.querySelector('#redo').click()");
+    const redoAssemblyCount=await poll(async()=>await evaluate(
+      "document.querySelector('#structureSelect').options.length"),30);
+    if(redoAssemblyCount!==13)throw Error('Quick-build assembly did not redo atomically');
+    await delay(180);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'quick-build-press-station.png'),Buffer.from(frame.data,'base64')));
+    console.log('studio: quick-build composite assembly, seat safety and reversible insertion verified');
+    console.log('studio: atomic multi-object alignment, movement, arrays, selection persistence and undo/redo verified');
+
+    console.log('studio: court palette, dimensions, paint-zone geometry, boundary rejection, plan direct-edit and 23 searchable components verified');
+
+    console.log('studio: compact header, seven reusable components, live WebGL2 geometry, transform, duplicate and 2D placement verified');
+
+    console.log('operator editing: source counts adjusted with review flags, 3D updated, invalid edit rejected, undo/redo and section translation verified');
+
 
 
 

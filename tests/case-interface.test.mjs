@@ -7,12 +7,12 @@ import {REAL_SCHOOL_CASES} from './fixtures/actual-school-cases.mjs';
 const source=new URL('../',import.meta.url);
 const read=path=>readFileSync(new URL(path,source),'utf8');
 test('case library includes all documented live cases, two OSU refs and fictional demo',()=>{
-  assert.equal(VENUE_CASES.length,10);
+  assert.equal(VENUE_CASES.length,16);
   assert.equal(VENUE_CASES.filter(c=>c.group==='references').length,2);
   assert.equal(VENUE_CASES.filter(c=>c.group==='schools').length,6);
   assert.equal(VENUE_CASES.filter(c=>c.group==='extended').length,1);
-  assert.equal(VENUE_CASES.filter(c=>c.group==='demos').length,1);
-  assert.equal(new Set(VENUE_CASES.map(c=>c.id)).size,10);
+  assert.equal(VENUE_CASES.filter(c=>c.group==='demos').length,7);
+  assert.equal(new Set(VENUE_CASES.map(c=>c.id)).size,16);
   assert.equal(getVenueCase('aiken-high').capacity,1418);
   assert.equal(getVenueCase('northview').capacity,534);
   assert.equal(getVenueCase('wills-point').capacity,null);
@@ -98,7 +98,90 @@ test('workbench is two-column with a closable details drawer',()=>{
   const view=read('workbench/index.html'),style=read('workbench/workbench.css');
   assert.match(view,/id="detailsToggle"/);
   assert.match(view,/id="detailsClose"/);
-  assert.match(view,/class="steps-strip"/);
+  assert.match(view,/class="topbar studio-header"/);
+  assert.doesNotMatch(view,/class="steps-strip"/);
   assert.doesNotMatch(view,/aside class="sidebar"/);
   assert.match(style,/\.layout\.details-open \.inspector/);
+});
+
+test('operator measurement and individual seat controls are kept discoverable but compact',()=>{
+  const page=read('workbench/index.html');
+  for(const id of ['measureTools','measureTool','measureClear','measureResult',
+    'seatAdvanced','seatEditNumber','seatShiftX','seatShiftY','seatShiftZ',
+    'seatApplyOffset','seatResetOffset'])
+    assert.match(page,new RegExp('id="'+id+'"'),id);
+  assert.match(page,/<details class="disclosure" id="measureTools"/);
+  assert.match(page,/<details class="disclosure" id="seatAdvanced"/);
+});
+
+test('model tool modes and 3D navigation remain compact and operable',()=>{
+  const page=read('workbench/index.html'),script=read('workbench/workbench.js'),
+    style=read('workbench/workbench.css');
+  const modes=['rows','seats','batch','preview'];
+  for(const mode of modes){
+    assert.match(page,new RegExp('data-model-tool="'+mode+'"'));
+    assert.match(page,new RegExp('data-model-tool-pane="'+mode+'"'));
+  }
+  for(const id of ['batchSection','batchPreview','batchApplyStyle','batchApplyInsets',
+    'cameraFit','cameraTop','cameraFocus','cameraZoom','cameraCapture','toggleTools',
+    'modelCanvas','seatToolSection','seatToolRow']){
+    assert.match(page,new RegExp('id="'+id+'"'),id+' missing');
+  }
+  assert.match(script,/activateModelTool/);
+  assert.match(script,/applyVenueBatchEdit/);
+  assert.match(script,/cameraFit/);
+  assert.match(style,/\.content-grid\.tools-collapsed/);
+});
+
+test('single command bar owns workflow, project status and navigation',()=>{
+  const html=read('workbench/index.html'),css=read('workbench/workbench.css');
+  assert.match(html,/class="topbar studio-header"/);
+  assert.match(html,/id="workspaceName"/);
+  assert.match(html,/id="stageCounter"/);
+  assert.match(html,/data-open-stage="model"/);
+  assert.match(html,/id="buildTag"/);
+  assert.doesNotMatch(html,/class="workspace-top"/);
+  assert.doesNotMatch(html,/class="steps-strip"/);
+  assert.match(css,/\.topbar\.studio-header/);
+});
+test('modeling supports a real seven-kind component library',()=>{
+  const html=read('workbench/index.html'),js=read('workbench/workbench.js');
+  const kinds=['platform','stairs','rail','wall','portal','scoreboard','table'];
+  for(const kind of kinds)assert.match(html,new RegExp('data-structure-kind="'+kind+'"'));
+  for(const id of ['structureSelect','structureAdd','structurePickOnPlan',
+    'structureApply','structureDuplicate','structureRotate','structureRemove'])
+    assert.match(html,new RegExp('id="'+id+'"'));
+  assert.match(js,/editVenueStructure/);
+  assert.match(js,/activateModelTool\('structures'\)/);
+});
+
+test('source-case context is placed inside the collapsed project menu',()=>{
+  const markup=read('workbench/index.html');
+  const menu=markup.indexOf('class="top-menu-content"');
+  const context=markup.indexOf('id="caseContext"');
+  const dropdownEnd=markup.indexOf('</details>',menu);
+  assert.ok(menu>=0&&context>menu&&context<dropdownEnd);
+  assert.doesNotMatch(markup,/<div class="steps-strip"/);
+});
+
+
+test('direct-edit studio offers court tools and a searchable expanded component library',()=>{
+  const html=read('workbench/index.html'),css=read('workbench/workbench.css'),
+    js=read('workbench/workbench.js');
+  for(const name of ['surface','structures']){
+    assert.match(html,new RegExp('data-model-tool="'+name+'"'));
+    assert.match(html,new RegExp('data-model-tool-pane="'+name+'"'));
+  }
+  for(const id of ['surfaceFloor','surfaceApron','surfaceLines','surfaceLane',
+    'surfaceWidth','surfaceLength','surfaceApplyDimensions','surfaceEditOnPlan',
+    'surfaceShowMarkings','zonePlace','zoneSelect','zoneDuplicate','zoneRemove',
+    'structureCategory','structureSearch','structureRepeat'])
+      assert.match(html,new RegExp('id="'+id+'"'),id);
+  assert.match(js,/editPlayingSurface/);
+  assert.match(js,/worldToSurface/);
+  assert.match(js,/structureHandles/);
+  assert.match(css,/\.surface-palettes/);
+  const kinds=[...html.matchAll(/data-structure-kind="([^"]+)"/g)]
+    .map(x=>x[1]);
+  assert.equal(new Set(kinds).size,23);
 });

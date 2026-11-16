@@ -1,6 +1,7 @@
 // Independent, repeatable geometry/data checks. Gates prevent publishing a
 // seemingly certified result from an unverified source-derived draft.
 import {assessSources} from './sources.mjs';
+import {structureSeatInterference} from './structures.mjs';
 const positiveArea=points=>{
   let area=0;
   for(let i=0;i<points.length;i++){
@@ -38,6 +39,50 @@ export function assessVenueGeometry(traced){
       add('blocking','COLLAPSED_SECTION','Section footprint has negligible area',section.id);
     if(topology.crossed)
       add('blocking','CROSSED_SECTION','Section footprint is self-intersecting',section.id);
+  }
+  const surface=venue.surfaceDesign;
+  if(surface?.dimensionsEdited)
+    add('review','PLAYING_SURFACE_RECALIBRATION_REQUIRED',
+      'The field/court dimensions changed; recheck the source registration and stand clearances');
+  if(surface?.zones?.length)add('review','PAINTED_FLOOR_ZONES_UNVERIFIED',
+    surface.zones.length+' operator-authored painted areas require source comparison');
+  if(surface&&(surface.centerX||surface.centerZ||surface.rotation))
+    add('review','PLAYING_SURFACE_TRANSFORM_UNVERIFIED',
+      'The playing surface has a staff-estimated offset or rotation');
+  const structures=venue.structures??[];
+  if(structures.length)add('review','OPERATOR_STRUCTURES_UNVERIFIED',
+    structures.length+' staff-placed venue structures require source and accessibility review');
+  const blockedByStructures=structureSeatInterference(structures,seats);
+  if(blockedByStructures.length)add('blocking','STRUCTURE_INTERSECTS_SEATING',
+    blockedByStructures.length+' structure-seat footprint overlaps (first: '+
+    blockedByStructures[0].structure+' / '+blockedByStructures[0].seat+')');
+  const staffRows=venue.rows.filter(r=>r.operatorEdited);
+  const adjustedSeats=venue.rows.reduce((n,r)=>n+(r.seatOverrides?.length??0),0);
+  if(adjustedSeats)add('review','INDIVIDUAL_SEAT_OFFSETS',
+    adjustedSeats+' individual seats have staff-estimated coordinate offsets');
+  if(staffRows.length){
+    const changed=staffRows.filter(r=>r.sourceSeats!==null&&
+      r.sourceSeats!==undefined&&r.sourceSeats!==r.seats);
+    const added=staffRows.filter(r=>r.operatorAdded);
+    add('review','STAFF_EDITS_PENDING_SOURCE_RECONCILIATION',
+      staffRows.length+' manually modified rows, '+changed.length+
+      ' source-count changes, '+added.length+' staff-added rows');
+  }
+  const removed=venue.editLedger?.filter(e=>e.operation==='remove-row')??[];
+  if(removed.length)add('review','DELETED_SOURCE_ROWS',
+    removed.length+' row-deletion operations require comparison with the original inventory');
+  // Only compare *actually adjoining* sections; an aisle gap or an unrelated
+  // bank must not create an artificial continuity violation.
+  for(let i=0;i<venue.sections.length;i++)for(let j=i+1;j<venue.sections.length;j++){
+    const a=venue.sections[i],b=venue.sections[j];
+    const close=(p,q)=>Math.hypot(p.x-q.x,p.z-q.z)<.75;
+    const endpoints=s=>[[s.front[0],s.back[0]],[s.front.at(-1),s.back.at(-1)]];
+    const touching=endpoints(a).some(x=>endpoints(b).some(y=>
+      close(x[0],y[0])&&close(x[1],y[1])));
+    if(touching&&(Math.abs(a.baseHeight-b.baseHeight)>.40||
+      Math.abs(a.rowRise-b.rowRise)>.085))
+      add('review','ADJACENT_SECTION_ELEVATION',
+        a.id+' and '+b.id+' share an edge but use different seating elevations');
   }
   for(const row of rowRuns){
     if(row.seatPitch<.43)add('review','TIGHT_PITCH',row.row+' mean spacing '+row.seatPitch.toFixed(3)+' m',row.section);

@@ -1,7 +1,18 @@
 import {SPORT_DEFAULTS,newVenue,normalizeVenue,parseVenueRows} from '../src/workbench/contract.mjs';
 import {registerCourt} from '../src/workbench/registration.mjs';
 import {fictionalGym} from '../src/workbench/fixtures.mjs';
+import {BOWL_STARTERS,buildSyntheticBowl} from '../src/workbench/bowlBuilder.mjs';
 import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
+import {applyVenueEdit,applyVenueBatchEdit} from '../src/workbench/editing.mjs';
+import {editVenueStructure} from '../src/workbench/structureEditor.mjs';
+import {editVenueStructureBatch} from '../src/workbench/structureBatch.mjs';
+import {addVenueAssembly,VENUE_ASSEMBLIES} from '../src/workbench/structureAssemblies.mjs';
+import {STRUCTURE_CATALOG,buildStructureInstances} from '../src/workbench/structures.mjs';
+import {snapPosition,objectGuideTargets,measuredOffset} from '../src/workbench/editorGuides.mjs';
+import {editPlayingSurface} from '../src/workbench/surfaceEditor.mjs';
+import {SURFACE_PRESETS,SURFACE_ZONE_KINDS,
+  surfaceToWorld,worldToSurface} from '../src/workbench/surface.mjs';
+import {generateTracedVenue} from '../src/workbench/generator.mjs';
 import {NativeVenueRenderer} from '../src/next/webgl.js';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
 import {importRowFile} from '../src/workbench/imports/tabular.mjs';
@@ -19,8 +30,13 @@ import {makeAikenUnverifiedOperatorDraft} from '../src/workbench/qa/aiken-operat
 const $=id=>document.getElementById(id);
 const canvas=$('planCanvas'),modelCanvas=$('modelCanvas'),ctx=canvas.getContext('2d');
 let venue=newVenue(),registration=null,image=null,editorMode='select',draftPoints=[];
-let preview=null,renderer=null,selectedSection='',selectedSeat=null,drag=null,viewMode='plan';
+let lastMeasurement=null;
+const measurementKey=()=>JSON.stringify([venue.plan.name,venue.court,venue.calibration.corners]);
+let preview=null,renderer=null,selectedSection='',selectedSeat=null,
+  selectedStructure='',selectedStructureIds=new Set(),selectedZone='',activeModelTool='rows',
+  activeStructureKind='platform',drag=null,viewMode='plan';
 let pendingRows=null,vectorDrawing=null,pdfHandle=null,workflowUI=null;
+let guideState=null,modelDrag=null,quickInspectorOpen=false;
 const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
 const safeName=()=>venue.venue.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'school-venue';
@@ -52,6 +68,7 @@ async function restoreDocument(next){
   $('pdfPageWrap').hidden=true;
   $('pdfStatus').textContent='No active PDF reader. Reattach the source PDF to review another page.';
   venue=checked;image=restoredImage;selectedSeat=null;selectedSection='';
+  selectedStructure='';selectedStructureIds.clear();selectedZone='';
   registration=image&&venue.calibration.corners.length===4?
     registerCourt(venue.calibration.corners,venue.court.width,venue.court.length):null;
   preview=null;vectorDrawing=null;editorMode='select';draftPoints=[];
@@ -109,10 +126,17 @@ function sync(){
   $('capacitySource').value=venue.capacitySource;
   $('workspaceName').textContent=venue.venue;
   $('sourceName').textContent=venue.plan.name||'No drawing attached';
+  if(lastMeasurement&&lastMeasurement.key!==measurementKey()){
+    lastMeasurement=null;
+    $('measureResult').textContent='Source geometry changed. Remeasure the drawing.';
+  }
   renderPdfSuggestions();
   $('undo').disabled=!history.canUndo;$('redo').disabled=!history.canRedo;
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   refreshSections();
+  refreshRowControls();
+  refreshStructureControls();
+  refreshSurfaceControls();
 }
 function renderPdfSuggestions(){
   const root=$('pdfLabels');root.replaceChildren();
@@ -149,10 +173,370 @@ function updateSectionFields(){
   $('baseHeight').value=s?s.baseHeight:'';
   $('rowRise').value=s?s.rowRise:'';
 }
+function refreshRowControls(preferredSection=null,preferredRow=null){
+  const sections=$('rowEditSection'),rows=$('rowEditRow');
+  const currentSection=preferredSection??sections.value;
+  const currentRow=preferredRow??rows.value;
+  sections.replaceChildren(...venue.sections.map(s=>new Option(s.id,s.id)));
+  const target=venue.sections.find(s=>s.id===currentSection)||
+    venue.sections.find(s=>s.id===selectedSection)||venue.sections[0];
+  if(!target){rows.replaceChildren();fillRowFields();refreshSpecialTools();return;}
+  sections.value=target.id;
+  const available=venue.rows.filter(r=>r.section.toLowerCase()===target.id.toLowerCase());
+  rows.replaceChildren(...available.map(r=>new Option(r.row,r.row)));
+  if(available.some(r=>r.row===currentRow))rows.value=currentRow;
+  fillRowFields();
+  refreshSpecialTools();
+}
+
+function populateOptions(select,values,desired){
+  select.replaceChildren(...values.map(x=>new Option(x,x)));
+  if(values.includes(desired))select.value=desired;
+}
+function refreshSpecialTools(){
+  const sectionValues=venue.sections.map(s=>s.id);
+  const active=$('rowEditSection').value;
+  const batch=$('batchSection');
+  const oldBatch=batch.value;
+  populateOptions(batch,sectionValues,oldBatch||active);
+  const seatSection=$('seatToolSection');
+  populateOptions(seatSection,sectionValues,active);
+  const seatRows=venue.rows.filter(r=>r.section===$('seatToolSection').value)
+    .map(r=>r.row);
+  populateOptions($('seatToolRow'),seatRows,$('rowEditRow').value);
+  updateBatchPreview();
+}
+function updateBatchPreview(){
+  const id=$('batchSection').value;
+  const rows=venue.rows.filter(r=>r.section===id);
+  const count=rows.reduce((n,r)=>n+r.seats,0);
+  $('batchPreview').textContent=rows.length?
+    rows.length+' rows · '+number(count)+' positions · staff review required':
+    'Choose a section with source rows.';
+}
+function activateModelTool(tool){
+  const permitted=new Set(['bowl','rows','seats','batch','surface','structures','preview']);
+  activeModelTool=tool;
+  if(!permitted.has(tool))return;
+  document.querySelectorAll('[data-model-tool]').forEach(btn=>
+    btn.setAttribute('aria-pressed',String(btn.dataset.modelTool===tool)));
+  document.querySelectorAll('[data-model-tool-pane]').forEach(pane=>
+    pane.hidden=pane.dataset.modelToolPane!==tool);
+  if(tool==='seats')$('seatAdvanced').open=true;
+  refreshQuickObjectInspector();
+}
+function commitBatch(edit,summary){
+  try{
+    const before=structuredClone(venue);
+    const result=applyVenueBatchEdit(venue,edit);
+    venue=result.venue;selectedSeat=null;
+    recordEdit(before,summary+' · '+result.affected);
+    sync();tryPreview();
+    message(summary+' · '+result.rowsAffected+' rows modified; capacity preserved. '+
+      'Source review still required.');
+  }catch(e){message('Batch rejected: '+e.message,true);}
+}
+
+
+function refreshSurfaceControls(preferredZone=null){
+  const style=venue.surfaceDesign;
+  const props={surfaceFloor:'floor',surfaceApron:'apron',surfaceLines:'lines',
+    surfaceLane:'lane',surfaceApronWidth:'apronWidth',
+    surfaceX:'centerX',surfaceZ:'centerZ',surfaceRotation:'rotation'};
+  for(const [id,property] of Object.entries(props))$(id).value=style[property];
+  $('surfaceShowMarkings').checked=style.showMarkings;
+  $('surfaceShowBoards').checked=style.showBoards;
+  $('surfaceWidth').value=venue.court.width;
+  $('surfaceLength').value=venue.court.length;
+  $('surfaceStatus').textContent=style.preset+' · '+style.zones.length+
+    ' painted zones · '+venue.court.width.toFixed(2)+' × '+
+    venue.court.length.toFixed(2)+' m · unverified';
+  document.querySelectorAll('[data-surface-preset]').forEach(button=>
+    button.setAttribute('aria-pressed',String(button.dataset.surfacePreset===style.preset)));
+  const select=$('zoneSelect'),id=preferredZone??selectedZone??select.value;
+  select.replaceChildren(...style.zones.map(zone=>new Option(zone.label+' · '+zone.id,zone.id)));
+  const chosen=style.zones.find(zone=>zone.id===id)||style.zones[0];
+  selectedZone=chosen?.id??'';
+  if(chosen){
+    select.value=chosen.id;
+    $('zoneKind').value=chosen.kind;
+    $('zoneWidth').value=chosen.width;
+    $('zoneDepth').value=chosen.depth;
+    $('zoneColor').value=chosen.color;
+    $('zoneLabel').value=chosen.label;
+    $('zoneX').value=chosen.x;
+    $('zoneZ').value=chosen.z;
+    $('zoneRotation').value=chosen.rotation;
+  }else{
+    $('zoneLabel').value='';
+    $('zoneX').value='0';
+    $('zoneZ').value='0';
+    $('zoneRotation').value='0';
+  }
+}
+function surfaceStyleFields(){
+  return {floor:$('surfaceFloor').value,apron:$('surfaceApron').value,
+    lines:$('surfaceLines').value,lane:$('surfaceLane').value,
+    apronWidth:$('surfaceApronWidth').value,
+    centerX:$('surfaceX').value,centerZ:$('surfaceZ').value,
+    rotation:$('surfaceRotation').value,
+    showMarkings:$('surfaceShowMarkings').checked,
+    showBoards:$('surfaceShowBoards').checked};
+}
+function zoneFormFields(){
+  return {x:$('zoneX').value,z:$('zoneZ').value,
+    width:$('zoneWidth').value,depth:$('zoneDepth').value,
+    rotation:$('zoneRotation').value,
+    color:$('zoneColor').value,label:$('zoneLabel').value};
+}
+function commitSurface(command,title){
+  try{
+    const before=structuredClone(venue);
+    const result=editPlayingSurface(venue,command);
+    venue=result.venue;
+    selectedZone=result.action==='zone-remove'?'':result.id||selectedZone;
+    recordEdit(before,title);
+    sync();tryPreview();
+    refreshSurfaceControls(selectedZone);
+    message(title+' saved · playing surface updated · original source seats unchanged. '+
+      'Recheck measurements and field markings.');
+    return true;
+  }catch(e){message('Court edit rejected: '+e.message,true);return false;}
+}
+function courtHandles(){
+  const style=venue.surfaceDesign,{width,length}=venue.court;
+  return {center:surfaceToWorld({x:0,z:0},style),
+    width:surfaceToWorld({x:width/2,z:0},style),
+    length:surfaceToWorld({x:0,z:length/2},style),
+    rotate:surfaceToWorld({x:0,z:length/2+2.2},style)};
+}
+const snap=(value,step=.25)=>Math.round(value/step)*step;
+function zoneCenter(zone){
+  return surfaceToWorld(zone,venue.surfaceDesign);
+}
+function fillStructureFields(s){
+  const preset=STRUCTURE_CATALOG[s?.kind??activeStructureKind];
+  $('structureLabel').value=s?.label??preset.label;
+  for(const [id,prop,defaultValue] of [
+    ['structureX','x',0],['structureY','y',0],['structureZ','z',0],
+    ['structureYaw','yaw',0],['structureWidth','width',preset.width],
+    ['structureDepth','depth',preset.depth],['structureHeight','height',preset.height]
+  ])$(id).value=s?.[prop]??defaultValue;
+  $('structureNote').value=s?.note??'';
+}
+function refreshStructurePalette(){
+  const category=$('structureCategory').value;
+  const search=$('structureSearch').value.trim().toLowerCase();
+  document.querySelectorAll('[data-structure-kind]').forEach(button=>{
+    const spec=STRUCTURE_CATALOG[button.dataset.structureKind];
+    const group=button.dataset.structureCategory;
+    button.hidden=(category!=='all'&&category!==group)||
+      Boolean(search&&!spec.label.toLowerCase().includes(search)&&
+        !button.dataset.structureKind.includes(search));
+  });
+}
+function structureHandles(s){
+  const a=s.yaw*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+  const at=(x,z)=>({x:s.x+c*x+sn*z,z:s.z-sn*x+c*z});
+  return {resize:at(s.width/2,s.depth/2),
+    rotate:at(0,s.depth/2+1.6)};
+}
+function refreshStructureControls(preferred=null){
+  const structures=venue.structures??[];
+  const valid=new Set(structures.map(s=>s.id));
+  selectedStructureIds=new Set([...selectedStructureIds].filter(id=>valid.has(id)));
+  const select=$('structureSelect');
+  const id=preferred??selectedStructure??select.value;
+  select.replaceChildren(...structures.map(s=>
+    new Option(s.label+' · '+s.id,s.id)));
+  const current=structures.find(s=>s.id===id)||structures[0];
+  selectedStructure=current?.id??'';
+  if(current&&!selectedStructureIds.size)selectedStructureIds.add(current.id);
+  if(current){
+    select.value=current.id;activeStructureKind=current.kind;
+    fillStructureFields(current);
+  }else fillStructureFields(null);
+  const multi=$('structureMultiSelect');
+  multi.replaceChildren(...structures.map(s=>{
+    const option=new Option(s.label+' · '+s.id,s.id);
+    option.selected=selectedStructureIds.has(s.id);
+    return option;
+  }));
+  $('structureGroupStatus').textContent=selectedStructureIds.size+
+    ' selected · Ctrl-click on the plan or drag an empty area to box-select';
+  document.querySelectorAll('[data-structure-kind]').forEach(button=>
+    button.setAttribute('aria-pressed',
+      String(button.dataset.structureKind===activeStructureKind)));
+  refreshStructurePalette();
+  $('structureStatus').textContent=structures.length?
+    structures.length+' component(s) · '+selectedStructureIds.size+
+      ' selected · provisional geometry':
+    'No components yet. Choose a type, then add or place it.';
+  refreshQuickObjectInspector();
+}
+function refreshQuickObjectInspector(){
+  const inspector=$('quickObjectInspector');
+  const s=venue.structures.find(item=>item.id===selectedStructure);
+  inspector.hidden=!s||!quickInspectorOpen||activeModelTool!=='structures'||
+    workflowUI?.current!=='model';
+  if(!s)return;
+  $('quickObjectName').textContent=s.label+' · '+s.id;
+  const props={quickX:'x',quickY:'y',quickZ:'z',quickYaw:'yaw',
+    quickWidth:'width',quickDepth:'depth',quickHeight:'height'};
+  // Preserve the field currently being typed into; edits are applied only
+  // when the user explicitly presses Apply.
+  for(const [id,key] of Object.entries(props))
+    if(document.activeElement!==$(id))$(id).value=s[key];
+}
+function structureFormValues(){
+  return {x:$('structureX').value,z:$('structureZ').value,
+    y:$('structureY').value,yaw:$('structureYaw').value,
+    width:$('structureWidth').value,depth:$('structureDepth').value,
+    height:$('structureHeight').value,label:$('structureLabel').value,
+    note:$('structureNote').value};
+}
+function commitStructure(command,title){
+  try{
+    const before=structuredClone(venue);
+    const result=editVenueStructure(venue,command);
+    venue=result.venue;selectedStructure=result.action==='remove'?'':result.id;
+    selectedStructureIds=new Set(result.action==='remove'?[]:[result.id]);
+    quickInspectorOpen=result.action!=='remove';
+    recordEdit(before,title+' · '+result.id);
+    sync();tryPreview();refreshStructureControls(selectedStructure);
+    message(title+' saved. '+result.count+' components · seat count unchanged · source review required.');
+    return true;
+  }catch(e){message('Component rejected: '+e.message,true);return false;}
+}
+function commitStructureBatch(command,title){
+  try{
+    const before=structuredClone(venue);
+    const result=editVenueStructureBatch(venue,command);
+    venue=result.venue;
+    selectedStructureIds=new Set(result.ids);
+    selectedStructure=result.ids[0]||'';
+    recordEdit(before,title+' · '+result.affected+' components');
+    sync();tryPreview();refreshStructureControls(selectedStructure);
+    message(title+' completed for '+result.affected+
+      ' components · one undo step · source seats unchanged.');
+    return true;
+  }catch(e){message('Group operation rejected: '+e.message,true);return false;}
+}
+function commitStructureAssembly(x,z){
+  try{
+    const before=structuredClone(venue),preset=$('structureAssemblyPreset').value;
+    const result=addVenueAssembly(venue,{preset,x,z,
+      yaw:$('structureAssemblyYaw').value,
+      scale:$('structureAssemblyScale').value});
+    venue=result.venue;
+    selectedStructureIds=new Set(result.ids);
+    selectedStructure=result.ids[0]||'';
+    recordEdit(before,'Add '+VENUE_ASSEMBLIES[preset].label+' assembly');
+    sync();tryPreview();refreshStructureControls(selectedStructure);
+    $('structureGroupTools').open=result.ids.length>1;
+    message('Placed '+VENUE_ASSEMBLIES[preset].label+' · '+
+      result.ids.length+' editable components · one undo step · source seats unchanged.');
+    return true;
+  }catch(e){message('Assembly rejected: '+e.message,true);return false;}
+}
+function selectStructure(id,additive=false){
+  if(!(venue.structures??[]).some(s=>s.id===id))return;
+  if(additive){
+    if(selectedStructureIds.has(id)&&selectedStructureIds.size>1)
+      selectedStructureIds.delete(id);
+    else selectedStructureIds.add(id);
+    selectedStructure=selectedStructureIds.has(id)?id:[...selectedStructureIds][0]||id;
+  }else{
+    selectedStructure=id;selectedStructureIds=new Set([id]);
+  }
+  refreshStructureControls(selectedStructure);
+  activateModelTool('structures');
+  quickInspectorOpen=true;refreshQuickObjectInspector();
+  if(selectedStructureIds.size>1)$('structureGroupTools').open=true;
+  message(selectedStructureIds.size+' selected · drag to move, or use Arrange multiple components.');
+  $('threeDEditReadout').textContent=selectedStructureIds.size+
+    ' object(s) selected · drag to move · Alt-drag to raise · Shift for fine snap';
+  repaint();
+  if(viewMode!=='plan')renderer?.render();
+}
+function fillRowFields(){
+  const section=$('rowEditSection').value,label=$('rowEditRow').value;
+  const r=venue.rows.find(r=>r.section===section&&r.row===label);
+  const fields=['rowEditSeats','rowEditFirst','rowEditNumbers','rowEditGaps',
+    'rowInsetStart','rowInsetEnd','rowDepthOffset','rowEditElevation'];
+  if(!r){
+    fields.forEach(id=>$(id).value='');
+    $('rowEditStatus').textContent=section?'No row inventory for this section. Add a staff-estimated row below.':
+      'Import or create sections and source rows first.';
+    return;
+  }
+  $('rowEditSeats').value=r.seats;$('rowEditFirst').value=r.first;
+  $('rowEditNumbers').value=(r.seatNumbers??[]).join('|');
+  $('rowEditGaps').value=(r.gaps??[]).map(g=>g.after+':'+g.width).join('|');
+  $('rowEditDirection').value=r.seatDirection??'forward';
+  $('rowEditType').value=r.seatType??'chair';
+  $('rowInsetStart').value=r.insetStartM??0;
+  $('rowInsetEnd').value=r.insetEndM??0;
+  $('rowDepthOffset').value=r.depthOffsetM??0;
+  $('rowEditElevation').value=r.elevation??'';
+  $('rowEditStatus').textContent=r.operatorEdited?
+    'Staff-edited · original count '+(r.sourceSeats??'not supplied')+
+      ' · pending source verification':
+    'Imported/fixture row · '+r.seats+' modeled seats · unverified geometry';
+  const valid=new Set((r.seatNumbers??[]).length?r.seatNumbers:
+    Array.from({length:r.seats},(_,i)=>String(r.first+i)));
+  if(!valid.has($('seatEditNumber').value))
+    $('seatEditNumber').value=r.seatNumbers?.[0]??String(r.first);
+  fillSeatOffsetFields();
+}
+function fillSeatOffsetFields(){
+  const row=venue.rows.find(r=>r.section===$('rowEditSection').value&&
+    r.row===$('rowEditRow').value);
+  const number=$('seatEditNumber').value.trim();
+  const override=row?.seatOverrides?.find(o=>o.number===number);
+  $('seatShiftX').value=override?.dx??0;
+  $('seatShiftY').value=override?.dy??0;
+  $('seatShiftZ').value=override?.dz??0;
+}
+function commitOperatorEdit(edit,summary,preferredRow=null){
+  try{
+    const before=structuredClone(venue);
+    const result=applyVenueEdit(venue,edit);
+    venue=result.venue;selectedSeat=null;
+    recordEdit(before,summary+' · '+result.affected);
+    sync();
+    refreshRowControls(edit.section,preferredRow??edit.row);
+    tryPreview();
+    if(edit.type==='set-seat-offset'||edit.type==='clear-seat-offset'){
+      $('seatEditNumber').value=edit.number;fillSeatOffsetFields();
+    }
+    message(summary+' saved · '+(result.seatDelta>=0?'+':'')+result.seatDelta+
+      ' seats. Check original school evidence before delivery.');
+    return true;
+  }catch(e){message('Edit rejected: '+e.message,true);return false;}
+}
 function layout(){
   const r=canvas.getBoundingClientRect(),w=Math.max(1,r.width),h=Math.max(1,r.height);
-  const inset=32, maxX=Math.max(venue.court.width/2+18,12,...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.x)+4)));
-  const maxZ=Math.max(venue.court.length/2+9,20,...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.z)+4)));
+  const inset=32;
+  // Frame placed structures as well as source contours. Freeze the view
+  // bounds while dragging to avoid zoom feedback under the pointer.
+  const components=drag?.before?.structures??venue.structures??[];
+  const extents=components.map(s=>{
+    const angle=s.yaw*Math.PI/180,ca=Math.abs(Math.cos(angle));
+    const sn=Math.abs(Math.sin(angle));
+    return {x:Math.abs(s.x)+(ca*s.width+sn*s.depth)/2+2,
+      z:Math.abs(s.z)+(sn*s.width+ca*s.depth)/2+2};
+  });
+  const surface=venue.surfaceDesign,angle=surface.rotation*Math.PI/180;
+  const ca=Math.abs(Math.cos(angle)),sn=Math.abs(Math.sin(angle));
+  const halfWidth=venue.court.width/2+surface.apronWidth;
+  const halfLength=venue.court.length/2+surface.apronWidth;
+  const maxX=Math.max(venue.court.width/2+18,12,
+    ...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.x)+4)),
+    ...extents.map(v=>v.x),Math.abs(surface.centerX)+ca*halfWidth+sn*halfLength+4);
+  const maxZ=Math.max(venue.court.length/2+9,20,
+    ...venue.sections.flatMap(s=>[...s.front,...s.back].map(p=>Math.abs(p.z)+4)),
+    ...extents.map(v=>v.z),Math.abs(surface.centerZ)+sn*halfWidth+ca*halfLength+4);
   const scale=Math.min((w-2*inset)/(2*maxX),(h-2*inset)/(2*maxZ));
   if(image){
     const scaleImage=Math.min((w-2*inset)/image.width,(h-2*inset)/image.height);
@@ -196,6 +580,71 @@ function resize(){
   draw();
   renderer?.resize();
 }
+function currentSnapStep(event){
+  // Shift allows fine placement. Alt bypasses automatic grid or magnet
+  // snapping for independent manual adjustments.
+  return event?.shiftKey ? .1 : Number($('gridStep').value);
+}
+function inferObjectPoint(point,excluded=[],event=null){
+  const step=currentSnapStep(event),enabled=$('snapEnabled').checked&&!event?.altKey;
+  const targets=objectGuideTargets(venue.structures,venue.sections,
+    venue.surfaceDesign,excluded);
+  const candidate=snapPosition(point,{grid:step,gridEnabled:enabled,
+    magnetEnabled:enabled,tolerance:Math.max(.08,8/Math.max(4,layout().scale)),
+    targets});
+  guideState={...candidate,origin:point};
+  return candidate;
+}
+function drawDraftingGrid(g){
+  if(!$('gridVisible').checked||(image&&!registration))return;
+  const desired=Number($('gridStep').value);
+  const halfX=Math.min(300,Math.max(45,g.w/Math.max(1,g.scale)/2+10));
+  const halfZ=Math.min(300,Math.max(45,g.h/Math.max(1,g.scale)/2+10));
+  const step=desired*Math.max(1,Math.ceil((halfX+halfZ)/(135*desired)));
+  ctx.save();
+  if(image&&g.imageRect){
+    const r=g.imageRect;ctx.beginPath();ctx.rect(r.x,r.y,r.width,r.height);ctx.clip();
+  }
+  ctx.lineWidth=1;
+  for(let x=Math.ceil(-halfX/step)*step;x<=halfX+.001;x+=step){
+    const a=worldToScreen({x,z:-halfZ},g),b=worldToScreen({x,z:halfZ},g);
+    if(!Number.isFinite(a.x+a.y+b.x+b.y))continue;
+    ctx.strokeStyle=Math.abs(x)<.001?'#3787a99c':'#6b99a82b';
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  for(let z=Math.ceil(-halfZ/step)*step;z<=halfZ+.001;z+=step){
+    const a=worldToScreen({x:-halfX,z},g),b=worldToScreen({x:halfX,z},g);
+    if(!Number.isFinite(a.x+a.y+b.x+b.y))continue;
+    ctx.strokeStyle=Math.abs(z)<.001?'#3787a99c':'#6b99a82b';
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawInferenceGuides(g){
+  if(!guideState||!$('guidesVisible').checked||!$('snapEnabled').checked)return;
+  ctx.save();
+  ctx.lineWidth=1.4;ctx.strokeStyle='#d74e59';
+  ctx.setLineDash([5,4]);
+  for(const guide of guideState.guides){
+    const a=worldToScreen(guide.axis==='x'?
+      {x:guide.value,z:-300}:{x:-300,z:guide.value},g);
+    const b=worldToScreen(guide.axis==='x'?
+      {x:guide.value,z:300}:{x:300,z:guide.value},g);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  const p=worldToScreen(guideState,g),label=
+    'X '+guideState.x.toFixed(2)+' m · Z '+guideState.z.toFixed(2)+' m';
+  ctx.font='600 11px system-ui';ctx.textAlign='left';
+  const width=ctx.measureText(label).width+16;
+  ctx.fillStyle='#243d4deb';
+  ctx.fillRect(Math.min(g.w-width-5,Math.max(5,p.x+12)),
+    Math.max(50,Math.min(g.h-27,p.y-31)),width,22);
+  ctx.fillStyle='#fff';
+  ctx.fillText(label,Math.min(g.w-width-5,Math.max(5,p.x+12))+8,
+    Math.max(50,Math.min(g.h-27,p.y-31))+15);
+  ctx.restore();
+}
 function draw(){
   if(viewMode!=='plan')return;
   const g=layout(),{w,h}=g;
@@ -205,10 +654,15 @@ function draw(){
     ctx.drawImage(image,r.x,r.y,r.width,r.height);
     ctx.fillStyle='#ffffff27';ctx.fillRect(r.x,r.y,r.width,r.height);
   }
-  const court=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,z])=>worldToScreen({x:x*venue.court.width/2,z:z*venue.court.length/2},g));
-  if(!image||registration)outline(court,image?'#7ba7ab25':'#b9d1d2','#f8fafa',2);
+  drawDraftingGrid(g);
+  const surfaceStyle=venue.surfaceDesign;
+  const court=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,z])=>
+    worldToScreen(surfaceToWorld({x:x*venue.court.width/2,
+      z:z*venue.court.length/2},surfaceStyle),g));
+  if(!image||registration)outline(court,image?'#7ba7ab25':
+    surfaceStyle.floor+'7c',surfaceStyle.lines,2);
   if(!image||registration){
-    const center=worldToScreen({x:0,z:0},g);
+    const center=worldToScreen(surfaceToWorld({x:0,z:0},surfaceStyle),g);
     ctx.beginPath();ctx.ellipse(center.x,center.y,Math.max(2,1.83*(image?2:g.scale)),Math.max(2,1.83*(image?2:g.scale)),0,0,Math.PI*2);
     ctx.strokeStyle='#e6ffff';ctx.lineWidth=1;ctx.stroke();
   }
@@ -225,6 +679,93 @@ function draw(){
       const p=worldToScreen(preview.seats[i],g);
       ctx.beginPath();ctx.arc(p.x,p.y,1.55,0,Math.PI*2);ctx.fill();
     }
+    // A selected source row is visible on the calibrated 2D drawing.
+    const section=$('rowEditSection').value,row=$('rowEditRow').value;
+    if(section&&row){
+      ctx.fillStyle='#e49b3b';ctx.strokeStyle='#fefefe';ctx.lineWidth=1;
+      for(const seat of preview.seats)if(seat.section===section&&seat.row===row){
+        const p=worldToScreen(seat,g);
+        ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();ctx.stroke();
+      }
+    }
+  }
+
+
+  // Editable surface overlays are drawn in source-world coordinates.
+  for(const zone of surfaceStyle.zones){
+    const a=zone.rotation*Math.PI/180,c=Math.cos(a),sin=Math.sin(a);
+    const local=([x,z])=>{
+      const rotate={x:zone.x+x*c+z*sin,z:zone.z-x*sin+z*c};
+      return worldToScreen(surfaceToWorld(rotate,surfaceStyle),g);
+    };
+    const d=zone.kind==='stripe'?Math.min(zone.depth,.25):zone.depth;
+    const vertices=zone.kind==='circle'?
+      Array.from({length:40},(_,i)=>{
+        const t=i*2*Math.PI/40;return local([Math.cos(t)*zone.width/2,
+          Math.sin(t)*zone.depth/2]);
+      }):
+      [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([x,z])=>
+        local([x*zone.width,z*d]));
+    outline(vertices,zone.color+'78',zone.id===selectedZone?'#bb782b':zone.color,
+      zone.id===selectedZone?2.8:1.4);
+    if(activeModelTool==='surface'&&zone.id===selectedZone){
+      const center=worldToScreen(zoneCenter(zone),g);
+      ctx.beginPath();ctx.arc(center.x,center.y,6,0,Math.PI*2);
+      ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#bf8134';ctx.lineWidth=2;ctx.stroke();
+    }
+  }
+  if(activeModelTool==='surface'&&workflowUI?.current==='model'){
+    const controls=courtHandles();
+    for(const [kind,p] of Object.entries(controls)){
+      const q=worldToScreen(p,g);
+      ctx.beginPath();ctx.arc(q.x,q.y,kind==='center'?7:6,0,Math.PI*2);
+      ctx.fillStyle=kind==='center'?'#ffd285':kind==='rotate'?'#8cacb9':'#fff';
+      ctx.fill();
+      ctx.strokeStyle='#3d6c7e';ctx.lineWidth=2;ctx.stroke();
+    }
+  }
+  // Source-derived components are drawn above seating plans for reliable
+  // selection, but never change the official aisle or row inventory.
+  for(const s of venue.structures??[]){
+    const angle=s.yaw*Math.PI/180,c=Math.cos(angle),sn=Math.sin(angle);
+    const half=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]];
+    const boundary=half.map(([x,z])=>worldToScreen({
+      x:s.x+c*x*s.width+sn*z*s.depth,
+      z:s.z-sn*x*s.width+c*z*s.depth
+    },g));
+    const chosen=selectedStructureIds.has(s.id);
+    outline(boundary,chosen?'#8cb9c088':'#668b9766',
+      chosen?'#276d8c':'#56717e',chosen?3:1.5);
+    const center=worldToScreen(s,g);
+    // Keep the canvas free from overlapping component labels. The active
+    // object shows its ID only while editing the construction layer.
+    if(chosen&&activeModelTool==='structures'){
+      ctx.fillStyle='#193c50';ctx.font='700 10px system-ui';
+      ctx.textAlign='center';ctx.fillText(s.id,center.x,center.y-14);
+    }
+    if(chosen&&activeModelTool==='structures'){
+      ctx.beginPath();ctx.arc(center.x,center.y,5,0,2*Math.PI);
+      ctx.fillStyle='#ffc16a';ctx.fill();
+      if(activeModelTool==='structures'&&s.id===selectedStructure)
+        for(const [kind,pos] of Object.entries(structureHandles(s))){
+        const q=worldToScreen(pos,g);
+        ctx.beginPath();ctx.arc(q.x,q.y,kind==='rotate'?6:7,0,Math.PI*2);
+        ctx.fillStyle=kind==='rotate'?'#b9e1e6':'#fff';
+        ctx.fill();ctx.strokeStyle='#276d8c';ctx.lineWidth=2;ctx.stroke();
+      }
+    }
+  }
+  if(lastMeasurement&&lastMeasurement.key===measurementKey()){
+    const a=worldToScreen(lastMeasurement.start,g),b=worldToScreen(lastMeasurement.end,g);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle='#c18031';ctx.lineWidth=2.5;ctx.stroke();
+    for(const pos of [a,b]){
+      ctx.beginPath();ctx.arc(pos.x,pos.y,4.5,0,2*Math.PI);
+      ctx.fillStyle='#f3b35c';ctx.fill();
+    }
+    ctx.fillStyle='#8a501f';ctx.font='bold 12px system-ui';
+    ctx.fillText(lastMeasurement.distance.toFixed(2)+' m',
+      (a.x+b.x)/2,(a.y+b.y)/2-10);
   }
   if(selectedSection){
     const s=venue.sections.find(s=>s.id===selectedSection);
@@ -251,6 +792,17 @@ function draw(){
     ctx.strokeStyle='#bf6f25';ctx.lineWidth=2;ctx.stroke();
     for(const p of points){ctx.beginPath();ctx.arc(p.x,p.y,4,0,2*Math.PI);ctx.fillStyle='#bf6f25';ctx.fill();}
   }
+  drawInferenceGuides(g);
+  if(drag?.kind==='box'){
+    const a=drag.start,b=drag.end;
+    ctx.save();
+    ctx.strokeStyle='#196c94';ctx.fillStyle='#3b8db022';
+    ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+    const left=Math.min(a.x,b.x),top=Math.min(a.y,b.y);
+    const w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
+    ctx.fillRect(left,top,w,h);ctx.strokeRect(left,top,w,h);
+    ctx.restore();
+  }
 }
 function repaint(){
   const review=reviewReadiness(venue);
@@ -265,20 +817,47 @@ function repaint(){
   $('sectionCount').textContent=number(venue.sections.length);
   $('rowCount').textContent=number(venue.rows.length);
   $('mappedCount').textContent=number(preview?.seats.length??0);
+  const staffEdits=venue.rows.filter(r=>r.operatorEdited).length;
+  $('quickStats').title=staffEdits?
+    staffEdits+' rows changed by staff; original evidence needs reconciliation':
+    'Source and elevation verification required';
   $('quickStats').textContent=preview?
-    number(preview.seats.length)+' modeled positions · '+number(venue.sections.length)+' sections · needs review':
+    number(preview.seats.length)+' seats · '+number(venue.sections.length)+
+      ' sections · '+(venue.structures?.length??0)+' components · needs review':
     venue.rows.length?number(venue.rows.length)+' source rows · not yet modeled':
     'No seats generated';
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   $('evidenceStatus').textContent=preview?.quality?.blockingCount?'Geometry blocked':
     preview?'Unverified model · human review required':
     venue.plan.name||venue.rows.length?'Import / calibration in progress':'Awaiting source files';
-  $('modeLabel').textContent=editorMode==='select'?'Select · drag a section corner to adjust':
+  $('modeLabel').textContent=editorMode==='place-assembly'?
+    'Quick-build · choose an assembly position on the 2D plan':
+    editorMode==='place-structure'?
+    'Place component · click a point on the calibrated 2D plan':
+    editorMode==='place-zone'?'Paint zone · click a point on the calibrated 2D plan':
+    editorMode==='select'&&activeModelTool==='surface'?
+      'Court · drag handles to move, resize or rotate':
+    editorMode==='select'&&activeModelTool==='structures'?
+      'Build · drag to move, Ctrl-click to multi-select, or box-select empty space':
+    editorMode==='select'?'Select · drag a section corner to adjust':
     editorMode==='calibrate'?'Calibration · mark all four court corners':
+    editorMode==='measure'?'Ruler · select two plan points':
     'Tracing · front left → front right → rear right → rear left';
   $('emptyCanvas').hidden=!!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
   $('canvasOverlay').hidden=!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
-  $('canvasOverlay').textContent=editorMode==='calibrate'?'Click the four court corners in order: near left, near right, far right, far left.':
+  $('canvasOverlay').textContent=editorMode==='place-assembly'?
+    'Click to place the chosen assembly. Original source seats are preserved.':
+    editorMode==='place-structure'?
+    'Click on the plan to place '+STRUCTURE_CATALOG[activeStructureKind].label+
+    '. This will not alter source seat counts.':
+    editorMode==='place-zone'?
+      'Click the calibrated plan to place the selected painted area.':
+    editorMode==='select'&&activeModelTool==='surface'?
+      'Drag the golden center to reposition the court, white handles to resize, or the blue handle to rotate.':
+    editorMode==='select'&&activeModelTool==='structures'?
+      'Select a component to move, resize or rotate it. The numeric controls are optional.':
+    editorMode==='measure'?'Select two points on the plan for a provisional distance.':
+    editorMode==='calibrate'?'Click the four court corners in order: near left, near right, far right, far left.':
     editorMode==='trace'?'Trace '+(draftPoints.length+1)+'/4: '+['front left','front right','rear right','rear left'][draftPoints.length]:
     image&&!registration?'Image loaded. Mark four court corners before tracing sections.':
     'Drag section corners to correct the footprint. Imported row counts are never changed to match a target capacity.';
@@ -315,6 +894,12 @@ function repaint(){
   draw();
 }
 function tryPreview(){
+  // Maintain the chosen orbit camera after a small geometry edit. Loading an
+  // entirely new example clears preview first, so it gets a fresh fit.
+  const camera=renderer&&preview&&viewMode==='overview'?{
+    theta:renderer.theta,phi:renderer.phi,zoomFactor:renderer.zoomFactor,
+    distance:renderer.distance,pan:[...renderer.pan],mode:renderer.mode
+  }:null;
   try{
     venue=validateFields();
     if(!venue.rows.length||!venue.sections.length){preview=null;repaint();return;}
@@ -322,6 +907,11 @@ function tryPreview(){
     preview=next;
     if(renderer)renderer.load(preview.plan);
     if(viewMode!=='plan')open3d(viewMode);
+    if(camera&&renderer&&viewMode==='overview'){
+      renderer.theta=camera.theta;renderer.phi=camera.phi;
+      renderer.zoomFactor=camera.zoomFactor;renderer.distance=camera.distance;
+      renderer.pan=camera.pan;renderer.mode=camera.mode;renderer.render();
+    }
     message('Generated '+number(next.seats.length)+
       ' positions from current project rows. Source and elevation verification remain required.');
   }catch(e){preview=null;message(e.message,true);}
@@ -379,6 +969,47 @@ canvas.addEventListener('pointerdown',event=>{
       }
       repaint();return;
     }
+    if(editorMode==='measure'){
+      const world=screenToWorld(p,g);
+      draftPoints.push({world});
+      if(draftPoints.length===2){
+        const [a,b]=draftPoints.map(x=>x.world),distance=Math.hypot(b.x-a.x,b.z-a.z);
+        lastMeasurement={start:a,end:b,distance,key:measurementKey()};
+        $('measureResult').textContent='Plan-derived distance '+distance.toFixed(3)+
+          ' m · Not an independently verified measurement.';
+        draftPoints=[];editorMode='select';
+        message('Plan ruler completed. Confirm drawing scale before using any dimensions.');
+      }else message('Measure a second point on the drawing.');
+      repaint();return;
+    }
+    if(editorMode==='place-zone'){
+      const world=screenToWorld(p,g),local=worldToSurface(world,venue.surfaceDesign);
+      const ok=commitSurface({action:'zone-add',kind:$('zoneKind').value,
+        x:snap(local.x),z:snap(local.z),width:$('zoneWidth').value,
+        depth:$('zoneDepth').value,color:$('zoneColor').value},
+        'Place custom surface marking');
+      if(ok){editorMode='select';activateModelTool('surface');}
+      repaint();return;
+    }
+    if(editorMode==='place-assembly'){
+      const world=inferObjectPoint(screenToWorld(p,g),[],event);
+      if(commitStructureAssembly(world.x,world.z)){
+        editorMode='select';draw();
+      }
+      repaint();return;
+    }
+    if(editorMode==='place-structure'){
+      const world=inferObjectPoint(screenToWorld(p,g),[],event);
+      const values=structureFormValues();
+      const success=commitStructure({action:'add',kind:activeStructureKind,
+        ...values,x:world.x,z:world.z},
+        'Place '+STRUCTURE_CATALOG[activeStructureKind].label);
+      if(success){
+        if(!$('structureRepeat').checked)editorMode='select';
+        selectedSection='';draw();
+      }
+      repaint();return;
+    }
     if(editorMode==='trace'){
       const world=screenToWorld(p,g),pixel=image?sourcePixel(p,g):null;
       draftPoints.push({world,pixel});
@@ -387,6 +1018,86 @@ canvas.addEventListener('pointerdown',event=>{
         commitSection(next);editorMode='select';tryPreview();
       }
       repaint();return;
+    }
+    if(workflowUI?.current==='model'&&activeModelTool==='surface'){
+      const design=venue.surfaceDesign;
+      let candidate=null,distance=13;
+      for(const zone of design.zones){
+        const q=worldToScreen(zoneCenter(zone),g);
+        const d=Math.hypot(q.x-p.x,q.y-p.y);
+        if(d<distance){candidate=zone;distance=d;}
+      }
+      if(candidate){
+        selectedZone=candidate.id;refreshSurfaceControls(selectedZone);
+        drag={kind:'zone',id:selectedZone,before:structuredClone(venue)};
+        canvas.setPointerCapture(event.pointerId);
+        draw();return;
+      }
+      let handle=null;distance=16;
+      for(const [kind,world] of Object.entries(courtHandles())){
+        const q=worldToScreen(world,g),d=Math.hypot(q.x-p.x,q.y-p.y);
+        if(d<distance){handle=kind;distance=d;}
+      }
+      if(handle){
+        drag={kind:'court',handle,before:structuredClone(venue)};
+        canvas.setPointerCapture(event.pointerId);
+        return;
+      }
+    }
+    if(workflowUI?.current==='model'&&(venue.structures?.length??0)){
+      const selected=venue.structures.find(s=>s.id===selectedStructure);
+      if(selected&&activeModelTool==='structures'){
+        for(const [mode,point] of Object.entries(structureHandles(selected))){
+          const q=worldToScreen(point,g);
+          if(Math.hypot(q.x-p.x,q.y-p.y)<15){
+            drag={kind:'structure',mode,id:selected.id,before:structuredClone(venue)};
+            canvas.setPointerCapture(event.pointerId);
+            return;
+          }
+        }
+      }
+      let closest=null,distance=18;
+      for(const structure of venue.structures){
+        const q=worldToScreen(structure,g),d=Math.hypot(q.x-p.x,q.y-p.y);
+        if(d<distance){closest=structure;distance=d;}
+      }
+      if(closest){
+        if(event.ctrlKey||event.metaKey){
+          selectStructure(closest.id,true);return;
+        }
+        const grouped=activeModelTool==='structures'&&
+          selectedStructureIds.size>1&&selectedStructureIds.has(closest.id);
+        if(!grouped)selectStructure(closest.id);
+        else{selectedStructure=closest.id;refreshStructureControls(closest.id);}
+        const world=screenToWorld(p,g);
+        drag={kind:grouped?'structure-group':'structure',mode:'move',id:closest.id,
+          ids:grouped?[...selectedStructureIds]:[closest.id],
+          offsetX:world.x-closest.x,offsetZ:world.z-closest.z,
+          before:structuredClone(venue)};
+        canvas.setPointerCapture(event.pointerId);
+        return;
+      }
+      if(activeModelTool==='structures'){
+        drag={kind:'box',start:p,end:p,additive:event.ctrlKey||event.metaKey};
+        canvas.setPointerCapture(event.pointerId);
+        draw();return;
+      }
+    }
+    if(preview&&workflowUI?.current==='model'){
+      let nearest=null,distance=10;
+      for(const seat of preview.seats){
+        const xy=worldToScreen(seat,g),d=Math.hypot(xy.x-p.x,xy.y-p.y);
+        if(d<distance){distance=d;nearest=seat;}
+      }
+      if(nearest){
+        selectedSection=nearest.section;
+        $('sectionSelect').value=selectedSection;
+        updateSectionFields();
+        refreshRowControls(nearest.section,nearest.row);
+        message('Selected '+nearest.section+' / '+nearest.row+
+          ' on the plan. The row editor is ready.');
+        repaint();return;
+      }
     }
     let section=venue.sections.find(s=>s.id===selectedSection);
     let handle=-1;
@@ -403,6 +1114,81 @@ canvas.addEventListener('pointerdown',event=>{
 });
 canvas.addEventListener('pointermove',event=>{
   if(!drag)return;
+  if(drag.kind==='box'){
+    drag.end=pointer(event);draw();return;
+  }
+  if(drag.kind==='structure-group'){
+    try{
+      const raw=screenToWorld(pointer(event),layout());
+      const position=inferObjectPoint(raw,drag.ids,event);
+      const anchor=drag.before.structures.find(s=>s.id===drag.id);
+      if(!anchor)return;
+      const step=event.shiftKey?.05:.25;
+      const dx=snap(position.x-(drag.offsetX??0)-anchor.x,step);
+      const dz=snap(position.z-(drag.offsetZ??0)-anchor.z,step);
+      for(const id of drag.ids){
+        const original=drag.before.structures.find(s=>s.id===id);
+        const current=venue.structures.find(s=>s.id===id);
+        if(original&&current){current.x=original.x+dx;current.z=original.z+dz;}
+      }
+      draw();
+    }catch{}
+    return;
+  }
+  if(drag.kind==='court'||drag.kind==='zone'){
+    try{
+      const world=screenToWorld(pointer(event),layout()),design=venue.surfaceDesign;
+      if(drag.kind==='zone'){
+        const zone=design.zones.find(s=>s.id===drag.id);
+        if(zone){
+          const local=worldToSurface(world,design);
+          zone.x=snap(local.x,event.shiftKey?.05:.25);
+          zone.z=snap(local.z,event.shiftKey?.05:.25);
+        }
+      }else if(drag.handle==='center'){
+        design.centerX=snap(world.x,event.shiftKey?.05:.25);
+        design.centerZ=snap(world.z,event.shiftKey?.05:.25);
+      }else{
+        const local=worldToSurface(world,design);
+        if(drag.handle==='width'){
+          venue.court.width=Math.min(160,Math.max(8,snap(2*Math.abs(local.x),.25)));
+        }else if(drag.handle==='length'){
+          venue.court.length=Math.min(200,Math.max(15,snap(2*Math.abs(local.z),.25)));
+        }else if(drag.handle==='rotate'){
+          const angle=Math.atan2(world.x-design.centerX,world.z-design.centerZ)*180/Math.PI;
+          design.rotation=Math.max(-180,Math.min(180,snap(angle,5)));
+        }
+      }
+      draw();
+    }catch{}
+    return;
+  }
+  if(drag.kind==='structure'){
+    try{
+      const raw=screenToWorld(pointer(event),layout());
+      const position=inferObjectPoint(raw,[drag.id],event);
+      const step=event.shiftKey?.05:.25;
+      const structure=venue.structures.find(s=>s.id===drag.id);
+      if(structure&&Number.isFinite(position.x+position.z)){
+        if(drag.mode==='resize'){
+          const a=structure.yaw*Math.PI/180,c=Math.cos(a),sin=Math.sin(a);
+          const x=position.x-structure.x,z=position.z-structure.z;
+          const localX=c*x-sin*z,localZ=sin*x+c*z;
+          structure.width=Math.min(30,Math.max(.4,snap(2*Math.abs(localX),step)));
+          structure.depth=Math.min(24,Math.max(.08,snap(2*Math.abs(localZ),step)));
+        }else if(drag.mode==='rotate'){
+          structure.yaw=Math.max(-180,Math.min(180,
+            snap(Math.atan2(position.x-structure.x,
+              position.z-structure.z)*180/Math.PI,5)));
+        }else{
+          structure.x=snap(position.x-(drag.offsetX??0),step);
+          structure.z=snap(position.z-(drag.offsetZ??0),step);
+        }
+        draw();
+      }
+    }catch{}
+    return;
+  }
   const section=venue.sections.find(s=>s.id===drag.id);
   if(!section)return;
   try{
@@ -410,6 +1196,10 @@ canvas.addEventListener('pointermove',event=>{
     if(!Number.isFinite(world.x+world.z)||Math.abs(world.x)>2000||Math.abs(world.z)>2000)return;
     const key=[['front',0],['front',section.front.length-1],
       ['back',section.back.length-1],['back',0]][drag.handle];
+    if(event.shiftKey){
+      world.x=Math.round(world.x*10)/10;
+      world.z=Math.round(world.z*10)/10;
+    }
     section[key[0]][key[1]]=world;
     if(image&&registration&&section.trace.length===4)section.trace[drag.handle]=sourcePixel(p,g);
     draw();
@@ -417,13 +1207,102 @@ canvas.addEventListener('pointermove',event=>{
 });
 function releasePointer(event){
   if(!drag)return;
-  const completed=drag;drag=null;
+  const completed=drag;drag=null;guideState=null;
   if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
-  recordEdit(completed.before,'Adjust traced section '+completed.id);
-  tryPreview();
+  if(completed.kind==='box'){
+    const a=completed.start,b=completed.end;
+    if(Math.hypot(b.x-a.x,b.y-a.y)>=8){
+      const left=Math.min(a.x,b.x),right=Math.max(a.x,b.x);
+      const top=Math.min(a.y,b.y),bottom=Math.max(a.y,b.y);
+      const selected=venue.structures.filter(s=>{
+        const point=worldToScreen(s,layout());
+        return point.x>=left&&point.x<=right&&point.y>=top&&point.y<=bottom;
+      }).map(s=>s.id);
+      if(!completed.additive)selectedStructureIds.clear();
+      for(const id of selected)selectedStructureIds.add(id);
+      selectedStructure=[...selectedStructureIds][0]||'';
+      refreshStructureControls(selectedStructure);
+      if(selectedStructureIds.size>1)$('structureGroupTools').open=true;
+      message(selectedStructureIds.size+' components selected with the plan box.');
+    }
+    draw();return;
+  }
+  if(completed.kind==='structure-group'){
+    const before=completed.before.structures.find(s=>s.id===completed.id);
+    const after=venue.structures.find(s=>s.id===completed.id);
+    const dx=after.x-before.x,dz=after.z-before.z;
+    venue=completed.before;
+    if(dx||dz)commitStructureBatch({
+      action:'translate',ids:completed.ids,dx,dz
+    },'Move selected components');
+    else{sync();tryPreview();}
+    return;
+  }
+  if(completed.kind==='structure'){
+    const from=completed.before.structures.find(s=>s.id===completed.id);
+    const to=venue.structures.find(s=>s.id===completed.id);
+    venue=completed.before;
+    if(!from||!to){sync();tryPreview();return;}
+    const keys=['x','y','z','yaw','width','depth','height'];
+    const changes=Object.fromEntries(keys.filter(key=>
+      Math.abs(from[key]-to[key])>1e-6).map(key=>[key,to[key]]));
+    if(Object.keys(changes).length){
+      if(!commitStructure({action:'update',id:completed.id,changes},
+        'Modify component on plan')){sync();tryPreview();}
+    }else{sync();tryPreview();}
+    return;
+  }
+  if(completed.kind==='court'||completed.kind==='zone'){
+    const changed=structuredClone(venue);
+    venue=completed.before;
+    let command=null,summary='Move playing surface';
+    if(completed.kind==='zone'){
+      const zone=changed.surfaceDesign.zones.find(s=>s.id===completed.id);
+      if(zone)command={action:'zone-update',id:zone.id,
+        changes:{x:zone.x,z:zone.z}};
+      summary='Move painted floor zone';
+    }else if(completed.handle==='width'||completed.handle==='length'){
+      command={action:'dimensions',width:changed.court.width,length:changed.court.length};
+      summary='Resize court on 2D plan';
+    }else{
+      command={action:'style',changes:{
+        centerX:changed.surfaceDesign.centerX,centerZ:changed.surfaceDesign.centerZ,
+        rotation:changed.surfaceDesign.rotation}};
+    }
+    if(command)commitSurface(command,summary);
+    else {sync();tryPreview();}
+    return;
+  }
+  try{
+    const candidate=normalizeVenue(venue);
+    if(candidate.rows.length&&candidate.rows.every(r=>candidate.sections.some(s=>
+      s.id.toLowerCase()===r.section.toLowerCase()))){
+      const geometry=generateTracedVenue(candidate);
+      if(geometry.quality.blockingCount)
+        throw Error('Dragged contour causes '+geometry.quality.blockingCount+' blocking geometry issues');
+    }
+    venue=candidate;
+    recordEdit(completed.before,(completed.kind==='structure'?'Move component ':'Adjust traced section ')+completed.id);
+    sync();tryPreview();
+  }catch(e){
+    venue=completed.before;sync();tryPreview();
+    message('Drag reverted: '+e.message,true);
+  }
 }
 canvas.addEventListener('pointerup',releasePointer);
 canvas.addEventListener('pointercancel',releasePointer);
+for(const id of ['gridVisible','snapEnabled','guidesVisible','gridStep']){
+  $(id).addEventListener('change',()=>{
+    guideState=null;repaint();
+    if(id==='gridStep')message('Metric drafting step: '+$('gridStep').value+' m.');
+  });
+}
+function showStudioHelp(show){
+  $('studioHelp').hidden=!show;
+  $('studioHelpToggle').setAttribute('aria-expanded',String(show));
+}
+$('studioHelpToggle').onclick=()=>showStudioHelp($('studioHelp').hidden);
+$('studioHelpClose').onclick=()=>showStudioHelp(false);
 const fieldHandler=()=>{
   try{const before=structuredClone(venue);venue=validateFields();
     recordEdit(before,'Update venue metadata');
@@ -436,10 +1315,11 @@ for(const id of ['school','venue','courtWidth','courtLength','capacity','capacit
 }
 $('sport').onchange=()=>{
   const old=venue;
-  if((old.sections.length||old.rows.length)&&!confirm('Changing venue type will reset the traced sections and rows. Continue?')){
+  if((old.sections.length||old.rows.length||old.structures?.length)&&!confirm('Changing venue type will reset the traced sections, rows and draft components. Continue?')){
     $('sport').value=old.sport;return;
   }
   venue=newVenue($('sport').value);venue.school=old.school;venue.venue=old.venue;
+  selectedStructure='';selectedStructureIds.clear();selectedZone='';
   recordEdit(old,'Change playing-surface type');
   image=null;registration=null;selectedSection='';preview=null;sync();repaint();
 };
@@ -451,14 +1331,305 @@ $('trace').onclick=()=>{
   if(image&&!registration){message('Calibrate the playing surface before tracing.',true);return;}
   editorMode='trace';draftPoints=[];repaint();
 };
+$('measureTool').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the court before measuring distances on a drawing.',true);return;
+  }
+  editorMode='measure';draftPoints=[];
+  $('measureResult').textContent='Select the first plan point, then the second.';
+  repaint();
+};
+$('measureClear').onclick=()=>{
+  lastMeasurement=null;draftPoints=[];editorMode='select';
+  $('measureResult').textContent='No plan measurement yet.';
+  repaint();
+};
 $('sectionSelect').onchange=()=>{selectedSection=$('sectionSelect').value;updateSectionFields();repaint();};
 $('applySection').onclick=()=>{
-  const s=venue.sections.find(s=>s.id===$('sectionSelect').value);
-  if(!s){message('Select a section first.',true);return;}
-  const before=structuredClone(venue);
-  s.baseHeight=Number($('baseHeight').value);s.rowRise=Number($('rowRise').value);
-  recordEdit(before,'Adjust section elevation '+s.id);
-  tryPreview();
+  commitOperatorEdit({type:'set-section-elevation',section:$('sectionSelect').value,
+    baseHeight:$('baseHeight').value,rowRise:$('rowRise').value},'Adjust section elevation');
+};
+$('moveSelectedSection').onclick=()=>{
+  if(commitOperatorEdit({type:'translate-section',section:$('sectionSelect').value,
+    dx:$('sectionMoveX').value,dz:$('sectionMoveZ').value},'Move section')){
+    $('sectionMoveX').value='0';$('sectionMoveZ').value='0';
+  }
+};
+$('resizeSelectedSection').onclick=()=>{
+  const percent=$('sectionWidthPct').value.trim();
+  if(commitOperatorEdit({type:'resize-section',section:$('sectionSelect').value,
+    factor:percent?Number(percent)/100:null},'Resize section'))
+    $('sectionWidthPct').value='100';
+};
+$('rowEditSection').onchange=()=>{refreshRowControls($('rowEditSection').value);draw();};
+$('rowEditRow').onchange=()=>{fillRowFields();refreshSpecialTools();draw();};
+$('seatToolSection').onchange=()=>refreshRowControls($('seatToolSection').value);
+$('seatToolRow').onchange=()=>refreshRowControls($('seatToolSection').value,$('seatToolRow').value);
+$('batchSection').onchange=()=>updateBatchPreview();
+$('batchApplyStyle').onclick=()=>commitBatch({section:$('batchSection').value,
+  kind:'seat-type',seatType:$('batchSeatType').value},'Batch seat style');
+$('batchApplyInsets').onclick=()=>commitBatch({section:$('batchSection').value,
+  kind:'end-insets',insetStartM:$('batchInsetStart').value,
+  insetEndM:$('batchInsetEnd').value},'Batch row clearance');
+document.querySelectorAll('[data-model-tool]').forEach(button=>
+  button.onclick=()=>activateModelTool(button.dataset.modelTool));
+
+$('openReviewFromScene').onclick=()=>workflowUI?.go('review');
+
+document.querySelectorAll('[data-surface-preset]').forEach(button=>
+  button.onclick=()=>commitSurface({action:'preset',
+    preset:button.dataset.surfacePreset},'Set playing surface palette'));
+$('surfaceApplyStyle').onclick=()=>commitSurface({
+  action:'style',changes:surfaceStyleFields()
+},'Edit floor colors, markings and placement');
+$('surfaceApplyDimensions').onclick=()=>commitSurface({
+  action:'dimensions',width:$('surfaceWidth').value,
+  length:$('surfaceLength').value
+},'Resize documented playing area');
+$('surfaceReset').onclick=()=>commitSurface({
+  action:'reset'
+},'Reset playing surface finish');
+$('surfaceEditOnPlan').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the source plan before manipulating the playing surface.',true);
+    return;
+  }
+  $('showPlan').click();
+  activateModelTool('surface');
+  editorMode='select';
+  repaint();
+  message('Drag the center handle to move, the side handles to resize, or the upper handle to rotate. Hold Shift for fine snapping.');
+};
+$('zoneAdd').onclick=()=>{
+  commitSurface({action:'zone-add',kind:$('zoneKind').value,
+    x:0,z:0,width:$('zoneWidth').value,depth:$('zoneDepth').value,
+    color:$('zoneColor').value},'Add painted floor area');
+};
+$('zonePlace').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the court drawing before locating a painted zone.',true);
+    return;
+  }
+  $('showPlan').click();activateModelTool('surface');
+  $('surfaceZones').open=true;
+  editorMode='place-zone';
+  repaint();
+  message('Click the plan to place the zone. The shape and size can be adjusted afterwards.');
+};
+$('zoneSelect').onchange=()=>{
+  selectedZone=$('zoneSelect').value;
+  refreshSurfaceControls(selectedZone);draw();
+};
+$('zoneApply').onclick=()=>{
+  if(!selectedZone)return message('Select a painted zone first.',true);
+  commitSurface({action:'zone-update',id:selectedZone,
+    changes:zoneFormFields()},'Edit painted floor area');
+};
+$('zoneDuplicate').onclick=()=>{
+  if(!selectedZone)return message('Select a painted zone first.',true);
+  commitSurface({action:'zone-duplicate',id:selectedZone},'Duplicate floor area');
+};
+$('zoneRemove').onclick=()=>{
+  if(!selectedZone)return message('Select a painted zone first.',true);
+  commitSurface({action:'zone-remove',id:selectedZone},'Remove painted floor area');
+};
+
+function setStructureKind(kind){
+  if(!Object.hasOwn(STRUCTURE_CATALOG,kind))return;
+  activeStructureKind=kind;
+  fillStructureFields(null);
+  document.querySelectorAll('[data-structure-kind]').forEach(button=>
+    button.setAttribute('aria-pressed',
+      String(button.dataset.structureKind===kind)));
+  const category=STRUCTURE_CATALOG[kind].category||
+    ({platform:'access',stairs:'access',rail:'access',portal:'access',
+      wall:'structure',scoreboard:'equipment',table:'equipment'}[kind]??'access');
+  if($('structureCategory').value!=='all')$('structureCategory').value=category;
+  refreshStructurePalette();
+  $('structureStatus').textContent='Ready to create '+STRUCTURE_CATALOG[kind].label+
+    '. Set the dimensions, then add or place on the 2D plan.';
+}
+document.querySelectorAll('[data-structure-kind]').forEach(button=>
+  button.onclick=()=>setStructureKind(button.dataset.structureKind));
+$('structureCategory').onchange=()=>refreshStructurePalette();
+$('structureSearch').oninput=()=>refreshStructurePalette();
+$('objectPropertiesToggle').onclick=()=>{
+  if(!selectedStructure)return message('Select a venue component first.',true);
+  quickInspectorOpen=!quickInspectorOpen;refreshQuickObjectInspector();
+};
+$('quickClose').onclick=()=>{quickInspectorOpen=false;refreshQuickObjectInspector();};
+$('quickApply').onclick=()=>{
+  if(!selectedStructure)return message('Select a component first.',true);
+  const map={quickX:'x',quickY:'y',quickZ:'z',quickYaw:'yaw',
+    quickWidth:'width',quickDepth:'depth',quickHeight:'height'};
+  const changes=Object.fromEntries(Object.entries(map).map(([id,key])=>
+    [key,$(id).value]));
+  commitStructure({action:'update',id:selectedStructure,changes},
+    'Edit selected object from canvas');
+};
+$('quickCopy').onclick=()=>{
+  if(selectedStructure)commitStructure({action:'duplicate',id:selectedStructure},
+    'Duplicate selected object from canvas');
+};
+$('quickDelete').onclick=()=>{
+  if(!selectedStructure)return;
+  if(confirm('Delete the selected draft object '+selectedStructure+'?'))
+    commitStructure({action:'remove',id:selectedStructure},
+      'Delete selected object from canvas');
+};
+$('structureMultiSelect').onchange=()=>{
+  const selected=[...$('structureMultiSelect').selectedOptions].map(o=>o.value);
+  selectedStructureIds=new Set(selected);
+  selectedStructure=selected[0]||'';
+  refreshStructureControls(selectedStructure);
+  repaint();
+};
+$('structureSelectAll').onclick=()=>{
+  selectedStructureIds=new Set(venue.structures.map(s=>s.id));
+  selectedStructure=[...selectedStructureIds][0]||'';
+  refreshStructureControls(selectedStructure);repaint();
+};
+$('structureSelectOne').onclick=()=>{
+  selectedStructureIds=new Set(selectedStructure?[selectedStructure]:[]);
+  refreshStructureControls(selectedStructure);repaint();
+};
+for(const [button,action] of [
+  ['structureGroupAlign','align'],['structureGroupSpace','distribute'],
+  ['structureGroupMirror','mirror'],['structureGroupMove','translate'],
+  ['structureGroupCopy','duplicate'],['structureGroupArray','array']
+]){
+  $(button).onclick=()=>{
+    const command={action,ids:[...selectedStructureIds]};
+    if(['align','distribute','mirror'].includes(action))
+      command.axis=$('structureGroupAxis').value;
+    else{
+      command.dx=$('structureGroupDx').value;
+      command.dz=$('structureGroupDz').value;
+      if(action==='array')command.copies=$('structureGroupCopies').value;
+    }
+    commitStructureBatch(command,{
+      align:'Align selected component centers',
+      distribute:'Space selected components evenly',
+      mirror:'Mirror selected component layout',
+      translate:'Move selected components',
+      duplicate:'Duplicate selected components',
+      array:'Create repeated component array'
+    }[action]);
+  };
+}
+$('structureGroupRemove').onclick=()=>{
+  const ids=[...selectedStructureIds];
+  if(!ids.length)return message('Select components to remove.',true);
+  if(!confirm('Remove '+ids.length+' selected draft components?'))return;
+  commitStructureBatch({action:'remove',ids},'Remove selected components');
+};
+document.querySelectorAll('[data-structure-nudge]').forEach(button=>
+  button.onclick=()=>{
+    const s=venue.structures.find(x=>x.id===selectedStructure);
+    if(!s)return message('Select a component to move.',true);
+    const delta={left:[-.25,0],right:[.25,0],up:[0,-.25],down:[0,.25]}
+      [button.dataset.structureNudge];
+    if(!delta)return;
+    commitStructure({action:'update',id:s.id,
+      changes:{x:Math.round((s.x+delta[0])*100)/100,
+        z:Math.round((s.z+delta[1])*100)/100}},'Nudge venue component');
+  });
+$('structureSelect').onchange=()=>selectStructure($('structureSelect').value);
+$('structureAssemblyAdd').onclick=()=>commitStructureAssembly(
+  $('structureAssemblyX').value,$('structureAssemblyZ').value);
+$('structureAssemblyPlace').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the source drawing before placing an assembly.',true);return;
+  }
+  $('showPlan').click();
+  activateModelTool('structures');
+  editorMode='place-assembly';
+  repaint();
+  message('Click the 2D plan to position the complete '+VENUE_ASSEMBLIES[
+    $('structureAssemblyPreset').value].label+' assembly.');
+};
+$('structureAdd').onclick=()=>{
+  commitStructure({action:'add',kind:activeStructureKind,
+    ...structureFormValues()},'Add '+STRUCTURE_CATALOG[activeStructureKind].label);
+};
+$('structureApply').onclick=()=>{
+  if(!selectedStructure)return message('Select or create a component first.',true);
+  commitStructure({action:'update',id:selectedStructure,
+    changes:structureFormValues()},'Edit venue component');
+};
+$('structurePickOnPlan').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the source drawing before placing components on the plan.',true);
+    return;
+  }
+  $('showPlan').click();
+  editorMode='place-structure';
+  draftPoints=[];
+  repaint();
+  message('Click the 2D plan to place '+STRUCTURE_CATALOG[activeStructureKind].label+
+    '. Hold Shift while dragging to snap to a 10 cm grid.');
+};
+$('structureDuplicate').onclick=()=>{
+  if(!selectedStructure)return message('Select a component first.',true);
+  commitStructure({action:'duplicate',id:selectedStructure},'Duplicate venue component');
+};
+$('structureRotate').onclick=()=>{
+  const s=venue.structures.find(s=>s.id===selectedStructure);
+  if(!s)return message('Select a component first.',true);
+  const next=((s.yaw+90+180)%360)-180;
+  commitStructure({action:'update',id:s.id,changes:{yaw:next}},'Rotate venue component');
+};
+$('structureRemove').onclick=()=>{
+  if(!selectedStructure)return message('Select a component first.',true);
+  if(!confirm('Remove '+selectedStructure+' from this editable draft?'))return;
+  commitStructure({action:'remove',id:selectedStructure},'Remove venue component');
+};
+$('seatEditNumber').onchange=()=>fillSeatOffsetFields();
+$('seatApplyOffset').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  commitOperatorEdit({type:'set-seat-offset',section,row,
+    number:$('seatEditNumber').value.trim(),
+    dx:$('seatShiftX').value,dy:$('seatShiftY').value,dz:$('seatShiftZ').value},
+    'Adjust individual seat',row);
+};
+$('seatResetOffset').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  commitOperatorEdit({type:'clear-seat-offset',section,row,
+    number:$('seatEditNumber').value.trim()},'Clear individual seat correction',row);
+};
+$('applyRowEdit').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  if(!section||!row){message('Select an existing section and row.',true);return;}
+  const current=venue.rows.find(r=>r.section===section&&r.row===row);
+  const labels=$('rowEditNumbers').value.trim();
+  const count=Number($('rowEditSeats').value);
+  if(current?.seatNumbers?.length&&count!==current.seats&&!labels&&
+    !confirm('Clear explicit source seat labels and replace them with provisional sequential numbers?'))return;
+  commitOperatorEdit({type:'update-row',section,row,changes:{
+    seats:$('rowEditSeats').value,first:$('rowEditFirst').value,
+    seatNumbers:labels,seatDirection:$('rowEditDirection').value,
+    seatType:$('rowEditType').value,gaps:$('rowEditGaps').value,
+    insetStartM:$('rowInsetStart').value,insetEndM:$('rowInsetEnd').value,
+    depthOffsetM:$('rowDepthOffset').value,
+    elevation:$('rowEditElevation').value.trim()===''?null:$('rowEditElevation').value
+  }},'Update row',row);
+};
+$('rowAdd').onclick=()=>{
+  const section=$('rowEditSection').value;
+  const row=$('rowNewLabel').value.trim(),seats=$('rowNewSeats').value;
+  if(commitOperatorEdit({type:'add-row',section,afterRow:$('rowEditRow').value||null,
+    newRow:{row,seats}},'Add provisional row',row))$('rowNewLabel').value='';
+};
+for(const [button,direction] of [['rowMoveUp','up'],['rowMoveDown','down']])
+  $(button).onclick=()=>{
+    const section=$('rowEditSection').value,row=$('rowEditRow').value;
+    commitOperatorEdit({type:'move-row',section,row,direction},'Reorder row',row);
+  };
+$('rowRemove').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  if(!section||!row)return;
+  if(!confirm('Remove row '+section+'/'+row+'? This changes the source-model seat count and requires manual reconciliation.'))return;
+  commitOperatorEdit({type:'remove-row',section,row},'Remove staff-reviewed row');
 };
 $('removeSection').onclick=()=>{
   const id=selectedSection;
@@ -609,6 +1780,81 @@ $('planFile').onchange=async event=>{
 };
 $('csvExample').onclick=()=>save('example-rows.csv',
   'section,row,seats,seat_start,tier,seat_type\r\nHOME,A,12,1,T1,bleacher\r\nHOME,B,12,1,T1,bleacher\r\nAWAY,A,10,1,T1,chair\r\n',mimeCSV);
+function bowlOptions(){
+  return {template:$('bowlPreset').value,
+    sectors:Number($('bowlSectors').value),levels:Number($('bowlLevels').value),
+    rowsPerTier:Number($('bowlRows').value),rowDepth:Number($('bowlRowDepth').value),
+    seatWidth:Number($('bowlSeatPitch').value),
+    rowRise:Number($('bowlRowRise').value),
+    clearance:Number($('bowlClearance').value)};
+}
+function updateBowlDefaults(){
+  const spec=BOWL_STARTERS[$('bowlPreset').value];
+  if(!spec)return;
+  for(const [id,n] of [
+    ['bowlSectors',spec.sectors],['bowlLevels',spec.rows.length],
+    ['bowlRows',spec.rows[0]],['bowlRowDepth',spec.rowDepth],
+    ['bowlSeatPitch',spec.seatWidth],['bowlRowRise',spec.rises[0]],
+    ['bowlClearance',spec.clearance]])$(id).value=String(n);
+  updateBowlEstimate();
+}
+function updateBowlEstimate(){
+  try{
+    const generated=buildSyntheticBowl(bowlOptions());
+    const seats=generated.rows.reduce((n,row)=>n+row.seats,0);
+    $('bowlEstimate').textContent=number(generated.sections.length)+
+      ' editable banks · '+number(generated.rows.length)+' rows · '+
+      number(seats)+' estimated seats. Not an official inventory.';
+    $('bowlBuild').disabled=false;
+  }catch(e){
+    $('bowlEstimate').textContent=e.message;
+    $('bowlBuild').disabled=true;
+  }
+}
+function loadSyntheticBowl(options,{quiet=false}={}){
+  try{
+    if($('bowlPreset').value!==options.template&&
+      Object.hasOwn(BOWL_STARTERS,options.template)){
+      $('bowlPreset').value=options.template;
+      updateBowlDefaults();
+    }
+    if(venue.sources.length||venue.officialCapacity!==null)
+      throw Error('This project contains source-backed records. Export it first, then open a new workspace before creating a fictional venue.');
+    if(!quiet&&(venue.rows.length||venue.sections.length||venue.structures.length)&&
+      !confirm('Replace the current unsourced draft with this entirely fictional seating bowl?'))return false;
+    const candidate=buildSyntheticBowl(options);
+    const before=structuredClone(venue);
+    venue=candidate;
+    image=null;registration=null;selectedSeat=null;selectedSection='';
+    selectedStructure='';selectedStructureIds.clear();selectedZone='';
+    editorMode='select';draftPoints=[];lastMeasurement=null;
+    if(pdfHandle){closePdfFile(pdfHandle).catch(()=>{});pdfHandle=null;}
+    $('pdfPageWrap').hidden=true;
+    $('pdfStatus').textContent='Synthetic example. No source PDF or measured drawing is attached.';
+    recordEdit(before,'Generate synthetic venue '+venue.venue);
+    sync();tryPreview();
+    if(!preview){
+      venue=before;sync();tryPreview();
+      throw Error('The proposed synthetic bowl did not pass geometry validation. Original draft restored.');
+    }
+    workflowUI?.go('model');
+    activateModelTool('bowl');
+    message('Created '+number(venue.sections.length)+
+      ' editable spectator banks and '+number(venue.rows.length)+
+      ' row records. Entire model is synthetic and unverified.');
+    return true;
+  }catch(e){message('Bowl generation rejected: '+e.message,true);return false;}
+}
+$('bowlPreset').onchange=updateBowlDefaults;
+for(const id of ['bowlSectors','bowlLevels','bowlRows','bowlRowDepth',
+  'bowlSeatPitch','bowlRowRise','bowlClearance'])
+  $(id).addEventListener('input',updateBowlEstimate);
+$('bowlBuild').onclick=()=>loadSyntheticBowl(bowlOptions());
+$('sourceStarterLoad').onclick=()=>loadSyntheticBowl({
+  template:$('sourceStarterSelect').value
+});
+updateBowlDefaults();
+
 $('fixture').onclick=()=>{
   const before=structuredClone(venue);
   venue=fictionalGym();registration=null;image=null;preview=null;selectedSection='';
@@ -620,6 +1866,143 @@ $('fixture').onclick=()=>{
   workflowUI?.go('model');
   message('Loaded an explicitly fictional 1,500-seat geometry exercise.');
 };
+function render3dEditorOverlay(current){
+  const overlay=$('gizmoCanvas'),bounds=modelCanvas.getBoundingClientRect();
+  if(overlay.hidden||bounds.width<2||bounds.height<2)return;
+  const scale=Math.min(window.devicePixelRatio||1,1.5);
+  const w=Math.round(bounds.width*scale),h=Math.round(bounds.height*scale);
+  if(overlay.width!==w||overlay.height!==h){overlay.width=w;overlay.height=h;}
+  const ox=overlay.getContext('2d');
+  ox.setTransform(scale,0,0,scale,0,0);ox.clearRect(0,0,bounds.width,bounds.height);
+  const screen=point=>{
+    const p=current.projectPoint(point);
+    return p?{x:p[0]/(modelCanvas.width/bounds.width),
+      y:p[1]/(modelCanvas.height/bounds.height)}:null;
+  };
+  if($('gridVisible').checked&&current.mode!=='human'){
+    const s=venue.surfaceDesign;
+    const extentX=Math.max(18,venue.court.width*.8);
+    const extentZ=Math.max(25,venue.court.length*.65);
+    const step=Math.max(2,Number($('gridStep').value)*4);
+    ox.save();ox.strokeStyle='#6f9eab35';ox.lineWidth=.8;
+    for(let x=-extentX;x<=extentX+.01;x+=step){
+      const a=screen([x,0,-extentZ]),b=screen([x,0,extentZ]);
+      if(!a||!b)continue;
+      ox.beginPath();ox.moveTo(a.x,a.y);ox.lineTo(b.x,b.y);ox.stroke();
+    }
+    for(let z=-extentZ;z<=extentZ+.01;z+=step){
+      const a=screen([-extentX,0,z]),b=screen([extentX,0,z]);
+      if(!a||!b)continue;
+      ox.beginPath();ox.moveTo(a.x,a.y);ox.lineTo(b.x,b.y);ox.stroke();
+    }
+    ox.restore();
+  }
+  const selected=venue.structures.find(x=>x.id===selectedStructure);
+  if(!selected||activeModelTool!=='structures'||current.mode==='human')return;
+  const center=[selected.x,selected.y+selected.height/2,selected.z];
+  const origin=screen(center);if(!origin)return;
+  modelCanvas.dataset.operatorScreenX=origin.x.toFixed(2);
+  modelCanvas.dataset.operatorScreenY=origin.y.toFixed(2);
+  modelCanvas.dataset.operatorId=selected.id;
+  const axes=[
+    ['X',[center[0]+2.5,center[1],center[2]],'#cb625c'],
+    ['Y',[center[0],center[1]+2.5,center[2]],'#4d9974'],
+    ['Z',[center[0],center[1],center[2]+2.5],'#477ec8']
+  ];
+  ox.save();
+  for(const [axis,end,color] of axes){
+    const target=screen(end);
+    if(!target)continue;
+    const dx=target.x-origin.x,dy=target.y-origin.y;
+    const length=Math.hypot(dx,dy);if(length<.1)continue;
+    const reach=Math.max(27,Math.min(48,length));
+    const px=origin.x+dx/length*reach,py=origin.y+dy/length*reach;
+    ox.strokeStyle=color;ox.fillStyle=color;ox.lineWidth=3;
+    ox.beginPath();ox.moveTo(origin.x,origin.y);ox.lineTo(px,py);ox.stroke();
+    ox.beginPath();ox.arc(px,py,4.5,0,Math.PI*2);ox.fill();
+    ox.font='700 11px system-ui';ox.textAlign='center';
+    ox.fillText(axis,px+9,py-5);
+  }
+  ox.beginPath();ox.arc(origin.x,origin.y,5.5,0,Math.PI*2);
+  ox.fillStyle='#fff';ox.fill();ox.strokeStyle='#35566d';
+  ox.lineWidth=2;ox.stroke();
+  const readout=selected.label+'  X '+selected.x.toFixed(2)+
+    '  Y '+selected.y.toFixed(2)+'  Z '+selected.z.toFixed(2);
+  ox.font='600 11px system-ui';ox.textAlign='left';
+  const labelWidth=ox.measureText(readout).width+18;
+  const px=Math.max(7,Math.min(bounds.width-labelWidth-7,origin.x+13));
+  const py=Math.max(64,Math.min(bounds.height-56,origin.y+11));
+  ox.fillStyle='#263d4ce8';ox.fillRect(px,py,labelWidth,23);
+  ox.fillStyle='#fff';ox.fillText(readout,px+9,py+16);
+  ox.restore();
+}
+function start3dObjectDrag(structure){
+  if(!$('threeDEditEnabled').checked||viewMode==='eye')return false;
+  if(!venue.structures.some(s=>s.id===structure.id))return false;
+  const selected=selectedStructureIds.has(structure.id)&&selectedStructureIds.size>1;
+  if(!selected)selectStructure(structure.id);
+  else{selectedStructure=structure.id;refreshStructureControls(structure.id);}
+  modelDrag={before:structuredClone(venue),id:structure.id,
+    ids:selected?[...selectedStructureIds]:[structure.id],
+    proposal:{dx:0,dz:0,dy:0}};
+  activateModelTool('structures');
+  $('threeDEditReadout').textContent='Moving '+modelDrag.ids.length+
+    ' object(s) · release to validate; Alt adjusts elevation.';
+  return true;
+}
+function preview3dObjectDrag(delta){
+  if(!modelDrag||!renderer)return;
+  const anchor=modelDrag.before.structures.find(s=>s.id===modelDrag.id);
+  if(!anchor)return;
+  let dx=0,dz=0,dy=0;
+  if(delta.altKey){
+    dy=Math.round(delta.dy*10)/10;
+    dy=Math.max(-Math.min(...modelDrag.ids.map(id=>
+      modelDrag.before.structures.find(s=>s.id===id).y)),dy);
+    dy=Math.min(85-Math.max(...modelDrag.ids.map(id=>
+      modelDrag.before.structures.find(s=>s.id===id).y)),dy);
+  }else{
+    const point=inferObjectPoint({x:anchor.x+delta.dx,
+      z:anchor.z+delta.dz},modelDrag.ids,delta);
+    dx=point.x-anchor.x;dz=point.z-anchor.z;
+  }
+  modelDrag.proposal={dx,dz,dy};
+  for(const id of modelDrag.ids){
+    const before=modelDrag.before.structures.find(s=>s.id===id);
+    const current=venue.structures.find(s=>s.id===id);
+    if(before&&current){
+      current.x=before.x+dx;current.z=before.z+dz;
+      current.y=before.y+dy;
+    }
+  }
+  renderer.updateOperatorInstances(venue.structures,
+    buildStructureInstances(venue.structures));
+  $('threeDEditReadout').textContent=modelDrag.ids.length+' selected · '+
+    'ΔX '+dx.toFixed(2)+' m · ΔY '+dy.toFixed(2)+' m · ΔZ '+dz.toFixed(2)+' m';
+}
+function finish3dObjectDrag(cancel=false){
+  if(!modelDrag)return;
+  const completed=modelDrag;modelDrag=null;guideState=null;
+  const {dx,dz,dy}=completed.proposal;
+  venue=completed.before;
+  if(cancel||(!dx&&!dz&&!dy)){
+    $('threeDEditReadout').textContent='Selection ready · drag an object to move; Alt changes height.';
+    if(cancel)renderer?.updateOperatorInstances(venue.structures,
+      buildStructureInstances(venue.structures));
+    return;
+  }
+  let success=false;
+  if(completed.ids.length>1)success=commitStructureBatch({
+    action:'translate',ids:completed.ids,dx,dz,dy
+  },'Move objects directly in 3D');
+  else{
+    const from=completed.before.structures.find(s=>s.id===completed.id);
+    success=commitStructure({action:'update',id:completed.id,
+      changes:{x:from.x+dx,y:from.y+dy,z:from.z+dz}},
+      'Move object directly in 3D');
+  }
+  if(!success){sync();tryPreview();}
+}
 function open3d(mode){
   if(!preview){message('Trace sections, import rows, and generate a valid model first.',true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
   viewMode=mode;canvas.hidden=true;modelCanvas.hidden=false;
@@ -629,22 +2012,126 @@ function open3d(mode){
       $('seatDetails').textContent='Section '+s.sectionId+' · Row '+s.row+' · Seat '+s.number+
         '\nX '+s.x.toFixed(2)+' m / Y '+s.y.toFixed(2)+' m / Z '+s.z.toFixed(2)+' m';
       renderer.highlight(s);
+      if(venue.rows.some(r=>r.section===s.sectionId&&r.row===s.row)){
+        refreshRowControls(s.sectionId,s.row);
+        $('seatEditNumber').value=String(s.number);fillSeatOffsetFields();
+        activateModelTool('seats');
+      }
     });}
     catch(e){message('WebGL2 unavailable: '+e.message,true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
   }
+  renderer.onStructurePick=structure=>selectStructure(structure.id);
+  renderer.onStructureDragStart=structure=>start3dObjectDrag(structure);
+  renderer.onStructureDrag=delta=>preview3dObjectDrag(delta);
+  renderer.onStructureDragEnd=()=>finish3dObjectDrag(false);
+  renderer.onStructureDragCancel=()=>finish3dObjectDrag(true);
+  renderer.onFrame=current=>{
+    const metrics=current.framingMetrics();
+    modelCanvas.dataset.seatingWidth=(metrics.seatWidth*100).toFixed(1);
+    modelCanvas.dataset.seatingHeight=(metrics.seatHeight*100).toFixed(1);
+    render3dEditorOverlay(current);
+  };
   renderer.load(preview.plan);renderer.resize();
   renderer.view(mode==='eye'?'human':'overview',selectedSeat);
   if(mode==='eye'&&!selectedSeat)message('Select a seat in 3D overview before entering Seat view.',true);
 }
 function tab(mode){
+  const show3d=mode!=='plan'&&mode!=='eye';
+  $('gizmoCanvas').hidden=!show3d;
+  $('threeDHint').hidden=!show3d;
+  $('precisionBar').hidden=mode==='eye';
   $('canvasOverlay').hidden=mode!=='plan'||!(image||venue.rows.length||venue.sections.length||preview);
   $('showPlan').classList.toggle('active',mode==='plan');
   $('show3d').classList.toggle('active',mode==='overview');
   $('showEye').classList.toggle('active',mode==='eye');
+  if(show3d&&renderer)render3dEditorOverlay(renderer);
 }
 $('showPlan').onclick=()=>{viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;tab('plan');resize();};
 $('show3d').onclick=()=>{open3d('overview');tab(viewMode);};
 $('showEye').onclick=()=>{if(!selectedSeat){message('Click a seat in 3D overview first.',true);return;}open3d('eye');tab(viewMode);};
+
+function requireModelCamera(){
+  if(!preview){message('Generate a 3D preview first.',true);return null;}
+  if(viewMode==='plan')open3d('overview');
+  return renderer;
+}
+$('cameraFit').onclick=()=>{
+  const view=requireModelCamera();if(!view)return;
+  view.focusOnModel();$('cameraZoom').value='120';$('cameraZoomLabel').textContent='120%';
+};
+$('cameraTop').onclick=()=>{
+  const view=requireModelCamera();if(!view)return;
+  view.view('top');viewMode='overview';tab('overview');
+};
+$('cameraFocus').onclick=()=>{
+  const view=requireModelCamera();if(!view)return;
+  const section=$('rowEditSection').value||$('sectionSelect').value;
+  if(!view.focusOnSection(section))message('Choose a section with modeled seats.',true);
+  else{viewMode='overview';tab('overview');}
+};
+$('cameraZoom').oninput=()=>{
+  const view=requireModelCamera();if(!view)return;
+  const percent=Number($('cameraZoom').value);
+  view.setEditorZoom(100/percent);
+  $('cameraZoomLabel').textContent=percent+'%';
+};
+$('cameraCapture').onclick=()=>{
+  try{
+    if(!preview)throw Error('Generate a model before saving its image');
+    const source=viewMode==='plan'?canvas.toDataURL('image/png'):
+      renderer?.capture();
+    if(!source)throw Error('3D capture is unavailable');
+    const a=document.createElement('a');a.href=source;
+    a.download=safeName()+'-model.png';a.click();
+    requestedDownloads.unshift('Requested · '+a.download);
+    refreshActivity();
+  }catch(e){message(e.message,true);}
+};
+$('toggleTools').onclick=()=>{
+  const collapsed=document.querySelector('.content-grid').classList.toggle('tools-collapsed');
+  $('toggleTools').setAttribute('aria-pressed',String(collapsed));
+  $('toggleTools').textContent=collapsed?'Show tools':'Hide tools';
+  requestAnimationFrame(resize);
+};
+activateModelTool('rows');
+window.addEventListener('keydown',event=>{
+  if(event.target?.closest?.('input,textarea,select,[contenteditable],button'))return;
+  const key=event.key.toLowerCase();
+  const building=workflowUI?.current==='model'&&activeModelTool==='structures';
+  if(building&&selectedStructureIds.size&&
+      (event.ctrlKey||event.metaKey)&&!event.altKey&&key==='d'){
+    event.preventDefault();
+    if(selectedStructureIds.size>1)commitStructureBatch({
+      action:'duplicate',ids:[...selectedStructureIds],dx:1,dz:0
+    },'Duplicate selected components');
+    else $('structureDuplicate').click();
+    return;
+  }
+  if(event.ctrlKey||event.metaKey||event.altKey)return;
+  if(building&&selectedStructureIds.size&&
+      ['arrowleft','arrowright','arrowup','arrowdown'].includes(key)){
+    event.preventDefault();
+    const step=event.shiftKey?.05:.25;
+    const dx=key==='arrowleft'?-step:key==='arrowright'?step:0;
+    const dz=key==='arrowup'?-step:key==='arrowdown'?step:0;
+    if(selectedStructureIds.size>1)commitStructureBatch({
+      action:'translate',ids:[...selectedStructureIds],dx,dz
+    },'Nudge selected components');
+    else{
+      const s=venue.structures.find(s=>s.id===selectedStructure);
+      if(s)commitStructure({action:'update',id:s.id,changes:{
+        x:Math.round((s.x+dx)*100)/100,z:Math.round((s.z+dz)*100)/100
+      }},'Nudge venue component');
+    }
+    return;
+  }
+  if(building&&selectedStructureIds.size&&key==='delete'){
+    event.preventDefault();$('structureGroupRemove').click();return;
+  }
+  if(key==='f'){$('cameraFit').click();}
+  else if(key==='t'){$('cameraTop').click();}
+  else if(key==='v'){$('showPlan').click();}
+});
 $('generate').onclick=()=>tryPreview();
 $('saveProject').onclick=()=>{
   try{venue=validateFields();save(safeName()+'.filedmaker-workbench.json',JSON.stringify(venue,null,2));message('Editable source project saved.');}
@@ -664,7 +2151,8 @@ $('openProject').onchange=async event=>{
     if(pdfHandle){await closePdfFile(pdfHandle);pdfHandle=null;}
     $('pdfPageWrap').hidden=true;
     $('pdfStatus').textContent='No active PDF reader. Reattach the source PDF to review another page.';
-    venue=next;image=loadedImage;registration=image&&next.calibration.corners.length===4?
+    venue=next;image=loadedImage;selectedStructure='';selectedStructureIds.clear();selectedZone='';
+    registration=image&&next.calibration.corners.length===4?
       registerCourt(next.calibration.corners,next.court.width,next.court.length):null;
     preview=null;selectedSeat=null;selectedSection='';editorMode='select';draftPoints=[];
     recordEdit(before,'Import editable project');
@@ -711,6 +2199,17 @@ $('saveReport').onclick=()=>{
       preview.venue.court.length,preview.venue.calibration.checkpoints||[]):null,
     sourceManifest:preview.venue.sources,sourceReview:assessSources(preview.venue),
     quality:preview.quality,changeLog:preview.venue.changeLog,
+    staffEditLedger:preview.venue.editLedger,
+    staffEditSummary:{
+      editedRows:preview.venue.rows.filter(r=>r.operatorEdited).length,
+      addedRows:preview.venue.rows.filter(r=>r.operatorAdded).length,
+      changedSourceSeatCounts:preview.venue.rows.filter(r=>
+        r.sourceSeats!==null&&r.sourceSeats!==undefined&&
+        r.seats!==r.sourceSeats).length,
+      deletedRowEvents:preview.venue.editLedger.filter(e=>e.operation==='remove-row').length,
+      adjustedSeats:preview.venue.rows.reduce((n,r)=>n+(r.seatOverrides?.length??0),0),
+      sourceReconciliationRequired:preview.venue.editLedger.length>0
+    },
     ...preview.audit,rowRuns:preview.rowRuns,warnings:preview.warnings},null,2));
 };
 $('publish').onclick=async()=>{
@@ -855,6 +2354,12 @@ async function openRequestedCase(){
   if(example==='fictional'){
     const c=getVenueCase('fictional-gym');showCaseContext(c);
     $('fixture').click();
+  }else if(example?.startsWith('bowl-')&&
+    Object.hasOwn(BOWL_STARTERS,example.slice(5))){
+    const template=example.slice(5),record=getVenueCase('synthetic-'+template);
+    if(record)showCaseContext(record);
+    $('bowlPreset').value=template;updateBowlDefaults();
+    loadSyntheticBowl({template},{quiet:true});
   }else if(example==='aiken'){
     const c=getVenueCase('aiken-high');showCaseContext(c);
     try{

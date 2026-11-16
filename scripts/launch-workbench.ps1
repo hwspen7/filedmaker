@@ -4,7 +4,6 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$target = 'feature/big-ten-arena-parity'
 Set-Location $root
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     throw 'Git is not installed or not on PATH.'
@@ -14,23 +13,19 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host 'Checking the actual FiledMaker Git checkout...'
-& git fetch origin $target
-if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch the designated FiledMaker development branch.' }
-
-$localBranch = (& git branch --show-current).Trim()
-if ($localBranch -ne $target) {
-    $dirty = & git status --porcelain
-    if ($dirty) {
-        throw 'Local edits exist. Commit or stash them before switching branches; no files were discarded.'
-    }
-    & git switch $target
-    if ($LASTEXITCODE -ne 0) {
-        & git switch --track "origin/$target"
-        if ($LASTEXITCODE -ne 0) { throw 'Cannot switch to the development branch.' }
-    }
+$target = (& git branch --show-current).Trim()
+if (-not $target) {
+    throw 'Detached HEAD is not supported. Switch to main or the desired feature branch.'
 }
-& git pull --ff-only origin $target
-if ($LASTEXITCODE -ne 0) { throw 'Branch cannot fast-forward. Check local commits before updating.' }
+# Launching is read-only with respect to Git. A workspace may contain
+# legitimate user edits, generated files, or staged changes.
+# Updates belong to an explicit user-driven fetch/pull, not application startup.
+$dirty = & git status --porcelain
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the Git working tree.' }
+if ($dirty) {
+    Write-Warning 'Local changes detected. Launching the checked-out files without changing or stashing them.'
+}
+Write-Host "Selected Git branch: $target"
 
 $sha = (& git rev-parse HEAD).Trim()
 $branch = (& git branch --show-current).Trim()

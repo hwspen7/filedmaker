@@ -107,7 +107,12 @@ test('homepage exposes only two OSU references and custom workbench',()=>{
 
 test('Windows workbench launcher checks branch and runtime identity',()=>{
   const launcher=readFileSync(new URL('../scripts/launch-workbench.ps1',import.meta.url),'utf8');
-  assert.match(launcher,/feature\/big-ten-arena-parity/);
+  assert.match(launcher,/git branch --show-current/);
+  assert.match(launcher,/Local changes detected/);
+  assert.match(launcher,/git status --porcelain/);
+  assert.doesNotMatch(launcher,/Uncommitted edits exist/);
+  assert.doesNotMatch(launcher,/& git (?:fetch|pull) /);
+  assert.doesNotMatch(launcher,/\$target = 'feature\/big-ten-arena-parity'/);
   assert.match(launcher,/__filedmaker\/status/);
   assert.match(launcher,/workbench\//);
   assert.doesNotMatch(launcher,/data-bigten=/);

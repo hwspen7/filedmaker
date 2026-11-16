@@ -32,3 +32,46 @@ h1{font-size:clamp(27px,3.1vw,38px);letter-spacing:-1.35px;font-weight:680;margi
 @media(max-width:970px){.case-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-layout{grid-template-columns:1fr}.detail-next{max-width:420px}}
 @media(max-width:640px){.topbar{padding:0 15px;gap:12px}.brand{margin-right:0}.topbar nav{gap:11px}.topbar nav a{font-size:11px}.topbar nav a:last-child{display:none}.new-btn{font-size:11px;padding:9px}
 .main{padding:32px 18px 60px}.heading{align-items:stretch;flex-direction:column;gap:17px}.search input{width:100%}.case-grid{grid-template-columns:1fr}.art{height:176px}.detail-head{display:block}.detail-status{display:inline-block;margin-top:17px}}
+
+/* Different schematic floor plans for the six editable synthetic examples. */
+.art[data-layout]{background:linear-gradient(145deg,#f5f7f7,#e8eef0)}
+.art[data-layout] .seating-ring{position:relative;transition:transform .2s}
+.art[data-layout="school-end-stands"] .seating-ring{
+  width:64%;height:72%;border:0;border-radius:4px;background:#c0d5c5;
+  transform:rotate(-8deg);box-shadow:inset 0 0 0 7px #e4ece5}
+.art[data-layout="school-end-stands"] .seating-ring::before,
+.art[data-layout="school-end-stands"] .seating-ring::after{
+  content:"";position:absolute;left:19%;width:62%;height:14px;
+  background:repeating-linear-gradient(0deg,#809aa7 0 3px,#c6d5dc 3px 5px);
+  border:2px solid #7c9aa6;border-radius:3px}
+.art[data-layout="school-end-stands"] .seating-ring::before{top:3px}
+.art[data-layout="school-end-stands"] .seating-ring::after{bottom:3px}
+.art[data-layout="four-side-fieldhouse"] .seating-ring{
+  width:69%;height:70%;border:13px solid #8ba6b7;border-radius:38%;
+  background:#bfcec5;box-shadow:inset 0 0 0 8px #e6eceb;
+  transform:rotate(-10deg)}
+.art[data-layout="college-two-tier"] .seating-ring{
+  width:75%;height:79%;border:14px solid #98b1bf;border-radius:44%;
+  background:#c4d6cb;transform:rotate(-12deg);
+  box-shadow:inset 0 0 0 9px #edf1f1,inset 0 0 0 26px #6689a2}
+.art[data-layout="metro-three-tier"] .seating-ring{
+  width:85%;height:85%;border:15px solid #9eb2bf;border-radius:44%;
+  background:#c1d5c8;transform:rotate(-13deg);
+  box-shadow:inset 0 0 0 7px #eff3f2,inset 0 0 0 18px #b1c4cf,
+    inset 0 0 0 24px #f3f6f6,inset 0 0 0 39px #658da4}
+.art[data-layout="horseshoe-football"] .seating-ring{
+  width:83%;height:80%;border:17px solid #7f9baf;
+  border-bottom:0;border-radius:50% 50% 15% 15%;background:#96b6a1;
+  box-shadow:inset 0 0 0 9px #e6ece8;
+  transform:rotate(0deg)}
+.art[data-layout="grandstand-football"] .seating-ring{
+  width:86%;height:65%;border:0;border-radius:4px;
+  background:#9ab89f;box-shadow:inset 0 0 0 7px #dce8dc;
+  transform:rotate(-9deg)}
+.art[data-layout="grandstand-football"] .seating-ring::before,
+.art[data-layout="grandstand-football"] .seating-ring::after{
+  content:"";position:absolute;width:19%;height:96%;top:2%;
+  background:repeating-linear-gradient(90deg,#7e9bac 0 5px,#b6cbd5 5px 8px);
+  border:2px solid #668aa3;border-radius:3px}
+.art[data-layout="grandstand-football"] .seating-ring::before{left:1%}
+.art[data-layout="grandstand-football"] .seating-ring::after{right:1%}

@@ -1,7 +1,8 @@
 import {VENUE_CASES,getVenueCase} from '../src/workbench/caseCatalog.mjs';
 
 const $=id=>document.getElementById(id);
-const MODEL_IDS=new Set(['osu-basketball','osu-football','fictional-gym','aiken-high']);
+const MODEL_IDS=new Set(['osu-basketball','osu-football','fictional-gym','aiken-high',
+  ...VENUE_CASES.filter(c=>c.group==='demos').map(c=>c.id)]);
 const validFilters=new Set(['all','models','schools']);
 let filter=new URLSearchParams(location.search).get('group')||'all';
 if(filter==='references'||filter==='demos')filter='models';
@@ -17,6 +18,7 @@ const caseTarget=c=>isModel(c)?c.action:'./?case='+encodeURIComponent(c.id);
 
 function graphic(c){
   const container=node('div','art art-'+c.preview);
+  if(c.id.startsWith('synthetic-'))container.dataset.layout=c.id.slice(10);
   container.setAttribute('aria-hidden','true');
   container.append(node('div','seating-ring'));
   if(c.preview==='auditorium')container.append(node('div','stage-shape'));

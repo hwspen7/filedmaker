@@ -2,6 +2,34 @@
 
 **Current product focus:** a source-driven workflow for schools and small venues. The public studio showcases only Ohio State's Schottenstein Center and Ohio Stadium. The [Case Library](cases/) organizes school and reference cases by documented status. The [Venue Workbench](workbench/) provides plan-image registration, operator-traced section boundaries, school row-count CSV ingestion, deterministic seat generation, an editable geometry preview, and offline export.
 
+## Precision Studio: start here
+
+Use the [case gallery](cases/) to launch one of six **fictional but
+fully editable** venue examples, including a two-tier college arena,
+three-tier indoor arena and two football grandstands. No source upload
+is needed for these training cases.
+
+Open the [venue workbench](workbench/) to use the new **Bowl** tool to
+generate curved seating banks with adjustable section count, row depth,
+seat pitch, row rise, tier count and access clearance. Existing authentic
+projects remain source-controlled and cannot be silently replaced with
+fictional generated inventory.
+
+**Draw in 2D:** toggle Grid, Snap and Guides in the floating canvas bar.
+Object centers, perimeter edges and section points display inference
+lines while moving. Drag on the plan, or use the selected-object
+properties popup to enter precise X/Y/Z coordinates and dimensions.
+
+**Edit in 3D:** directly drag a selected component to relocate it;
+Alt-drag adjusts its elevation. A visible X/Y/Z overlay and position
+readout accompany the operation. Drag empty space to orbit, and disable
+3D object editing when only camera navigation is desired.
+
+The [practical operator walkthrough](docs/PRECISION_STUDIO.md) covers
+beginner controls, source evidence requirements, model limitations and
+validation. The procedural examples are never represented as authentic
+Ohio State seating records.
+
 - Run `npm start`, then open `/workbench/`.
 - Data and geometry are separated. The number of imported row seats is never altered merely to match a venue's advertised capacity.
 - All traced coordinates, heights, and sightlines remain **estimated** until independently checked. The fictional 1,500-seat gym is an engine test, not a real school.
@@ -456,3 +484,13 @@ For actual ticket-sale integration, the school must supply canonical section/row
 ## Reference bowl corrections
 
 The Ohio Stadium and Schottenstein Center reference scenes no longer invent default aisle cuts. Their **illustrative** sectors are spaced by the front-row perimeter to avoid isolated corner fragments. Only untouched obsolete example cutouts are removed during project validation; staff-authored and measured aisles are preserved. Native WebGL2 uses transparent canvas output, while seating support colors avoid the previous white ground slab. These changes do not establish exact official seating identities.
+
+
+## Staff-operated precision editing
+
+See [Operator modeling](docs/OPERATOR_MODELING.md) for section, row and single-seat editing, the bounded edit ledger, geometry checks, and explicit source-verification requirements.
+
+
+## Canvas-first venue workbench
+
+The [workbench redesign guide](docs/WORKSPACE_REDESIGN.md) describes camera fitting, object-oriented edit modes, bulk row editing, explicit source review and modular expansion.
