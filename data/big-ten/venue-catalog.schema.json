@@ -149,6 +149,13 @@
             "team": {
               "type": "string",
               "minLength": 2
+            },
+            "primaryColor": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "colorProvenance": {
+              "const": "illustrative-seating-tone"
             }
           }
         },
