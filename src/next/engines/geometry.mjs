@@ -169,6 +169,29 @@ export const GeometryEngine={
       });
       if(new Set(rowOverrides.map(r=>r.tier+':'+r.id)).size!==rowOverrides.length)
         throw Error('Duplicate venue section row override');
+      const courtside=raw.courtside==null?null:(()=>{
+        const local=raw.courtside;
+        if(!/^https:\/\//.test(local.source??''))
+          throw Error('Courtside section coordinates require a source');
+        if(local.side!=='east'&&local.side!=='west')
+          throw Error('Invalid court-level side');
+        if(!Array.isArray(local.blocks)||local.blocks.length<1||local.blocks.length>12)
+          throw Error('Invalid court-level section inventory');
+        const existing=new Set(sectionMap.flatMap(t=>t.flatMap(g=>g.sectionIds)));
+        const blocks=local.blocks.map(block=>{
+          const id=String(block.id),rows=block.rows;
+          if(!/^[A-Za-z0-9-]{1,12}$/.test(id)||existing.has(id)||
+            !Array.isArray(rows)||rows.length<1||rows.length>20||
+            rows.some(row=>!(/^[A-Za-z0-9]{1,4}$/).test(String(row))))
+            throw Error('Invalid or overlapping documented court-level section '+id);
+          existing.add(id);
+          return {id,rows:rows.map(String)};
+        });
+        return {side:local.side,blocks,source:String(local.source).slice(0,512),
+          seatDepth:finite(local.seatDepth??.72,'Court seat row depth',.65,1.05),
+          margin:finite(local.margin??1.12,'Court seat from sideline',.9,3),
+          frontHeight:finite(local.frontHeight??.55,'Courtside platform front height',.2,2)};
+      })();
       const sectionRules=(raw.sectionRules??[]).map(rule=>{
         const tier=integer(rule.tier,'Interior rule tier',0,tiers.length-1);
         const id=String(rule.id);
@@ -199,7 +222,7 @@ export const GeometryEngine={
           sections:sections?[...sections]:null,kind:type.kind};
       });
       return {type:String(raw.type??'').slice(0,80),outline:raw.outline,
-        tierProfiles,rowOverrides,sectionRules,notches,seatTypes,
+        tierProfiles,rowOverrides,courtside,sectionRules,notches,seatTypes,
         source:String(raw.source??'').slice(0,512),
         notes:String(raw.notes??'').slice(0,600),
         geometryStatus:'chart-informed-unsurveyed'};
