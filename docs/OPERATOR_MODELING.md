@@ -17,6 +17,10 @@ Precise section positioning for X/Z translation and width scaling from
 50 to 150 percent. Drag a section corner on the 2D plan; hold Shift for
 10 cm snapping. Invalid polygons or blocked geometry revert automatically.
 Manual section transformations clear obsolete image trace corner data.
+The 2D calibration step also provides an optional two-point ruler. It reports
+a plan-derived distance based on the current registration and is explicitly
+not an independent architectural measurement. Changing the source drawing
+or calibration invalidates its reading.
 
 ## Row editing
 

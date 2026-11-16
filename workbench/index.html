@@ -69,7 +69,13 @@
 <div class="actions"><button type="button" id="calibrate" class="primary">1 · Mark court corners</button>
 <button type="button" id="trace">2 · Trace section</button></div>
 <p id="traceInstructions" class="hint">Four court corners first, then four corners per section: front left, front right, rear right, rear left. Labels do not create polygons automatically.</p>
-<button id="matchVectors" type="button">Review matching vector sections</button></div>
+<button id="matchVectors" type="button">Review matching vector sections</button>
+<details class="disclosure" id="measureTools"><summary>Plan measurement ruler</summary>
+<p class="hint">Measure two locations on the current calibrated plan. The result inherits drawing accuracy and does not verify actual construction.</p>
+<div class="row-actions"><button id="measureTool" type="button">Measure two points</button>
+<button id="measureClear" type="button">Clear ruler</button></div>
+<div id="measureResult" class="hint" role="status" aria-live="polite">No plan measurement yet.</div>
+</details></div>
 <div class="section"><div class="small-title">Selected section</div>
 <label>Section<select id="sectionSelect"><option value="">No section selected</option></select></label>
 <div class="pair"><label>First-row height (m)<input id="baseHeight" type="number" step=".05" min="0" max="80"></label>

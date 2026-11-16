@@ -102,3 +102,13 @@ test('workbench is two-column with a closable details drawer',()=>{
   assert.doesNotMatch(view,/aside class="sidebar"/);
   assert.match(style,/\.layout\.details-open \.inspector/);
 });
+
+test('operator measurement and individual seat controls are kept discoverable but compact',()=>{
+  const page=read('workbench/index.html');
+  for(const id of ['measureTools','measureTool','measureClear','measureResult',
+    'seatAdvanced','seatEditNumber','seatShiftX','seatShiftY','seatShiftZ',
+    'seatApplyOffset','seatResetOffset'])
+    assert.match(page,new RegExp('id="'+id+'"'),id);
+  assert.match(page,/<details class="disclosure" id="measureTools"/);
+  assert.match(page,/<details class="disclosure" id="seatAdvanced"/);
+});

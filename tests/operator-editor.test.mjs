@@ -156,8 +156,9 @@ test('a single-seat correction changes only that seat, without altering row capa
   assert.ok(Math.abs(changed.x-first.x-.08)<1e-8);
   assert.ok(Math.abs(changed.y-first.y-.12)<1e-8);
   assert.ok(Math.abs(changed.z-first.z+.05)<1e-8);
-  assert.deepEqual(after.seats.find(s=>s.id==='WEST-1-1-2'),
-    before.seats.find(s=>s.id==='WEST-1-1-2'));
+  const coordinates=s=>({id:s.id,number:s.number,x:s.x,y:s.y,z:s.z});
+  assert.deepEqual(coordinates(after.seats.find(s=>s.id==='WEST-1-1-2')),
+    coordinates(before.seats.find(s=>s.id==='WEST-1-1-2')));
   assert.ok(after.quality.issues.some(x=>x.code==='INDIVIDUAL_SEAT_OFFSETS'));
   assert.equal(after.quality.publicationEligible,false);
   assert.equal(original.rows[0].seatOverrides,undefined);

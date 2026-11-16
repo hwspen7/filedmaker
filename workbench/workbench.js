@@ -21,6 +21,8 @@ import {makeAikenUnverifiedOperatorDraft} from '../src/workbench/qa/aiken-operat
 const $=id=>document.getElementById(id);
 const canvas=$('planCanvas'),modelCanvas=$('modelCanvas'),ctx=canvas.getContext('2d');
 let venue=newVenue(),registration=null,image=null,editorMode='select',draftPoints=[];
+let lastMeasurement=null;
+const measurementKey=()=>JSON.stringify([venue.plan.name,venue.court,venue.calibration.corners]);
 let preview=null,renderer=null,selectedSection='',selectedSeat=null,drag=null,viewMode='plan';
 let pendingRows=null,vectorDrawing=null,pdfHandle=null,workflowUI=null;
 const history=createHistory();
@@ -111,6 +113,10 @@ function sync(){
   $('capacitySource').value=venue.capacitySource;
   $('workspaceName').textContent=venue.venue;
   $('sourceName').textContent=venue.plan.name||'No drawing attached';
+  if(lastMeasurement&&lastMeasurement.key!==measurementKey()){
+    lastMeasurement=null;
+    $('measureResult').textContent='Source geometry changed. Remeasure the drawing.';
+  }
   renderPdfSuggestions();
   $('undo').disabled=!history.canUndo;$('redo').disabled=!history.canRedo;
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
@@ -308,6 +314,18 @@ function draw(){
       }
     }
   }
+  if(lastMeasurement&&lastMeasurement.key===measurementKey()){
+    const a=worldToScreen(lastMeasurement.start,g),b=worldToScreen(lastMeasurement.end,g);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle='#c18031';ctx.lineWidth=2.5;ctx.stroke();
+    for(const pos of [a,b]){
+      ctx.beginPath();ctx.arc(pos.x,pos.y,4.5,0,2*Math.PI);
+      ctx.fillStyle='#f3b35c';ctx.fill();
+    }
+    ctx.fillStyle='#8a501f';ctx.font='bold 12px system-ui';
+    ctx.fillText(lastMeasurement.distance.toFixed(2)+' m',
+      (a.x+b.x)/2,(a.y+b.y)/2-10);
+  }
   if(selectedSection){
     const s=venue.sections.find(s=>s.id===selectedSection);
     if(s)for(const point of cornerList(s)){
@@ -361,10 +379,12 @@ function repaint(){
     venue.plan.name||venue.rows.length?'Import / calibration in progress':'Awaiting source files';
   $('modeLabel').textContent=editorMode==='select'?'Select · drag a section corner to adjust':
     editorMode==='calibrate'?'Calibration · mark all four court corners':
+    editorMode==='measure'?'Ruler · select two plan points':
     'Tracing · front left → front right → rear right → rear left';
   $('emptyCanvas').hidden=!!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
   $('canvasOverlay').hidden=!(image||venue.rows.length||venue.sections.length||preview)||viewMode!=='plan';
-  $('canvasOverlay').textContent=editorMode==='calibrate'?'Click the four court corners in order: near left, near right, far right, far left.':
+  $('canvasOverlay').textContent=editorMode==='measure'?'Select two points on the plan for a provisional distance.':
+    editorMode==='calibrate'?'Click the four court corners in order: near left, near right, far right, far left.':
     editorMode==='trace'?'Trace '+(draftPoints.length+1)+'/4: '+['front left','front right','rear right','rear left'][draftPoints.length]:
     image&&!registration?'Image loaded. Mark four court corners before tracing sections.':
     'Drag section corners to correct the footprint. Imported row counts are never changed to match a target capacity.';
@@ -463,6 +483,19 @@ canvas.addEventListener('pointerdown',event=>{
         }
         tryPreview();
       }
+      repaint();return;
+    }
+    if(editorMode==='measure'){
+      const world=screenToWorld(p,g);
+      draftPoints.push({world});
+      if(draftPoints.length===2){
+        const [a,b]=draftPoints.map(x=>x.world),distance=Math.hypot(b.x-a.x,b.z-a.z);
+        lastMeasurement={start:a,end:b,distance,key:measurementKey()};
+        $('measureResult').textContent='Plan-derived distance '+distance.toFixed(3)+
+          ' m · Not an independently verified measurement.';
+        draftPoints=[];editorMode='select';
+        message('Plan ruler completed. Confirm drawing scale before using any dimensions.');
+      }else message('Measure a second point on the drawing.');
       repaint();return;
     }
     if(editorMode==='trace'){
@@ -569,6 +602,19 @@ $('calibrate').onclick=()=>{
 $('trace').onclick=()=>{
   if(image&&!registration){message('Calibrate the playing surface before tracing.',true);return;}
   editorMode='trace';draftPoints=[];repaint();
+};
+$('measureTool').onclick=()=>{
+  if(image&&!registration){
+    message('Calibrate the court before measuring distances on a drawing.',true);return;
+  }
+  editorMode='measure';draftPoints=[];
+  $('measureResult').textContent='Select the first plan point, then the second.';
+  repaint();
+};
+$('measureClear').onclick=()=>{
+  lastMeasurement=null;draftPoints=[];editorMode='select';
+  $('measureResult').textContent='No plan measurement yet.';
+  repaint();
 };
 $('sectionSelect').onchange=()=>{selectedSection=$('sectionSelect').value;updateSectionFields();repaint();};
 $('applySection').onclick=()=>{

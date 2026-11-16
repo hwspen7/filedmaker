@@ -458,6 +458,18 @@ async function main(){
     await delay(250);
     await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
       writeFileSync(join(dir,'operator-section-tools.png'),Buffer.from(frame.data,'base64')));
+
+    const ruler=await evaluate("(()=>{document.querySelector('#measureTools').open=true;document.querySelector('#measureTool').click();const c=document.querySelector('#planCanvas');const r=c.getBoundingClientRect();const point=(x,y)=>c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+x*r.width,clientY:r.top+y*r.height,pointerId:31}));point(.40,.45);point(.55,.52);return {result:document.querySelector('#measureResult').textContent,canvas:!c.hidden}})()");
+    if(!ruler.canvas||!ruler.result.includes('Plan-derived distance')||
+      !ruler.result.includes('Not an independently verified measurement'))
+      throw Error('Plan distance ruler is not functional: '+JSON.stringify(ruler));
+    await delay(160);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-plan-ruler.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#measureClear').click()");
+    const clearedRuler=await evaluate("document.querySelector('#measureResult').textContent");
+    if(clearedRuler!=='No plan measurement yet.')throw Error('Plan ruler did not reset');
+
     console.log('operator editing: source counts adjusted with review flags, 3D updated, invalid edit rejected, undo/redo and section translation verified');
 
 
