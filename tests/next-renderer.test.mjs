@@ -118,8 +118,10 @@ test('Ohio State basketball diagram keeps source section numbers and illustrativ
   const regular = ['301','302','303','305','306','308','319','320','334'].map(sectionRows);
   assert.ok(regular.every(rows => rows[0].y > 14.9 && rows[0].y < 16
     && rows.at(-1).y > 27.9 && rows.at(-1).y < 29.1));
-  const pressSide = ['321','322','323','324','325','326'].map(sectionRows);
-  assert.ok(pressSide.every(rows => rows.at(-1).y > 23 && rows.at(-1).y < 27));
+  const restored = ['321','322','323','324','325','326'].map(sectionRows);
+  assert.ok(restored.every(rows => rows.length===21 && rows[0].row==='A'
+    && rows.at(-1).row==='U' && Math.abs(rows.at(-1).y-28.55)<.05),
+    'Restored media-side banks must reach the same U-row elevation');
   const treadHeight = new Map(model.seatingRows.map(row=>[row.sectionId+':'+row.row,row.y]));
   for(const seat of model.seats){
     assert.equal(seat.y,treadHeight.get(seat.sectionId+':'+seat.row),'Each chair sits on its level tread');
@@ -185,7 +187,7 @@ test('chart-backed roster locations are independent of CSV order and keep suppli
   assert.throws(()=>load(['U,UNKNOWN,1,1']),/Supply XYZ/);
 });
 
-test('phase-one basketball preview models documented club rows and the upper aisle gap',()=>{
+test('basketball preview keeps documented club rows while filling former Press Box seating gap',()=>{
  const model=generateSeats({...createSchottensteinCenterProject(),audienceLayout:'schottenstein-men'});
  const inRow=(section,row)=>model.seats.filter(s=>s.sectionId===section&&s.row===row);
  assert.equal(inRow('206','A').length,14);
@@ -208,15 +210,15 @@ test('phase-one basketball preview models documented club rows and the upper ais
  assert.ok(inRow('305','U').length>0);
  assert.ok(inRow('304','H').length>0);
  assert.equal(inRow('304','B').length,0);
- assert.equal(inRow('322','N').length,0);
+ assert.ok(inRow('322','N').length>0);
  assert.ok(inRow('114','P').length>0);
  const upperCorner=inRow('302','D');
  assert.ok(upperCorner.length>0);
  assert.ok(upperCorner.every(s=>s.z>0&&s.x<0));
- assert.equal(inRow('323','C').length,0);
- assert.equal(inRow('323','E').length,0);
- const a=inRow('323','B')[0],b=inRow('323','F')[0],c=inRow('323','G')[0];
- assert.ok(a&&b&&c&&b.y-a.y>3.9*(c.y-b.y));
+ for(const row of ['C','E','N','U'])assert.ok(inRow('323',row).length>0,
+   'Restored section 323 contains the previously omitted row '+row);
+ for(const id of ['321','322','323','324','325','326'])
+   assert.ok(inRow(id,'U').length>0,id+' reaches the full-height upper rim');
  assert.equal(new Set(model.seats.map(s=>s.uid)).size,model.seats.length);
 });
 
@@ -275,7 +277,7 @@ test('phase-one native geometry includes a cutaway-aware interior and current bo
  assert.equal(plan.arenaInterior,true);
  assert.equal(plan.scoreboardHeight,16.3);
  assert.deepEqual(plan.features.map(feature=>feature.label),
-   ['Band Area','Press Box','Accessible Platform']);
+   ['Band Area','Accessible Platform']);
  const boxes=decode(plan);
  assert.ok(!boxes.some(box=>box.id===-4), 'The gray elliptical floor plate must not exist in any view');
  assert.ok(!plan.deckGeometry.some((number,i)=>i%6===1&&number===-1), 'The decorative plinth must not reappear');
@@ -347,7 +349,7 @@ test('manual terrace refinements remove isolated slits and retain wide rear rows
  }
  const rows=label=>spans('314',label);
  assert.equal(rows('B').length,0,'The mapped accessible gap remains open');
- assert.equal(spans('323','C').length,0,'The press-side gap remains open');
+ assert.ok(spans('323','C').length>0,'The artificial Press Box row gap is closed');
  assert.ok(rows('U')[0].y-rows('T')[0].y>rows('I')[0].y-rows('H')[0].y,
    'The terrace rises progressively towards the back');
 });
@@ -380,8 +382,8 @@ test('manual front banks use three contiguous rows without occupying the access 
    assert.equal(rear.row,'H');
    assert.ok(depth(rear)-depth(front)-(front.depth+rear.depth)*.5>=1.05);
  }
- const press=rows('323');
- assert.deepEqual(press.slice(0,4).map(row=>row.row),['A','B','B2','F']);
+ const restored=rows('323');
+ assert.deepEqual(restored.slice(0,4).map(row=>row.row),['A','B','C','D']);
  for(const id of ['321','322','323','324','325']){
    const bank=rows(id);
    assert.ok(bank.at(-1).width>=bank.at(-2).width*.85,id+' keeps a full final row');
