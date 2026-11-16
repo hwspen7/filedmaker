@@ -70,6 +70,7 @@
 <label>Documented capacity<input id="capacity" type="number" min="1" max="150000" placeholder="Only if sourced"></label>
 <label>Official HTTPS source<input id="capacitySource" type="url" placeholder="https://school.example.edu"></label></details></div>
 <button id="sourceNext" class="primary full" type="button">Continue to calibration</button>
+<button id="openExisting" class="quiet-action" type="button">Open an existing FiledMaker project</button>
 </section>
 
 <section class="stage-screen" data-stage-panel="calibrate" hidden>
@@ -115,6 +116,8 @@
 <details class="disclosure section"><summary>Project utilities</summary>
 <label class="upload">Open editable project<input id="openProject" type="file" accept=".json,application/json" hidden></label>
 <label class="upload">Compare prior project<input id="compareProject" type="file" accept=".json,application/json" hidden></label></details>
+<details class="disclosure section"><summary>Project edit history</summary><div id="projectActivity" class="qa activity">No edits yet</div></details>
+<details class="disclosure section"><summary>Downloads requested this session</summary><div id="exportActivity" class="qa activity">No downloads in this tab</div></details>
 <div class="step-actions"><button id="backToModel" type="button">Back to 3D</button><a class="link-light" href="../cases/">Explore case library</a></div>
 </section>
 </aside>

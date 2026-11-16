@@ -61,7 +61,7 @@ test('workbench groups all original tool controls into four unique stages',()=>{
     'compareProject','saveSeats','saveReport','publish','showPlan','show3d','showEye',
     'planCanvas','modelCanvas','canvasOverlay','modeLabel','sourceLedger','qa','delta',
     'reviewChecklist','seatDetails','rowCount','mappedCount','sectionCount','publishedCount',
-    'workspaceName','workStatus'];
+    'workspaceName','workStatus','openExisting','projectActivity','exportActivity'];
   for(const id of oldControls)assert.match(html,new RegExp('id="'+id+'"'),id+' has no DOM anchor');
   const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   assert.equal(new Set(ids).size,ids.length,'Duplicate UI ID could break event handlers');

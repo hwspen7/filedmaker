@@ -25,6 +25,14 @@ const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
 const safeName=()=>venue.venue.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'school-venue';
 const mimeCSV='text/csv;charset=utf-8';
+const requestedDownloads=[];
+function refreshActivity(){
+  const list=venue.changeLog??[];
+  $('projectActivity').textContent=list.length?
+    list.slice(-12).reverse().map(entry=>entry.event).join('\n'):'No project edits yet';
+  $('exportActivity').textContent=requestedDownloads.length?
+    requestedDownloads.map(entry=>entry).join('\n'):'No downloads requested in this tab';
+}
 function recordEdit(before,action){
   if(JSON.stringify(before)===JSON.stringify(venue))return;
   history.record(before,action);
@@ -76,6 +84,9 @@ function message(text,bad=false){
 function save(name,data,mime='application/json'){
   const blob=new Blob([data],{type:mime}),url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=name;a.click();
+  requestedDownloads.unshift('Requested · '+name);
+  if(requestedDownloads.length>12)requestedDownloads.length=12;
+  refreshActivity();
   setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
 function validateFields(){
@@ -294,6 +305,7 @@ function repaint(){
     [venue.rows.length?'Import completed. Trace each row-bearing section and generate a model.':
     'Awaiting source rows and traced sections.',...sourceStatus.issues,calibrationNote,
     ...venue.notes.slice(0,5).map(note=>'PROJECT NOTE · '+note)].filter(Boolean).join('\n');
+  refreshActivity();
   draw();
 }
 function tryPreview(){
@@ -797,6 +809,7 @@ $('matchVectors').onclick=()=>{
 const observer=new ResizeObserver(()=>resize());observer.observe(canvas.parentElement);
 sync();repaint();resize();
 
+$('openExisting').onclick=()=>$('openProject').click();
 workflowUI=setupWorkflow({onStageChange:stage=>{
   if(stage==='source'||stage==='calibrate')$('showPlan').click();
   if(stage==='model'&&preview)$('show3d').click();
