@@ -3,7 +3,7 @@ import {
 } from './schottensteinChartContours.mjs';
 import { OSU_FACTS } from './osuFacts.mjs';
 import { ACCESS_FRONT_DEPTH, connectedSchottensteinRuns, refineAccessibleRear, refineSchottensteinBank, refineSchottensteinContour,
-  schottensteinMediaElevation, schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
+  schottensteinRake, schottensteinRowHeading } from './schottensteinRefinement.mjs';
 
 // The guide endpoints orient the rows. The traced chart contours clip them.
 export const SCHOTTENSTEIN_CHART_URL =
@@ -88,7 +88,6 @@ const upper = [
 const letterRows = letters => [...letters];
 const rowsAtoU=letterRows('ABCDEFGHIJKLMNOPQRSTU');
 const accessibleTerrace=new Set([304,307,314,331]);
-const terraceEnds=new Map([[321,17],[322,13],[324,14],[325,14],[326,20]]);
 const clubWithPublishedCounts = new Set(['204','205','206','207','221','222','223','224']);
 // Published row labels from the section pages linked below. The slots keep
 // the documented wheelchair landings and press-side breaks between rows open.
@@ -100,12 +99,11 @@ const rowDetails = new Map([
   ['114',{labels:[...rowsAtoU.slice(0,10).map(c=>c+c),...rowsAtoU.slice(0,19)]}],
   ['131',{labels:[...rowsAtoU.slice(0,8).map(c=>c+c),...rowsAtoU.slice(0,19)]}],
   ...club.map(([id])=>[String(id),{labels:rowsAtoU.slice(0,10)}]),
-  ...upper.filter(([id])=>id!==323).map(([id])=>[
+  ...upper.map(([id])=>[
     String(id),accessibleTerrace.has(id)
       ?{labels:['A','A2','A3',...rowsAtoU.slice(7)],slots:[0,1,2,...rowsAtoU.slice(7).map((_,i)=>i+7)]}
-      :{labels:rowsAtoU.slice(0,terraceEnds.get(id)??rowsAtoU.length)}
+      :{labels:rowsAtoU}
   ]),
-  ['323', {labels:['A','B','B2',...letterRows('FGHIJKLMN')], slots:[0,1,2,5,6,7,8,9,10,11,12,13]}],
 ]);
 const referenceSite = 'https://www.rateyourseats.com/schottenstein-center/seating/sections/';
 export const SCHOTTENSTEIN_REFERENCE_VIEWS = Object.freeze([
@@ -155,7 +153,6 @@ const turn = 2 * Math.PI;
 const azimuth = ({x,z}) => (Math.atan2(z,x) + turn) % turn;
 const chartRegions=[
   {kind:'band',label:'Band Area',sectionId:'114',outline:unpack([764,401,808,401,808,432,764,432])},
-  {kind:'press',label:'Press Box',sectionId:'323',outline:unpack([439,697,706,695,733,727,439,727])},
   {kind:'accessible',label:'Accessible Platform',sectionId:'105',outline:unpack([513,217,577,217,577,229,513,229])},
 ];
 
@@ -247,7 +244,7 @@ const blocks = [lower,club,upper].flatMap((level,tier)=>
       ? (centerSpans[0][1] + centerSpans.at(-1)[0]) * .5 : project(center).z;
     const accessibleRear=refineAccessibleRear(id,near,treadDepth,spansAt);
     const publishedRowCounts=clubWithPublishedCounts.has(sectionId);
-    const reserved=chartRegions.filter(region=>region.sectionId===sectionId||(tier===2&&region.kind==='press')).map(region=>region.outline.map(project));
+    const reserved=chartRegions.filter(region=>region.sectionId===sectionId).map(region=>region.outline.map(project));
     return {id:sectionId,tier,rows,depthRows,corners,outlines,projected,reserved,nx,nz,near,
       treadDepth,accessibleRear,profileAxis,details,publishedRowCounts,labelPoint:labels.get(id)};
   })
@@ -338,9 +335,7 @@ function rowGeometry(block,rowIndex,{reserve=false}={}) {
   let ranges=polygonSpans(block.projected,depth);
   const lowerProfile = lowerElevations.get(block.id);
   const [frontY]=tierElevations[block.tier];
-  const media=schottensteinMediaElevation(Number(block.id),frontY,block.depthRows,block.treadDepth);
   const y=lowerProfile ? lowerProfile.first + slot * lowerProfile.rise
-    : media ? media.front+(media.rear-media.front)*slot/(block.depthRows-1)
     : block.accessibleRear&&slot<3 ? frontY+slot*.38
     : deckHeight(block.tier,slot/(block.depthRows-1));
   if(reserve){
@@ -371,16 +366,6 @@ function buildSchottensteinFeatures(rows) {
       const distance=item=>Math.hypot((item.left.x+item.right.x)/2-point.x,(item.left.z+item.right.z)/2-point.z);
       return distance(a)-distance(b);
     })[0];
-    if(region.kind==='press'){
-      // The preserved source outline still reserves genuine press-side seat
-      // voids. Its visible label belongs on the recessed gallery facade, not
-      // over section 323 or above a floating gray roof slab.
-      const angle=Math.atan2(point.z,point.x);
-      const radius=schottensteinBuildingRadius(angle)+.57;
-      return {...region,x:radius*Math.cos(angle),z:radius*Math.sin(angle),
-        y:SCHOTTENSTEIN_TERRACE_RIM.rear+2.50,
-        source:SCHOTTENSTEIN_CHART_URL};
-    }
     return {...region,...point,y:row?.y??0,source:SCHOTTENSTEIN_CHART_URL};
   });
 }
