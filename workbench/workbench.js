@@ -437,7 +437,7 @@ function selectStructure(id,additive=false){
   if(selectedStructureIds.size>1)$('structureGroupTools').open=true;
   message(selectedStructureIds.size+' selected · drag to move, or use Arrange multiple components.');
   $('threeDEditReadout').textContent=selectedStructureIds.size+
-    ' object(s) selected · Shift-drag to move · Alt+Shift-drag to raise';
+    ' object(s) selected · drag to move · Alt-drag to raise · Shift for fine snap';
   repaint();
   if(viewMode!=='plan')renderer?.render();
 }
@@ -1935,7 +1935,10 @@ function finish3dObjectDrag(cancel=false){
   const {dx,dz,dy}=completed.proposal;
   venue=completed.before;
   if(cancel||(!dx&&!dz&&!dy)){
-    sync();tryPreview();return;
+    $('threeDEditReadout').textContent='Selection ready · drag an object to move; Alt changes height.';
+    if(cancel)renderer?.updateOperatorInstances(venue.structures,
+      buildStructureInstances(venue.structures));
+    return;
   }
   let success=false;
   if(completed.ids.length>1)success=commitStructureBatch({
