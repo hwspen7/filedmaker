@@ -5,6 +5,8 @@ on:
     branches:
       - feature/big-ten-18-arenas
       - feature/big-ten-arena-parity
+      - feature/big-ten-all-17-integrated-20261115
+      - feature/big-ten-17-final-integration-20261115
     paths:
       - 'data/big-ten/**'
       - 'scripts/generate-big-ten.mjs'
