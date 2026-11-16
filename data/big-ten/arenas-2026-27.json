@@ -16,7 +16,9 @@
       "id": "illinois",
       "school": {
         "name": "University of Illinois Urbana-Champaign",
-        "team": "Fighting Illini"
+        "team": "Fighting Illini",
+        "primaryColor": "#B64D27",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "State Farm Center",
@@ -92,7 +94,9 @@
       "id": "indiana",
       "school": {
         "name": "Indiana University Bloomington",
-        "team": "Hoosiers"
+        "team": "Hoosiers",
+        "primaryColor": "#8D2631",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Simon Skjodt Assembly Hall",
@@ -168,7 +172,9 @@
       "id": "iowa",
       "school": {
         "name": "University of Iowa",
-        "team": "Hawkeyes"
+        "team": "Hawkeyes",
+        "primaryColor": "#3C4146",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Carver-Hawkeye Arena",
@@ -244,7 +250,9 @@
       "id": "maryland",
       "school": {
         "name": "University of Maryland, College Park",
-        "team": "Terrapins"
+        "team": "Terrapins",
+        "primaryColor": "#9D2C3C",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "XFINITY Center",
@@ -327,7 +335,9 @@
       "id": "michigan",
       "school": {
         "name": "University of Michigan",
-        "team": "Wolverines"
+        "team": "Wolverines",
+        "primaryColor": "#1A4572",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Crisler Center",
@@ -403,7 +413,9 @@
       "id": "michigan-state",
       "school": {
         "name": "Michigan State University",
-        "team": "Spartans"
+        "team": "Spartans",
+        "primaryColor": "#1F5741",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Breslin Center",
@@ -479,7 +491,9 @@
       "id": "minnesota",
       "school": {
         "name": "University of Minnesota Twin Cities",
-        "team": "Golden Gophers"
+        "team": "Golden Gophers",
+        "primaryColor": "#6C3542",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Williams Arena",
@@ -555,7 +569,9 @@
       "id": "nebraska",
       "school": {
         "name": "University of Nebraska–Lincoln",
-        "team": "Cornhuskers"
+        "team": "Cornhuskers",
+        "primaryColor": "#B72B3A",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Pinnacle Bank Arena",
@@ -638,7 +654,9 @@
       "id": "northwestern",
       "school": {
         "name": "Northwestern University",
-        "team": "Wildcats"
+        "team": "Wildcats",
+        "primaryColor": "#5A467B",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Welsh–Ryan Arena",
@@ -714,7 +732,9 @@
       "id": "ohio-state",
       "school": {
         "name": "The Ohio State University",
-        "team": "Buckeyes"
+        "team": "Buckeyes",
+        "primaryColor": "#903549",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Value City Arena at the Schottenstein Center",
@@ -804,7 +824,9 @@
       "id": "oregon",
       "school": {
         "name": "University of Oregon",
-        "team": "Ducks"
+        "team": "Ducks",
+        "primaryColor": "#176047",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Matthew Knight Arena",
@@ -880,7 +902,9 @@
       "id": "penn-state",
       "school": {
         "name": "Pennsylvania State University",
-        "team": "Nittany Lions"
+        "team": "Nittany Lions",
+        "primaryColor": "#24466D",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Bryce Jordan Center",
@@ -963,7 +987,9 @@
       "id": "purdue",
       "school": {
         "name": "Purdue University",
-        "team": "Boilermakers"
+        "team": "Boilermakers",
+        "primaryColor": "#4B4A4B",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Mackey Arena",
@@ -1039,7 +1065,9 @@
       "id": "rutgers",
       "school": {
         "name": "Rutgers University–New Brunswick",
-        "team": "Scarlet Knights"
+        "team": "Scarlet Knights",
+        "primaryColor": "#9C2B3C",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Jersey Mike's Arena",
@@ -1115,7 +1143,9 @@
       "id": "ucla",
       "school": {
         "name": "University of California, Los Angeles",
-        "team": "Bruins"
+        "team": "Bruins",
+        "primaryColor": "#326FA5",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Pauley Pavilion",
@@ -1191,7 +1221,9 @@
       "id": "usc",
       "school": {
         "name": "University of Southern California",
-        "team": "Trojans"
+        "team": "Trojans",
+        "primaryColor": "#92293B",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Galen Center",
@@ -1267,7 +1299,9 @@
       "id": "washington",
       "school": {
         "name": "University of Washington",
-        "team": "Huskies"
+        "team": "Huskies",
+        "primaryColor": "#59437B",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Alaska Airlines Arena at Hec Edmundson Pavilion",
@@ -1343,7 +1377,9 @@
       "id": "wisconsin",
       "school": {
         "name": "University of Wisconsin–Madison",
-        "team": "Badgers"
+        "team": "Badgers",
+        "primaryColor": "#9F293D",
+        "colorProvenance": "illustrative-seating-tone"
       },
       "venue": {
         "name": "Kohl Center",
