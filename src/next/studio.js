@@ -42,7 +42,12 @@ function prepareAreaLabels(){
     rowCenters.get(row.sectionId).push(row);
   }
   const labels=[];
-  for(const section of model.sectionFootprints??[]){
+  const sectionsToLabel=model.sectionFootprints??(
+    model.proceduralSpec?.sectionMap?[...rowCenters].map(([id,rows])=>({
+      id,depthRows:Math.max(...rows.map(row=>row.slot))+1
+    })):[]
+  );
+  for(const section of sectionsToLabel){
     const rows=rowCenters.get(section.id)??[];
     const frontSlot=Math.floor(section.depthRows*.20);
     let anchor=null;
