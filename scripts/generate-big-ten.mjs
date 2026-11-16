@@ -11,6 +11,8 @@ import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
 const DEFAULT_CATALOG=fileURLToPath(new URL('../data/big-ten/arenas-2026-27.json',import.meta.url));
 const SECTION_PROFILES=JSON.parse(readFileSync(
   new URL('../data/big-ten/reference-section-layouts.json',import.meta.url),'utf8')).layouts;
+const ARCH_SIGNATURES=JSON.parse(readFileSync(
+  new URL('../data/big-ten/architectural-signatures.json',import.meta.url),'utf8')).venues;
 const DEFAULT_OUT='build/big-ten-18';
 const DEFAULT_MAX_ERROR=.035;
 const fail=message=>{throw Error(message);};
@@ -80,6 +82,10 @@ export function toProceduralSpec(venue){
   const {evidenceLevel,...model}=venue.model;
   const layout=SECTION_PROFILES[venue.id]??null;
   const base=structuredClone(model);
+  const signature=ARCH_SIGNATURES[venue.id]??null;
+  if(signature){
+    base.exterior={...base.exterior,entrances:[],signature:structuredClone(signature)};
+  }
   if(layout){
     base.tiers=structuredClone(layout.tiersOverride);
     base.sectionMap=structuredClone(layout.tiers);
@@ -101,6 +107,8 @@ export function toProceduralSpec(venue){
       seatCoordinates:venue.evidence.seatRoster,
       sectionLabels:layout?.chartIds??'estimated',
       sourceSectionMap:layout?.source??null,
+      buildingReference:signature?.source??null,
+      buildingStatus:signature?'landmarks-modeled/unsurveyed':'unmodeled',
       sectionOutlineProvenance:layout?'estimated-arc':'estimated-uniform',
       notice:'Seats and section boundaries are estimated even when school chart section IDs and row-label ranges are sourced.'
     }
@@ -116,6 +124,9 @@ function reportFor(venue,packageResult){
     arena:venue.venue.name,city:venue.venue.city,state:venue.venue.state,
     modelStatus:'estimated-parametric',
     sectionMapStatus:model.proceduralSpec.sectionMap?'official-section-ids/estimated-angles':'uniform-estimate',
+    architectureSignature:ARCH_SIGNATURES[venue.id]?{roof:ARCH_SIGNATURES[venue.id].roof,
+      feature:ARCH_SIGNATURES[venue.id].feature,source:ARCH_SIGNATURES[venue.id].source,
+      evidence:'profile-not-surveyed'}:null,
     modeledSectionIdCount:model.proceduralSpec.sectionMap
       ?model.proceduralSpec.sectionMap.flatMap(groups=>groups.flatMap(group=>group.sectionIds)).length
       :model.proceduralSpec.sections,
