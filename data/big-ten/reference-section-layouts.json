@@ -9,12 +9,12 @@
       "chartIds": "documented",
       "rowLabels": "documented",
       "geometry": "estimated",
-      "notes": "Inner 19 section labels and outer 36 labels from Crisler official men's chart. Outer displayed rows 22–41; section-specific actual row presence varies. Excluded suite/band/club footprints still need surveying.",
+      "notes": "Inner 19 section labels and outer 36 labels from Crisler official men's chart. Outer displayed rows 22–41; section-specific actual row presence varies. Excluded suite/band/club footprints still need surveying. Lower-tier angular break for Band and lower lobby is hand-estimated from the published map and is not a surveyed boundary.",
       "tiers": [
         [
           {
-            "startAngle": 0.34,
-            "spanAngle": 6.283185307179586,
+            "startAngle": 0.79,
+            "spanAngle": 5.27,
             "sectionIds": [
               "101",
               "104",
@@ -32,9 +32,40 @@
               "124",
               "126",
               "128",
-              "130",
+              "130"
+            ],
+            "weights": [
+              1.1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1.15
+            ],
+            "rowStart": 1,
+            "rowCount": 20
+          },
+          {
+            "startAngle": 6.53,
+            "spanAngle": 0.44,
+            "sectionIds": [
               "134",
               "136"
+            ],
+            "weights": [
+              1.05,
+              0.95
             ],
             "rowStart": 1,
             "rowCount": 20
