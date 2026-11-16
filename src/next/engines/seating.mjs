@@ -27,7 +27,7 @@ export const SeatingEngine={
           banks.push({
             sectionId:group.sectionIds[k],
             sectionIndex:banks.length,
-            lo,hi,rowStart:group.rowStart,rowCount:group.rowCount
+            lo,hi,rowStart:group.rowStart,rowCount:group.rowCount,skipRows:group.skipRows
           });
         }
       }
@@ -36,10 +36,10 @@ export const SeatingEngine={
     const build=pitch=>{
       const seats=[],seatingRows=[],groups=[];
       for(const tier of spec.tiers)for(const bank of mappedBanks(tier)){
-        const {sectionId,sectionIndex,lo:start,hi:end,rowStart,rowCount}=bank;
+        const {sectionId,sectionIndex,lo:start,hi:end,rowStart,rowCount,skipRows=[]}=bank;
         const mapped=Boolean(spec.sectionMap);
         for(let slot=0;slot<rowCount;slot++){
-          if(!mapped&&voidAt(tier.index,sectionIndex+1,slot+1))continue;
+          if(skipRows.includes(rowStart+slot)||(!mapped&&voidAt(tier.index,sectionIndex+1,slot+1)))continue;
           const fraction=(slot+.5)/tier.rows;
           const rowLabel=String(rowStart+slot);
           const center=point(tier.index,(start+end)/2,fraction);
