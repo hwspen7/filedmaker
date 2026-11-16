@@ -92,6 +92,12 @@ export const ArchitectureEngine={
         )
       );
       for(const row of rowPatches){
+        if(row.courtPatch){
+          const [a,b,c,d]=row.courtPatch;
+          quad(layers.decks,arr(a),arr(b),arr(c),arr(d),up);
+          vertical(layers.fascias,d,c,Math.min(d.y,c.y)-.30,Math.min(d.y,c.y));
+          continue;
+        }
         const tier=spec.tiers[row.tier],u=row.slot/tier.rows,v=(row.slot+1)/tier.rows;
         const steps=Math.max(2,Math.ceil((row.hi-row.lo)/.09));
         for(let k=0;k<steps;k++){
