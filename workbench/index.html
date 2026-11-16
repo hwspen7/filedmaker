@@ -310,6 +310,39 @@
   <button data-structure-nudge="down" type="button" aria-label="Move downward on plan">↓</button>
   <button data-structure-nudge="right" type="button" aria-label="Move right">→</button>
 </div>
+<details class="disclosure group-layout" id="structureGroupTools">
+  <summary>Arrange multiple components</summary>
+  <p class="hint">Drag empty plan space to box-select, or Ctrl-click items to add and remove them. You can also use the selection list below.</p>
+  <label>Selected components
+    <select id="structureMultiSelect" multiple size="5" aria-label="Select multiple components"></select>
+  </label>
+  <div class="row-actions">
+    <button id="structureSelectAll" type="button">Select all</button>
+    <button id="structureSelectOne" type="button">Single selection</button>
+  </div>
+  <div class="row-edit-status" id="structureGroupStatus" aria-live="polite">Select components to arrange.</div>
+  <label>Arrange along
+    <select id="structureGroupAxis">
+      <option value="x">Horizontal X axis</option>
+      <option value="z">Depth Z axis</option>
+    </select>
+  </label>
+  <div class="row-actions group-actions">
+    <button id="structureGroupAlign" type="button">Align centers</button>
+    <button id="structureGroupSpace" type="button">Space evenly</button>
+    <button id="structureGroupMirror" type="button">Mirror</button>
+  </div>
+  <div class="pair">
+    <label>X offset (m)<input id="structureGroupDx" type="number" min="-200" max="200" step=".25" value="1"></label>
+    <label>Z offset (m)<input id="structureGroupDz" type="number" min="-200" max="200" step=".25" value="0"></label>
+  </div>
+  <div class="row-actions group-actions">
+    <button id="structureGroupMove" type="button">Move group</button>
+    <button id="structureGroupCopy" type="button">Duplicate group</button>
+    <button id="structureGroupRemove" type="button">Remove selected</button>
+  </div>
+  <p class="hint">All group edits are one undoable transaction. Objects that intersect existing seats are rejected together.</p>
+</details>
 <div class="row-edit-status" id="structureStatus" aria-live="polite">Choose a component type or select an existing item.</div>
       <details class="disclosure" id="structureTransform">
         <summary>Precise dimensions &amp; coordinates</summary>
