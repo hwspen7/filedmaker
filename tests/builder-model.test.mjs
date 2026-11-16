@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PARTS,createProject,validateProject,makePart,addPart,
-  updatePart,removePart,duplicatePart,countSeats,seatsForStand,
-  rotatedPoint,exportProject,importProject} from '../src/builder/model.mjs';
+import {PARTS,ASSEMBLIES,SURFACES,createProject,validateProject,makePart,addPart,
+  updatePart,removePart,duplicatePart,placeAssembly,countSeats,seatsForStand,
+  curvedLocalPoint,parseOBJ,importOBJAsset,rotatedPoint,exportProject,
+  importProject} from '../src/builder/model.mjs';
 
 test('all event presets start without external documents',()=>{
   for(const activity of ['basketball','concert','community']){
@@ -92,8 +93,101 @@ test('browser-scale geometry is bounded to avoid unmanageable seats',()=>{
     /exceeds 24,000/);
 });
 
-test('library includes reusable seating and event components',()=>{
-  assert.deepEqual(Object.keys(PARTS),[
-    'stand','stage','platform','table','barrier','tower','booth','entrance'
-  ]);
+test('component library includes sports, training gear and event assemblies',()=>{
+  assert.ok(Object.keys(PARTS).length>=25);
+  for(const kind of ['basketball_court','volleyball_court','badminton_court',
+    'treadmill','squat_rack','hoop','net','custom_model']){
+    assert.ok(PARTS[kind],kind);
+  }
+  assert.ok(Object.keys(ASSEMBLIES).length>=5);
+  assert.ok(SURFACES.includes('basketball_court'));
+});
+
+test('three-court gym generates three independently editable courts and six hoops',()=>{
+  const gym=createProject('training');
+  const courts=gym.parts.filter(p=>p.kind==='basketball_court');
+  assert.equal(courts.length,3);
+  assert.deepEqual(courts.map(p=>p.x).sort((a,b)=>a-b),[-27,0,27]);
+  assert.equal(gym.parts.filter(p=>p.kind==='hoop').length,6);
+  assert.ok(gym.parts.some(p=>p.kind==='squat_rack'));
+  assert.deepEqual(importProject(exportProject(gym)),gym);
+});
+
+test('multi-sport complex combines distinct court types and fitness equipment',()=>{
+  const complex=createProject('complex');
+  for(const kind of ['basketball_court','volleyball_court',
+    'badminton_court','pickleball_court','futsal_court','treadmill','bike']){
+    assert.ok(complex.parts.some(p=>p.kind===kind),kind);
+  }
+  assert.ok(complex.floor.width>=100);
+  assert.deepEqual(importProject(exportProject(complex)),complex);
+});
+
+test('curved stands recalculate every row along a real circular arc',()=>{
+  const baseline=createProject();
+  const stand=baseline.parts[0];
+  const changed=updatePart(baseline,stand.id,{shape:'arc',arcAngle:110});
+  const arc=changed.parts[0];
+  const positions=seatsForStand(arc);
+  const front=positions.filter(p=>p.row===1);
+  const back=positions.filter(p=>p.row===arc.rows);
+  assert.ok(back.length>front.length,'rear rows follow the longer circular arc');
+  assert.ok(front.some(p=>p.x!==front[0].x&&p.z!==front[0].z));
+  assert.notEqual(countSeats(changed),countSeats(baseline));
+  assert.equal(positions.length,countSeats(changed)-countSeats(baseline)+
+    seatsForStand(stand).length);
+  assert.deepEqual(importProject(exportProject(changed)),changed);
+  const center=curvedLocalPoint(arc,0,0);
+  assert.equal(center.x,0);
+  assert.equal(center.z,0);
+});
+
+test('arc radius and unsupported shapes are validated',()=>{
+  const gym=createProject();
+  assert.throws(()=>updatePart(gym,'stand-1',
+    {shape:'arc',arcAngle:221}),/Arc angle/);
+  assert.throws(()=>updatePart(gym,'stand-1',
+    {shape:'spiral'}),/Stand shape/);
+  assert.throws(()=>updatePart(gym,'stand-1',
+    {shape:'arc',arcAngle:220,width:4,depth:7.8}),/radius/);
+});
+
+test('ready-made basketball and fitness zones are additive and atomic',()=>{
+  const initial=createProject('community');
+  const withCourt=placeAssembly(initial,'basketball_zone',12,4);
+  assert.equal(withCourt.parts.length,initial.parts.length+
+    ASSEMBLIES.basketball_zone.items.length);
+  assert.equal(withCourt.parts.filter(p=>p.kind==='hoop').length,2);
+  const withFitness=placeAssembly(withCourt,'fitness_zone',-15,8);
+  assert.ok(withFitness.parts.some(p=>p.kind==='training_bench'));
+  assert.equal(initial.parts.length,7,'prior scene remains unchanged');
+  assert.throws(()=>placeAssembly(initial,'invalid-assembly'),/Unsupported assembly/);
+});
+
+test('external OBJ importer handles negative-index faces and preserves license metadata',()=>{
+  const quad=[
+    'o crate','v 0 0 0','v 2 0 0','v 2 1 2','v 0 1 2','f -4 -3 -2 -1'
+  ].join('\n');
+  const mesh=parseOBJ(quad);
+  assert.equal(mesh.vertices.length,4);
+  assert.equal(mesh.faces.length,2);
+  const original=createProject();
+  const imported=importOBJAsset(original,quad,{
+    sourceName:'CC0-crate.obj',sourceLicense:'CC0'
+  });
+  const asset=imported.parts.at(-1);
+  assert.equal(asset.kind,'custom_model');
+  assert.equal(asset.sourceLicense,'CC0');
+  assert.equal(asset.mesh.faces.length,2);
+  assert.deepEqual(importProject(exportProject(imported)),imported);
+  assert.equal(original.parts.length,4);
+});
+
+test('OBJ rejects malformed indices, oversized geometry and non-mesh text',()=>{
+  assert.throws(()=>parseOBJ('f 1 2 3'),/out of range/);
+  assert.throws(()=>parseOBJ('v 0 0 0\nv 1 0 0'),/vertices and faces/);
+  assert.throws(()=>parseOBJ('v 0 0 NaN\nf 1 2 3'),/malformed/);
+  const oversized=Array.from({length:2501},(_,i)=>'v '+i+' 0 0').join('\n');
+  assert.throws(()=>parseOBJ(oversized),/2500/);
+  assert.throws(()=>importOBJAsset(createProject(),'not an obj'),/vertices and faces/);
 });
