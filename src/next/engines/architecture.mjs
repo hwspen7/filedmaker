@@ -26,9 +26,18 @@ export const ArchitectureEngine={
     if(!Number.isInteger(segments)||segments<32||segments>512)throw Error('Invalid architecture resolution');
     if(!Number.isInteger(bands)||bands<2||bands>32)throw Error('Invalid architecture bands');
     const layers={decks:[],fascias:[],concourse:[],facade:[],glazing:[],trim:[],aisles:[],stepEdges:[],backWall:[],pilasters:[],soffit:[],roofDeck:[],buildingRoof:[],brickBase:[],brickPiers:[],entryMasonry:[],entryGlass:[],towerFrames:[],towerCrown:[],towerRibs:[],entryBrick:[],entryCurtain:[],entryFrames:[],entryCanopy:[],entryDoors:[],externalTrim:[]};
-    const strip=(out,fn1,fn2,n=up)=>{
+    const insideTier=(tier,angle)=>{
+      const map=spec.sectionMap?.[tier];
+      if(!map)return true;
+      return map.some(group=>{
+        const offset=((angle-group.startAngle)%TAU+TAU)%TAU;
+        return offset<=group.spanAngle+1e-8;
+      });
+    };
+    const strip=(out,fn1,fn2,n=up,predicate=()=>true)=>{
       for(let i=0;i<segments;i++){
         const a=i*TAU/segments,b=(i+1)*TAU/segments;
+        if(!predicate((a+b)/2))continue;
         const p=fn1(a),q=fn1(b),r=fn2(b),s=fn2(a);
         quad(out,arr(p),arr(q),arr(r),arr(s),n);
       }
@@ -38,6 +47,7 @@ export const ArchitectureEngine={
         const u=j/bands,v=(j+1)/bands;
         for(let i=0;i<segments;i++){
           const a=i*TAU/segments,b=(i+1)*TAU/segments;
+          if(!insideTier(tier.index,(a+b)/2))continue;
           const p=point(tier.index,a,u),q=point(tier.index,b,u),r=point(tier.index,b,v),s=point(tier.index,a,v);
           const mid=(a+b)/2,rise=tier.rows*tier.rise,depth=tier.rows*tier.depth;
           const grade=rise/depth;
@@ -48,18 +58,22 @@ export const ArchitectureEngine={
       }
       for(const frac of [0,1])for(let i=0;i<segments;i++){
         const a=i*TAU/segments,b=(i+1)*TAU/segments;
+        if(!insideTier(tier.index,(a+b)/2))continue;
         const p=point(tier.index,a,frac),q=point(tier.index,b,frac);
         vertical(layers.fascias,p,q,p.y-.65,p.y-.15);
       }
       const outer=a=>point(tier.index,a,1,.12);
       const beyond=a=>point(tier.index,a,1,.36);
-      strip(layers.trim,a=>({...outer(a),y:outer(a).y+.05}),a=>({...beyond(a),y:beyond(a).y+.05}));
+      strip(layers.trim,a=>({...outer(a),y:outer(a).y+.05}),
+        a=>({...beyond(a),y:beyond(a).y+.05}),up,
+        angle=>insideTier(tier.index,angle));
     }
     for(let t=0;t<spec.tiers.length-1;t++){
       const first=a=>point(t,a,1),second=a=>point(t+1,a,0);
       // Each circulation deck is flat, with height determined by the lower tier.
       const y=spec.tiers[t].baseY+spec.tiers[t].rows*spec.tiers[t].rise+.18;
-      strip(layers.concourse,a=>({...first(a),y}),a=>({...second(a),y}));
+      strip(layers.concourse,a=>({...first(a),y}),a=>({...second(a),y}),up,
+        angle=>insideTier(t,angle)&&insideTier(t+1,angle));
     }
     const outerTier=spec.tiers.length-1;
     const indoor=spec.template==='indoor-arena';
@@ -107,8 +121,19 @@ export const ArchitectureEngine={
     }
     // Aisles are real unoccupied angular wedges in SeatingEngine, not raised
     // meshes spanning occupied chairs. Architectural overlays stay on the deck.
-    for(const tier of spec.tiers)for(let section=0;section<spec.sections;section++){
-      const angle=section*TAU/spec.sections;
+    for(const tier of spec.tiers){
+      const angles=spec.sectionMap?.[tier.index]
+        ?spec.sectionMap[tier.index].flatMap(group=>{
+          const total=group.weights.reduce((sum,w)=>sum+w,0);
+          let offset=0;
+          return group.sectionIds.map((_,index)=>{
+            const angle=group.startAngle+group.spanAngle*offset/total;
+            offset+=group.weights[index];
+            return angle;
+          });
+        })
+        :Array.from({length:spec.sections},(_,i)=>i*TAU/spec.sections);
+      for(const angle of angles){
       for(let row=0;row<tier.rows;row++){
         const u=row/tier.rows,v=(row+1)/tier.rows;
         const p=point(tier.index,angle,u),q=point(tier.index,angle,v);
@@ -120,6 +145,7 @@ export const ArchitectureEngine={
         const delta=.02;
         quad(layers.stepEdges,[d[0],d[1]+delta,d[2]],[c[0],c[1]+delta,c[2]],
           [c[0],c[1]+delta+.015,c[2]],[d[0],d[1]+delta+.015,d[2]],[Math.cos(angle),0,Math.sin(angle)]);
+      }
       }
     }
     // An optional exterior profile reuses the identical mesh-building code
