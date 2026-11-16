@@ -16,6 +16,7 @@ on:
       - 'src/next/venuePlan.mjs'
       - 'src/schoolPublisher.mjs'
       - 'tests/big-ten-batch.test.mjs'
+      - 'tests/offline-export-next.test.mjs'
       - 'package.json'
       - '.github/workflows/big-ten-18.yml'
   workflow_dispatch:
