@@ -36,11 +36,11 @@ async function setBigTenVenue(id){
         throw e;
       });
     }
-    const {venues,sectionProfiles,architecturalSignatures}=await bigTenCatalogRequest;
+    const {venues,sectionProfiles,architecturalSignatures,interiorProfiles}=await bigTenCatalogRequest;
     if(request!==bigTenRequestId)return;
     const venue=venues.find(item=>item.id===id&&item.id!=='ohio-state');
     if(!venue)throw Error('Big Ten school not found: '+id);
-    const spec=toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures);
+    const spec=toBigTenProceduralSpec(venue,sectionProfiles,architecturalSignatures,interiorProfiles);
     project=createProceduralProject(spec);
     selected=null;
     mode='overview';
