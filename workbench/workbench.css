@@ -239,6 +239,18 @@ html,body{height:100%;overflow:hidden}
 .component-editor input,.component-editor select{width:100%;margin-top:5px;
   border:1px solid #dfe6e9;border-radius:8px;padding:8px;font-size:11px}
 .component-editor .hint{font-size:10px;line-height:1.5}
+.group-layout{margin:10px 0}
+.group-layout summary{cursor:pointer;font-size:11px;font-weight:650}
+.group-layout[open]{background:#f8fafb}
+.group-layout .row-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.group-layout .row-actions button{flex:1 1 78px;padding:8px 5px;border:1px solid #d9e2e7;
+  border-radius:7px;background:#fff;font-size:10px;color:#425664}
+.group-layout .group-actions button:hover{background:#edf4f6;border-color:#9caebb}
+.group-layout #structureGroupRemove{color:#9a4740}
+.group-layout #structureMultiSelect{min-height:94px;max-height:145px;padding:4px}
+.group-layout #structureMultiSelect option{padding:5px 7px}
+.group-layout #structureGroupStatus{font-size:10px;line-height:1.5;padding:5px 0}
+
 @media(max-width:1090px){
  .studio-header .brand{min-width:104px}
  .studio-header .workspace-ident{max-width:230px}
