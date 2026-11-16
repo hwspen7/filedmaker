@@ -2,6 +2,20 @@
 
 **New default entry point:** `http://127.0.0.1:5174/` is a rebuilt seat-first viewer powered by a single dependency-free WebGL2 renderer. 2D remains available when WebGL2 is blocked. The school tool at `/school/` and viewer at `/viewer/` share the same renderer. The previous advanced modeling UI is retained at `/legacy/` for compatibility and its GLB export.
 
+## Big Ten 18 — automatic basketball arena batch
+
+This branch contains a source-linked **2026–27 Big Ten men's basketball** catalog covering all 18 member schools and a deterministic generator using the existing six engines.
+
+```bash
+npm run generate:big-ten -- --out build/big-ten-18 --html --strict
+```
+
+Open `build/big-ten-18/index.html` to browse 18 separate standalone 3D / 2D / seat-view previews. A dedicated GitHub Actions workflow builds and publishes the complete directory as a downloadable artifact. The machine-readable [arena catalog](data/big-ten/arenas-2026-27.json) and [JSON Schema](data/big-ten/venue-catalog.schema.json) keep sourced names/capacities distinct from estimated topology. Source provenance, per-arena capacity differences, row counts and QA are retained in reports.
+
+**Accuracy:** these are 18 actual universities and primary basketball arena names, with documented capacity references. The rendered per-section rows, seat positions, entrance placement and exteriors remain procedural estimates pending digitized venue charts or licensed measured CAD. **No individual modeled seat is an official ticket seat.**
+
+[Big Ten 18 data specification, capacities, commands and fidelity milestones](docs/BIG_TEN_18.md).
+
 ## Reusable six-engine venue generator (full-architecture branch)
 
 This development branch now includes six independent, data-driven modules: Geometry, Seating, Architecture, Optimization, Reference and Validation. The same algorithms generate **two distinct fictional venue previews** (an indoor basketball arena and an outdoor American-football stadium) without calling Schottenstein-specific building code. The existing OSU reconstruction is preserved separately. New **Procedural arena** and **Procedural stadium** presets and a **Generate a venue** form are available on the studio home page.
