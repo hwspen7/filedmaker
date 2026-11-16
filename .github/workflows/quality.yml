@@ -1,7 +1,7 @@
 name: Quality
 on:
   push:
-    branches: [main, feature/schottenstein-audience-preview, feature/schottenstein-full-3d-architecture, feature/big-ten-arena-parity, feature/operator-geometry-editor]
+    branches: [main, feature/schottenstein-audience-preview, feature/schottenstein-full-3d-architecture, feature/big-ten-arena-parity, feature/operator-geometry-editor, feature/venue-builder-studio]
   pull_request:
     branches: [main]
 permissions:
@@ -28,6 +28,10 @@ jobs:
           chrome-version: stable
       - name: Test OSU references and custom workbench in WebGL2
         run: npm run test:workbench-browser
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+      - name: Test direct-edit venue builder in Chrome
+        run: node scripts/browser-builder.mjs
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
       - name: Save visual acceptance screenshots
