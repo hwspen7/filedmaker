@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FiledMaker · 场馆重建工作台</title>
+<meta name="description" content="Data-first stadium interior reconstruction. Manually enter sections, rows and geometry; no image scanning.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./builder.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../"><span class="brandmark">F</span><span><strong>FiledMaker</strong><small>Venue Reconstruction Engine</small></span></a>
+  <div class="heading"><span class="eyebrow">STRUCTURED GEOMETRY</span><strong>场馆内部重建</strong></div>
+  <div class="head-actions">
+    <button id="newProject" type="button">新建空白项目</button>
+    <button id="openDemo" type="button">加载 1,500 座示例</button>
+    <label class="btn filebtn">导入项目 JSON<input type="file" id="importProject" accept=".json,application/json" hidden></label>
+    <button id="saveProject" class="emphasis" type="button">保存项目 JSON</button>
+  </div>
+</header>
+<div class="intro">
+  <div><span class="eyebrow">FILEDMAKER / INTERNAL VENUE CORE</span><h1>用数据制造场馆，而不是扫描图片。</h1><p>填写真实分区、排数、曲线、坡度与座位缺口。二维平面和三维看台共用一套数据，可直接修改并重新生成。</p></div>
+  <span class="status-tag">无图片识别 · 暂不建模外立面</span>
+</div>
+<div class="layout">
+  <aside class="settings card">
+    <div class="panel-title"><strong>01 · 场馆资料</strong><span>来源数据</span></div>
+    <label>学校 / 运营单位<input id="school" maxlength="120"></label>
+    <label>场馆名称<input id="venue" maxlength="120"></label>
+    <label>场地类型<select id="sport">
+      <option value="nfhs-basketball">高中篮球 · NFHS</option>
+      <option value="ncaa">大学篮球 · NCAA</option>
+      <option value="nfhs-football">高中橄榄球</option>
+      <option value="ncaa-football">大学橄榄球</option>
+    </select></label>
+    <div class="pair"><label>场地宽度 (m)<input id="courtWidth" type="number" step=".01" min="8"></label><label>场地长度 (m)<input id="courtLength" type="number" step=".01" min="15"></label></div>
+    <details class="details"><summary>官方容量与资料来源</summary>
+      <label>公布容量（可留空）<input id="capacity" type="number" min="1" step="1" placeholder="未知时留空"></label>
+      <label>容量来源 HTTPS URL<input id="capacitySource" type="url" placeholder="https://school.edu/..."></label>
+      <label>备注<textarea id="notes" rows="3" placeholder="当前配置、测量来源和需要复核的部分"></textarea></label>
+    </details>
+    <div class="divider"></div>
+    <div class="panel-title"><strong>02 · 分区目录</strong><span id="sectionCount">0 个</span></div>
+    <div id="sectionList" class="section-list"></div>
+    <div class="pair"><label>新分区 ID<input id="newSectionId" placeholder="如 101" maxlength="30"></label>
+      <label>初始方向<select id="sectionSide"><option value="west">西侧</option><option value="east">东侧</option><option value="north">北侧</option><option value="south">南侧</option></select></label></div>
+    <button id="addSection" class="wide" type="button">＋ 新建可编辑看台</button>
+    <div class="divider"></div>
+    <div class="panel-title"><strong>03 · 逐排数据</strong><span>真实数据优先</span></div>
+    <p class="hint">选择一个分区后逐排填写，或导入 CSV。座位数由原始数据决定，不按容量强行补齐。</p>
+    <label class="btn filebtn wide">导入排座 CSV<input type="file" id="importRows" accept=".csv,text/csv" hidden></label>
+    <button id="downloadRows" class="wide" type="button">导出生成座位 CSV</button>
+    <div class="note"><strong>数据精度边界</strong><p>若只录入估算坡度，模型高度仍属于估算。官方容量不是座位坐标证明。</p></div>
+    <div class="future"><strong>建筑外壳接口</strong><p>已在数据规范中预留。当前只生成内部看台、座椅和场地。</p></div>
+  </aside>
+  <main class="workspace">
+    <div class="card view-card">
+      <div class="view-title">
+        <div><span class="eyebrow">02 / GEOMETRY EDITOR</span><h2>二维轮廓与三维场馆</h2><p>拖动蓝色控制点调整分区。三维预览由同一套数据实时重建。</p></div>
+        <div class="view-controls">
+          <button id="show2d" class="chosen" type="button">二维编辑</button>
+          <button id="show3d" type="button">三维预览</button>
+        </div>
+      </div>
+      <div id="canvasHost" class="canvas-host">
+        <canvas id="planCanvas" aria-label="二维看台曲线和场地编辑器"></canvas>
+        <canvas id="sceneCanvas" aria-label="三维场馆渲染画布" hidden></canvas>
+        <div class="canvas-hint" id="canvasHint">选择一个分区，拖动轮廓控制点 · 蓝色为前沿，橙色为后沿</div>
+        <div class="canvas-tools"><button id="fitPlan" type="button">适配视图</button><button id="rebuild" class="emphasis" type="button">重新生成</button></div>
+      </div>
+      <div class="view-footer">
+        <span id="summary">尚无可生成的看台</span>
+        <div><button id="viewOverview" type="button">三维总览</button><button id="viewHuman" type="button">观众视角</button></div>
+      </div>
+    </div>
+    <div class="card audit">
+      <div class="panel-title"><strong>生成检查</strong><span>不会修改原始座位数量</span></div>
+      <div class="stats">
+        <div><strong id="statSections">0</strong><small>分区</small></div>
+        <div><strong id="statRows">0</strong><small>排线</small></div>
+        <div><strong id="statSeats">0</strong><small>生成座位</small></div>
+        <div><strong id="statDifference">—</strong><small>与公布容量差</small></div>
+      </div>
+      <div id="status" class="status" role="status" aria-live="polite">录入数据后即可生成。</div>
+      <ul id="warnings" class="warnings"></ul>
+    </div>
+  </main>
+  <aside class="inspector card">
+    <div class="panel-title"><strong>03 · 分区与排座细节</strong><span>精确编辑</span></div>
+    <label>当前分区<select id="sectionSelect"><option value="">请选择分区</option></select></label>
+    <div id="noSelection" class="empty">先在左侧添加分区，或加载示例。每个分区都可独立控制轮廓、层级、坡度及排座。</div>
+    <div id="sectionEditor" hidden>
+      <div class="pair"><label>分区编号<input id="sectionId" maxlength="30"></label><label>看台层级<select id="tier">
+        <option value="T1">T1 · 第一层</option><option value="T2">T2 · 第二层</option><option value="T3">T3 · 第三层</option><option value="T4">T4 · 第四层</option>
+      </select></label></div>
+      <div class="pair"><label>第一排高度 (m)<input id="baseHeight" type="number" min="0" step=".05"></label>
+        <label>每排抬升 (m)<input id="rowRise" type="number" min=".05" step=".01"></label></div>
+      <label>几何数据来源<input id="source" placeholder="如学校提供的排座尺寸"></label>
+      <div class="inline-buttons">
+        <button id="frontPoint" type="button">＋ 前沿控制点</button>
+        <button id="backPoint" type="button">＋ 后沿控制点</button>
+      </div>
+      <div class="inline-buttons">
+        <button id="removeFrontPoint" type="button">－ 前沿控制点</button>
+        <button id="removeBackPoint" type="button">－ 后沿控制点</button>
+      </div>
+      <button id="deleteSection" type="button" class="danger wide">删除当前分区</button>
+      <div class="divider"></div>
+      <div class="panel-title"><strong>逐排配置</strong><span id="rowCount">0 排</span></div>
+      <p class="hint">可逐排设置不同座位数、座位编号和绝对高度。通道格式如 8:1.2，表示第 8 张座位后留 1.2 米。</p>
+      <div class="rows-table-wrap"><table><thead><tr>
+        <th>排</th><th>座数</th><th>首座</th><th>通道</th><th>高度 m</th><th></th>
+      </tr></thead><tbody id="rowEditor"></tbody></table></div>
+      <div class="inline-buttons"><button id="addRow" type="button">＋ 新增一排</button><button id="removeRow" type="button">－ 末排</button></div>
+      <details class="details">
+        <summary>批量重建排座（覆盖当前分区）</summary>
+        <div class="pair"><label>排数<input id="bulkRowCount" type="number" min="1" max="100" value="12"></label><label>每排座数<input id="bulkSeatCount" type="number" min="1" max="300" value="20"></label></div>
+        <button id="replaceRows" type="button" class="wide">按以上数量重建该区排座</button>
+      </details>
+      <div class="divider"></div>
+      <p class="hint" id="selectedSeat">三维预览中点击座位，可以查看对应位置。</p>
+    </div>
+  </aside>
+</div>
+<footer>FiledMaker · Data-driven interior reconstruction · Source-aware geometry · Exterior interface reserved · No scan-to-3D claims</footer>
+<script type="module" src="./builder.js"></script>
+</body>
+</html>
