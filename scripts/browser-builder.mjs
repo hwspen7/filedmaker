@@ -99,6 +99,7 @@ async function main(){
     const added=await evaluate("(()=>{document.querySelector('.part[data-kind=stage]').click();return {count:document.querySelectorAll('.object-button').length,selection:document.querySelector('#selectionType').textContent}})()");
     if(added.count!==5||added.selection!=='Concert stage')
       throw Error('Adding a stage failed: '+JSON.stringify(added));
+    await delay(250);
     // Move the selected stage directly on the 3D canvas, not via a form.
     const moved=await evaluate("(()=>{const c=document.querySelector('#scene'),r=c.getBoundingClientRect();const x=r.left+r.width/2,y=r.top+r.height/2-10;const capture=c.setPointerCapture,has=c.hasPointerCapture;try{c.setPointerCapture=()=>{};c.hasPointerCapture=()=>false;for(const [kind,dx] of [['pointerdown',0],['pointermove',48],['pointerup',48]])c.dispatchEvent(new PointerEvent(kind,{bubbles:true,button:0,buttons:kind==='pointerup'?0:1,pointerId:3,clientX:x+dx,clientY:y}));}finally{c.setPointerCapture=capture;c.hasPointerCapture=has;}return {selected:document.querySelector('#selectionType').textContent,x:document.querySelectorAll('#fieldList input')[1]?.value,status:document.querySelector('#status').textContent}})()");
     if(moved.selected!=='Concert stage'||Math.abs(Number(moved.x))<.1)
