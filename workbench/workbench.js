@@ -36,7 +36,7 @@ let preview=null,renderer=null,selectedSection='',selectedSeat=null,
   selectedStructure='',selectedStructureIds=new Set(),selectedZone='',activeModelTool='rows',
   activeStructureKind='platform',drag=null,viewMode='plan';
 let pendingRows=null,vectorDrawing=null,pdfHandle=null,workflowUI=null;
-let guideState=null,modelDrag=null;
+let guideState=null,modelDrag=null,quickInspectorOpen=false;
 const history=createHistory();
 const number=n=>Number(n||0).toLocaleString('en-US');
 const safeName=()=>venue.venue.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'school-venue';
@@ -223,6 +223,7 @@ function activateModelTool(tool){
   document.querySelectorAll('[data-model-tool-pane]').forEach(pane=>
     pane.hidden=pane.dataset.modelToolPane!==tool);
   if(tool==='seats')$('seatAdvanced').open=true;
+  refreshQuickObjectInspector();
 }
 function commitBatch(edit,summary){
   try{
@@ -371,6 +372,21 @@ function refreshStructureControls(preferred=null){
     structures.length+' component(s) · '+selectedStructureIds.size+
       ' selected · provisional geometry':
     'No components yet. Choose a type, then add or place it.';
+  refreshQuickObjectInspector();
+}
+function refreshQuickObjectInspector(){
+  const inspector=$('quickObjectInspector');
+  const s=venue.structures.find(item=>item.id===selectedStructure);
+  inspector.hidden=!s||!quickInspectorOpen||activeModelTool!=='structures'||
+    workflowUI?.current!=='model';
+  if(!s)return;
+  $('quickObjectName').textContent=s.label+' · '+s.id;
+  const props={quickX:'x',quickY:'y',quickZ:'z',quickYaw:'yaw',
+    quickWidth:'width',quickDepth:'depth',quickHeight:'height'};
+  // Preserve the field currently being typed into; edits are applied only
+  // when the user explicitly presses Apply.
+  for(const [id,key] of Object.entries(props))
+    if(document.activeElement!==$(id))$(id).value=s[key];
 }
 function structureFormValues(){
   return {x:$('structureX').value,z:$('structureZ').value,
@@ -385,6 +401,7 @@ function commitStructure(command,title){
     const result=editVenueStructure(venue,command);
     venue=result.venue;selectedStructure=result.action==='remove'?'':result.id;
     selectedStructureIds=new Set(result.action==='remove'?[]:[result.id]);
+    quickInspectorOpen=result.action!=='remove';
     recordEdit(before,title+' · '+result.id);
     sync();tryPreview();refreshStructureControls(selectedStructure);
     message(title+' saved. '+result.count+' components · seat count unchanged · source review required.');
@@ -434,6 +451,7 @@ function selectStructure(id,additive=false){
   }
   refreshStructureControls(selectedStructure);
   activateModelTool('structures');
+  quickInspectorOpen=true;refreshQuickObjectInspector();
   if(selectedStructureIds.size>1)$('structureGroupTools').open=true;
   message(selectedStructureIds.size+' selected · drag to move, or use Arrange multiple components.');
   $('threeDEditReadout').textContent=selectedStructureIds.size+
@@ -1435,6 +1453,30 @@ document.querySelectorAll('[data-structure-kind]').forEach(button=>
   button.onclick=()=>setStructureKind(button.dataset.structureKind));
 $('structureCategory').onchange=()=>refreshStructurePalette();
 $('structureSearch').oninput=()=>refreshStructurePalette();
+$('objectPropertiesToggle').onclick=()=>{
+  if(!selectedStructure)return message('Select a venue component first.',true);
+  quickInspectorOpen=!quickInspectorOpen;refreshQuickObjectInspector();
+};
+$('quickClose').onclick=()=>{quickInspectorOpen=false;refreshQuickObjectInspector();};
+$('quickApply').onclick=()=>{
+  if(!selectedStructure)return message('Select a component first.',true);
+  const map={quickX:'x',quickY:'y',quickZ:'z',quickYaw:'yaw',
+    quickWidth:'width',quickDepth:'depth',quickHeight:'height'};
+  const changes=Object.fromEntries(Object.entries(map).map(([id,key])=>
+    [key,$(id).value]));
+  commitStructure({action:'update',id:selectedStructure,changes},
+    'Edit selected object from canvas');
+};
+$('quickCopy').onclick=()=>{
+  if(selectedStructure)commitStructure({action:'duplicate',id:selectedStructure},
+    'Duplicate selected object from canvas');
+};
+$('quickDelete').onclick=()=>{
+  if(!selectedStructure)return;
+  if(confirm('Delete the selected draft object '+selectedStructure+'?'))
+    commitStructure({action:'remove',id:selectedStructure},
+      'Delete selected object from canvas');
+};
 $('structureMultiSelect').onchange=()=>{
   const selected=[...$('structureMultiSelect').selectedOptions].map(o=>o.value);
   selectedStructureIds=new Set(selected);
