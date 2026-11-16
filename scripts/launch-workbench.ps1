@@ -17,14 +17,15 @@ $target = (& git branch --show-current).Trim()
 if (-not $target) {
     throw 'Detached HEAD is not supported. Switch to main or the desired feature branch.'
 }
+# Launching is read-only with respect to Git. A workspace may contain
+# legitimate user edits, generated files, or staged changes.
+# Updates belong to an explicit user-driven fetch/pull, not application startup.
 $dirty = & git status --porcelain
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the Git working tree.' }
 if ($dirty) {
-    throw 'Uncommitted edits exist. Commit or stash them before launching this verified checkout.'
+    Write-Warning 'Local changes detected. Launching the checked-out files without changing or stashing them.'
 }
-& git fetch origin $target
-if ($LASTEXITCODE -ne 0) { throw "Cannot fetch current remote branch $target." }
-& git pull --ff-only origin $target
-if ($LASTEXITCODE -ne 0) { throw 'Branch cannot fast-forward. Check local commits before updating.' }
+Write-Host "Selected Git branch: $target"
 
 $sha = (& git rev-parse HEAD).Trim()
 $branch = (& git branch --show-current).Trim()

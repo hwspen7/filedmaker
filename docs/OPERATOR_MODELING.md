@@ -76,5 +76,7 @@ The launcher never silently switches branches. First select the desired
 branch yourself (main for the stable release or
 feature/operator-geometry-editor for this review), fetch it and pull it.
 Then run scripts/launch-workbench.ps1. The launcher checks the current
-branch, refuses uncommitted changes and verifies that the localhost server
-is actually serving the same commit, rather than reusing an older tab.
+branch and verifies that the localhost server is serving the same commit,
+rather than reusing an older tab. Local working-tree changes are allowed
+and reported as a warning. The launcher never fetches, pulls, stashes,
+resets or overwrites Git files; update the branch explicitly when desired.
