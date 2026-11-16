@@ -555,13 +555,102 @@ export class NativeVenueRenderer {
     const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/w,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/w;
     return [(px+1)*this.canvas.width*.5,(1-py)*this.canvas.height*.5,w];
   }
+  // Project the pointer onto an editable world-height plane. The camera
+  // ray works in orbit and overhead views without using hidden DOM state.
+  unprojectToPlane(clientX,clientY,planeY=0){
+    if(!this.plan||this.mode==='human')return null;
+    const rect=this.canvas.getBoundingClientRect(),camera=this.currentCamera();
+    if(!rect.width||!rect.height)return null;
+    const forward=normalize(camera.target.map((v,i)=>v-camera.eye[i]));
+    const right=normalize(cross(forward,camera.up));
+    const up=normalize(cross(right,forward));
+    const tan=Math.tan(camera.fov*Math.PI/360);
+    const nx=(2*(clientX-rect.left)/rect.width-1)*tan*rect.width/rect.height;
+    const ny=(1-2*(clientY-rect.top)/rect.height)*tan;
+    const ray=normalize(forward.map((v,i)=>v+right[i]*nx+up[i]*ny));
+    if(Math.abs(ray[1])<1e-6)return null;
+    const t=(planeY-camera.eye[1])/ray[1];
+    if(t<=0||t>10000)return null;
+    return {x:camera.eye[0]+t*ray[0],y:planeY,z:camera.eye[2]+t*ray[2]};
+  }
+  pickStructureAt(e){
+    if(!this.plan?.operatorStructures?.length||this.mode==='human')return null;
+    const rect=this.canvas.getBoundingClientRect();
+    const x=(e.clientX-rect.left)*this.canvas.width/rect.width;
+    const y=(e.clientY-rect.top)*this.canvas.height/rect.height;
+    let nearest=null,distance=(28*this.canvas.width/rect.width)**2;
+    for(const s of this.plan.operatorStructures){
+      const p=this.projectPoint([s.x,s.y+s.height*.5,s.z]);
+      if(!p)continue;
+      const d=(p[0]-x)**2+(p[1]-y)**2;
+      if(d<distance){distance=d;nearest=s;}
+    }
+    return nearest;
+  }
+  updateOperatorInstances(structures,raw){
+    const offset=this.plan?.operatorStructureOffsetFloats;
+    const count=this.plan?.operatorStructureLengthFloats;
+    if(!this.plan?.operatorWorkspace||!Number.isInteger(offset)||
+      !(raw instanceof Float32Array)||raw.length!==count)return false;
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER,this.instances);
+    this.gl.bufferSubData(this.gl.ARRAY_BUFFER,offset*4,raw);
+    this.plan.instanceData.set(raw,offset);
+    this.plan.operatorStructures=structures;
+    this.render();
+    return true;
+  }
   bind(){
-    let start=null,changed=false;
-    this.canvas.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY,theta:this.theta,phi:this.phi,yaw:this.humanYaw,pitch:this.humanPitch};changed=false;this.canvas.setPointerCapture(e.pointerId);});
-    this.canvas.addEventListener('pointermove',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.hypot(dx,dy)>4)changed=true;
-      if(this.mode==='human'){this.humanYaw=start.yaw-dx*.004;this.humanPitch=clamp(start.pitch+dy*.004,-1.3,1.3);}else{this.theta=start.theta-dx*.006;this.phi=clamp(start.phi-dy*.005,.10,1.49);}this.render();});
-    this.canvas.addEventListener('pointerup',e=>{if(start&&!changed&&this.mode!=='human')this.pick(e);start=null;});
-    this.canvas.addEventListener('pointercancel',()=>{start=null;});
+    let start=null,changed=false,editing=null;
+    this.canvas.addEventListener('pointerdown',e=>{
+      const structure=e.shiftKey?this.pickStructureAt(e):null;
+      if(structure&&this.onStructureDragStart){
+        const origin=this.unprojectToPlane(e.clientX,e.clientY,structure.y);
+        if(origin&&this.onStructureDragStart(structure,origin,e)!==false){
+          editing={structure,origin,clientX:e.clientX,clientY:e.clientY};
+          start=null;changed=false;
+          this.canvas.setPointerCapture(e.pointerId);return;
+        }
+      }
+      start={x:e.clientX,y:e.clientY,theta:this.theta,phi:this.phi,
+        yaw:this.humanYaw,pitch:this.humanPitch};
+      changed=false;this.canvas.setPointerCapture(e.pointerId);
+    });
+    this.canvas.addEventListener('pointermove',e=>{
+      if(editing){
+        const next=this.unprojectToPlane(e.clientX,e.clientY,editing.structure.y);
+        const delta=next?{
+          dx:next.x-editing.origin.x,dz:next.z-editing.origin.z,
+          dy:-(e.clientY-editing.clientY)*.03,altKey:e.altKey,
+          shiftKey:e.shiftKey,structure:editing.structure,
+          clientX:e.clientX,clientY:e.clientY
+        }:null;
+        if(delta)this.onStructureDrag?.(delta);
+        return;
+      }
+      if(!start)return;
+      const dx=e.clientX-start.x,dy=e.clientY-start.y;
+      if(Math.hypot(dx,dy)>4)changed=true;
+      if(this.mode==='human'){
+        this.humanYaw=start.yaw-dx*.004;
+        this.humanPitch=clamp(start.pitch+dy*.004,-1.3,1.3);
+      }else{
+        this.theta=start.theta-dx*.006;
+        this.phi=clamp(start.phi-dy*.005,.10,1.49);
+      }
+      this.render();
+    });
+    this.canvas.addEventListener('pointerup',e=>{
+      if(editing){
+        this.onStructureDragEnd?.(editing.structure,e);
+        editing=null;start=null;return;
+      }
+      if(start&&!changed&&this.mode!=='human')this.pick(e);
+      start=null;
+    });
+    this.canvas.addEventListener('pointercancel',()=>{
+      if(editing)this.onStructureDragCancel?.(editing.structure);
+      editing=null;start=null;
+    });
     this.canvas.addEventListener('wheel',e=>{
       e.preventDefault();
       const factor=e.deltaY>0?1.10:1/1.10;
@@ -571,17 +660,12 @@ export class NativeVenueRenderer {
       this.render();
     },{passive:false});
   }
-  pick(e){if(!this.plan)return;const rect=this.canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*this.canvas.width/rect.width,y=(e.clientY-rect.top)*this.canvas.height/rect.height;
-    if(this.mode!=='human'&&this.onStructurePick&&this.plan.operatorStructures?.length){
-      let object=null,dist=(25*this.canvas.width/rect.width)**2;
-      for(const structure of this.plan.operatorStructures){
-        const p=this.projectPoint([structure.x,structure.y+structure.height*.5,structure.z]);
-        if(!p)continue;
-        const value=(p[0]-x)**2+(p[1]-y)**2;
-        if(value<dist){dist=value;object=structure;}
-      }
-      if(object){this.onStructurePick(object);return;}
-    }
+  pick(e){if(!this.plan)return;
+    const rect=this.canvas.getBoundingClientRect();
+    const x=(e.clientX-rect.left)*this.canvas.width/rect.width;
+    const y=(e.clientY-rect.top)*this.canvas.height/rect.height;
+    const object=this.onStructurePick?this.pickStructureAt(e):null;
+    if(object){this.onStructurePick(object);return;}
     let best=-1,depth=Infinity,dist=13*13*(this.canvas.width/rect.width)**2;
     for(let i=0;i<this.plan.seats.length;i++){
       const s=this.plan.seats[i],p=this.projectPoint([s.x,s.y+.5,s.z]);if(!p)continue;
