@@ -100,6 +100,17 @@ function drawCourt(){
  }else{
   ctx.beginPath();ctx.arc(px(0),py(0),9.15*scale,0,Math.PI*2);ctx.stroke();
  }
+ if(project.liveStage==='end'){
+   // End-stage layout is an illustrative event arrangement, not an official
+   // concert seat map. Both 2D and WebGL use the same stage dimensions.
+   const stageWidth=Math.min(16,w*.79),stageDepth=Math.min(8,l*.24);
+   const stageZ=-l*.27;
+   ctx.fillStyle='#242b3d';
+   ctx.fillRect(px(-stageWidth/2),py(stageZ-stageDepth/2),
+     stageWidth*scale,stageDepth*scale);
+   ctx.fillStyle='#f0f3fa';ctx.textAlign='center';
+   ctx.font='700 12px system-ui';ctx.fillText('STAGE · 示意',px(0),py(stageZ)+4);
+ }
  ctx.restore();
 }
 function draw(){
