@@ -631,6 +631,7 @@ function open3d(mode){
   if(mode==='eye'&&!selectedSeat)message('Select a seat in 3D overview before entering Seat view.',true);
 }
 function tab(mode){
+  $('canvasOverlay').hidden=mode!=='plan';
   $('showPlan').classList.toggle('active',mode==='plan');
   $('show3d').classList.toggle('active',mode==='overview');
   $('showEye').classList.toggle('active',mode==='eye');
