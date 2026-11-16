@@ -219,6 +219,13 @@ export function generateReconstruction(project,{preview=true}={}){
   const output=preview?buildWorkbenchPreview(workbench):generateTracedVenue(workbench);
   if(output.seats.length!==normalized.totals.seats)
     throw Error('Generated seat count does not match the supplied row inventory');
+  // A count-exact preview can still have folded banks or seat collisions.
+  // Block such geometry rather than publishing a misleading reconstruction.
+  if(output.quality?.blockingCount){
+    const first=output.quality.issues.find(issue=>issue.severity==='blocking');
+    throw Error('Geometry validation failed: '+(first?.code??'UNKNOWN')+
+      ' — '+(first?.detail??'Review section boundaries and seating rows'));
+  }
   const warnings=[...output.warnings];
   if(!normalized.officialCapacity)
     warnings.push('No independently sourced capacity. Geometry is not an official ticket map.');
