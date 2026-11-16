@@ -386,74 +386,11 @@ export function buildSchottensteinArchitecture(model){
   // Deliberately open roof: the arena wall, eaves and gallery canopy remain,
   // while the central opaque lid is absent in every rendering and export.
 
-  // Press suite is recessed into the existing upper gallery, not an extra
-  // freestanding roof slab in front of sections 321-326. All front faces
-  // share the gallery's radial envelope, directly behind the seats.
-  const press=model.features?.find(feature=>feature.kind==='press');
-  if(press){
-    const centerAngle=Math.atan2(press.z,press.x);
-    const halfSpan=.52; // A wider architectural bay, around 52-58m across.
-    const frontOffset=.73,backOffset=4.85;
-    const base=galleryFloor-.30,sill=galleryFloor+1.06;
-    const header=galleryFloor+5.37,top=galleryFloor+6.23;
-    const signedAngle=a=>Math.atan2(Math.sin(a-centerAngle),Math.cos(a-centerAngle));
-    const pressSegments=[];
-    for(let i=0;i<SEGMENTS;i++){
-      const angle=(i+.5)*TAU/SEGMENTS;
-      if(Math.abs(signedAngle(angle))<=halfSpan)pressSegments.push(i);
-    }
-    if(pressSegments.length<8)throw Error('Press gallery requires sufficient facade segments');
-    const rearSeats=fitRearSeatEnvelope(model.seats,{
-      tier:2,segments:SEGMENTS,clearance:.38,spread:1
-    });
-    for(const i of pressSegments){
-      const j=(i+1)%SEGMENTS,angle=i*TAU/SEGMENTS,nextAngle=j*TAU/SEGMENTS;
-      const seatA=chairEdge[i],seatB=chairEdge[j];
-      if(!seatA||!seatB)continue;
-      // Behind the shorter media-side bank, extend the SAME gallery wall down
-      // to the last occupied chair. The old wall started at the high, global
-      // gallery floor and left a giant white hole below the Press Box.
-      // Keep this infill in the existing backWall layer, not a detached slab.
-      const lowA=Math.min(base-.54,seatA.y-.23);
-      const lowB=Math.min(base-.54,seatB.y-.23);
-      wallBand(backWall,i,frontOffset,lowA,lowB,base,base,'in');
-
-      // Connect that continuous wall to the actual rear lip behind the seats.
-      // Each bay is matched to its two end chairs, avoiding a long, flat gray
-      // ribbon floating above the individual rows.
-      const innerA=rearSeats.radii[i]-.02,innerB=rearSeats.radii[j]-.02;
-      const outerA=outerR[i]+frontOffset,outerB=outerR[j]+frontOffset;
-      if(innerA<outerA-.12&&innerB<outerB-.12){
-        const p=(radius,a,y)=>[radius*Math.cos(a),y,radius*Math.sin(a)];
-        quad(galleryFloorMesh,p(innerA,angle,lowA),p(innerB,nextAngle,lowB),
-          station(j,frontOffset,lowB),station(i,frontOffset,lowA),[0,1,0]);
-      }
-      // Wall, glazing and narrow mullions occupy one vertical plane. Their
-      // geometry is part of the building facade: no hovering roof/canopy.
-      wallBand(pressWalls,i,frontOffset,base,base,sill,sill,'in');
-      wallBand(pressGlass,i,frontOffset-.028,sill,sill,header,header,'in');
-      wallBand(pressWalls,i,frontOffset,header,header,top,top,'in');
-      if(i%4===0){
-        wallBand(pressWalls,i,frontOffset-.052,sill-.09,sill-.09,
-          header+.09,header+.09,'in');
-      }
-      if(i%5===0){
-        wallBand(pressWalls,i,frontOffset-.065,header-.08,header-.08,
-          header+.08,header+.08,'in');
-      }
-    }
-    // Two short return walls close the gallery into the structural concourse.
-    // Their ends align with the outer building wall rather than projecting
-    // forward into the occupied seats.
-    for(const [index,side] of [[pressSegments[0],-1],
-      [(pressSegments.at(-1)+1)%SEGMENTS,1]]){
-      const at=(offset,y)=>station(index,offset,y);
-      const angle=index*TAU/SEGMENTS;
-      const tangent=[-Math.sin(angle)*side,0,Math.cos(angle)*side];
-      quad(pressWalls,at(frontOffset,base),at(backOffset,base),
-        at(backOffset,top),at(frontOffset,top),tangent);
-    }
-  }
+  // Press Box uses the EXISTING integrated upper-gallery windows and rear
+  // wall. Do not add a second press facade, lowered backWall infill, or a
+  // radial floor band here: those created the floating gray strip visible
+  // above sections 320-326. The Press Box source feature remains in the
+  // venue plan as a label only; no seating data are changed.
   // Synthetic EXIT graphics, glowing portal numbers and fabricated radial
   // staircases are intentionally absent. The map's genuine seat-free
   // circulation gaps remain untouched.
