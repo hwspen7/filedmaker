@@ -9,12 +9,12 @@
       "chartIds": "documented",
       "rowLabels": "documented",
       "geometry": "estimated",
-      "notes": "Inner 19 section labels and outer 36 labels from Crisler official men's chart. Outer displayed rows 22–41; section-specific actual row presence varies. Excluded suite/band/club footprints still need surveying. Lower-tier angular break for Band and lower lobby is hand-estimated from the published map and is not a surveyed boundary.",
+      "notes": "Inner 19 section labels and outer 36 labels from Crisler official men's chart. Outer displayed rows 22–41; section-specific actual row presence varies. Excluded suite/band/club footprints still need surveying. Lower-tier angular break for Band and lower lobby is hand-estimated from the published map and is not a surveyed boundary. Two lower-bank groups remain separately labeled, but the former unsupported empty wedges have been closed; future source tracing can cut only documented band/club footprints.",
       "tiers": [
         [
           {
-            "startAngle": 0.79,
-            "spanAngle": 5.27,
+            "startAngle": 0.51,
+            "spanAngle": 5.62,
             "sectionIds": [
               "101",
               "104",
@@ -57,8 +57,8 @@
             "rowCount": 20
           },
           {
-            "startAngle": 0.24681469282041377,
-            "spanAngle": 0.44,
+            "startAngle": 6.13,
+            "spanAngle": 0.6631853071795861,
             "sectionIds": [
               "134",
               "136"
@@ -1554,12 +1554,12 @@
       "chartIds": "documented",
       "rowLabels": "estimated",
       "geometry": "estimated",
-      "notes": "Northwestern's official venue chart identifies 101–115 lower and 201–220 upper. A small lower-level gap approximates Wilson Club circulation; section widths, inaccessible ends and offsets are not yet traced.",
+      "notes": "Northwestern's official venue chart identifies 101–115 lower and 201–220 upper. A small lower-level gap approximates Wilson Club circulation; section widths, inaccessible ends and offsets are not yet traced. The prior 0.32-radian lower stand void was illustrative and not traceable to the chart. The model now keeps that area continuous until a verified Wilson Club outline is available.",
       "tiers": [
         [
           {
             "startAngle": 0.28,
-            "spanAngle": 5.963185307179586,
+            "spanAngle": 6.283185307179586,
             "sectionIds": [
               "101",
               "102",
