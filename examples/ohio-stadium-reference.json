@@ -1,15 +1,15 @@
 {
   "schemaVersion": 5,
-  "title": "Ohio Stadium — architectural reference",
+  "title": "Ohio Stadium — 2026 architectural reference",
   "country": "United States",
   "city": "Columbus",
-  "surface": "nfl",
+  "surface": "ncaa-football",
   "shape": 3.15,
   "seatPitch": 0.55,
   "aisleWidth": 1.34,
   "roof": false,
-  "detailLevel": "high",
-  "showExterior": true,
+  "detailLevel": "standard",
+  "showExterior": false,
   "showFixtures": true,
   "venueReference": {
     "id": "ohio-stadium",
@@ -214,136 +214,28 @@
       }
     ]
   },
-  "aisles": [
-    {
-      "id": "illustrative-aisle-1",
-      "angle": 12.857,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-2",
-      "angle": 38.571,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-3",
-      "angle": 64.286,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-4",
-      "angle": 90,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-5",
-      "angle": 115.714,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-6",
-      "angle": 141.429,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-7",
-      "angle": 167.143,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-8",
-      "angle": 192.857,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-9",
-      "angle": 218.571,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-10",
-      "angle": 244.286,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-11",
-      "angle": 270,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-12",
-      "angle": 295.714,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-13",
-      "angle": 321.429,
-      "width": 1.45,
-      "tier": "all"
-    },
-    {
-      "id": "illustrative-aisle-14",
-      "angle": 347.143,
-      "width": 1.45,
-      "tier": "all"
-    }
-  ],
-  "portals": [
-    {
-      "id": "illustrative-east-lower",
-      "tierId": "T2",
-      "angle": 9,
-      "width": 5,
-      "firstRow": 11,
-      "lastRow": 17
-    },
-    {
-      "id": "illustrative-west-lower",
-      "tierId": "T2",
-      "angle": 171,
-      "width": 5,
-      "firstRow": 11,
-      "lastRow": 17
-    },
-    {
-      "id": "illustrative-north-lower",
-      "tierId": "T2",
-      "angle": 270,
-      "width": 5,
-      "firstRow": 11,
-      "lastRow": 17
-    },
-    {
-      "id": "illustrative-east-upper",
-      "tierId": "T4",
-      "angle": 345,
-      "width": 5,
-      "firstRow": 9,
-      "lastRow": 14
-    },
-    {
-      "id": "illustrative-west-upper",
-      "tierId": "T4",
-      "angle": 195,
-      "width": 5,
-      "firstRow": 9,
-      "lastRow": 14
-    }
-  ],
+  "aisles": [],
+  "portals": [],
   "sectionProfiles": [
     {
+      "sectionId": "S04",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S04",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
       "sectionId": "S05",
       "tierId": "T3",
       "rows": 10,
@@ -480,6 +372,24 @@
     },
     {
       "sectionId": "S12",
+      "tierId": "T4",
+      "rows": 0,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.52,
+      "depth": 0.86
+    },
+    {
+      "sectionId": "S13",
+      "tierId": "T3",
+      "rows": 10,
+      "frontShift": 0,
+      "heightShift": 0,
+      "rise": 0.38,
+      "depth": 0.83
+    },
+    {
+      "sectionId": "S13",
       "tierId": "T4",
       "rows": 0,
       "frontShift": 0,
@@ -493,7 +403,7 @@
     "mode": "generated",
     "venue": "Ohio Stadium",
     "source": "Ohio State official architectural facts and seating maps; interpretive sector geometry",
-    "sourceUrl": "https://ohiostatebuckeyes.com/sports/2023/6/2/ohio-stadium",
+    "sourceUrl": "https://ohiostatebuckeyes.com/documents/download/2026/10/13/7_Indiana.pdf",
     "inputUnit": "m",
     "yUnit": "m",
     "heightOffset": 0,
@@ -506,254 +416,254 @@
       "id": "S01",
       "label": "East bowl sector 01",
       "start": 0,
-      "end": 11.25,
+      "end": 18.431393,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S02",
       "label": "East bowl sector 02",
-      "start": 11.25,
-      "end": 22.5,
+      "start": 18.431393,
+      "end": 33.991998,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S03",
       "label": "East bowl sector 03",
-      "start": 22.5,
-      "end": 33.75,
+      "start": 33.991998,
+      "end": 45.823858,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S04",
       "label": "East bowl sector 04",
-      "start": 33.75,
-      "end": 45,
+      "start": 45.823858,
+      "end": 54.135754,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S05",
       "label": "South bowl sector 05",
-      "start": 45,
-      "end": 56.25,
+      "start": 54.135754,
+      "end": 60.329508,
       "enabled": true,
       "color": "#a4a9a9"
     },
     {
       "id": "S06",
       "label": "South bowl sector 06",
-      "start": 56.25,
-      "end": 67.5,
+      "start": 60.329508,
+      "end": 70.106719,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S07",
       "label": "South bowl sector 07",
-      "start": 67.5,
-      "end": 78.75,
+      "start": 70.106719,
+      "end": 80.116031,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S08",
       "label": "South bowl sector 08",
-      "start": 78.75,
-      "end": 90,
+      "start": 80.116031,
+      "end": 90.710769,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S09",
       "label": "South bowl sector 09",
-      "start": 90,
-      "end": 101.25,
+      "start": 90.710769,
+      "end": 101.260071,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S10",
       "label": "South bowl sector 10",
-      "start": 101.25,
-      "end": 112.5,
+      "start": 101.260071,
+      "end": 111.170653,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S11",
       "label": "South bowl sector 11",
-      "start": 112.5,
-      "end": 123.75,
+      "start": 111.170653,
+      "end": 120.476218,
       "enabled": true,
       "color": "#a4a9a9"
     },
     {
       "id": "S12",
       "label": "South bowl sector 12",
-      "start": 123.75,
-      "end": 135,
+      "start": 120.476218,
+      "end": 126.712154,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S13",
       "label": "East bowl sector 13",
-      "start": 135,
-      "end": 146.25,
+      "start": 126.712154,
+      "end": 135.577588,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S14",
       "label": "East bowl sector 14",
-      "start": 146.25,
-      "end": 157.5,
+      "start": 135.577588,
+      "end": 147.83263,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S15",
       "label": "East bowl sector 15",
-      "start": 157.5,
-      "end": 168.75,
+      "start": 147.83263,
+      "end": 163.883839,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S16",
       "label": "East bowl sector 16",
-      "start": 168.75,
-      "end": 180,
+      "start": 163.883839,
+      "end": 182.435462,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S17",
       "label": "West bowl sector 17",
-      "start": 180,
-      "end": 191.25,
+      "start": 182.435462,
+      "end": 200.089993,
       "enabled": true,
       "color": "#a4a9a9"
     },
     {
       "id": "S18",
       "label": "West bowl sector 18",
-      "start": 191.25,
-      "end": 202.5,
+      "start": 200.089993,
+      "end": 214.938331,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S19",
       "label": "West bowl sector 19",
-      "start": 202.5,
-      "end": 213.75,
+      "start": 214.938331,
+      "end": 226.149438,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S20",
       "label": "West bowl sector 20",
-      "start": 213.75,
-      "end": 225,
+      "start": 226.149438,
+      "end": 234.169689,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S21",
       "label": "North bowl sector 21",
-      "start": 225,
-      "end": 236.25,
+      "start": 234.169689,
+      "end": 240.565235,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S22",
       "label": "North bowl sector 22",
-      "start": 236.25,
-      "end": 247.5,
+      "start": 240.565235,
+      "end": 250.282007,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S23",
       "label": "North bowl sector 23",
-      "start": 247.5,
-      "end": 258.75,
+      "start": 250.282007,
+      "end": 260.204736,
       "enabled": true,
       "color": "#a4a9a9"
     },
     {
       "id": "S24",
       "label": "North bowl sector 24",
-      "start": 258.75,
-      "end": 270,
+      "start": 260.204736,
+      "end": 270.704203,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S25",
       "label": "North bowl sector 25",
-      "start": 270,
-      "end": 281.25,
+      "start": 270.704203,
+      "end": 281.158107,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S26",
       "label": "North bowl sector 26",
-      "start": 281.25,
-      "end": 292.5,
+      "start": 281.158107,
+      "end": 290.981798,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S27",
       "label": "North bowl sector 27",
-      "start": 292.5,
-      "end": 303.75,
+      "start": 290.981798,
+      "end": 300.478249,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S28",
       "label": "North bowl sector 28",
-      "start": 303.75,
-      "end": 315,
+      "start": 300.478249,
+      "end": 306.672619,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S29",
       "label": "West bowl sector 29",
-      "start": 315,
-      "end": 326.25,
+      "start": 306.672619,
+      "end": 315.04113,
       "enabled": true,
       "color": "#a4a9a9"
     },
     {
       "id": "S30",
       "label": "West bowl sector 30",
-      "start": 326.25,
-      "end": 337.5,
+      "start": 315.04113,
+      "end": 326.835672,
       "enabled": true,
       "color": "#778387"
     },
     {
       "id": "S31",
       "label": "West bowl sector 31",
-      "start": 337.5,
-      "end": 348.75,
+      "start": 326.835672,
+      "end": 342.149368,
       "enabled": true,
       "color": "#a9293d"
     },
     {
       "id": "S32",
       "label": "West bowl sector 32",
-      "start": 348.75,
+      "start": 342.149368,
       "end": 360,
       "enabled": true,
       "color": "#a9293d"
@@ -804,5 +714,16 @@
       "gap": 0,
       "heightGap": 0
     }
-  ]
+  ],
+  "blueTheme": false,
+  "seatFirst": true,
+  "ticketing": {
+    "officialCapacity": 102041,
+    "capacitySource": "https://ohiostatebuckeyes.com/documents/download/2026/10/13/7_Indiana.pdf",
+    "capacityScope": "stadium capacity in more recent 2026 OSU game notes",
+    "inventorySource": "",
+    "inventoryCount": null,
+    "inventoryMode": "none",
+    "coordinates": "none"
+  }
 }

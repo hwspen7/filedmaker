@@ -62,3 +62,6 @@ body{background:#fff}.topbar{border-color:#e9edf0}.top-actions{gap:7px}.top-acti
 .seat-controls[open]>summary{margin-bottom:17px}
 .inspector .section-head{margin-bottom:9px}.inspector .metric{margin-bottom:12px}
 .inspector{padding-top:20px}
+
+/* Neutral non-white viewport behind transparent WebGL scene. */
+.viewport{background:#e0e6e4}

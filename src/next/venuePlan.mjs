@@ -76,9 +76,9 @@ export function buildVenuePlan(model,options={}) {
     if(!pos.every(Number.isFinite)||!size.every(x=>Number.isFinite(x)&&x>0.0001))return;
     (rounded?seatShells:elements).push(...pos,...size,Number(yaw)||0,...color,id);
   };
-  const concrete=colorRGB(chartPreview?'#d8d3cb':'#bccad5');
-  const riseFace=colorRGB(chartPreview?'#b1aba3':'#778fa5');
-  const steel=colorRGB(chartPreview?'#39393d':'#34465a');
+  const concrete=colorRGB(chartPreview?'#d8d3cb':'#768187');
+  const riseFace=colorRGB(chartPreview?'#b1aba3':'#5c686e');
+  const steel=colorRGB(chartPreview?'#39393d':'#637078');
   const seatScale=clamp(Number(project.seatPitch)||.53,.42,.76);
   const rows=new Map();
   let chairCount=0,benchCount=0;

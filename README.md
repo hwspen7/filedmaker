@@ -452,3 +452,7 @@ For Ohio Stadium and the Schottenstein Center, the generated sector numbers and 
 The visual renderer now shares seating type and school color rules across Studio and exported previews. OSU football uses a simplified bleacher-like representation instead of rendering every spectator position as an oversized folding chair. Seats use locally derived row normals; official seat sightlines still require verified geometry.
 
 For actual ticket-sale integration, the school must supply canonical section/row/seat identifiers, valid coordinates or photographed controls, and a real ticket-provider inventory API. A published capacity does **not** establish the number or location of sellable seats.
+
+## Reference bowl corrections
+
+The Ohio Stadium and Schottenstein Center reference scenes no longer invent default aisle cuts. Their **illustrative** sectors are spaced by the front-row perimeter to avoid isolated corner fragments. Only untouched obsolete example cutouts are removed during project validation; staff-authored and measured aisles are preserved. Native WebGL2 uses transparent canvas output, while seating support colors avoid the previous white ground slab. These changes do not establish exact official seating identities.

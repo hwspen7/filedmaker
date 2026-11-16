@@ -1,6 +1,6 @@
 {
   "name": "filedmaker",
-  "version": "10.0.0",
+  "version": "10.0.1",
   "private": true,
   "type": "module",
   "description": "Source-driven custom school venue geometry and Ohio State reference studies",
