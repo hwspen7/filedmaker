@@ -190,7 +190,8 @@ export const GeometryEngine={
         return {side:local.side,blocks,source:String(local.source).slice(0,512),
           seatDepth:finite(local.seatDepth??.72,'Court seat row depth',.65,1.05),
           margin:finite(local.margin??1.12,'Court seat from sideline',.9,3),
-          frontHeight:finite(local.frontHeight??.55,'Courtside platform front height',.2,2)};
+          frontHeight:finite(local.frontHeight??.55,'Courtside platform front height',.2,2),
+          rowRise:finite(local.rowRise??.08,'Court-level stand rise',.04,.24)};
       })();
       const sectionRules=(raw.sectionRules??[]).map(rule=>{
         const tier=integer(rule.tier,'Interior rule tier',0,tiers.length-1);
