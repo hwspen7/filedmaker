@@ -39,14 +39,17 @@ export function rowAttributes(record,count){
     throw Error('Duplicate seat label in a row');
   const direction=String(record.seat_direction||record.seatDirection||'forward').trim().toLowerCase();
   if(!['forward','reverse'].includes(direction))throw Error('Seat direction must be forward or reverse');
+  const insetStartM=finite(record.inset_start_m??record.insetStartM??0,'row start inset metres',0,30);
+  const insetEndM=finite(record.inset_end_m??record.insetEndM??0,'row end inset metres',0,30);
+  const depthOffsetM=finite(record.depth_offset_m??record.depthOffsetM??0,'row depth offset metres',-3,3);
   const rawElevation=record.elevation_m??record.elevation??null;
   const elevation=rawElevation==null||rawElevation===''?null:
     finite(rawElevation,'row elevation metres',0,100);
-  return {gaps,seatNumbers,seatDirection:direction,elevation};
+  return {gaps,seatNumbers,seatDirection:direction,elevation,insetStartM,insetEndM,depthOffsetM};
 }
 export function rowStations(row,width){
   const gaps=row.gaps||[],count=row.seats;
-  const reserved=gaps.reduce((sum,g)=>sum+g.width,0);
+  const reserved=gaps.reduce((sum,g)=>sum+g.width,0)+(row.insetStartM??0)+(row.insetEndM??0);
   const usable=width-reserved;
   if(usable<=0||usable/count<.25)
     throw Error('Row '+row.section+'/'+row.row+' cannot fit source seats and documented aisle gaps');
@@ -54,7 +57,7 @@ export function rowStations(row,width){
   const positions=Array.from({length:count},(_,i)=>{
     const inserted=gaps.filter(g=>g.after<=i).reduce((sum,g)=>sum+g.width,0);
     const numberIndex=row.seatDirection==='reverse'?count-i-1:i;
-    return {distance:(i+.5)*pitch+inserted,
+    return {distance:(row.insetStartM??0)+(i+.5)*pitch+inserted,
       label:row.seatNumbers?.length?row.seatNumbers[numberIndex]:
         String(row.first+numberIndex)};
   });

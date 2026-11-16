@@ -421,6 +421,36 @@ async function main(){
       throw Error('Fictional demo deep link is not interactive: '+JSON.stringify(synthetic));
     console.log('workbench UI: four-stage navigation and Aiken/fictional/source-only case deep links verified');
 
+    // Phase two: operate the actual row editor, verify 3D reacts, then undo/redo.
+    const beforeEdit=await evaluate("({count:document.querySelector('#mappedCount').textContent,row:document.querySelector('#rowEditRow').value,section:document.querySelector('#rowEditSection').value})");
+    if(beforeEdit.count!=='1,500'||!beforeEdit.row||!beforeEdit.section)
+      throw Error('Operator row editor is not populated for the fictional gym');
+    const afterEdit=await evaluate("(()=>{document.querySelector('#rowEditSeats').value='24';document.querySelector('#applyRowEdit').click();return {count:document.querySelector('#mappedCount').textContent,review:document.querySelector('#qa').textContent,rows:document.querySelector('#rowEditStatus').textContent}})()");
+    if(afterEdit.count!=='1,499'||!afterEdit.review.includes('STAFF_EDITS_PENDING_SOURCE_RECONCILIATION')||
+      !afterEdit.rows.includes('Staff-edited'))
+      throw Error('Applying row edit failed to update seats and provenance: '+JSON.stringify(afterEdit));
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-row-editor.png'),Buffer.from(frame.data,'base64')));
+    await evaluate("document.querySelector('#undo').click()");
+    const undone=await poll(async()=>await evaluate("document.querySelector('#mappedCount')?.textContent==='1,500'"),50);
+    if(!undone)throw Error('Undo did not restore original 1,500 source seats');
+    await evaluate("document.querySelector('#redo').click()");
+    const redone=await poll(async()=>await evaluate("document.querySelector('#mappedCount')?.textContent==='1,499'"),50);
+    if(!redone)throw Error('Redo did not restore staff-modified count');
+    const noChange=await evaluate("(()=>{document.querySelector('#rowEditSeats').value='0';document.querySelector('#applyRowEdit').click();return {count:document.querySelector('#mappedCount').textContent,error:document.querySelector('#workStatus').textContent}})()");
+    if(noChange.count!=='1,499'||!noChange.error.includes('Edit rejected'))
+      throw Error('Invalid seat count did not fail atomically');
+    await evaluate("document.querySelector('[data-open-stage=\"calibrate\"]').click()");
+    const moved=await evaluate("(()=>{const select=document.querySelector('#sectionSelect');select.value='WEST-1';select.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#sectionMoveX').value='.1';document.querySelector('#sectionMoveZ').value='0';document.querySelector('#moveSelectedSection').click();return {seats:document.querySelector('#mappedCount').textContent,ledger:document.querySelector('#qa').textContent,status:document.querySelector('#workStatus').textContent}})()");
+    if(moved.seats!=='1,499'||moved.status.includes('Edit rejected'))
+      throw Error('Section translation damaged model or failed to apply: '+JSON.stringify(moved));
+    await evaluate("document.querySelector('#sectionAdvanced').open=true");
+    await delay(250);
+    await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
+      writeFileSync(join(dir,'operator-section-tools.png'),Buffer.from(frame.data,'base64')));
+    console.log('operator editing: source counts adjusted with review flags, 3D updated, invalid edit rejected, undo/redo and section translation verified');
+
+
 
 
   } finally {

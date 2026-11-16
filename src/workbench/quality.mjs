@@ -39,6 +39,31 @@ export function assessVenueGeometry(traced){
     if(topology.crossed)
       add('blocking','CROSSED_SECTION','Section footprint is self-intersecting',section.id);
   }
+  const staffRows=venue.rows.filter(r=>r.operatorEdited);
+  if(staffRows.length){
+    const changed=staffRows.filter(r=>r.sourceSeats!==null&&
+      r.sourceSeats!==undefined&&r.sourceSeats!==r.seats);
+    const added=staffRows.filter(r=>r.operatorAdded);
+    add('review','STAFF_EDITS_PENDING_SOURCE_RECONCILIATION',
+      staffRows.length+' manually modified rows, '+changed.length+
+      ' source-count changes, '+added.length+' staff-added rows');
+  }
+  const removed=venue.editLedger?.filter(e=>e.operation==='remove-row')??[];
+  if(removed.length)add('review','DELETED_SOURCE_ROWS',
+    removed.length+' row-deletion operations require comparison with the original inventory');
+  // Only compare *actually adjoining* sections; an aisle gap or an unrelated
+  // bank must not create an artificial continuity violation.
+  for(let i=0;i<venue.sections.length;i++)for(let j=i+1;j<venue.sections.length;j++){
+    const a=venue.sections[i],b=venue.sections[j];
+    const close=(p,q)=>Math.hypot(p.x-q.x,p.z-q.z)<.75;
+    const endpoints=s=>[[s.front[0],s.back[0]],[s.front.at(-1),s.back.at(-1)]];
+    const touching=endpoints(a).some(x=>endpoints(b).some(y=>
+      close(x[0],y[0])&&close(x[1],y[1])));
+    if(touching&&(Math.abs(a.baseHeight-b.baseHeight)>.40||
+      Math.abs(a.rowRise-b.rowRise)>.085))
+      add('review','ADJACENT_SECTION_ELEVATION',
+        a.id+' and '+b.id+' share an edge but use different seating elevations');
+  }
   for(const row of rowRuns){
     if(row.seatPitch<.43)add('review','TIGHT_PITCH',row.row+' mean spacing '+row.seatPitch.toFixed(3)+' m',row.section);
     if(row.seatPitch>1.20)add('review','WIDE_PITCH',row.row+' mean spacing '+row.seatPitch.toFixed(3)+' m',row.section);

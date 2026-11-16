@@ -75,7 +75,18 @@
 <div class="pair"><label>First-row height (m)<input id="baseHeight" type="number" step=".05" min="0" max="80"></label>
 <label>Rise per row (m)<input id="rowRise" type="number" step=".01" min=".05" max="1.5"></label></div>
 <div class="actions"><button type="button" id="applySection">Apply geometry</button><button type="button" id="removeSection">Remove section</button></div>
-<p class="hint">Drag corner handles on the plan to adjust. Elevations remain estimates without measurements.</p></div>
+<p class="hint">Drag corner handles on the plan to adjust. Hold Shift for 10 cm snapping. Elevations remain provisional.</p></div>
+<details class="disclosure section" id="sectionAdvanced"><summary>Precise section positioning</summary>
+<p class="hint">Move a complete bank or rescale its front and rear edges. Existing seat counts remain unchanged.</p>
+<div class="pair">
+<label>Move X (m)<input id="sectionMoveX" type="number" step=".05" value="0" min="-15" max="15"></label>
+<label>Move Z (m)<input id="sectionMoveZ" type="number" step=".05" value="0" min="-15" max="15"></label>
+</div>
+<button id="moveSelectedSection" type="button">Apply position</button>
+<label>Section width (%)<input id="sectionWidthPct" type="number" min="50" max="150" step="5" value="100"></label>
+<button id="resizeSelectedSection" type="button">Apply width</button>
+<p class="hint">These geometric adjustments invalidate previous image tracing coordinates until re-reviewed.</p>
+</details>
 <details class="disclosure section"><summary>Independent calibration point</summary>
 <div class="pair"><label>Pixel X<input id="checkPX" type="number" step="any"></label><label>Pixel Y<input id="checkPY" type="number" step="any"></label></div>
 <div class="pair"><label>Measured X (m)<input id="checkX" type="number" step="any"></label><label>Measured Z (m)<input id="checkZ" type="number" step="any"></label></div>
@@ -89,8 +100,36 @@
 <div class="section"><div class="small-title">Model generation</div>
 <button id="generate" class="primary full" type="button">Generate / update model</button>
 <p class="hint">Use the 2D / 3D / Seat view controls above the canvas. Clicking a seat enables its viewpoint.</p></div>
-<div class="section"><div class="small-title">Human review is still required</div>
-<p class="hint">Check section footprints, aisles, row spacing, seat numbering and sightlines before sharing.</p></div>
+<div class="section row-edit-panel">
+<div class="small-title">Edit rows & seats</div>
+<label>Section<select id="rowEditSection"></select></label>
+<label>Row<select id="rowEditRow"></select></label>
+<div class="row-edit-status" id="rowEditStatus" aria-live="polite">Choose a row to adjust.</div>
+<div class="pair">
+<label>Seat count<input id="rowEditSeats" type="number" step="1" min="1" max="300"></label>
+<label>First seat number<input id="rowEditFirst" type="number" step="1" min="1" max="100000"></label>
+</div>
+<button id="applyRowEdit" class="primary full" type="button">Apply row changes</button>
+<details class="disclosure" id="rowAdvanced"><summary>Seat numbering, aisles & elevation</summary>
+<label>Seat labels (| separated)<input id="rowEditNumbers" placeholder="Optional: 1|3|5..."></label>
+<label>Seat direction<select id="rowEditDirection"><option value="forward">Forward</option><option value="reverse">Reverse</option></select></label>
+<label>Seat type<select id="rowEditType"><option value="chair">Individual chairs</option><option value="bleacher">Bleachers</option></select></label>
+<label>Documented aisles (AFTER:METRES)<input id="rowEditGaps" placeholder="12:1.2|20:1.0"></label>
+<div class="pair"><label>First-end inset (m)<input id="rowInsetStart" type="number" step=".05" min="0" max="30"></label>
+<label>Last-end inset (m)<input id="rowInsetEnd" type="number" step=".05" min="0" max="30"></label></div>
+<div class="pair"><label>Row depth offset (m)<input id="rowDepthOffset" type="number" step=".05" min="-3" max="3"></label>
+<label>Row height (m)<input id="rowEditElevation" type="number" step=".05" min="0" max="100" placeholder="Section default"></label></div>
+</details>
+<details class="disclosure" id="rowOperations"><summary>Add, reorder or remove a row</summary>
+<label>New row label<input id="rowNewLabel" maxlength="30" placeholder="e.g. 16"></label>
+<label>New row seat count<input id="rowNewSeats" type="number" min="1" max="300" step="1" value="12"></label>
+<button id="rowAdd" type="button">Add after selected row</button>
+<div class="row-actions"><button id="rowMoveUp" type="button">Move row up</button>
+<button id="rowMoveDown" type="button">Move row down</button>
+<button id="rowRemove" type="button">Remove row</button></div>
+</details>
+<p class="hint">Every staff change is recorded separately from the imported inventory. Geometry and capacity are checked after each edit.</p>
+</div>
 <div class="step-actions"><button id="backToCalibrate" type="button">Back</button><button id="modelNext" class="primary" type="button">Review & export</button></div>
 </section>
 

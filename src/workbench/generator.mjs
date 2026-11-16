@@ -36,7 +36,11 @@ export function generateTracedVenue(input){
     const rows=rowsBySection.get(s.id.toLowerCase())??[];
     if(!rows.length){warnings.push('Section '+s.id+' has no imported rows');continue;}
     for(let i=0;i<rows.length;i++){
-      const row=rows[i],t=(i+.5)/rows.length;
+      const row=rows[i],frontMid=sample(s.front,.5),backMid=sample(s.back,.5);
+      const depth=Math.hypot(backMid.x-frontMid.x,backMid.z-frontMid.z);
+      const t=(i+.5)/rows.length+(row.depthOffsetM??0)/Math.max(depth,.001);
+      if(t<.01||t>.99)throw Error('Section '+s.id+' row '+row.row+
+        ' depth offset would leave its traced footprint');
       const along=steps=>Array.from({length:steps+1},(_,j)=>{
         const f=j/steps,a=sample(s.front,f),b=sample(s.back,f);
         return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t};
@@ -65,12 +69,15 @@ export function generateTracedVenue(input){
         ids.add(id);
         const seat={id,section:s.id,row:row.row,number,tier:row.tier,x:at.x,y:heights,z:at.z,
           seatType:row.seatType,
-          provenance:row.elevation===null?'plan-trace/estimated-elevation':
-            'plan-trace/provided-elevation-unverified'};
+          provenance:row.operatorEdited?'operator-edited/needs-source-review':
+            (row.elevation===null?'plan-trace/estimated-elevation':
+              'plan-trace/provided-elevation-unverified')};
         seats.push(seat);seatPositions.push(seat);
       }
       rowRuns.push({section:s.id,row:row.row,count:row.seats,width,seatPitch:pitch,
-        aisleGaps:row.gaps,height:heights,seatType:row.seatType,start});
+        aisleGaps:row.gaps,height:heights,seatType:row.seatType,start,
+        operatorEdited:row.operatorEdited,sourceSeats:row.sourceSeats,
+        insets:[row.insetStartM,row.insetEndM],depthOffsetM:row.depthOffsetM});
     }
   }
   const declared=venue.rows.reduce((a,r)=>a+r.seats,0);

@@ -30,7 +30,7 @@ export function newVenue(sport='nfhs-basketball'){
     court:{width:d.width,length:d.length},officialCapacity:null,
     capacitySource:'',plan:{name:'',mime:'',width:0,height:0,imageData:'',pageNumber:null,labels:[]},
     calibration:{corners:[],checkpoints:[]},sections:[],rows:[],notes:[],
-    sources:[],rowSourceId:null,planSourceId:null,changeLog:[],vectorCandidates:[]};
+    sources:[],rowSourceId:null,planSourceId:null,changeLog:[],vectorCandidates:[],editLedger:[]};
 }
 export function parseVenueRows(csv){
   const raw=parseCSV(csv,16000),seen=new Set();
@@ -49,7 +49,9 @@ export function parseVenueRows(csv){
     if(!/^T[1-4]$/.test(tier))throw Error('Unsupported seating tier: '+tier);
     const kind=String(r.seat_type||'chair').trim().toLowerCase();
     if(!['chair','bleacher'].includes(kind))throw Error('Unsupported seat type: '+kind);
-    return {section,row,seats,first,tier,seatType:kind,...rowAttributes(r,seats)};
+    return {section,row,seats,first,tier,seatType:kind,
+      sourceSeats:seats,operatorEdited:false,operatorAdded:false,
+      ...rowAttributes(r,seats)};
   });
   if(rows.reduce((n,r)=>n+r.seats,0)>40000)
     throw Error('Workbench preview is limited to 40,000 seats; use the survey import for larger projects');
@@ -123,7 +125,12 @@ export function normalizeVenue(input){
     if(!/^T[1-4]$/.test(tier))throw Error('Unsupported seating tier: '+tier);
     const kind=String(r.seatType||'chair').trim().toLowerCase();
     if(!['chair','bleacher'].includes(kind))throw Error('Unsupported seat type: '+kind);
-    return {section,row,seats,first,tier,seatType:kind,...rowAttributes(r,seats)};
+    const baseline=r.sourceSeats==null?null:finite(r.sourceSeats,'Source row count',1,300);
+    if(baseline!==null&&!Number.isInteger(baseline))
+      throw Error('Source row count must be an integer');
+    return {section,row,seats,first,tier,seatType:kind,
+      sourceSeats:baseline,operatorEdited:r.operatorEdited===true,
+      operatorAdded:r.operatorAdded===true,...rowAttributes(r,seats)};
   });
   if(v.rows.reduce((n,r)=>n+r.seats,0)>40000)throw Error('Seat count exceeds the 40,000-seat preview limit');
   v.notes=Array.isArray(v.notes)?v.notes.map(s=>String(s).slice(0,250)).slice(0,50):[];
@@ -154,6 +161,18 @@ export function normalizeVenue(input){
   v.planSourceId=v.planSourceId==null?null:String(v.planSourceId).slice(0,72);
   for(const id of [v.rowSourceId,v.planSourceId])
     if(id&&!v.sources.some(s=>s.id===id))throw Error('Active source does not appear in the source manifest');
+  if(!Array.isArray(v.editLedger??[]))throw Error('Invalid edit ledger');
+  v.editLedger=(v.editLedger??[]).slice(-200).map(a=>{
+    const operation=String(a.operation??'').slice(0,40);
+    if(!['update-row','add-row','remove-row','move-row','translate-section',
+      'resize-section','set-section-elevation'].includes(operation))
+      throw Error('Invalid staff edit operation');
+    return {operation,section:name(a.section,'Edited section',30),
+      row:a.row==null?'':String(a.row).slice(0,30),
+      beforeSeats:a.beforeSeats==null?null:finite(a.beforeSeats,'Previous seats',0,300),
+      afterSeats:a.afterSeats==null?null:finite(a.afterSeats,'Updated seats',0,300),
+      note:String(a.note??'operator review required').slice(0,160)};
+  });
   v.changeLog=Array.isArray(v.changeLog)?v.changeLog.slice(-200).map(a=>({
     event:String(a.event||'').slice(0,100),at:String(a.at||'').slice(0,40)
   })):[];

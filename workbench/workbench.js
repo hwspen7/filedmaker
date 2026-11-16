@@ -2,6 +2,8 @@ import {SPORT_DEFAULTS,newVenue,normalizeVenue,parseVenueRows} from '../src/work
 import {registerCourt} from '../src/workbench/registration.mjs';
 import {fictionalGym} from '../src/workbench/fixtures.mjs';
 import {buildWorkbenchPreview} from '../src/workbench/adapter.mjs';
+import {applyVenueEdit} from '../src/workbench/editing.mjs';
+import {generateTracedVenue} from '../src/workbench/generator.mjs';
 import {NativeVenueRenderer} from '../src/next/webgl.js';
 import {buildOfflineSchoolViewerHTML} from '../src/schoolPublisher.mjs';
 import {importRowFile} from '../src/workbench/imports/tabular.mjs';
@@ -113,6 +115,7 @@ function sync(){
   $('undo').disabled=!history.canUndo;$('redo').disabled=!history.canRedo;
   $('publishedCount').textContent=venue.officialCapacity==null?'—':number(venue.officialCapacity);
   refreshSections();
+  refreshRowControls();
 }
 function renderPdfSuggestions(){
   const root=$('pdfLabels');root.replaceChildren();
@@ -148,6 +151,59 @@ function updateSectionFields(){
   const s=venue.sections.find(s=>s.id===selectedSection);
   $('baseHeight').value=s?s.baseHeight:'';
   $('rowRise').value=s?s.rowRise:'';
+}
+function refreshRowControls(preferredSection=null,preferredRow=null){
+  const sections=$('rowEditSection'),rows=$('rowEditRow');
+  const currentSection=preferredSection??sections.value;
+  const currentRow=preferredRow??rows.value;
+  sections.replaceChildren(...venue.sections.map(s=>new Option(s.id,s.id)));
+  const target=venue.sections.find(s=>s.id===currentSection)||
+    venue.sections.find(s=>s.id===selectedSection)||venue.sections[0];
+  if(!target){rows.replaceChildren();fillRowFields();return;}
+  sections.value=target.id;
+  const available=venue.rows.filter(r=>r.section.toLowerCase()===target.id.toLowerCase());
+  rows.replaceChildren(...available.map(r=>new Option(r.row,r.row)));
+  if(available.some(r=>r.row===currentRow))rows.value=currentRow;
+  fillRowFields();
+}
+function fillRowFields(){
+  const section=$('rowEditSection').value,label=$('rowEditRow').value;
+  const r=venue.rows.find(r=>r.section===section&&r.row===label);
+  const fields=['rowEditSeats','rowEditFirst','rowEditNumbers','rowEditGaps',
+    'rowInsetStart','rowInsetEnd','rowDepthOffset','rowEditElevation'];
+  if(!r){
+    fields.forEach(id=>$(id).value='');
+    $('rowEditStatus').textContent=section?'No row inventory for this section. Add a staff-estimated row below.':
+      'Import or create sections and source rows first.';
+    return;
+  }
+  $('rowEditSeats').value=r.seats;$('rowEditFirst').value=r.first;
+  $('rowEditNumbers').value=(r.seatNumbers??[]).join('|');
+  $('rowEditGaps').value=(r.gaps??[]).map(g=>g.after+':'+g.width).join('|');
+  $('rowEditDirection').value=r.seatDirection;
+  $('rowEditType').value=r.seatType;
+  $('rowInsetStart').value=r.insetStartM??0;
+  $('rowInsetEnd').value=r.insetEndM??0;
+  $('rowDepthOffset').value=r.depthOffsetM??0;
+  $('rowEditElevation').value=r.elevation??'';
+  $('rowEditStatus').textContent=r.operatorEdited?
+    'Staff-edited · original count '+(r.sourceSeats??'not supplied')+
+      ' · pending source verification':
+    'Imported/fixture row · '+r.seats+' modeled seats · unverified geometry';
+}
+function commitOperatorEdit(edit,summary,preferredRow=null){
+  try{
+    const before=structuredClone(venue);
+    const result=applyVenueEdit(venue,edit);
+    venue=result.venue;selectedSeat=null;
+    recordEdit(before,summary+' · '+result.affected);
+    sync();
+    refreshRowControls(edit.section,preferredRow??edit.row);
+    tryPreview();
+    message(summary+' saved · '+(result.seatDelta>=0?'+':'')+result.seatDelta+
+      ' seats. Check original school evidence before delivery.');
+    return true;
+  }catch(e){message('Edit rejected: '+e.message,true);return false;}
 }
 function layout(){
   const r=canvas.getBoundingClientRect(),w=Math.max(1,r.width),h=Math.max(1,r.height);
@@ -265,6 +321,10 @@ function repaint(){
   $('sectionCount').textContent=number(venue.sections.length);
   $('rowCount').textContent=number(venue.rows.length);
   $('mappedCount').textContent=number(preview?.seats.length??0);
+  const staffEdits=venue.rows.filter(r=>r.operatorEdited).length;
+  $('quickStats').title=staffEdits?
+    staffEdits+' rows changed by staff; original evidence needs reconciliation':
+    'Source and elevation verification required';
   $('quickStats').textContent=preview?
     number(preview.seats.length)+' modeled positions · '+number(venue.sections.length)+' sections · needs review':
     venue.rows.length?number(venue.rows.length)+' source rows · not yet modeled':
@@ -410,6 +470,10 @@ canvas.addEventListener('pointermove',event=>{
     if(!Number.isFinite(world.x+world.z)||Math.abs(world.x)>2000||Math.abs(world.z)>2000)return;
     const key=[['front',0],['front',section.front.length-1],
       ['back',section.back.length-1],['back',0]][drag.handle];
+    if(event.shiftKey){
+      world.x=Math.round(world.x*10)/10;
+      world.z=Math.round(world.z*10)/10;
+    }
     section[key[0]][key[1]]=world;
     if(image&&registration&&section.trace.length===4)section.trace[drag.handle]=sourcePixel(p,g);
     draw();
@@ -419,8 +483,21 @@ function releasePointer(event){
   if(!drag)return;
   const completed=drag;drag=null;
   if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
-  recordEdit(completed.before,'Adjust traced section '+completed.id);
-  tryPreview();
+  try{
+    const candidate=normalizeVenue(venue);
+    if(candidate.rows.length&&candidate.rows.every(r=>candidate.sections.some(s=>
+      s.id.toLowerCase()===r.section.toLowerCase()))){
+      const geometry=generateTracedVenue(candidate);
+      if(geometry.quality.blockingCount)
+        throw Error('Dragged contour causes '+geometry.quality.blockingCount+' blocking geometry issues');
+    }
+    venue=candidate;
+    recordEdit(completed.before,'Adjust traced section '+completed.id);
+    sync();tryPreview();
+  }catch(e){
+    venue=completed.before;sync();tryPreview();
+    message('Drag reverted: '+e.message,true);
+  }
 }
 canvas.addEventListener('pointerup',releasePointer);
 canvas.addEventListener('pointercancel',releasePointer);
@@ -453,12 +530,56 @@ $('trace').onclick=()=>{
 };
 $('sectionSelect').onchange=()=>{selectedSection=$('sectionSelect').value;updateSectionFields();repaint();};
 $('applySection').onclick=()=>{
-  const s=venue.sections.find(s=>s.id===$('sectionSelect').value);
-  if(!s){message('Select a section first.',true);return;}
-  const before=structuredClone(venue);
-  s.baseHeight=Number($('baseHeight').value);s.rowRise=Number($('rowRise').value);
-  recordEdit(before,'Adjust section elevation '+s.id);
-  tryPreview();
+  commitOperatorEdit({type:'set-section-elevation',section:$('sectionSelect').value,
+    baseHeight:$('baseHeight').value,rowRise:$('rowRise').value},'Adjust section elevation');
+};
+$('moveSelectedSection').onclick=()=>{
+  if(commitOperatorEdit({type:'translate-section',section:$('sectionSelect').value,
+    dx:$('sectionMoveX').value,dz:$('sectionMoveZ').value},'Move section')){
+    $('sectionMoveX').value='0';$('sectionMoveZ').value='0';
+  }
+};
+$('resizeSelectedSection').onclick=()=>{
+  const percent=$('sectionWidthPct').value.trim();
+  if(commitOperatorEdit({type:'resize-section',section:$('sectionSelect').value,
+    factor:percent?Number(percent)/100:null},'Resize section'))
+    $('sectionWidthPct').value='100';
+};
+$('rowEditSection').onchange=()=>refreshRowControls($('rowEditSection').value);
+$('rowEditRow').onchange=()=>fillRowFields();
+$('applyRowEdit').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  if(!section||!row){message('Select an existing section and row.',true);return;}
+  const current=venue.rows.find(r=>r.section===section&&r.row===row);
+  const labels=$('rowEditNumbers').value.trim();
+  const count=Number($('rowEditSeats').value);
+  if(current?.seatNumbers?.length&&count!==current.seats&&!labels&&
+    !confirm('Clear explicit source seat labels and replace them with provisional sequential numbers?'))return;
+  commitOperatorEdit({type:'update-row',section,row,changes:{
+    seats:$('rowEditSeats').value,first:$('rowEditFirst').value,
+    seatNumbers:labels,seatDirection:$('rowEditDirection').value,
+    seatType:$('rowEditType').value,gaps:$('rowEditGaps').value,
+    insetStartM:$('rowInsetStart').value,insetEndM:$('rowInsetEnd').value,
+    depthOffsetM:$('rowDepthOffset').value,
+    elevation:$('rowEditElevation').value.trim()===''?null:$('rowEditElevation').value
+  }},'Update row',row);
+};
+$('rowAdd').onclick=()=>{
+  const section=$('rowEditSection').value;
+  const row=$('rowNewLabel').value.trim(),seats=$('rowNewSeats').value;
+  if(commitOperatorEdit({type:'add-row',section,afterRow:$('rowEditRow').value||null,
+    newRow:{row,seats}},'Add provisional row',row))$('rowNewLabel').value='';
+};
+for(const [button,direction] of [['rowMoveUp','up'],['rowMoveDown','down']])
+  $(button).onclick=()=>{
+    const section=$('rowEditSection').value,row=$('rowEditRow').value;
+    commitOperatorEdit({type:'move-row',section,row,direction},'Reorder row',row);
+  };
+$('rowRemove').onclick=()=>{
+  const section=$('rowEditSection').value,row=$('rowEditRow').value;
+  if(!section||!row)return;
+  if(!confirm('Remove row '+section+'/'+row+'? This changes the source-model seat count and requires manual reconciliation.'))return;
+  commitOperatorEdit({type:'remove-row',section,row},'Remove staff-reviewed row');
 };
 $('removeSection').onclick=()=>{
   const id=selectedSection;
@@ -629,6 +750,9 @@ function open3d(mode){
       $('seatDetails').textContent='Section '+s.sectionId+' · Row '+s.row+' · Seat '+s.number+
         '\nX '+s.x.toFixed(2)+' m / Y '+s.y.toFixed(2)+' m / Z '+s.z.toFixed(2)+' m';
       renderer.highlight(s);
+      if(venue.rows.some(r=>r.section===s.sectionId&&r.row===s.row)){
+        refreshRowControls(s.sectionId,s.row);
+      }
     });}
     catch(e){message('WebGL2 unavailable: '+e.message,true);viewMode='plan';canvas.hidden=false;modelCanvas.hidden=true;repaint();return;}
   }
@@ -711,6 +835,7 @@ $('saveReport').onclick=()=>{
       preview.venue.court.length,preview.venue.calibration.checkpoints||[]):null,
     sourceManifest:preview.venue.sources,sourceReview:assessSources(preview.venue),
     quality:preview.quality,changeLog:preview.venue.changeLog,
+    staffEditLedger:preview.venue.editLedger,
     ...preview.audit,rowRuns:preview.rowRuns,warnings:preview.warnings},null,2));
 };
 $('publish').onclick=async()=>{
