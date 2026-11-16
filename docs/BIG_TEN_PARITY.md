@@ -46,6 +46,64 @@ No per-seat coordinates are surveyed or licensed in this batch.
   an independent 3D overview **and seat-eye screenshot** for each of the 17
   non-Ohio-State member arenas.
 
+## Individual exterior geometry: current implemented status
+
+A shared renderer does **not** mean that one fictional arena envelope is an
+acceptable finished model. The earlier version reused one superellipse shell
+and its two generic entrance rotundas for almost every university. Those
+rotundas are now removed from all 17 non-OSU generated arena profiles.
+The architecture engine generates individually configured real triangle meshes
+for each venue's roof silhouette, roof material and recognizable entrance mass.
+
+The reference registry is
+`data/big-ten/architectural-signatures.json`. Each entry contains
+documented venue traits plus separately identifiable, **estimated** roof
+rise, entrance direction and signature facade feature. The 17 architectural
+profiles currently include:
+
+- Illinois: white folded dome, 48 radial support locations, glass ring.
+  121.92 m published diameter, 39.0144 m apex above arena court.
+- Purdue: circular brick body and copper dome. Original archive records
+  12.192 m masonry wall and an additional 12.192 m dome.
+- Washington: brick pavilion with a gable and ridge skylight, Romanesque
+  entrance arches. Historical overall building 100.2792 × 145.0848 m.
+- Indiana: saddle-profile suspension roof and separate stands.
+- Iowa: shallow external long-span trusses and a sunken seating bowl.
+- Michigan: low oval roof and signature glazed oval entry.
+- Michigan State: east/southeast entrance pavilion.
+- Minnesota: historic high barrel roof and masonry shell.
+- Nebraska: oval mass and multi-storey glass lobby.
+- Northwestern: historic roof and updated fieldhouse glass facades.
+- Oregon: swept roof and curving transparent entrance.
+- Maryland: wide, low roof and larger glass/entry volumes.
+- Penn State: broad low-roofed brick and glass arena.
+- Rutgers: trapezoidal angled-metal roof.
+- UCLA: low broad roof with transparent/terracotta concourse language.
+- USC: broad rectilinear building with four corner towers.
+- Wisconsin: wide pale roof and glazed public entrance.
+
+The Illinois, Purdue and Washington exterior footprint/height evidence
+also influences the actual shape and position of generated roof and perimeter
+mesh vertices rather than being restricted to metadata. See each signature's
+`measuredFacts` for the precise source URL, unit and dimension.
+
+**Viewer:** "3D overview" deliberately exposes the bowl and seating. The
+new "Building exterior" button draws the opaque roof and facade without
+drawing seats through the roof. "Seat view" remains independent.
+Browser acceptance now captures 3D, exterior and seat-eye screenshots
+for each of the 17.
+
+**Remaining limitations:** 14 venue exterior footprint boundaries remain
+estimated from the generic bowl envelope, and all 17 require manual
+orthographic/photo overlay to reconstruct true walls, door offsets, roof
+edges, loading/secondary structures, floor treatment and unique material
+layouts. In particular, an estimated saddle mesh is NOT a measured
+suspension roof; a historical length/width is NOT a surveyed polygon;
+the Purdue 1967 profile is not proof that its 2011 adjacent facilities
+are modeled. Most seating polygons and row/aisle cutouts are also still
+schematic. Therefore `osuVisualParity.complete=false` remains mandatory
+for **every** one of the 17 new arenas.
+
 ## Section-reference work by school
 
 The status below describes source-derived **section identifiers**, not final
@@ -92,4 +150,3 @@ the specialized OSU model.
 Do not treat a successful GitHub build or a 0.02% seat-count deviation as an
 `OSU-level-preview` result.
 
-The remaining seven section profiles were added November 2026. All 17 non-Ohio-State arena entries now have independently cited maps for section identities. The separate Ohio State render and original scene continue unchanged. **This upgrades labeled geometry, not surveyed 3D photographic fidelity.**
