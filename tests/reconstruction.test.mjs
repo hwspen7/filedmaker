@@ -158,3 +158,15 @@ test('batch CLI demands exactly one input source',()=>{
   assert.match(seatsCSV([{id:'1',section:'A',row:'1',number:'2',tier:'T1',
     x:1,y:2,z:3}]),/seat_id,section,row,seat,level,x_m,y_m,z_m/);
 });
+
+test('webgl adapter retains entered seating furniture and upper tier coordinates',()=>{
+  const p=addRectangularBank(createReconstruction('nfhs-basketball'),{
+    id:'UPPER',tier:'T2',rows:3,seatsPerRow:12,baseHeight:6.2,seatType:'chair'});
+  p.sections[0].rows[1].seatType='bleacher';
+  const output=generateReconstruction(p,{preview:true});
+  assert.equal(output.project.tiers.length,2);
+  assert.ok(output.model.seats.every(s=>s.tier===1));
+  assert.ok(output.model.seats.filter(s=>s.row==='2').every(s=>s.seatType==='bleacher'));
+  assert.ok(output.model.seats.filter(s=>s.row==='1').every(s=>s.seatType==='chair'));
+  assert.ok(output.model.seats.every(s=>s.y>=6.2));
+});
