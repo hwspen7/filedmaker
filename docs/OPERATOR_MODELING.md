@@ -68,3 +68,13 @@ that unverified row geometry never becomes a certified seat map.
 
 Future tasks include staff-led genuine school projects, multi-selection,
 more detailed measurement tools and practical delivery integrations.
+
+
+## Windows launcher and branch identity
+
+The launcher never silently switches branches. First select the desired
+branch yourself (main for the stable release or
+feature/operator-geometry-editor for this review), fetch it and pull it.
+Then run scripts/launch-workbench.ps1. The launcher checks the current
+branch, refuses uncommitted changes and verifies that the localhost server
+is actually serving the same commit, rather than reusing an older tab.
