@@ -540,11 +540,11 @@ async function main(){
       return v?.id&&v.gizmo&&Number.isFinite(v.x)&&Number.isFinite(v.y)?v:null;
     },60);
     const dx=pick3d.left+pick3d.x,dy=pick3d.top+pick3d.y;
-    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy,modifiers:8});
-    await client.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',x:dx,y:dy,clickCount:1,modifiers:8});
-    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy-18,modifiers:9});
+    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy,modifiers:0});
+    await client.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',x:dx,y:dy,clickCount:1,modifiers:0});
+    await client.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:dx,y:dy-18,modifiers:1});
     const dragReadout=await evaluate("document.querySelector('#threeDEditReadout').textContent");
-    await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',x:dx,y:dy-18,clickCount:1,modifiers:8});
+    await client.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',x:dx,y:dy-18,clickCount:1,modifiers:0});
     const changed3d=await poll(async()=>{
       const r=await evaluate("({y:Number(document.querySelector('#structureY').value),status:document.querySelector('#workStatus').textContent})");
       return r?.y>pick3d.startY+.1?r:null;
@@ -555,7 +555,7 @@ async function main(){
     await delay(250);
     await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
       writeFileSync(join(dir,'3d-direct-edit-axes.png'),Buffer.from(frame.data,'base64')));
-    console.log('studio: live 3D axis gizmo, camera-plane picking, height drag and reversible geometry editing verified');
+    console.log('studio: click-to-edit 3D axis gizmo, camera-plane picking, Alt-height drag and reversible geometry verified');
     await delay(220);
     await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(frame=>
       writeFileSync(join(dir,'component-library-3d.png'),Buffer.from(frame.data,'base64')));
