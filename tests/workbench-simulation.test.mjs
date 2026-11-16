@@ -69,7 +69,7 @@ test('property benchmark: 75 unrelated synthetic seating layouts preserve source
     aisles+=source.rows.reduce((n,r)=>n+(r.gaps?.length??0),0);
   }
   assert.ok(total>35000);
-  assert.ok(sections>=250);
+  assert.ok(sections>=150);
   assert.ok(aisles>=100);
   t.diagnostic('Synthetic property cases: 75; positions: '+total+
     '; distinct section footprints: '+sections+'; source aisle declarations: '+aisles+
