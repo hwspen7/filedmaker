@@ -11,7 +11,7 @@ test('case library includes all documented live cases, two OSU refs and fictiona
   assert.equal(VENUE_CASES.filter(c=>c.group==='references').length,2);
   assert.equal(VENUE_CASES.filter(c=>c.group==='schools').length,6);
   assert.equal(VENUE_CASES.filter(c=>c.group==='extended').length,1);
-  assert.equal(VENUE_CASES.filter(c=>c.group==='demos').length,1);
+  assert.equal(VENUE_CASES.filter(c=>c.group==='demos').length,7);
   assert.equal(new Set(VENUE_CASES.map(c=>c.id)).size,10);
   assert.equal(getVenueCase('aiken-high').capacity,1418);
   assert.equal(getVenueCase('northview').capacity,534);
