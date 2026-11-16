@@ -142,8 +142,11 @@ test('unverified geometry cannot claim OSU-quality chart calibration by seat-cou
     assert.equal(spec.provenance.sectionOutlineProvenance,'estimated-arc',id);
     assert.equal(spec.provenance.seatCoordinates,'not-available',id);
   }
-  for(const id of ['illinois','northwestern']){
-    assert.equal(toProceduralSpec(get(id)).sectionMap,undefined,id);
+  for(const id of ['illinois','maryland','michigan-state','nebraska',
+    'northwestern','oregon','purdue','washington']){
+    const spec=toProceduralSpec(get(id));
+    assert.ok(spec.sectionMap,id+' must use chart-derived sections');
+    assert.equal(spec.provenance.sectionOutlineProvenance,'estimated-arc',id);
   }
 });
 
@@ -168,4 +171,46 @@ test('Indiana 3D structural treads do not bridge the empty side-stand gap',()=>{
     assert.ok(!(a>4.40&&a<4.95),
       'Unoccupied side-stand gap must not have a gray structural floor');
   }
+});
+
+
+test('all seventeen non-OSU arenas have source-linked real section labels',()=>{
+  for(const venue of catalog.venues.filter(v=>v.id!=='ohio-state')){
+    const spec=toProceduralSpec(venue);
+    assert.ok(spec.sectionMap,venue.id+' must not use a generic numbered bowl');
+    assert.ok(spec.provenance.sourceSectionMap?.startsWith('https://'),venue.id);
+    assert.equal(spec.provenance.sectionOutlineProvenance,'estimated-arc');
+    assert.equal(spec.provenance.seatCoordinates,'not-available');
+    GeometryEngine.normalize(spec);
+  }
+});
+
+test('Illinois, Nebraska, Purdue and Washington preserve distinct seating charts',()=>{
+  const illinois=toProceduralSpec(get('illinois'));
+  assert.equal(illinois.sectionMap.length,3);
+  assert.equal(illinois.sectionMap[2][0].sectionIds.length,48);
+  assert.equal(illinois.sectionMap[2][0].sectionIds.at(-1),'248');
+  const nebraska=toProceduralSpec(get('nebraska'));
+  assert.deepEqual(nebraska.sectionMap.map(t=>t[0].sectionIds[0]),['101','201','301']);
+  const purdue=toProceduralSpec(get('purdue'));
+  assert.deepEqual(purdue.sectionMap.map(t=>t[0].sectionIds[0]),['01','101']);
+  const washington=toProceduralSpec(get('washington'));
+  assert.equal(washington.sectionMap[0][0].sectionIds.length,14);
+  assert.equal(washington.sectionMap[1][0].rowStart,14);
+});
+
+test('Breslin lower bowl leaves published row labels 10–12 empty',()=>{
+  const spec=toProceduralSpec(get('michigan-state'));
+  assert.deepEqual(spec.sectionMap[0][0].skipRows,[10,11,12]);
+  const {model,audit}=generateVenuePackage(spec);
+  assert.ok(audit.passed,audit.errors.join('; '));
+  const lower=new Set(model.seats.filter(seat=>seat.tier===0).map(seat=>seat.row));
+  for(const label of ['10','11','12'])assert.ok(!lower.has(label),label);
+  for(const label of ['9','13','28'])assert.ok(lower.has(label),label);
+});
+
+test('mapped skipped rows are bounds-checked and cannot be repeated',()=>{
+  const spec=toProceduralSpec(get('michigan-state'));
+  spec.sectionMap[0][0].skipRows=[10,10];
+  assert.throws(()=>GeometryEngine.normalize(spec),/skipped row/);
 });
