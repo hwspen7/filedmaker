@@ -72,7 +72,11 @@ export const SeatingEngine={
               const stations=[0];
               for(let i=1;i<coords.length;i++)
                 stations.push(stations.at(-1)+hypot(coords[i],coords[i-1]));
-              const length=stations.at(-1),count=Math.floor(length/pitch);
+              const length=stations.at(-1);
+              // A capacity-fitting pitch must not erase a legitimate narrow
+              // row that can still physically fit one minimum-pitch seat.
+              // This preserves occupied chart banks during optimisation.
+              const count=Math.max(Math.floor(length/pitch),length>=.43?1:0);
               if(count<1)continue;
               const from=seats.length,seatWidth=length/count;
               const locate=distance=>{
@@ -104,9 +108,31 @@ export const SeatingEngine={
       minPitch:.43,maxPitch:.9,preferredPitch:spec.seatPitch,tolerance:spec.capacityTolerance
     });
     const {seats,seatingRows,groups,pitch,relativeError,withinTolerance,capacityWarning}=optimized;
+    const renderedSections=new Set(seats.map(s=>s.tier+':'+s.sectionId));
+    const expectedSections=new Set();
+    const eligibleRowKeys=new Set(),actualRowKeys=new Set();
+    for(const tier of spec.tiers)for(const bank of banksForTier(tier)){
+      expectedSections.add(tier.index+':'+bank.sectionId);
+      for(let slot=0;slot<bank.rowCount;slot++){
+        if(rowIntervals(tier,bank,slot).some(([lo,hi])=>{
+          const mid=(lo+hi)/2;
+          const f=(slot+.5)/tier.rows,pointMid=point(tier.index,mid,f);
+          return (hi-lo)*Math.hypot(pointMid.x,pointMid.z)>=.43;
+        }))eligibleRowKeys.add(tier.index+':'+bank.sectionId+':'+slot);
+      }
+    }
+    for(const row of seatingRows)actualRowKeys.add(row.tier+':'+row.sectionId+':'+row.slot);
+    const omittedEligibleRows=[...eligibleRowKeys].filter(key=>!actualRowKeys.has(key));
+    const missingSections=[...expectedSections].filter(key=>!renderedSections.has(key));
+    const coverage={documentedSectionCount:expectedSections.size,
+      occupiedSectionCount:renderedSections.size,
+      eligibleRowCount:eligibleRowKeys.size,renderedRowCount:actualRowKeys.size,
+      omittedEligibleRows,missingSections,
+      completeness:omittedEligibleRows.length===0&&missingSections.length===0};
     return {geometry,spec,seats,seatingRows,groups,capacity:seats.length,
       interiorSectionFootprints:interiorSectionFootprints(geometry,seatingRows),
       optimization:{pitch,relativeError,withinTolerance,capacityWarning},
+      coverage,
       seatOrigin:'generated',verifiedSeatIDs:false};
   }
 };
