@@ -75,7 +75,7 @@ test('Press Box label stays on the existing gallery; no floating gray strip can 
   assert.ok(g.backWall.length>0,'Existing integrated rear wall remains');
   assert.ok(g.galleryFloorMesh.length>0,'Existing circulation gallery remains');
   const source=String(buildSchottensteinArchitecture);
-  assert.doesNotMatch(source,/quad\\(galleryFloorMesh,\\s*p\\(innerA/,
+  assert.ok(!source.includes('quad(galleryFloorMesh,p(innerA'),
     'No extra radial press-floor strip may be generated');
   assert.equal(plan.seats.length,19049,'No ticketed seat is removed');
 });
