@@ -1,0 +1,25 @@
+{
+  "description": "Five independently prepared Big Ten basketball venue interior geometry drafts; no official seat XYZ or claimed surveyed fidelity",
+  "venues": [
+    {
+      "id": "illinois",
+      "path": "illinois.json"
+    },
+    {
+      "id": "indiana",
+      "path": "indiana.json"
+    },
+    {
+      "id": "michigan",
+      "path": "michigan.json"
+    },
+    {
+      "id": "purdue",
+      "path": "purdue.json"
+    },
+    {
+      "id": "wisconsin",
+      "path": "wisconsin.json"
+    }
+  ]
+}
