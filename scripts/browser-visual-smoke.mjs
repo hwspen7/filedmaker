@@ -226,6 +226,28 @@ async function main(){
     if(!exactCount)throw Error('Row edit failed to update exact generated seat count');
     console.log('data-first builder: 1,500-seat fixture, WebGL2, screenshot and 1,499-seat edit verified');
 
+    // Load two independent, large source-driven Big Ten arena reconstructions
+    // through the actual browser UI and confirm distinct geometry/counts.
+    for(const [school,seats,sections] of [['indiana','18,392','24'],['purdue','17,298','36']]){
+      await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/builder/?case='+school});
+      const caseReady=await poll(async()=>{
+        const state=await evaluate("({count:document.querySelector('#statSeats')?.textContent,sections:document.querySelector('#statSections')?.textContent,active:document.querySelector('[data-showcase].active')?.dataset.showcase,visible:!document.querySelector('#sceneCanvas')?.hidden,status:document.querySelector('#showcaseState')?.textContent})");
+        return state?.count===seats&&state.sections===sections&&
+          state.active===school&&state.visible?state:null;
+      },120);
+      if(!caseReady||/失败|error|failed/i.test(caseReady.status))
+        throw Error('Five-arena case failed to load '+school+': '+JSON.stringify(caseReady));
+      const verifiedCanvas=await evaluate("(()=>{const c=document.querySelector('#sceneCanvas');return !!c.getContext('webgl2')&&c.width>300})()");
+      if(!verifiedCanvas)throw Error('No WebGL2 3D arena for '+school);
+      await delay(800);
+      const caseShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+      const casePath=join(dir,'big-ten-showcase-'+school+'.png');
+      writeFileSync(casePath,Buffer.from(caseShot.data,'base64'));
+      if(statSync(casePath).size<15000)
+        throw Error('Big Ten 3D screenshot is blank for '+school);
+    }
+    console.log('Big Ten five-case UI: independent Indiana and Purdue 3D scenes, exact row data and screenshots verified');
+
     // Verify the new end-to-end school workbench in a real browser.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/'});
     await poll(async()=>await evaluate("document.documentElement.dataset.workbenchReady==='true'"),60);
