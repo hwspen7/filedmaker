@@ -23,6 +23,42 @@
   <div><span class="eyebrow">FILEDMAKER / INTERNAL VENUE CORE</span><h1>用数据制造场馆，而不是扫描图片。</h1><p>填写真实分区、排数、曲线、坡度与座位缺口。二维平面和三维看台共用一套数据，可直接修改并重新生成。</p></div>
   <span class="status-tag">无图片识别 · 暂不建模外立面</span>
 </div>
+<section class="showcase" aria-label="Big Ten five venue reconstruction cases">
+  <div class="showcase-header">
+    <div><span class="eyebrow">LIVE ENGINE DEMONSTRATIONS · 5 DIFFERENT ARENAS</span>
+      <h2>Big Ten 五座场馆实例</h2>
+      <p>点击任一场馆。加载的不是静态图片，而是可编辑的分区、排数和三维看台数据。所有未测量尺寸均标记为估算。</p>
+    </div>
+    <span id="showcaseState" class="showcase-hint" role="status" aria-live="polite">选择一座场馆查看</span>
+  </div>
+  <div class="showcase-cards">
+    <button type="button" class="showcase-card" data-showcase="illinois">
+      <canvas data-case-image="illinois" width="230" height="98" aria-hidden="true"></canvas>
+      <strong>Illinois</strong><small>State Farm Center</small>
+      <span>圆形 · 分离中层</span><em data-case-stats="illinois">载入三维数据</em>
+    </button>
+    <button type="button" class="showcase-card" data-showcase="indiana">
+      <canvas data-case-image="indiana" width="230" height="98" aria-hidden="true"></canvas>
+      <strong>Indiana</strong><small>Assembly Hall</small>
+      <span>双侧独立陡峭看台</span><em data-case-stats="indiana">载入三维数据</em>
+    </button>
+    <button type="button" class="showcase-card" data-showcase="michigan">
+      <canvas data-case-image="michigan" width="230" height="98" aria-hidden="true"></canvas>
+      <strong>Michigan</strong><small>Crisler Center</small>
+      <span>椭圆形双层看台</span><em data-case-stats="michigan">载入三维数据</em>
+    </button>
+    <button type="button" class="showcase-card" data-showcase="purdue">
+      <canvas data-case-image="purdue" width="230" height="98" aria-hidden="true"></canvas>
+      <strong>Purdue</strong><small>Mackey Arena</small>
+      <span>圆形连续看台</span><em data-case-stats="purdue">载入三维数据</em>
+    </button>
+    <button type="button" class="showcase-card" data-showcase="wisconsin">
+      <canvas data-case-image="wisconsin" width="230" height="98" aria-hidden="true"></canvas>
+      <strong>Wisconsin</strong><small>Kohl Center</small>
+      <span>多边形三层看台</span><em data-case-stats="wisconsin">载入三维数据</em>
+    </button>
+  </div>
+</section>
 <div class="layout">
   <aside class="settings card">
     <div class="panel-title"><strong>01 · 场馆资料</strong><span>来源数据</span></div>
