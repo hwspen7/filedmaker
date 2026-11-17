@@ -30,6 +30,7 @@ const TWO_PI=Math.PI*2;
 function polar(angle,rx,rz,shape){
   let exponent=2;
   if(shape==='grandstands')exponent=8;
+  if(shape==='rounded-rectangle')exponent=5.1;
   if(shape==='ellipse')exponent=2.2;
   const c=Math.cos(angle),s=Math.sin(angle);
   // Radius in a superellipse, parameterized by the geometric direction.
@@ -70,7 +71,8 @@ export function prepareBigTenExample(id,data){
   const ids=new Set(),sections=[];
   let seatTotal=0;
   for(let tierIndex=0;tierIndex<groups.length;tierIndex++){
-    const tierGroups=groups[tierIndex],rise=cfg.rise[tierIndex],
+    const tierGroups=groups[tierIndex],tierProfile=data.interiors[id]?.tierProfiles?.[tierIndex]??{},
+      rise=cfg.rise[tierIndex],
       depth=cfg.depth[tierIndex],offset=cfg.offsets[tierIndex],
       baseHeight=cfg.height[tierIndex];
     if(!Number.isFinite(rise)||!Number.isFinite(offset))
@@ -90,10 +92,12 @@ export function prepareBigTenExample(id,data){
         cursor=end;
         if(ids.has(name))throw Error('Repeated section identity in this model: '+name);
         ids.add(name);
-        const rx=cfg.rx+offset,rz=cfg.rz+offset;
-        const front=polyline(start,end,rx,rz,cfg.type);
+        const rx=(cfg.rx+offset+(tierProfile.radialInset??0))*(tierProfile.widthScale??1),
+          rz=(cfg.rz+offset+(tierProfile.radialInset??0))*(tierProfile.lengthScale??1);
+        const shape=tierProfile.outline??cfg.type;
+        const front=polyline(start,end,rx,rz,shape);
         const back=polyline(start,end,rx+officialRowCount*depth,
-          rz+officialRowCount*depth,cfg.type);
+          rz+officialRowCount*depth,shape);
         // Per-section row width determines *estimated* seats, not the target
         // venue capacity. Reserve small ends for section-side circulation.
         const rows=Array.from({length:officialRowCount},(_,k)=>{
@@ -101,7 +105,7 @@ export function prepareBigTenExample(id,data){
           // independently, never squeezing the front row to accommodate a
           // fixed count inferred from a wider middle row.
           const rowDepth=(k+.5)*depth;
-          const rowWidth=curveLength(start,end,rx+rowDepth,rz+rowDepth,cfg.type);
+          const rowWidth=curveLength(start,end,rx+rowDepth,rz+rowDepth,shape);
           const usable=Math.max(.7,rowWidth-.7);
           const seats=Math.max(1,Math.min(130,Math.floor(usable/cfg.pitch)));
           return {
