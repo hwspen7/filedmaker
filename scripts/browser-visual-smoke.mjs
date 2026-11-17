@@ -201,6 +201,31 @@ async function main(){
     if(!liveMap)throw Error('Live seat map toggle did not return to native 2D');
     console.log('live-seat-experience: reference model, 2D/3D, slider and comparison verified');
 
+    // Exercise the data-first builder in Chromium: exact model counts,
+    // row editing, WebGL2 and a captured screenshot.
+    await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/builder/'});
+    const reconstruction=await poll(async()=>{
+      const result=await evaluate("({count:document.querySelector('#statSeats')?.textContent,sections:document.querySelector('#statSections')?.textContent,error:document.querySelector('#status')?.textContent})");
+      return result?.count==='1,500'&&result.sections==='4'?result:null;
+    },60);
+    if(/未通过|失败|invalid|failed/i.test(reconstruction.error))
+      throw Error('Data-first builder rejected its fictional fixture: '+reconstruction.error);
+    await evaluate("document.querySelector('#show3d').click()");
+    const rendered=await poll(async()=>await evaluate("(()=>({active:!document.querySelector('#sceneCanvas').hidden,webgl:!!document.querySelector('#sceneCanvas').getContext('webgl2'),width:document.querySelector('#sceneCanvas').width}))()"),60);
+    if(!rendered.active||!rendered.webgl||rendered.width<100)
+      throw Error('Reconstruction WebGL2 canvas did not load: '+JSON.stringify(rendered));
+    await delay(750);
+    const reconstructedShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const reconstructedPath=join(dir,'data-first-reconstruction.png');
+    writeFileSync(reconstructedPath,Buffer.from(reconstructedShot.data,'base64'));
+    if(statSync(reconstructedPath).size<12000)
+      throw Error('Data-first screenshot is too small');
+    await evaluate("document.querySelector('#show2d').click()");
+    await evaluate("(()=>{const f=document.querySelector('#rowEditor input[data-field=seats]');f.value='24';f.dispatchEvent(new Event('change',{bubbles:true}));return true})()");
+    const exactCount=await poll(async()=>await evaluate("document.querySelector('#statSeats')?.textContent==='1,499'"),60);
+    if(!exactCount)throw Error('Row edit failed to update exact generated seat count');
+    console.log('data-first builder: 1,500-seat fixture, WebGL2, screenshot and 1,499-seat edit verified');
+
     // Verify the new end-to-end school workbench in a real browser.
     await client.send('Page.navigate',{url:'http://127.0.0.1:'+port+'/workbench/'});
     await poll(async()=>await evaluate("document.documentElement.dataset.workbenchReady==='true'"),60);
