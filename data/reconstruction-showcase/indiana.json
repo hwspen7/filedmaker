@@ -15,46 +15,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": 20.8529,
-          "z": 18.2894
+          "x": 21.2808,
+          "z": 18.6647
         },
         {
-          "x": 19.7825,
-          "z": 20.0154
+          "x": 19.9208,
+          "z": 20.1553
         },
         {
-          "x": 18.0501,
-          "z": 21.0725
+          "x": 17.9602,
+          "z": 20.9675
         },
         {
-          "x": 15.946,
-          "z": 21.5498
+          "x": 15.7644,
+          "z": 21.3043
         },
         {
-          "x": 13.7957,
-          "z": 21.7236
+          "x": 13.6042,
+          "z": 21.4221
         }
       ],
       "back": [
         {
-          "x": 53.9868,
-          "z": 47.35
+          "x": 54.4332,
+          "z": 47.7416
         },
         {
-          "x": 51.1403,
-          "z": 51.7423
+          "x": 51.2993,
+          "z": 51.9033
         },
         {
-          "x": 46.5942,
-          "z": 54.3963
+          "x": 46.5165,
+          "z": 54.3055
         },
         {
-          "x": 41.1286,
-          "z": 55.582
+          "x": 40.9515,
+          "z": 55.3426
         },
         {
-          "x": 35.5704,
-          "z": 56.0117
+          "x": 35.3802,
+          "z": 55.7121
         }
       ],
       "baseHeight": 0.62,
@@ -127,7 +127,7 @@
         },
         {
           "label": "6",
-          "seats": 16,
+          "seats": 17,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -153,7 +153,7 @@
         },
         {
           "label": "8",
-          "seats": 17,
+          "seats": 18,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -244,7 +244,7 @@
         },
         {
           "label": "15",
-          "seats": 21,
+          "seats": 22,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -270,7 +270,7 @@
         },
         {
           "label": "17",
-          "seats": 22,
+          "seats": 23,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -361,7 +361,7 @@
         },
         {
           "label": "24",
-          "seats": 26,
+          "seats": 27,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -387,7 +387,7 @@
         },
         {
           "label": "26",
-          "seats": 27,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -478,7 +478,7 @@
         },
         {
           "label": "33",
-          "seats": 31,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -504,7 +504,7 @@
         },
         {
           "label": "35",
-          "seats": 32,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -530,7 +530,7 @@
         },
         {
           "label": "37",
-          "seats": 33,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -595,7 +595,7 @@
         },
         {
           "label": "42",
-          "seats": 36,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -627,46 +627,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": 13.7957,
-          "z": 21.7236
+          "x": 13.6042,
+          "z": 21.4221
         },
         {
-          "x": 11.7442,
-          "z": 21.7791
+          "x": 11.5717,
+          "z": 21.4591
         },
         {
-          "x": 9.8194,
-          "z": 21.795
+          "x": 9.6728,
+          "z": 21.4697
         },
         {
-          "x": 8.0079,
-          "z": 21.799
+          "x": 7.8879,
+          "z": 21.4724
         },
         {
-          "x": 6.2874,
-          "z": 21.7999
+          "x": 6.1931,
+          "z": 21.4729
         }
       ],
       "back": [
         {
-          "x": 35.5704,
-          "z": 56.0117
+          "x": 35.3802,
+          "z": 55.7121
         },
         {
-          "x": 30.2777,
-          "z": 56.1485
+          "x": 30.1054,
+          "z": 55.8291
         },
         {
-          "x": 25.3144,
-          "z": 56.1877
+          "x": 25.1679,
+          "z": 55.8626
         },
         {
-          "x": 20.6441,
-          "z": 56.1976
+          "x": 20.5242,
+          "z": 55.871
         },
         {
-          "x": 16.2089,
-          "z": 56.1997
+          "x": 16.1146,
+          "z": 55.8727
         }
       ],
       "baseHeight": 0.62,
@@ -1090,7 +1090,7 @@
         },
         {
           "label": "33",
-          "seats": 28,
+          "seats": 27,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1116,7 +1116,7 @@
         },
         {
           "label": "35",
-          "seats": 29,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1142,7 +1142,7 @@
         },
         {
           "label": "37",
-          "seats": 30,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1168,7 +1168,7 @@
         },
         {
           "label": "39",
-          "seats": 31,
+          "seats": 30,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1194,7 +1194,7 @@
         },
         {
           "label": "41",
-          "seats": 32,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1220,7 +1220,7 @@
         },
         {
           "label": "43",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1239,46 +1239,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": 6.2874,
-          "z": 21.7999
+          "x": 6.1931,
+          "z": 21.4729
         },
         {
-          "x": 4.6362,
-          "z": 21.8
+          "x": 4.5666,
+          "z": 21.473
         },
         {
-          "x": 3.0342,
-          "z": 21.8
+          "x": 2.9887,
+          "z": 21.473
         },
         {
-          "x": 1.4638,
-          "z": 21.8
+          "x": 1.4418,
+          "z": 21.473
         },
         {
-          "x": -0.0916,
-          "z": 21.8
+          "x": -0.0903,
+          "z": 21.473
         }
       ],
       "back": [
         {
-          "x": 16.2089,
-          "z": 56.1997
+          "x": 16.1146,
+          "z": 55.8727
         },
         {
-          "x": 11.9519,
-          "z": 56.2
+          "x": 11.8824,
+          "z": 55.873
         },
         {
-          "x": 7.8222,
-          "z": 56.2
+          "x": 7.7767,
+          "z": 55.873
         },
         {
-          "x": 3.7737,
-          "z": 56.2
+          "x": 3.7517,
+          "z": 55.873
         },
         {
-          "x": -0.2362,
-          "z": 56.2
+          "x": -0.2349,
+          "z": 55.873
         }
       ],
       "baseHeight": 0.62,
@@ -1338,7 +1338,7 @@
         },
         {
           "label": "5",
-          "seats": 12,
+          "seats": 11,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1403,7 +1403,7 @@
         },
         {
           "label": "10",
-          "seats": 14,
+          "seats": 13,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1494,7 +1494,7 @@
         },
         {
           "label": "17",
-          "seats": 17,
+          "seats": 16,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1559,7 +1559,7 @@
         },
         {
           "label": "22",
-          "seats": 19,
+          "seats": 18,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1650,7 +1650,7 @@
         },
         {
           "label": "29",
-          "seats": 22,
+          "seats": 21,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1715,7 +1715,7 @@
         },
         {
           "label": "34",
-          "seats": 24,
+          "seats": 23,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1806,7 +1806,7 @@
         },
         {
           "label": "41",
-          "seats": 27,
+          "seats": 26,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -1851,46 +1851,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": -0.0916,
-          "z": 21.8
+          "x": -0.0903,
+          "z": 21.473
         },
         {
-          "x": -1.648,
-          "z": 21.8
+          "x": -1.6233,
+          "z": 21.473
         },
         {
-          "x": -3.2213,
-          "z": 21.8
+          "x": -3.173,
+          "z": 21.473
         },
         {
-          "x": -4.8281,
-          "z": 21.8
+          "x": -4.7557,
+          "z": 21.473
         },
         {
-          "x": -6.4864,
-          "z": 21.7998
+          "x": -6.3892,
+          "z": 21.4729
         }
       ],
       "back": [
         {
-          "x": -0.2362,
-          "z": 56.2
+          "x": -0.2349,
+          "z": 55.873
         },
         {
-          "x": -4.2486,
-          "z": 56.2
+          "x": -4.2238,
+          "z": 55.873
         },
         {
-          "x": -8.3044,
-          "z": 56.2
+          "x": -8.2561,
+          "z": 55.873
         },
         {
-          "x": -12.4467,
-          "z": 56.2
+          "x": -12.3743,
+          "z": 55.873
         },
         {
-          "x": -16.7219,
-          "z": 56.1996
+          "x": -16.6247,
+          "z": 55.8726
         }
       ],
       "baseHeight": 0.62,
@@ -1950,7 +1950,7 @@
         },
         {
           "label": "5",
-          "seats": 12,
+          "seats": 11,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -2015,7 +2015,7 @@
         },
         {
           "label": "10",
-          "seats": 14,
+          "seats": 13,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -2106,7 +2106,7 @@
         },
         {
           "label": "17",
-          "seats": 17,
+          "seats": 16,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -2197,7 +2197,7 @@
         },
         {
           "label": "24",
-          "seats": 20,
+          "seats": 19,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -2262,7 +2262,7 @@
         },
         {
           "label": "29",
-          "seats": 22,
+          "seats": 21,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -2353,7 +2353,7 @@
         },
         {
           "label": "36",
-          "seats": 25,
+          "seats": 24,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -2418,7 +2418,7 @@
         },
         {
           "label": "41",
-          "seats": 27,
+          "seats": 26,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -2463,46 +2463,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": -6.4864,
-          "z": 21.7998
+          "x": -6.3892,
+          "z": 21.4729
         },
         {
-          "x": -8.2164,
-          "z": 21.7988
+          "x": -8.0933,
+          "z": 21.4722
         },
         {
-          "x": -10.0402,
-          "z": 21.7941
+          "x": -9.8905,
+          "z": 21.4691
         },
         {
-          "x": -11.9797,
-          "z": 21.7755
+          "x": -11.8043,
+          "z": 21.4567
         },
         {
-          "x": -14.0456,
-          "z": 21.7116
+          "x": -13.8531,
+          "z": 21.4141
         }
       ],
       "back": [
         {
-          "x": -16.7219,
-          "z": 56.1996
+          "x": -16.6247,
+          "z": 55.8726
         },
         {
-          "x": -21.1818,
-          "z": 56.1971
+          "x": -21.0588,
+          "z": 55.8705
         },
         {
-          "x": -25.8837,
-          "z": 56.1854
+          "x": -25.7341,
+          "z": 55.8605
         },
         {
-          "x": -30.8849,
-          "z": 56.1396
+          "x": -30.7099,
+          "z": 55.8215
         },
         {
-          "x": -36.2157,
-          "z": 55.9821
+          "x": -36.0247,
+          "z": 55.6868
         }
       ],
       "baseHeight": 0.62,
@@ -3075,46 +3075,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": -14.0456,
-          "z": 21.7116
+          "x": -13.8531,
+          "z": 21.4141
         },
         {
-          "x": -16.2014,
-          "z": 21.5142
+          "x": -16.025,
+          "z": 21.28
         },
         {
-          "x": -18.2815,
-          "z": 20.983
+          "x": -18.2111,
+          "z": 20.9022
         },
         {
-          "x": -19.9456,
-          "z": 19.8439
+          "x": -20.1182,
+          "z": 20.0156
         },
         {
-          "x": -20.9356,
-          "z": 18.0528
+          "x": -21.3935,
+          "z": 18.4477
         }
       ],
       "back": [
         {
-          "x": -36.2157,
-          "z": 55.9821
+          "x": -36.0247,
+          "z": 55.6868
         },
         {
-          "x": -41.7901,
-          "z": 55.4941
+          "x": -41.6188,
+          "z": 55.2666
         },
         {
-          "x": -47.1984,
-          "z": 54.173
+          "x": -47.1413,
+          "z": 54.1075
         },
         {
-          "x": -51.5716,
-          "z": 51.3087
+          "x": -51.7654,
+          "z": 51.5015
         },
         {
-          "x": -54.2084,
-          "z": 46.744
+          "x": -54.6839,
+          "z": 47.154
         }
       ],
       "baseHeight": 0.62,
@@ -3187,7 +3187,7 @@
         },
         {
           "label": "6",
-          "seats": 16,
+          "seats": 17,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3213,7 +3213,7 @@
         },
         {
           "label": "8",
-          "seats": 17,
+          "seats": 18,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3304,7 +3304,7 @@
         },
         {
           "label": "15",
-          "seats": 21,
+          "seats": 22,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3330,7 +3330,7 @@
         },
         {
           "label": "17",
-          "seats": 22,
+          "seats": 23,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3421,7 +3421,7 @@
         },
         {
           "label": "24",
-          "seats": 26,
+          "seats": 27,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3447,7 +3447,7 @@
         },
         {
           "label": "26",
-          "seats": 27,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3538,7 +3538,7 @@
         },
         {
           "label": "33",
-          "seats": 31,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3564,7 +3564,7 @@
         },
         {
           "label": "35",
-          "seats": 32,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3590,7 +3590,7 @@
         },
         {
           "label": "37",
-          "seats": 33,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3655,7 +3655,7 @@
         },
         {
           "label": "42",
-          "seats": 36,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3687,46 +3687,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": -21.2481,
-          "z": -16.7788
+          "x": -21.8325,
+          "z": -17.2404
         },
         {
-          "x": -20.6262,
-          "z": -18.8206
+          "x": -20.9784,
+          "z": -19.142
         },
         {
-          "x": -19.3636,
-          "z": -20.3776
+          "x": -19.4261,
+          "z": -20.4434
         },
         {
-          "x": -17.4901,
-          "z": -21.2503
+          "x": -17.3625,
+          "z": -21.0953
         },
         {
-          "x": -15.348,
-          "z": -21.6177
+          "x": -15.1584,
+          "z": -21.3507
         }
       ],
       "back": [
         {
-          "x": -55.0485,
-          "z": -43.4698
+          "x": -55.6447,
+          "z": -43.9406
         },
         {
-          "x": -53.3806,
-          "z": -48.7078
+          "x": -53.7532,
+          "z": -49.0478
         },
         {
-          "x": -50.0354,
-          "z": -52.6555
+          "x": -50.1169,
+          "z": -52.7413
         },
         {
-          "x": -45.1353,
-          "z": -54.839
+          "x": -45.0173,
+          "z": -54.6956
         },
         {
-          "x": -39.5811,
-          "z": -55.75
+          "x": -39.3947,
+          "z": -55.4875
         }
       ],
       "baseHeight": 0.62,
@@ -3799,7 +3799,7 @@
         },
         {
           "label": "6",
-          "seats": 16,
+          "seats": 17,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3825,7 +3825,7 @@
         },
         {
           "label": "8",
-          "seats": 17,
+          "seats": 18,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3916,7 +3916,7 @@
         },
         {
           "label": "15",
-          "seats": 21,
+          "seats": 22,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -3942,7 +3942,7 @@
         },
         {
           "label": "17",
-          "seats": 22,
+          "seats": 23,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4059,7 +4059,7 @@
         },
         {
           "label": "26",
-          "seats": 27,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4176,7 +4176,7 @@
         },
         {
           "label": "35",
-          "seats": 32,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4299,46 +4299,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": -15.348,
-          "z": -21.6177
+          "x": -15.1584,
+          "z": -21.3507
         },
         {
-          "x": -13.2173,
-          "z": -21.746
+          "x": -13.0296,
+          "z": -21.4371
         },
         {
-          "x": -11.2007,
-          "z": -21.7857
+          "x": -11.0351,
+          "z": -21.4635
         },
         {
-          "x": -9.3092,
-          "z": -21.7968
+          "x": -9.17,
+          "z": -21.4708
         },
         {
-          "x": -7.5251,
-          "z": -21.7994
+          "x": -7.4123,
+          "z": -21.4726
         }
       ],
       "back": [
         {
-          "x": -39.5811,
-          "z": -55.75
+          "x": -39.3947,
+          "z": -55.4875
         },
         {
-          "x": -34.0777,
-          "z": -56.0668
+          "x": -33.8908,
+          "z": -55.7593
         },
         {
-          "x": -28.8761,
-          "z": -56.1648
+          "x": -28.7107,
+          "z": -55.843
         },
         {
-          "x": -23.999,
-          "z": -56.192
+          "x": -23.8598,
+          "z": -55.8662
         },
         {
-          "x": -19.3995,
-          "z": -56.1985
+          "x": -19.2867,
+          "z": -55.8718
         }
       ],
       "baseHeight": 0.62,
@@ -4372,7 +4372,7 @@
         },
         {
           "label": "3",
-          "seats": 14,
+          "seats": 13,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4398,7 +4398,7 @@
         },
         {
           "label": "5",
-          "seats": 15,
+          "seats": 14,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4424,7 +4424,7 @@
         },
         {
           "label": "7",
-          "seats": 16,
+          "seats": 15,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4450,7 +4450,7 @@
         },
         {
           "label": "9",
-          "seats": 17,
+          "seats": 16,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4476,7 +4476,7 @@
         },
         {
           "label": "11",
-          "seats": 18,
+          "seats": 17,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4853,7 +4853,7 @@
         },
         {
           "label": "40",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4879,7 +4879,7 @@
         },
         {
           "label": "42",
-          "seats": 34,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -4911,46 +4911,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": -7.5251,
-          "z": -21.7994
+          "x": -7.4123,
+          "z": -21.4726
         },
         {
-          "x": -5.8258,
-          "z": -21.7999
+          "x": -5.7385,
+          "z": -21.4729
         },
         {
-          "x": -4.1901,
-          "z": -21.8
+          "x": -4.1272,
+          "z": -21.473
         },
         {
-          "x": -2.5985,
-          "z": -21.8
+          "x": -2.5596,
+          "z": -21.473
         },
         {
-          "x": -1.0339,
-          "z": -21.8
+          "x": -1.0183,
+          "z": -21.473
         }
       ],
       "back": [
         {
-          "x": -19.3995,
-          "z": -56.1985
+          "x": -19.2867,
+          "z": -55.8718
         },
         {
-          "x": -15.0189,
-          "z": -56.1998
+          "x": -14.9315,
+          "z": -55.8728
         },
         {
-          "x": -10.8019,
-          "z": -56.2
+          "x": -10.7391,
+          "z": -55.873
         },
         {
-          "x": -6.699,
-          "z": -56.2
+          "x": -6.66,
+          "z": -55.873
         },
         {
-          "x": -2.6653,
-          "z": -56.2
+          "x": -2.6497,
+          "z": -55.873
         }
       ],
       "baseHeight": 0.62,
@@ -5036,7 +5036,7 @@
         },
         {
           "label": "7",
-          "seats": 13,
+          "seats": 12,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5127,7 +5127,7 @@
         },
         {
           "label": "14",
-          "seats": 16,
+          "seats": 15,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5218,7 +5218,7 @@
         },
         {
           "label": "21",
-          "seats": 19,
+          "seats": 18,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5309,7 +5309,7 @@
         },
         {
           "label": "28",
-          "seats": 22,
+          "seats": 21,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5374,7 +5374,7 @@
         },
         {
           "label": "33",
-          "seats": 24,
+          "seats": 23,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5400,7 +5400,7 @@
         },
         {
           "label": "35",
-          "seats": 25,
+          "seats": 24,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5465,7 +5465,7 @@
         },
         {
           "label": "40",
-          "seats": 27,
+          "seats": 26,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5523,46 +5523,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": -1.0339,
-          "z": -21.8
+          "x": -1.0183,
+          "z": -21.473
         },
         {
-          "x": 0.5203,
-          "z": -21.8
+          "x": 0.5125,
+          "z": -21.473
         },
         {
-          "x": 2.0797,
-          "z": -21.8
+          "x": 2.0485,
+          "z": -21.473
         },
         {
-          "x": 3.6605,
-          "z": -21.8
+          "x": 3.6056,
+          "z": -21.473
         },
         {
-          "x": 5.2796,
-          "z": -21.8
+          "x": 5.2005,
+          "z": -21.473
         }
       ],
       "back": [
         {
-          "x": -2.6653,
-          "z": -56.2
+          "x": -2.6497,
+          "z": -55.873
         },
         {
-          "x": 1.3412,
-          "z": -56.2
+          "x": 1.3334,
+          "z": -55.873
         },
         {
-          "x": 5.3614,
-          "z": -56.2
+          "x": 5.3302,
+          "z": -55.873
         },
         {
-          "x": 9.4367,
-          "z": -56.2
+          "x": 9.3818,
+          "z": -55.873
         },
         {
-          "x": 13.6108,
-          "z": -56.1999
+          "x": 13.5316,
+          "z": -55.8729
         }
       ],
       "baseHeight": 0.62,
@@ -5596,7 +5596,7 @@
         },
         {
           "label": "3",
-          "seats": 11,
+          "seats": 10,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5661,7 +5661,7 @@
         },
         {
           "label": "8",
-          "seats": 13,
+          "seats": 12,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5752,7 +5752,7 @@
         },
         {
           "label": "15",
-          "seats": 16,
+          "seats": 15,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5817,7 +5817,7 @@
         },
         {
           "label": "20",
-          "seats": 18,
+          "seats": 17,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5882,7 +5882,7 @@
         },
         {
           "label": "25",
-          "seats": 20,
+          "seats": 19,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -5973,7 +5973,7 @@
         },
         {
           "label": "32",
-          "seats": 23,
+          "seats": 22,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6038,7 +6038,7 @@
         },
         {
           "label": "37",
-          "seats": 25,
+          "seats": 24,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6135,46 +6135,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": 5.2796,
-          "z": -21.8
+          "x": 5.2005,
+          "z": -21.473
         },
         {
-          "x": 6.9557,
-          "z": -21.7997
+          "x": 6.8514,
+          "z": -21.4728
         },
         {
-          "x": 8.7092,
-          "z": -21.7981
+          "x": 8.5788,
+          "z": -21.4717
         },
         {
-          "x": 10.5629,
-          "z": -21.7911
+          "x": 10.4058,
+          "z": -21.4671
         },
         {
-          "x": 12.5372,
-          "z": -21.7647
+          "x": 12.3557,
+          "z": -21.4495
         }
       ],
       "back": [
         {
-          "x": 13.6108,
-          "z": -56.1999
+          "x": 13.5316,
+          "z": -55.8729
         },
         {
-          "x": 17.9316,
-          "z": -56.1992
+          "x": 17.8273,
+          "z": -55.8723
         },
         {
-          "x": 22.4524,
-          "z": -56.1953
+          "x": 22.322,
+          "z": -55.869
         },
         {
-          "x": 27.2314,
-          "z": -56.178
+          "x": 27.0745,
+          "z": -55.8542
         },
         {
-          "x": 32.323,
-          "z": -56.113
+          "x": 32.142,
+          "z": -55.7988
         }
       ],
       "baseHeight": 0.62,
@@ -6325,7 +6325,7 @@
         },
         {
           "label": "12",
-          "seats": 17,
+          "seats": 16,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6351,7 +6351,7 @@
         },
         {
           "label": "14",
-          "seats": 18,
+          "seats": 17,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6377,7 +6377,7 @@
         },
         {
           "label": "16",
-          "seats": 19,
+          "seats": 18,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6403,7 +6403,7 @@
         },
         {
           "label": "18",
-          "seats": 20,
+          "seats": 19,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6598,7 +6598,7 @@
         },
         {
           "label": "33",
-          "seats": 27,
+          "seats": 26,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6624,7 +6624,7 @@
         },
         {
           "label": "35",
-          "seats": 28,
+          "seats": 27,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6650,7 +6650,7 @@
         },
         {
           "label": "37",
-          "seats": 29,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6676,7 +6676,7 @@
         },
         {
           "label": "39",
-          "seats": 30,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6747,46 +6747,46 @@
       "tier": "T1",
       "front": [
         {
-          "x": 12.5372,
-          "z": -21.7647
+          "x": 12.3557,
+          "z": -21.4495
         },
         {
-          "x": 14.6352,
-          "z": -21.6765
+          "x": 14.442,
+          "z": -21.3905
         },
         {
-          "x": 16.7946,
-          "z": -21.4128
+          "x": 16.6353,
+          "z": -21.2097
         },
         {
-          "x": 18.7986,
-          "z": -20.7389
+          "x": 18.7821,
+          "z": -20.7208
         },
         {
-          "x": 20.2878,
-          "z": -19.406
+          "x": 20.5427,
+          "z": -19.6498
         }
       ],
       "back": [
         {
-          "x": 32.323,
-          "z": -56.113
+          "x": 32.142,
+          "z": -55.7988
         },
         {
-          "x": 37.7385,
-          "z": -55.8955
+          "x": 37.5475,
+          "z": -55.6125
         },
         {
-          "x": 43.3283,
-          "z": -55.2426
+          "x": 43.1759,
+          "z": -55.0483
         },
         {
-          "x": 48.5512,
-          "z": -53.5626
+          "x": 48.5508,
+          "z": -53.5622
         },
         {
-          "x": 52.4794,
-          "z": -50.1983
+          "x": 52.7557,
+          "z": -50.4626
         }
       ],
       "baseHeight": 0.62,
@@ -6859,7 +6859,7 @@
         },
         {
           "label": "6",
-          "seats": 16,
+          "seats": 17,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6885,7 +6885,7 @@
         },
         {
           "label": "8",
-          "seats": 17,
+          "seats": 18,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -6976,7 +6976,7 @@
         },
         {
           "label": "15",
-          "seats": 21,
+          "seats": 22,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7002,7 +7002,7 @@
         },
         {
           "label": "17",
-          "seats": 22,
+          "seats": 23,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7093,7 +7093,7 @@
         },
         {
           "label": "24",
-          "seats": 26,
+          "seats": 27,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7119,7 +7119,7 @@
         },
         {
           "label": "26",
-          "seats": 27,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7210,7 +7210,7 @@
         },
         {
           "label": "33",
-          "seats": 31,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7236,7 +7236,7 @@
         },
         {
           "label": "35",
-          "seats": 32,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7327,7 +7327,7 @@
         },
         {
           "label": "42",
-          "seats": 36,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7359,46 +7359,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": 55.9907,
-          "z": 53.2164
+          "x": 56.201,
+          "z": 53.4163
         },
         {
-          "x": 52.0623,
-          "z": 56.7839
+          "x": 50.9785,
+          "z": 55.6018
         },
         {
-          "x": 46.78,
-          "z": 58.6485
+          "x": 45.1067,
+          "z": 56.5506
         },
         {
-          "x": 41.0445,
-          "z": 59.4132
+          "x": 39.3099,
+          "z": 56.9022
         },
         {
-          "x": 35.4353,
-          "z": 59.6825
+          "x": 33.8551,
+          "z": 57.021
         }
       ],
       "back": [
         {
-          "x": 68.2999,
-          "z": 64.9157
+          "x": 68.6136,
+          "z": 65.2139
         },
         {
-          "x": 63.4976,
-          "z": 69.2563
+          "x": 62.483,
+          "z": 68.1498
         },
         {
-          "x": 57.0484,
-          "z": 71.5221
+          "x": 55.404,
+          "z": 69.4604
         },
         {
-          "x": 50.0511,
-          "z": 72.4505
+          "x": 48.3256,
+          "z": 69.9528
         },
         {
-          "x": 43.2101,
-          "z": 72.7774
+          "x": 41.6324,
+          "z": 70.12
         }
       ],
       "baseHeight": 19.1,
@@ -7406,19 +7406,6 @@
       "rows": [
         {
           "label": "1",
-          "seats": 38,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "2",
           "seats": 39,
           "first": 1,
           "seatType": "chair",
@@ -7431,8 +7418,21 @@
           "depthOffsetM": 0
         },
         {
-          "label": "3",
+          "label": "2",
           "seats": 40,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "3",
+          "seats": 41,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7445,7 +7445,7 @@
         },
         {
           "label": "4",
-          "seats": 40,
+          "seats": 41,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7458,7 +7458,7 @@
         },
         {
           "label": "5",
-          "seats": 41,
+          "seats": 42,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7471,7 +7471,7 @@
         },
         {
           "label": "6",
-          "seats": 41,
+          "seats": 42,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7484,7 +7484,7 @@
         },
         {
           "label": "7",
-          "seats": 42,
+          "seats": 43,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7497,7 +7497,7 @@
         },
         {
           "label": "8",
-          "seats": 42,
+          "seats": 43,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7510,7 +7510,7 @@
         },
         {
           "label": "9",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7523,7 +7523,7 @@
         },
         {
           "label": "10",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7536,7 +7536,7 @@
         },
         {
           "label": "11",
-          "seats": 44,
+          "seats": 45,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7562,7 +7562,7 @@
         },
         {
           "label": "13",
-          "seats": 45,
+          "seats": 46,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7575,7 +7575,7 @@
         },
         {
           "label": "14",
-          "seats": 46,
+          "seats": 47,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7588,7 +7588,7 @@
         },
         {
           "label": "15",
-          "seats": 46,
+          "seats": 47,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7601,7 +7601,7 @@
         },
         {
           "label": "16",
-          "seats": 47,
+          "seats": 48,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7620,46 +7620,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": 35.4353,
-          "z": 59.6825
+          "x": 33.8551,
+          "z": 57.021
         },
         {
-          "x": 30.1383,
-          "z": 59.768
+          "x": 28.7719,
+          "z": 57.0581
         },
         {
-          "x": 25.1599,
-          "z": 59.7925
+          "x": 24.0138,
+          "z": 57.0687
         },
         {
-          "x": 20.4522,
-          "z": 59.7986
+          "x": 19.5194,
+          "z": 57.0714
         },
         {
-          "x": 15.959,
-          "z": 59.7998
+          "x": 15.231,
+          "z": 57.0719
         }
       ],
       "back": [
         {
-          "x": 43.2101,
-          "z": 72.7774
+          "x": 41.6324,
+          "z": 70.12
         },
         {
-          "x": 36.7507,
-          "z": 72.8811
+          "x": 35.3849,
+          "z": 70.1725
         },
         {
-          "x": 30.6799,
-          "z": 72.9108
+          "x": 29.5339,
+          "z": 70.1874
         },
         {
-          "x": 24.9394,
-          "z": 72.9183
+          "x": 24.0066,
+          "z": 70.1911
         },
         {
-          "x": 19.4604,
-          "z": 72.9198
+          "x": 18.7324,
+          "z": 70.1919
         }
       ],
       "baseHeight": 19.1,
@@ -7667,7 +7667,7 @@
       "rows": [
         {
           "label": "1",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7680,7 +7680,7 @@
         },
         {
           "label": "2",
-          "seats": 34,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7693,7 +7693,7 @@
         },
         {
           "label": "3",
-          "seats": 34,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7706,7 +7706,7 @@
         },
         {
           "label": "4",
-          "seats": 35,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7719,7 +7719,7 @@
         },
         {
           "label": "5",
-          "seats": 35,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7732,7 +7732,7 @@
         },
         {
           "label": "6",
-          "seats": 36,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7745,7 +7745,7 @@
         },
         {
           "label": "7",
-          "seats": 36,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7758,7 +7758,7 @@
         },
         {
           "label": "8",
-          "seats": 37,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7771,7 +7771,7 @@
         },
         {
           "label": "9",
-          "seats": 37,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7784,7 +7784,7 @@
         },
         {
           "label": "10",
-          "seats": 38,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7797,7 +7797,7 @@
         },
         {
           "label": "11",
-          "seats": 38,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7810,7 +7810,7 @@
         },
         {
           "label": "12",
-          "seats": 39,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7823,7 +7823,7 @@
         },
         {
           "label": "13",
-          "seats": 39,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7836,7 +7836,7 @@
         },
         {
           "label": "14",
-          "seats": 39,
+          "seats": 38,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7849,7 +7849,7 @@
         },
         {
           "label": "15",
-          "seats": 40,
+          "seats": 38,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7862,7 +7862,7 @@
         },
         {
           "label": "16",
-          "seats": 40,
+          "seats": 39,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7881,46 +7881,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": 15.959,
-          "z": 59.7998
+          "x": 15.231,
+          "z": 57.0719
         },
         {
-          "x": 11.6277,
-          "z": 59.8
+          "x": 11.0972,
+          "z": 57.072
         },
         {
-          "x": 7.4107,
-          "z": 59.8
+          "x": 7.0726,
+          "z": 57.072
         },
         {
-          "x": 3.2651,
-          "z": 59.8
+          "x": 3.1162,
+          "z": 57.072
         },
         {
-          "x": -0.8494,
-          "z": 59.8
+          "x": -0.8107,
+          "z": 57.072
         }
       ],
       "back": [
         {
-          "x": 19.4604,
-          "z": 72.9198
+          "x": 18.7324,
+          "z": 70.1919
         },
         {
-          "x": 14.1788,
-          "z": 72.92
+          "x": 13.6483,
+          "z": 70.192
         },
         {
-          "x": 9.0366,
-          "z": 72.92
+          "x": 8.6985,
+          "z": 70.192
         },
         {
-          "x": 3.9815,
-          "z": 72.92
+          "x": 3.8325,
+          "z": 70.192
         },
         {
-          "x": -1.0358,
-          "z": 72.92
+          "x": -0.9971,
+          "z": 70.192
         }
       ],
       "baseHeight": 19.1,
@@ -7928,7 +7928,7 @@
       "rows": [
         {
           "label": "1",
-          "seats": 28,
+          "seats": 27,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7941,7 +7941,7 @@
         },
         {
           "label": "2",
-          "seats": 29,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7954,7 +7954,7 @@
         },
         {
           "label": "3",
-          "seats": 29,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7967,7 +7967,7 @@
         },
         {
           "label": "4",
-          "seats": 30,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7980,7 +7980,7 @@
         },
         {
           "label": "5",
-          "seats": 30,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -7993,7 +7993,7 @@
         },
         {
           "label": "6",
-          "seats": 31,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8006,7 +8006,7 @@
         },
         {
           "label": "7",
-          "seats": 31,
+          "seats": 30,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8019,7 +8019,7 @@
         },
         {
           "label": "8",
-          "seats": 31,
+          "seats": 30,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8032,7 +8032,7 @@
         },
         {
           "label": "9",
-          "seats": 32,
+          "seats": 30,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8045,7 +8045,7 @@
         },
         {
           "label": "10",
-          "seats": 32,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8058,7 +8058,7 @@
         },
         {
           "label": "11",
-          "seats": 33,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8071,7 +8071,7 @@
         },
         {
           "label": "12",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8084,7 +8084,7 @@
         },
         {
           "label": "13",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8097,7 +8097,7 @@
         },
         {
           "label": "14",
-          "seats": 34,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8110,7 +8110,7 @@
         },
         {
           "label": "15",
-          "seats": 34,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8123,7 +8123,7 @@
         },
         {
           "label": "16",
-          "seats": 35,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8142,46 +8142,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": -0.8494,
-          "z": 59.8
+          "x": -0.8107,
+          "z": 57.072
         },
         {
-          "x": -4.972,
-          "z": 59.8
+          "x": -4.7452,
+          "z": 57.072
         },
         {
-          "x": -9.1421,
-          "z": 59.8
+          "x": -8.7251,
+          "z": 57.072
         },
         {
-          "x": -13.4009,
-          "z": 59.8
+          "x": -12.7896,
+          "z": 57.072
         },
         {
-          "x": -17.7931,
-          "z": 59.7995
+          "x": -16.9815,
+          "z": 57.0718
         }
       ],
       "back": [
         {
-          "x": -1.0358,
-          "z": 72.92
+          "x": -0.9971,
+          "z": 70.192
         },
         {
-          "x": -6.0629,
-          "z": 72.92
+          "x": -5.8361,
+          "z": 70.192
         },
         {
-          "x": -11.1479,
-          "z": 72.92
+          "x": -10.7308,
+          "z": 70.192
         },
         {
-          "x": -16.3411,
-          "z": 72.9199
+          "x": -15.7297,
+          "z": 70.192
         },
         {
-          "x": -21.6969,
-          "z": 72.9194
+          "x": -20.8852,
+          "z": 70.1917
         }
       ],
       "baseHeight": 19.1,
@@ -8189,7 +8189,7 @@
       "rows": [
         {
           "label": "1",
-          "seats": 29,
+          "seats": 27,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8202,7 +8202,7 @@
         },
         {
           "label": "2",
-          "seats": 29,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8215,7 +8215,7 @@
         },
         {
           "label": "3",
-          "seats": 30,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8228,7 +8228,7 @@
         },
         {
           "label": "4",
-          "seats": 30,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8241,7 +8241,7 @@
         },
         {
           "label": "5",
-          "seats": 30,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8254,7 +8254,7 @@
         },
         {
           "label": "6",
-          "seats": 31,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8267,7 +8267,7 @@
         },
         {
           "label": "7",
-          "seats": 31,
+          "seats": 30,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8280,7 +8280,7 @@
         },
         {
           "label": "8",
-          "seats": 32,
+          "seats": 30,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8293,7 +8293,7 @@
         },
         {
           "label": "9",
-          "seats": 32,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8306,7 +8306,7 @@
         },
         {
           "label": "10",
-          "seats": 32,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8319,7 +8319,7 @@
         },
         {
           "label": "11",
-          "seats": 33,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8332,7 +8332,7 @@
         },
         {
           "label": "12",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8345,7 +8345,7 @@
         },
         {
           "label": "13",
-          "seats": 34,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8358,7 +8358,7 @@
         },
         {
           "label": "14",
-          "seats": 34,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8371,7 +8371,7 @@
         },
         {
           "label": "15",
-          "seats": 35,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8384,7 +8384,7 @@
         },
         {
           "label": "16",
-          "seats": 35,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8403,46 +8403,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": -17.7931,
-          "z": 59.7995
+          "x": -16.9815,
+          "z": 57.0718
         },
         {
-          "x": -22.3682,
-          "z": 59.7971
+          "x": -21.3484,
+          "z": 57.0707
         },
         {
-          "x": -27.181,
-          "z": 59.786
+          "x": -25.9443,
+          "z": 57.0659
         },
         {
-          "x": -32.2867,
-          "z": 59.7444
+          "x": -30.8295,
+          "z": 57.0479
         },
         {
-          "x": -37.7196,
-          "z": 59.6054
+          "x": -36.0627,
+          "z": 56.9873
         }
       ],
       "back": [
         {
-          "x": -21.6969,
-          "z": 72.9194
+          "x": -20.8852,
+          "z": 70.1917
         },
         {
-          "x": -27.2757,
-          "z": 72.9164
+          "x": -26.2559,
+          "z": 70.1902
         },
         {
-          "x": -33.1444,
-          "z": 72.903
+          "x": -31.908,
+          "z": 70.1835
         },
         {
-          "x": -39.3705,
-          "z": 72.8525
+          "x": -37.9144,
+          "z": 70.158
         },
         {
-          "x": -45.9959,
-          "z": 72.6838
+          "x": -44.3434,
+          "z": 70.0725
         }
       ],
       "baseHeight": 19.1,
@@ -8450,7 +8450,7 @@
       "rows": [
         {
           "label": "1",
-          "seats": 34,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8463,7 +8463,7 @@
         },
         {
           "label": "2",
-          "seats": 35,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8476,7 +8476,7 @@
         },
         {
           "label": "3",
-          "seats": 35,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8489,7 +8489,7 @@
         },
         {
           "label": "4",
-          "seats": 36,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8502,7 +8502,7 @@
         },
         {
           "label": "5",
-          "seats": 36,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8515,7 +8515,7 @@
         },
         {
           "label": "6",
-          "seats": 37,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8528,7 +8528,7 @@
         },
         {
           "label": "7",
-          "seats": 37,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8541,7 +8541,7 @@
         },
         {
           "label": "8",
-          "seats": 37,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8554,7 +8554,7 @@
         },
         {
           "label": "9",
-          "seats": 38,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8567,7 +8567,7 @@
         },
         {
           "label": "10",
-          "seats": 38,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8580,7 +8580,7 @@
         },
         {
           "label": "11",
-          "seats": 39,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8593,7 +8593,7 @@
         },
         {
           "label": "12",
-          "seats": 39,
+          "seats": 38,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8606,7 +8606,7 @@
         },
         {
           "label": "13",
-          "seats": 40,
+          "seats": 38,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8619,7 +8619,7 @@
         },
         {
           "label": "14",
-          "seats": 40,
+          "seats": 39,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8632,7 +8632,7 @@
         },
         {
           "label": "15",
-          "seats": 41,
+          "seats": 39,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8645,7 +8645,7 @@
         },
         {
           "label": "16",
-          "seats": 41,
+          "seats": 40,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8664,46 +8664,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": -37.7196,
-          "z": 59.6054
+          "x": -36.0627,
+          "z": 56.9873
         },
         {
-          "x": -43.421,
-          "z": 59.1851
+          "x": -41.6709,
+          "z": 56.7995
         },
         {
-          "x": -49.0676,
-          "z": 58.054
+          "x": -47.5532,
+          "z": 56.2623
         },
         {
-          "x": -53.895,
-          "z": 55.5304
+          "x": -53.2729,
+          "z": 54.8894
         },
         {
-          "x": -57.0898,
-          "z": 51.2546
+          "x": -57.9334,
+          "z": 52.012
         }
       ],
       "back": [
         {
-          "x": -45.9959,
-          "z": 72.6838
+          "x": -44.3434,
+          "z": 70.0725
         },
         {
-          "x": -52.95,
-          "z": 72.1736
+          "x": -51.215,
+          "z": 69.8087
         },
         {
-          "x": -59.8405,
-          "z": 70.8
+          "x": -58.3695,
+          "z": 69.0595
         },
         {
-          "x": -65.7371,
-          "z": 67.7319
+          "x": -65.2026,
+          "z": 67.1811
         },
         {
-          "x": -69.6449,
-          "z": 62.5265
+          "x": -70.5908,
+          "z": 63.3757
         }
       ],
       "baseHeight": 19.1,
@@ -8711,19 +8711,6 @@
       "rows": [
         {
           "label": "1",
-          "seats": 38,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "2",
           "seats": 39,
           "first": 1,
           "seatType": "chair",
@@ -8736,8 +8723,21 @@
           "depthOffsetM": 0
         },
         {
-          "label": "3",
+          "label": "2",
           "seats": 40,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "3",
+          "seats": 41,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8750,7 +8750,7 @@
         },
         {
           "label": "4",
-          "seats": 40,
+          "seats": 41,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8763,7 +8763,7 @@
         },
         {
           "label": "5",
-          "seats": 41,
+          "seats": 42,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8776,7 +8776,7 @@
         },
         {
           "label": "6",
-          "seats": 41,
+          "seats": 42,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8789,7 +8789,7 @@
         },
         {
           "label": "7",
-          "seats": 42,
+          "seats": 43,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8802,7 +8802,7 @@
         },
         {
           "label": "8",
-          "seats": 42,
+          "seats": 43,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8815,7 +8815,7 @@
         },
         {
           "label": "9",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8828,7 +8828,7 @@
         },
         {
           "label": "10",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8841,32 +8841,6 @@
         },
         {
           "label": "11",
-          "seats": 44,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "12",
-          "seats": 44,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "13",
           "seats": 45,
           "first": 1,
           "seatType": "chair",
@@ -8879,8 +8853,34 @@
           "depthOffsetM": 0
         },
         {
-          "label": "14",
+          "label": "12",
+          "seats": 45,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "13",
           "seats": 46,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "14",
+          "seats": 47,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8893,7 +8893,7 @@
         },
         {
           "label": "15",
-          "seats": 46,
+          "seats": 47,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8906,7 +8906,7 @@
         },
         {
           "label": "16",
-          "seats": 47,
+          "seats": 48,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8925,46 +8925,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": -58.0168,
-          "z": -48.7092
+          "x": -59.5491,
+          "z": -49.9956
         },
         {
-          "x": -55.665,
-          "z": -53.6704
+          "x": -55.7178,
+          "z": -53.7213
         },
         {
-          "x": -51.5604,
-          "z": -57.0509
+          "x": -50.3809,
+          "z": -55.7458
         },
         {
-          "x": -46.1901,
-          "z": -58.7668
+          "x": -44.492,
+          "z": -56.6064
         },
         {
-          "x": -40.449,
-          "z": -59.4567
+          "x": -38.7244,
+          "z": -56.9216
         }
       ],
       "back": [
         {
-          "x": -70.78,
-          "z": -59.4247
+          "x": -72.4008,
+          "z": -60.7855
         },
         {
-          "x": -67.9015,
-          "z": -65.4684
+          "x": -68.0562,
+          "z": -65.6176
         },
         {
-          "x": -62.8845,
-          "z": -69.581
+          "x": -61.7694,
+          "z": -68.3471
         },
         {
-          "x": -56.3285,
-          "z": -71.6658
+          "x": -54.6563,
+          "z": -69.5383
         },
         {
-          "x": -49.3248,
-          "z": -72.5034
+          "x": -47.6082,
+          "z": -69.9801
         }
       ],
       "baseHeight": 19.1,
@@ -8972,7 +8972,7 @@
       "rows": [
         {
           "label": "1",
-          "seats": 38,
+          "seats": 39,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -8985,32 +8985,6 @@
         },
         {
           "label": "2",
-          "seats": 39,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "3",
-          "seats": 39,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "4",
           "seats": 40,
           "first": 1,
           "seatType": "chair",
@@ -9023,8 +8997,34 @@
           "depthOffsetM": 0
         },
         {
-          "label": "5",
+          "label": "3",
+          "seats": 40,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "4",
           "seats": 41,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "5",
+          "seats": 42,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9037,7 +9037,7 @@
         },
         {
           "label": "6",
-          "seats": 41,
+          "seats": 42,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9050,7 +9050,7 @@
         },
         {
           "label": "7",
-          "seats": 42,
+          "seats": 43,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9063,7 +9063,7 @@
         },
         {
           "label": "8",
-          "seats": 42,
+          "seats": 43,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9076,7 +9076,7 @@
         },
         {
           "label": "9",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9089,7 +9089,7 @@
         },
         {
           "label": "10",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9102,7 +9102,7 @@
         },
         {
           "label": "11",
-          "seats": 44,
+          "seats": 45,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9115,7 +9115,7 @@
         },
         {
           "label": "12",
-          "seats": 44,
+          "seats": 45,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9128,7 +9128,7 @@
         },
         {
           "label": "13",
-          "seats": 45,
+          "seats": 46,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9154,7 +9154,7 @@
         },
         {
           "label": "15",
-          "seats": 46,
+          "seats": 47,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9186,46 +9186,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": -40.449,
-          "z": -59.4567
+          "x": -38.7244,
+          "z": -56.9216
         },
         {
-          "x": -34.8683,
-          "z": -59.6968
+          "x": -33.309,
+          "z": -57.0272
         },
         {
-          "x": -29.6058,
-          "z": -59.7722
+          "x": -28.2624,
+          "z": -57.06
         },
         {
-          "x": -24.6581,
-          "z": -59.7936
+          "x": -23.5346,
+          "z": -57.0692
         },
         {
-          "x": -19.9754,
-          "z": -59.7988
+          "x": -19.0643,
+          "z": -57.0715
         }
       ],
       "back": [
         {
-          "x": -49.3248,
-          "z": -72.5034
+          "x": -47.6082,
+          "z": -69.9801
         },
         {
-          "x": -42.5187,
-          "z": -72.7948
+          "x": -40.9616,
+          "z": -70.1288
         },
         {
-          "x": -36.1014,
-          "z": -72.8863
+          "x": -34.7584,
+          "z": -70.1751
         },
         {
-          "x": -30.068,
-          "z": -72.9122
+          "x": -28.9447,
+          "z": -70.1881
         },
         {
-          "x": -24.3579,
-          "z": -72.9186
+          "x": -23.4469,
+          "z": -70.1913
         }
       ],
       "baseHeight": 19.1,
@@ -9233,7 +9233,7 @@
       "rows": [
         {
           "label": "1",
-          "seats": 35,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9246,7 +9246,7 @@
         },
         {
           "label": "2",
-          "seats": 36,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9259,7 +9259,7 @@
         },
         {
           "label": "3",
-          "seats": 36,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9272,7 +9272,7 @@
         },
         {
           "label": "4",
-          "seats": 37,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9285,7 +9285,7 @@
         },
         {
           "label": "5",
-          "seats": 37,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9298,7 +9298,7 @@
         },
         {
           "label": "6",
-          "seats": 38,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9311,7 +9311,7 @@
         },
         {
           "label": "7",
-          "seats": 38,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9324,7 +9324,7 @@
         },
         {
           "label": "8",
-          "seats": 39,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9337,7 +9337,7 @@
         },
         {
           "label": "9",
-          "seats": 39,
+          "seats": 38,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9350,7 +9350,7 @@
         },
         {
           "label": "10",
-          "seats": 40,
+          "seats": 38,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9363,7 +9363,7 @@
         },
         {
           "label": "11",
-          "seats": 40,
+          "seats": 39,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9376,7 +9376,7 @@
         },
         {
           "label": "12",
-          "seats": 41,
+          "seats": 39,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9389,7 +9389,7 @@
         },
         {
           "label": "13",
-          "seats": 41,
+          "seats": 40,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9402,7 +9402,7 @@
         },
         {
           "label": "14",
-          "seats": 42,
+          "seats": 40,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9415,7 +9415,7 @@
         },
         {
           "label": "15",
-          "seats": 42,
+          "seats": 41,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9428,7 +9428,7 @@
         },
         {
           "label": "16",
-          "seats": 43,
+          "seats": 41,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9447,307 +9447,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": -19.9754,
-          "z": -59.7988
+          "x": -19.0643,
+          "z": -57.0715
         },
         {
-          "x": -15.5014,
-          "z": -59.7998
+          "x": -14.7943,
+          "z": -57.0719
         },
         {
-          "x": -11.1841,
-          "z": -59.8
+          "x": -10.6739,
+          "z": -57.072
         },
         {
-          "x": -6.9765,
-          "z": -59.8
+          "x": -6.6582,
+          "z": -57.072
         },
         {
-          "x": -2.836,
-          "z": -59.8
+          "x": -2.7066,
+          "z": -57.072
         }
       ],
       "back": [
         {
-          "x": -24.3579,
-          "z": -72.9186
+          "x": -23.4469,
+          "z": -70.1913
         },
         {
-          "x": -18.9024,
-          "z": -72.9198
+          "x": -18.1953,
+          "z": -70.1919
         },
         {
-          "x": -13.6379,
-          "z": -72.92
+          "x": -13.1277,
+          "z": -70.192
         },
         {
-          "x": -8.5071,
-          "z": -72.92
+          "x": -8.1889,
+          "z": -70.192
         },
         {
-          "x": -3.4582,
-          "z": -72.92
-        }
-      ],
-      "baseHeight": 19.1,
-      "rowRise": 0.48,
-      "rows": [
-        {
-          "label": "1",
-          "seats": 29,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "2",
-          "seats": 29,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "3",
-          "seats": 30,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "4",
-          "seats": 30,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "5",
-          "seats": 31,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "6",
-          "seats": 31,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "7",
-          "seats": 32,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "8",
-          "seats": 32,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "9",
-          "seats": 32,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "10",
-          "seats": 33,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "11",
-          "seats": 33,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "12",
-          "seats": 34,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "13",
-          "seats": 34,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "14",
-          "seats": 35,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "15",
-          "seats": 35,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        },
-        {
-          "label": "16",
-          "seats": 35,
-          "first": 1,
-          "seatType": "chair",
-          "seatDirection": "forward",
-          "gaps": [],
-          "seatNumbers": [],
-          "elevation": null,
-          "insetStartM": 0.35,
-          "insetEndM": 0.35,
-          "depthOffsetM": 0
-        }
-      ],
-      "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019"
-    },
-    {
-      "id": "KK",
-      "tier": "T2",
-      "front": [
-        {
-          "x": -2.836,
-          "z": -59.8
-        },
-        {
-          "x": 1.2776,
-          "z": -59.8
-        },
-        {
-          "x": 5.4033,
-          "z": -59.8
-        },
-        {
-          "x": 9.5806,
-          "z": -59.8
-        },
-        {
-          "x": 13.8511,
-          "z": -59.7999
-        }
-      ],
-      "back": [
-        {
-          "x": -3.4582,
-          "z": -72.92
-        },
-        {
-          "x": 1.5579,
-          "z": -72.92
-        },
-        {
-          "x": 6.5887,
-          "z": -72.92
-        },
-        {
-          "x": 11.6826,
-          "z": -72.92
-        },
-        {
-          "x": 16.8901,
-          "z": -72.9199
+          "x": -3.3288,
+          "z": -70.192
         }
       ],
       "baseHeight": 19.1,
@@ -9768,7 +9507,7 @@
         },
         {
           "label": "2",
-          "seats": 29,
+          "seats": 28,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9807,7 +9546,7 @@
         },
         {
           "label": "5",
-          "seats": 30,
+          "seats": 29,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9833,7 +9572,7 @@
         },
         {
           "label": "7",
-          "seats": 31,
+          "seats": 30,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9859,7 +9598,7 @@
         },
         {
           "label": "9",
-          "seats": 32,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9872,7 +9611,7 @@
         },
         {
           "label": "10",
-          "seats": 32,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9898,7 +9637,7 @@
         },
         {
           "label": "12",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9924,7 +9663,7 @@
         },
         {
           "label": "14",
-          "seats": 34,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9951,6 +9690,267 @@
         {
           "label": "16",
           "seats": 34,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        }
+      ],
+      "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019"
+    },
+    {
+      "id": "KK",
+      "tier": "T2",
+      "front": [
+        {
+          "x": -2.7066,
+          "z": -57.072
+        },
+        {
+          "x": 1.2193,
+          "z": -57.072
+        },
+        {
+          "x": 5.1568,
+          "z": -57.072
+        },
+        {
+          "x": 9.1436,
+          "z": -57.072
+        },
+        {
+          "x": 13.2193,
+          "z": -57.072
+        }
+      ],
+      "back": [
+        {
+          "x": -3.3288,
+          "z": -70.192
+        },
+        {
+          "x": 1.4996,
+          "z": -70.192
+        },
+        {
+          "x": 6.3422,
+          "z": -70.192
+        },
+        {
+          "x": 11.2455,
+          "z": -70.192
+        },
+        {
+          "x": 16.2582,
+          "z": -70.192
+        }
+      ],
+      "baseHeight": 19.1,
+      "rowRise": 0.48,
+      "rows": [
+        {
+          "label": "1",
+          "seats": 27,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "2",
+          "seats": 27,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "3",
+          "seats": 28,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "4",
+          "seats": 28,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "5",
+          "seats": 29,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "6",
+          "seats": 29,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "7",
+          "seats": 29,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "8",
+          "seats": 30,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "9",
+          "seats": 30,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "10",
+          "seats": 31,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "11",
+          "seats": 31,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "12",
+          "seats": 31,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "13",
+          "seats": 32,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "14",
+          "seats": 32,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "15",
+          "seats": 33,
+          "first": 1,
+          "seatType": "chair",
+          "seatDirection": "forward",
+          "gaps": [],
+          "seatNumbers": [],
+          "elevation": null,
+          "insetStartM": 0.35,
+          "insetEndM": 0.35,
+          "depthOffsetM": 0
+        },
+        {
+          "label": "16",
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -9969,46 +9969,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": 13.8511,
-          "z": -59.7999
+          "x": 13.2193,
+          "z": -57.072
         },
         {
-          "x": 18.26,
-          "z": -59.7994
+          "x": 17.4271,
+          "z": -57.0717
         },
         {
-          "x": 22.8572,
-          "z": -59.7965
+          "x": 21.8152,
+          "z": -57.0705
         },
         {
-          "x": 27.6979,
-          "z": -59.7837
+          "x": 26.4383,
+          "z": -57.065
         },
         {
-          "x": 32.8369,
-          "z": -59.7363
+          "x": 31.3572,
+          "z": -57.0444
         }
       ],
       "back": [
         {
-          "x": 16.8901,
-          "z": -72.9199
+          "x": 16.2582,
+          "z": -70.192
         },
         {
-          "x": 22.2662,
-          "z": -72.9193
+          "x": 21.4333,
+          "z": -70.1916
         },
         {
-          "x": 27.872,
-          "z": -72.9158
+          "x": 26.83,
+          "z": -70.1899
         },
         {
-          "x": 33.7749,
-          "z": -72.9002
+          "x": 32.5155,
+          "z": -70.1821
         },
         {
-          "x": 40.0415,
-          "z": -72.8427
+          "x": 38.563,
+          "z": -70.1531
         }
       ],
       "baseHeight": 19.1,
@@ -10016,7 +10016,7 @@
       "rows": [
         {
           "label": "1",
-          "seats": 32,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10029,7 +10029,7 @@
         },
         {
           "label": "2",
-          "seats": 33,
+          "seats": 31,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10042,7 +10042,7 @@
         },
         {
           "label": "3",
-          "seats": 33,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10055,7 +10055,7 @@
         },
         {
           "label": "4",
-          "seats": 34,
+          "seats": 32,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10068,7 +10068,7 @@
         },
         {
           "label": "5",
-          "seats": 34,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10081,7 +10081,7 @@
         },
         {
           "label": "6",
-          "seats": 35,
+          "seats": 33,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10094,7 +10094,7 @@
         },
         {
           "label": "7",
-          "seats": 35,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10107,7 +10107,7 @@
         },
         {
           "label": "8",
-          "seats": 36,
+          "seats": 34,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10120,7 +10120,7 @@
         },
         {
           "label": "9",
-          "seats": 36,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10133,7 +10133,7 @@
         },
         {
           "label": "10",
-          "seats": 37,
+          "seats": 35,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10146,7 +10146,7 @@
         },
         {
           "label": "11",
-          "seats": 37,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10159,7 +10159,7 @@
         },
         {
           "label": "12",
-          "seats": 38,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10172,7 +10172,7 @@
         },
         {
           "label": "13",
-          "seats": 38,
+          "seats": 36,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10185,7 +10185,7 @@
         },
         {
           "label": "14",
-          "seats": 38,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10198,7 +10198,7 @@
         },
         {
           "label": "15",
-          "seats": 39,
+          "seats": 37,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10211,7 +10211,7 @@
         },
         {
           "label": "16",
-          "seats": 39,
+          "seats": 38,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10230,46 +10230,46 @@
       "tier": "T2",
       "front": [
         {
-          "x": 32.8369,
-          "z": -59.7363
+          "x": 31.3572,
+          "z": -57.0444
         },
         {
-          "x": 38.3032,
-          "z": -59.5796
+          "x": 36.6293,
+          "z": -56.9759
         },
         {
-          "x": 44.0208,
-          "z": -59.1108
+          "x": 42.2744,
+          "z": -56.7657
         },
         {
-          "x": 49.625,
-          "z": -57.8684
+          "x": 48.1682,
+          "z": -56.1696
         },
         {
-          "x": 54.3123,
-          "z": -55.1648
+          "x": 53.8254,
+          "z": -54.6703
         }
       ],
       "back": [
         {
-          "x": 40.0415,
-          "z": -72.8427
+          "x": 38.563,
+          "z": -70.1531
         },
         {
-          "x": 46.7076,
-          "z": -72.6526
+          "x": 45.0387,
+          "z": -70.0566
         },
         {
-          "x": 53.6817,
-          "z": -72.0834
+          "x": 51.9523,
+          "z": -69.7612
         },
         {
-          "x": 60.5211,
-          "z": -70.5744
+          "x": 59.1118,
+          "z": -68.9311
         },
         {
-          "x": 66.2473,
-          "z": -67.2871
+          "x": 65.8519,
+          "z": -66.8856
         }
       ],
       "baseHeight": 19.1,
@@ -10290,7 +10290,7 @@
         },
         {
           "label": "2",
-          "seats": 39,
+          "seats": 40,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10316,7 +10316,7 @@
         },
         {
           "label": "4",
-          "seats": 40,
+          "seats": 41,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10342,7 +10342,7 @@
         },
         {
           "label": "6",
-          "seats": 41,
+          "seats": 42,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10368,7 +10368,7 @@
         },
         {
           "label": "8",
-          "seats": 42,
+          "seats": 43,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10381,7 +10381,7 @@
         },
         {
           "label": "9",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10394,7 +10394,7 @@
         },
         {
           "label": "10",
-          "seats": 43,
+          "seats": 44,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10407,7 +10407,7 @@
         },
         {
           "label": "11",
-          "seats": 44,
+          "seats": 45,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10433,7 +10433,7 @@
         },
         {
           "label": "13",
-          "seats": 45,
+          "seats": 46,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10459,7 +10459,7 @@
         },
         {
           "label": "15",
-          "seats": 46,
+          "seats": 47,
           "first": 1,
           "seatType": "chair",
           "seatDirection": "forward",
@@ -10487,7 +10487,7 @@
       "source": "https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019"
     }
   ],
-  "notes": "BIG TEN SHOWCASE | indiana | separate opposed grandstands with open ends | NOT AN OFFICIAL 3D VENUE | Section labels/order are chart-informed. Bank curves, row footprint, elevation, seating counts, accessibility and seat XY/XYZ are estimated. Source: https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019 | Original legacy seating allocation estimate: 18534.",
+  "notes": "BIG TEN SHOWCASE | indiana | separate opposed grandstands with open ends | NOT AN OFFICIAL 3D VENUE | Section labels/order are chart-informed. Bank curves, row footprint, elevation, seating counts, accessibility and seat XY/XYZ are estimated. Source: https://s3.us-east-2.amazonaws.com/sidearm.nextgen.sites/iuhoosiers.com/documents/2026/4/30/MBB_2027_Seating_Configuration.pdf?timestamp=20260430075019 | Original legacy seating allocation estimate: 18392.",
   "exterior": {
     "enabled": false,
     "provider": null,
@@ -10496,6 +10496,6 @@
   "totals": {
     "sections": 24,
     "rows": 708,
-    "seats": 18534
+    "seats": 18392
   }
 }
