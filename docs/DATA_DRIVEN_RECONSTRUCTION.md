@@ -22,6 +22,36 @@ For example, if the server says it is listening on port 5201, use:
 
 Use New blank project for your own data. The initially loaded 1,500-seat gym is explicitly fictional and for engine evaluation only.
 
+## Big Ten five-venue demonstration
+
+Five source-informed but still **non-surveyed** basketball arena interior drafts are available in the top gallery of /builder/. They use the same manually structured JSON input and the same renderer:
+
+- Illinois, State Farm Center — 87 modeled sections in three levels, with a split club/mezzanine bank.
+- Indiana, Simon Skjodt Assembly Hall — 24 modeled sections in two separated, tall grandstand structures.
+- Michigan, Crisler Center — 55 modeled sections in a large elliptical two-level bowl.
+- Purdue, Mackey Arena — 36 modeled sections in a near-circular two-level bowl.
+- Wisconsin, Kohl Center — 84 modeled sections in a faceted three-level bowl with estimated upper-tier overhangs.
+
+The model section IDs and rough adjacency are taken from the earlier sourced Big Ten dataset, as available. Other values such as seat counts per row, precise aisle/portal dimensions, heights and outline geometry are **estimated** and must not be marketed as official ticket positions or verified spectator sightlines. Generated seat counts are intentionally **not** forced to match official capacity and currently differ for all five.
+
+Open, for example:
+
+    http://127.0.0.1:5201/builder/?case=indiana
+
+Replace 5201 with the local server's actual port. Click another gallery card to compare the distinct layout, or modify one selected section/row and rebuild the 2D and 3D model.
+
+Regenerate the five editable JSON datasets from the older source catalog and the documented modeling assumptions:
+
+    npm run prepare:big-ten-showcase
+
+Regenerate a batch of independent seat XYZ exports and validation reports from the five prepared files:
+
+    npm run generate:reconstruction -- --catalog data/reconstruction-showcase/catalog.json --out build/big-ten-showcase
+
+The outputs are independent venue folders plus a manifest. To validate without writing files, append --dry-run.
+
+This is a five-venue engine demonstration, not an assertion that five universities' full real seating bowls are complete. Building exteriors and professional seated-eye accuracy remain outside the current scope.
+
 ## Operator workflow
 
 1. Enter school, venue, sport and court dimensions in metres.
