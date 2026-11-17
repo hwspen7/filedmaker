@@ -96,17 +96,22 @@ export function prepareBigTenExample(id,data){
           rz+officialRowCount*depth,cfg.type);
         // Per-section row width determines *estimated* seats, not the target
         // venue capacity. Reserve small ends for section-side circulation.
-        const midDepth=officialRowCount*depth*.5;
-        const length=curveLength(start,end,rx+midDepth,rz+midDepth,cfg.type);
-        const usable=Math.max(.7,length-.7);
-        const estimatedSeats=Math.max(1,Math.min(130,Math.floor(usable/cfg.pitch)));
-        const rows=Array.from({length:officialRowCount},(_,k)=>({
-          label:String((group.rowStart??1)+k),
-          seats:estimatedSeats,first:1,seatType:'chair',
-          seatDirection:'forward',gaps:[],seatNumbers:[],
-          elevation:null,insetStartM:.35,insetEndM:.35,depthOffsetM:0,
-        }));
-        seatTotal+=estimatedSeats*officialRowCount;
+        const rows=Array.from({length:officialRowCount},(_,k)=>{
+          // Real bank width increases with row depth. Estimate each row
+          // independently, never squeezing the front row to accommodate a
+          // fixed count inferred from a wider middle row.
+          const rowDepth=(k+.5)*depth;
+          const rowWidth=curveLength(start,end,rx+rowDepth,rz+rowDepth,cfg.type);
+          const usable=Math.max(.7,rowWidth-.7);
+          const seats=Math.max(1,Math.min(130,Math.floor(usable/cfg.pitch)));
+          return {
+            label:String((group.rowStart??1)+k),
+            seats,first:1,seatType:'chair',
+            seatDirection:'forward',gaps:[],seatNumbers:[],
+            elevation:null,insetStartM:.35,insetEndM:.35,depthOffsetM:0,
+          };
+        });
+        seatTotal+=rows.reduce((n,row)=>n+row.seats,0);
         sections.push({
           id:name,tier:'T'+(tierIndex+1),front,back,
           baseHeight,rowRise:rise,rows,
