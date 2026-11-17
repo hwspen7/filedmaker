@@ -641,4 +641,110 @@ $('fitPlan').onclick=fit;
 $('rebuild').onclick=rebuild;
 new ResizeObserver(()=>{if(currentMode==='plan')fit();else renderer?.resize();})
   .observe($('canvasHost'));
+// The five real-school showcase files contain manual, editable geometry.
+// Their chart identifiers are sourced, while unmeasured seat XYZ stays estimated.
+const SHOWCASE_IDS=new Set(['illinois','indiana','michigan','purdue','wisconsin']);
+const caseCache=new Map();
+function loadCase(id){
+  if(!SHOWCASE_IDS.has(id))return Promise.reject(Error('Unknown Big Ten case'));
+  if(!caseCache.has(id)){
+    const url=new URL('../data/reconstruction-showcase/'+id+'.json',import.meta.url);
+    caseCache.set(id,fetch(url).then(async response=>{
+      if(!response.ok)throw Error('Cannot load '+id+' dataset ('+response.status+')');
+      const raw=await response.json();
+      return normalizeReconstruction(raw);
+    }));
+  }
+  return caseCache.get(id);
+}
+function drawCaseMiniature(canvas,venue){
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='#edf3f7';ctx.fillRect(0,0,w,h);
+  const all=[{x:-venue.court.width/2,z:-venue.court.length/2},
+    {x:venue.court.width/2,z:venue.court.length/2}];
+  for(const s of venue.sections)all.push(...s.front,...s.back);
+  const minX=Math.min(...all.map(p=>p.x)),maxX=Math.max(...all.map(p=>p.x)),
+    minZ=Math.min(...all.map(p=>p.z)),maxZ=Math.max(...all.map(p=>p.z));
+  const scale=Math.min((w-17)/(maxX-minX+1),(h-12)/(maxZ-minZ+1));
+  const cx=(minX+maxX)/2,cz=(minZ+maxZ)/2;
+  const xy=p=>({x:w/2+(p.x-cx)*scale,y:h/2+(p.z-cz)*scale});
+  const tiers=['T3','T2','T1'];
+  const fills={T1:'#6ca6d0',T2:'#3c7eb4',T3:'#b5cede'};
+  const strokes={T1:'#e5f2fd',T2:'#b5d7ec',T3:'#8daac1'};
+  for(const level of tiers){
+    for(const section of venue.sections.filter(s=>s.tier===level)){
+      const poly=[...section.front,...section.back.toReversed()];
+      if(!poly.length)continue;
+      const first=xy(poly[0]);ctx.beginPath();ctx.moveTo(first.x,first.y);
+      for(const point of poly.slice(1)){
+        const p=xy(point);ctx.lineTo(p.x,p.y);
+      }
+      ctx.closePath();ctx.fillStyle=fills[level];ctx.fill();
+      ctx.strokeStyle=strokes[level];ctx.lineWidth=.55;ctx.stroke();
+    }
+  }
+  const min=xy({x:-venue.court.width/2,z:-venue.court.length/2}),
+    max=xy({x:venue.court.width/2,z:venue.court.length/2});
+  ctx.fillStyle='#d7b485';ctx.fillRect(min.x,min.y,max.x-min.x,max.y-min.y);
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.1;ctx.strokeRect(min.x,min.y,max.x-min.x,max.y-min.y);
+  ctx.beginPath();ctx.moveTo(min.x,(min.y+max.y)/2);
+  ctx.lineTo(max.x,(min.y+max.y)/2);ctx.stroke();
+}
+function markCaseSelection(id){
+  for(const card of document.querySelectorAll('[data-showcase]')){
+    const active=card.dataset.showcase===id;
+    card.classList.toggle('active',active);
+    card.setAttribute('aria-pressed',active?'true':'false');
+  }
+}
+async function openBigTenCase(id){
+  const active=document.querySelector('[data-showcase="'+id+'"]');
+  if(active?.disabled)return;
+  if(active)active.disabled=true;
+  $('showcaseState').textContent='正在加载 '+id+' 的完整分区和座位数据…';
+  try{
+    const data=await loadCase(id);
+    project=clone(data);
+    selectedId=project.sections[0]?.id??null;
+    selectedSeat=null;
+    currentMode='plan';
+    renderAll(true);
+    markCaseSelection(id);
+    const link=new URL(location.href);
+    link.searchParams.set('case',id);
+    history.replaceState(null,'',link);
+    // Let the loading label paint before the expensive native WebGL build.
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    rebuild();
+    if(!output)throw Error('Venue geometry failed the build QA rules');
+    currentMode='model';reflect2d();
+    $('showcaseState').textContent=data.school+' · '+data.totals.sections+
+      ' 分区，'+data.totals.seats.toLocaleString()+' 个估算模型座位。可编辑，非官方三维模型。';
+  }catch(error){
+    $('showcaseState').textContent='加载失败：'+error.message;
+    setStatus('Big Ten case '+id+': '+error.message,true);
+  }finally{
+    if(active)active.disabled=false;
+  }
+}
+for(const button of document.querySelectorAll('[data-showcase]')){
+  const id=button.dataset.showcase;
+  button.onclick=()=>openBigTenCase(id);
+  loadCase(id).then(data=>{
+    drawCaseMiniature(document.querySelector('[data-case-image="'+id+'"]'),data);
+    const stats=document.querySelector('[data-case-stats="'+id+'"]');
+    if(stats)stats.textContent=data.totals.sections+' 分区 · '+
+      data.totals.rows.toLocaleString()+' 排';
+  }).catch(error=>{
+    const stats=document.querySelector('[data-case-stats="'+id+'"]');
+    if(stats)stats.textContent='数据读取失败';
+  });
+}
+const requestedCase=new URLSearchParams(location.search).get('case');
+if(requestedCase&&SHOWCASE_IDS.has(requestedCase))
+  openBigTenCase(requestedCase);
+
 renderAll(true);
