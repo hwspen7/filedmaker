@@ -1,3 +1,15 @@
+# FiledMaker — Data-first venue reconstruction
+
+**New active development direction:** construct accurate-looking indoor seating geometry from **prepared section and row data**, not from automatic plan scanning. Each school controls its own bank contours, tier elevations, aisle gaps and ticket labels. One shared generator can process multiple schools with no Blender dependency.
+
+- Open the new manual-data editor at /builder/ after running the local Node server.
+- Read docs/DATA_DRIVEN_RECONSTRUCTION.md for the input specification, CSV schema and batch CLI.
+- Use npm run generate:reconstruction with a manually prepared JSON file or a catalog of schools.
+- Exterior buildings are out of scope; the extension interface is reserved.
+- Existing /workbench/, OSU reference studies and /experience/ remain accessible for comparison. None of their estimated seats are promoted to verified source data.
+
+---
+
 # FiledMaker — venue customization workbench
 
 **Current product focus:** a source-driven workflow for schools and small venues. The public studio showcases only Ohio State's Schottenstein Center and Ohio Stadium. The [Case Library](cases/) organizes school and reference cases by documented status. The [Venue Workbench](workbench/) provides plan-image registration, operator-traced section boundaries, school row-count CSV ingestion, deterministic seat generation, an editable geometry preview, and offline export.
