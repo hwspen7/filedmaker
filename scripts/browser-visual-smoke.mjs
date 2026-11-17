@@ -214,6 +214,7 @@ async function main(){
     const reconstructionCanvas=await poll(async()=>await evaluate("(()=>({active:!document.querySelector('#sceneCanvas').hidden,webgl:!!document.querySelector('#sceneCanvas').getContext('webgl2'),width:document.querySelector('#sceneCanvas').width}))()"),60);
     if(!reconstructionCanvas.active||!reconstructionCanvas.webgl||reconstructionCanvas.width<100)
       throw Error('Reconstruction WebGL2 canvas did not load: '+JSON.stringify(reconstructionCanvas));
+    await evaluate("document.querySelector('#canvasHost').scrollIntoView({block:'center'})");
     await delay(750);
     const reconstructedShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     const reconstructedPath=join(dir,'data-first-reconstruction.png');
@@ -239,6 +240,7 @@ async function main(){
         throw Error('Five-arena case failed to load '+school+': '+JSON.stringify(caseReady));
       const verifiedCanvas=await evaluate("(()=>{const c=document.querySelector('#sceneCanvas');return !!c.getContext('webgl2')&&c.width>300})()");
       if(!verifiedCanvas)throw Error('No WebGL2 3D arena for '+school);
+      await evaluate("document.querySelector('#canvasHost').scrollIntoView({block:'center'})");
       await delay(800);
       const caseShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
       const casePath=join(dir,'big-ten-showcase-'+school+'.png');
