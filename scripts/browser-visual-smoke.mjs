@@ -211,9 +211,9 @@ async function main(){
     if(/未通过|失败|invalid|failed/i.test(reconstruction.error))
       throw Error('Data-first builder rejected its fictional fixture: '+reconstruction.error);
     await evaluate("document.querySelector('#show3d').click()");
-    const rendered=await poll(async()=>await evaluate("(()=>({active:!document.querySelector('#sceneCanvas').hidden,webgl:!!document.querySelector('#sceneCanvas').getContext('webgl2'),width:document.querySelector('#sceneCanvas').width}))()"),60);
-    if(!rendered.active||!rendered.webgl||rendered.width<100)
-      throw Error('Reconstruction WebGL2 canvas did not load: '+JSON.stringify(rendered));
+    const reconstructionCanvas=await poll(async()=>await evaluate("(()=>({active:!document.querySelector('#sceneCanvas').hidden,webgl:!!document.querySelector('#sceneCanvas').getContext('webgl2'),width:document.querySelector('#sceneCanvas').width}))()"),60);
+    if(!reconstructionCanvas.active||!reconstructionCanvas.webgl||reconstructionCanvas.width<100)
+      throw Error('Reconstruction WebGL2 canvas did not load: '+JSON.stringify(reconstructionCanvas));
     await delay(750);
     const reconstructedShot=await client.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     const reconstructedPath=join(dir,'data-first-reconstruction.png');
